@@ -95,6 +95,7 @@ int libvo_common_alloc_frames (vo_instance_t * _this, int width, int height,
 	this->frame[i].base[0] = alloc;
 	this->frame[i].base[1] = alloc + 4 * size;
 	this->frame[i].base[2] = alloc + 5 * size;
+	this->frame[i].copy = NULL;
 	this->frame[i].draw = draw;
 	this->frame[i].this = (vo_instance_t *)this;
 	alloc += 6 * size;

@@ -15,6 +15,7 @@ typedef struct vo_instance_s vo_instance_t;
 
 struct vo_frame_s {
     uint8_t * base[3];	/* pointer to 3 planes */
+    void (* copy) (vo_frame_t * frame, uint8_t **);
     void (* draw) (vo_frame_t * frame);
     vo_instance_t * this;
 };

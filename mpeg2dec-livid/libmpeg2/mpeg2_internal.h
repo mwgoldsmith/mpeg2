@@ -19,12 +19,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/* hack mode - temporary */
-/* 0 = decode B pictures in a small slice buffer, display slice per slice */
-/* 1 = decode in a frame buffer, display slice per slice */
-/* 2 = decode in a frame buffer, display whole frames */
-#define HACK_MODE 2
-
 /* macroblock modes */
 #define MACROBLOCK_INTRA 1
 #define MACROBLOCK_PATTERN 2
