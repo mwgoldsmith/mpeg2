@@ -33,9 +33,10 @@ if test "x$DISPLAY_DRIVER" = x -a x$enable_mga = xyes; then
   fi
 fi
 
+dnl gatos is disabled for now, switch sense back later
 AC_ARG_ENABLE(gatos, 
-  [  --disable-gatos         make a version not using GATOS],
-  enable_gatos=no, enable_gatos=yes)
+  [  --enable-gatos         make a version not using GATOS],
+  enable_gatos=yes, enable_gatos=no)
 if test "x$DISPLAY_DRIVER" = x -a x$enable_gatos = xyes; then
    AC_CHECK_LIB(gatos, main, [ DISPLAY_DRIVER=display_gatos.o 
 	   LIBS="$LIBS -lgatos" ], , -L/usr/X11R6/lib -L/usr/lib -L/usr/local/lib)

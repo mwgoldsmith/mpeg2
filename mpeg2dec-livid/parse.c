@@ -804,21 +804,7 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
 
   //6.3.17.4 Coded block pattern 
   if (mb->macroblock_type & MACROBLOCK_PATTERN)
-  {
     mb->coded_block_pattern = Get_coded_block_pattern();
-
-    if (picture->chroma_format==CHROMA_422)
-    {
-      // coded_block_pattern_1 
-      mb->coded_block_pattern = (mb->coded_block_pattern<<2) | bitstream_get(2); 
-
-		}
-		else if (picture->chroma_format==CHROMA_444)
-		{
-			// coded_block_pattern_2 
-			mb->coded_block_pattern = (mb->coded_block_pattern<<6) | bitstream_get(6); 
-		}
-	}
   else
     mb->coded_block_pattern = (mb->macroblock_type & MACROBLOCK_INTRA) ? 
       0x3f : 0;
