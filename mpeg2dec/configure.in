@@ -69,10 +69,7 @@ elif test x"$GCC" = x"yes"; then
 	TRY_CFLAGS="$OPT_CFLAGS -mcpu=ultrasparc -mvis -Wa,-Av9b"
 	AC_TRY_CFLAGS([$TRY_CFLAGS $CFLAGS],[OPT_CFLAGS="$TRY_CFLAGS"]);;
     alpha*)
-	TRY_CFLAGS="$ARCH_OPT_CFLAGS -Wa,-mev6"
-	AC_TRY_CFLAGS([$OPT_CFLAGS $TRY_CFLAGS $CFLAGS],
-	    [ARCH_OPT_CFLAGS="$TRY_CFLAGS"
-	    AC_DEFINE([ARCH_ALPHA],,[alpha architecture])]);;
+	AC_DEFINE([ARCH_ALPHA],,[alpha architecture]);;
     esac
 elif test x"$CC" = x"tendracc"; then
     dnl TenDRA portability checking compiler
