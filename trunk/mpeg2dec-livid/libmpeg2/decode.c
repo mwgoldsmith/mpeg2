@@ -32,9 +32,7 @@
 #include "attributes.h"
 #include "mmx.h"
 
-//
-// here is our global var
-//
+
 mpeg2_config_t config;
 
 
@@ -64,7 +62,6 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output,
     mpeg2dec->chunk_ptr=mpeg2dec->chunk_buffer;
     mpeg2dec->code=0xff;
 
-    // hm
     mpeg2dec->picture= (picture_t*) malloc(sizeof(picture_t));
     memset(mpeg2dec->picture,0,sizeof(picture_t));
 
@@ -221,23 +218,24 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 	    in_slice = 1;
 
 	    if (!is_display_initialized) {
+		vo_output_video_attr_t attr;
 
-		mpeg2dec->attr.width = picture.coded_picture_width;
-		mpeg2dec->attr.height = picture.coded_picture_height;
-		mpeg2dec->attr.fullscreen = 0;
-		mpeg2dec->attr.title = NULL;
+		attr.width = picture.coded_picture_width;
+		attr.height = picture.coded_picture_height;
+		attr.fullscreen = 0;
+		attr.title = NULL;
 
-		if (output->setup (&(mpeg2dec->attr))) {
+		if (output->setup (&attr)) {
 		    printf ("display init failed\n");
 		    exit (1);
 		}
+
 		decode_allocate_image_buffers (mpeg2dec);
 		decode_reorder_frames (mpeg2dec);
 		is_display_initialized = 1;
 	    } else if (!picture.second_field) 
 		decode_reorder_frames (mpeg2dec);
 	}
-
 
 	drop_frame |= drop_flag && (picture.picture_coding_type == B_TYPE);
 	
@@ -246,9 +244,9 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 
 	    if ((HACK_MODE < 2) && (!picture.mpeg1)) {
 		uint8_t * foo[3];
+		uint8_t ** bar;
 		int offset;
-                uint8_t ** bar;
-                
+
 		if (picture.picture_coding_type == B_TYPE)
 		    bar = picture.throwaway_frame;
 		else
@@ -309,6 +307,7 @@ int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
 	ret += parse_chunk (mpeg2dec, code, chunk_buffer);
 
 	/* done with header or slice, prepare for next one */
+
 	code = byte;
 	chunk_ptr = chunk_buffer;
 	shift = 0xffffff00;
@@ -320,7 +319,7 @@ int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
 #undef code
 }
 
-void mpeg2_close_ng (mpeg2dec_t * mpeg2dec)
+void mpeg2_close (mpeg2dec_t * mpeg2dec)
 {
 #define output (mpeg2dec->output)
 #define is_display_initialized (mpeg2dec->is_display_initialized)
