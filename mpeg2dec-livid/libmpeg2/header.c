@@ -38,14 +38,14 @@
 
 static const uint_8 default_intra_quantization_matrix[64] ALIGN_16_BYTE = 
 {
-   8, 16, 19, 22, 26, 27, 29, 34,
-  16, 16, 22, 24, 27, 29, 34, 37,
-  19, 22, 26, 27, 29, 34, 34, 38,
-  22, 22, 26, 27, 29, 34, 37, 40,
-  22, 26, 27, 29, 32, 35, 40, 48,
-  26, 27, 29, 32, 35, 40, 48, 58,
-  26, 27, 29, 34, 38, 46, 56, 69,
-  27, 29, 35, 38, 46, 56, 69, 83
+	 8, 16, 19, 22, 26, 27, 29, 34,
+	16, 16, 22, 24, 27, 29, 34, 37,
+	19, 22, 26, 27, 29, 34, 34, 38,
+	22, 22, 26, 27, 29, 34, 37, 40,
+	22, 26, 27, 29, 32, 35, 40, 48,
+	26, 27, 29, 32, 35, 40, 48, 58,
+	26, 27, 29, 34, 38, 46, 56, 69,
+	27, 29, 35, 38, 46, 56, 69, 83
 };
 
 static const uint_8 default_non_intra_quantization_matrix[64] ALIGN_16_BYTE = 
@@ -134,12 +134,12 @@ header_state_init(picture_t *picture)
 //FIXME remove once we get everything working
 void header_get_marker_bit(char *string)
 {
-  int marker;
+	int marker;
 
-  marker = bitstream_get(1);
+	marker = bitstream_get(1);
 
-  if(!marker)
-    fprintf(stderr,"(header) %s marker_bit set to 0\n",string);
+	if(!marker)
+		fprintf(stderr,"(header) %s marker_bit set to 0\n",string);
 }
 
 
@@ -148,41 +148,40 @@ header_process_sequence_header(picture_t *picture)
 {
 	uint_32 i;
 
-  picture->horizontal_size             = bitstream_get(12);
-  picture->vertical_size               = bitstream_get(12);
+	picture->horizontal_size             = bitstream_get(12);
+	picture->vertical_size               = bitstream_get(12);
 
 	//XXX this needs field fixups
 	picture->coded_picture_height = ((picture->vertical_size + 15)/16) * 16;
 	picture->coded_picture_width  = ((picture->horizontal_size   + 15)/16) * 16;
 	picture->last_mba = ((picture->coded_picture_height * picture->coded_picture_width) >> 8) - 1;
 
-  picture->aspect_ratio_information    = bitstream_get(4);
-  picture->frame_rate_code             = bitstream_get(4);
-  picture->bit_rate_value              = bitstream_get(18);
-  header_get_marker_bit("sequence_header");
-  picture->vbv_buffer_size             = bitstream_get(10);
-  picture->constrained_parameters_flag = bitstream_get(1);
+	picture->aspect_ratio_information    = bitstream_get(4);
+	picture->frame_rate_code             = bitstream_get(4);
+	picture->bit_rate_value              = bitstream_get(18);
+	header_get_marker_bit("sequence_header");
+	picture->vbv_buffer_size             = bitstream_get(10);
+	picture->constrained_parameters_flag = bitstream_get(1);
 
-  if((picture->use_custom_intra_quantizer_matrix = bitstream_get(1)))
-  {
+	if((picture->use_custom_intra_quantizer_matrix = bitstream_get(1)))
+	{
 		picture->intra_quantizer_matrix = picture->custom_intra_quantization_matrix;
-    for (i=0; i < 64; i++)
-      picture->custom_intra_quantization_matrix[scan_norm[i]] = bitstream_get(8);
-  }
+		for (i=0; i < 64; i++)
+			picture->custom_intra_quantization_matrix[scan_norm[i]] = bitstream_get(8);
+	}
 	else
 		picture->intra_quantizer_matrix = (uint_8*) default_intra_quantization_matrix;
 
-  if((picture->use_custom_non_intra_quantizer_matrix = bitstream_get(1)))
-  {
+	if((picture->use_custom_non_intra_quantizer_matrix = bitstream_get(1)))
+	{
 		picture->non_intra_quantizer_matrix = picture->custom_non_intra_quantization_matrix;
-    for (i=0; i < 64; i++)
-      picture->custom_non_intra_quantization_matrix[scan_norm[i]] = bitstream_get(8);
-  }
+		for (i=0; i < 64; i++)
+			picture->custom_non_intra_quantization_matrix[scan_norm[i]] = bitstream_get(8);
+	}
 	else
 		picture->non_intra_quantizer_matrix = (uint_8*) default_non_intra_quantization_matrix;
 
 	stats_sequence_header(picture);
-
 }
 
 void
@@ -215,25 +214,25 @@ header_process_extension(picture_t *picture)
 void
 header_process_user_data(void)
 {
-  while (bitstream_show(24)!=0x01L)
-    bitstream_flush(8);
+	while (bitstream_show(24)!=0x01L)
+		bitstream_flush(8);
 }
 
 static void
 header_process_sequence_extension(picture_t *picture)
 {
 
-  /*picture->profile_and_level_indication = */ bitstream_get(8);
-  picture->progressive_sequence           =    bitstream_get(1);
-  picture->chroma_format                  =    bitstream_get(2);
-  /*picture->horizontal_size_extension    = */ bitstream_get(2);
-  /*picture->vertical_size_extension      = */ bitstream_get(2);
-  /*picture->bit_rate_extension           = */ bitstream_get(12);
-  header_get_marker_bit("sequence_extension");
-  /*picture->vbv_buffer_size_extension    = */ bitstream_get(8);
-  /*picture->low_delay                    = */ bitstream_get(1);
-  /*picture->frame_rate_extension_n       = */ bitstream_get(2);
-  /*picture->frame_rate_extension_d       = */ bitstream_get(5);
+	/*picture->profile_and_level_indication = */ bitstream_get(8);
+	picture->progressive_sequence           =    bitstream_get(1);
+	picture->chroma_format                  =    bitstream_get(2);
+	/*picture->horizontal_size_extension    = */ bitstream_get(2);
+	/*picture->vertical_size_extension      = */ bitstream_get(2);
+	/*picture->bit_rate_extension           = */ bitstream_get(12);
+	header_get_marker_bit("sequence_extension");
+	/*picture->vbv_buffer_size_extension    = */ bitstream_get(8);
+	/*picture->low_delay                    = */ bitstream_get(1);
+	/*picture->frame_rate_extension_n       = */ bitstream_get(2);
+	/*picture->frame_rate_extension_d       = */ bitstream_get(5);
 
 	stats_sequence_ext(picture);
 	//
@@ -249,19 +248,19 @@ header_process_sequence_extension(picture_t *picture)
 static void
 header_process_sequence_display_extension(picture_t *picture)
 {
-  picture->video_format      = bitstream_get(3);
-  picture->color_description = bitstream_get(1);
+	picture->video_format      = bitstream_get(3);
+	picture->color_description = bitstream_get(1);
 
-  if (picture->color_description)
-  {
-    picture->color_primaries          = bitstream_get(8);
-    picture->transfer_characteristics = bitstream_get(8);
-    picture->matrix_coefficients      = bitstream_get(8);
-  }
+	if (picture->color_description)
+	{
+		picture->color_primaries          = bitstream_get(8);
+		picture->transfer_characteristics = bitstream_get(8);
+		picture->matrix_coefficients      = bitstream_get(8);
+	}
 
-  picture->display_horizontal_size = bitstream_get(14);
-  header_get_marker_bit("sequence_display_extension");
-  picture->display_vertical_size   = bitstream_get(14);
+	picture->display_horizontal_size = bitstream_get(14);
+	header_get_marker_bit("sequence_display_extension");
+	picture->display_vertical_size   = bitstream_get(14);
 
 	stats_sequence_display_ext(picture);
 }
@@ -269,17 +268,16 @@ header_process_sequence_display_extension(picture_t *picture)
 void 
 header_process_gop_header(picture_t *picture)
 {
-  picture->drop_flag   = bitstream_get(1);
-  picture->hour        = bitstream_get(5);
-  picture->minute      = bitstream_get(6);
-  header_get_marker_bit("gop_header");
-  picture->sec         = bitstream_get(6);
-  picture->frame       = bitstream_get(6);
-  picture->closed_gop  = bitstream_get(1);
-  picture->broken_link = bitstream_get(1);
+	picture->drop_flag   = bitstream_get(1);
+	picture->hour        = bitstream_get(5);
+	picture->minute      = bitstream_get(6);
+	header_get_marker_bit("gop_header");
+	picture->sec         = bitstream_get(6);
+	picture->frame       = bitstream_get(6);
+	picture->closed_gop  = bitstream_get(1);
+	picture->broken_link = bitstream_get(1);
 
 	stats_gop_header(picture);
-
 }
 
 
@@ -287,19 +285,19 @@ static void
 header_process_picture_coding_extension(picture_t *picture)
 {
 	//pre subtract 1 for use later in compute_motion_vector
-  picture->f_code[0][0] = bitstream_get(4) - 1;
-  picture->f_code[0][1] = bitstream_get(4) - 1;
-  picture->f_code[1][0] = bitstream_get(4) - 1;
-  picture->f_code[1][1] = bitstream_get(4) - 1;
+	picture->f_code[0][0] = bitstream_get(4) - 1;
+	picture->f_code[0][1] = bitstream_get(4) - 1;
+	picture->f_code[1][0] = bitstream_get(4) - 1;
+	picture->f_code[1][1] = bitstream_get(4) - 1;
 
-  picture->intra_dc_precision         = bitstream_get(2);
-  picture->picture_structure          = bitstream_get(2);
-  picture->top_field_first            = bitstream_get(1);
-  picture->frame_pred_frame_dct       = bitstream_get(1);
-  picture->concealment_motion_vectors = bitstream_get(1);
-  picture->q_scale_type               = bitstream_get(1);
-  picture->intra_vlc_format           = bitstream_get(1);
-  picture->alternate_scan             = bitstream_get(1);
+	picture->intra_dc_precision         = bitstream_get(2);
+	picture->picture_structure          = bitstream_get(2);
+	picture->top_field_first            = bitstream_get(1);
+	picture->frame_pred_frame_dct       = bitstream_get(1);
+	picture->concealment_motion_vectors = bitstream_get(1);
+	picture->q_scale_type               = bitstream_get(1);
+	picture->intra_vlc_format           = bitstream_get(1);
+	picture->alternate_scan             = bitstream_get(1);
 
 #ifdef __i386__
 	if(config.flags & MPEG2_MMX_ENABLE)
@@ -318,20 +316,20 @@ header_process_picture_coding_extension(picture_t *picture)
 			picture->scan = scan_norm;
 	}
 
-  picture->repeat_first_field         = bitstream_get(1);
+	picture->repeat_first_field         = bitstream_get(1);
 	/*chroma_420_type isn't used */       bitstream_get(1);
-  picture->progressive_frame          = bitstream_get(1);
-  picture->composite_display_flag     = bitstream_get(1);
+	picture->progressive_frame          = bitstream_get(1);
+	picture->composite_display_flag     = bitstream_get(1);
 
-  if (picture->composite_display_flag)
-  {
+	if (picture->composite_display_flag)
+	{
 		//This info is not used in the decoding process
-    /* picture->v_axis            = */ bitstream_get(1);
-    /* picture->field_sequence    = */ bitstream_get(3);
-    /* picture->sub_carrier       = */ bitstream_get(1);
-    /* picture->burst_amplitude   = */ bitstream_get(7);
-    /* picture->sub_carrier_phase = */ bitstream_get(8);
-  }
+		/* picture->v_axis            = */ bitstream_get(1);
+		/* picture->field_sequence    = */ bitstream_get(3);
+		/* picture->sub_carrier       = */ bitstream_get(1);
+		/* picture->burst_amplitude   = */ bitstream_get(7);
+		/* picture->sub_carrier_phase = */ bitstream_get(8);
+	}
 
 	//XXX die gracefully if we encounter a field picture based stream
 	if(picture->picture_structure != FRAME_PICTURE)
@@ -346,20 +344,20 @@ header_process_picture_coding_extension(picture_t *picture)
 void 
 header_process_picture_header(picture_t *picture)
 {
-  picture->temporal_reference  = bitstream_get(10);
-  picture->picture_coding_type = bitstream_get(3);
-  picture->vbv_delay           = bitstream_get(16);
+	picture->temporal_reference  = bitstream_get(10);
+	picture->picture_coding_type = bitstream_get(3);
+	picture->vbv_delay           = bitstream_get(16);
 
-  if (picture->picture_coding_type==P_TYPE || picture->picture_coding_type==B_TYPE)
-  {
-    picture->full_pel_forward_vector = bitstream_get(1);
-    picture->forward_f_code = bitstream_get(3);
-  }
-  if (picture->picture_coding_type==B_TYPE)
-  {
-    picture->full_pel_backward_vector = bitstream_get(1);
-    picture->backward_f_code = bitstream_get(3);
-  }
+	if (picture->picture_coding_type==P_TYPE || picture->picture_coding_type==B_TYPE)
+	{
+		picture->full_pel_forward_vector = bitstream_get(1);
+		picture->forward_f_code = bitstream_get(3);
+	}
+	if (picture->picture_coding_type==B_TYPE)
+	{
+		picture->full_pel_backward_vector = bitstream_get(1);
+		picture->backward_f_code = bitstream_get(3);
+	}
 
 	stats_picture_header(picture);
 }
