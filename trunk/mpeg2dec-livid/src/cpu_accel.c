@@ -43,10 +43,10 @@ static uint32_t x86_accel (void)
 	 : "cc")
 #else	// PIC version : save ebx
 #define cpuid(op,eax,ebx,ecx,edx)	\
-    asm ("push %%ebx\n\t"		\
+    asm ("pushl %%ebx\n\t"		\
 	 "cpuid\n\t"			\
 	 "movl %%ebx,%1\n\t"		\
-	 "pop %%ebx"			\
+	 "popl %%ebx"			\
 	 : "=a" (eax),			\
 	   "=r" (ebx),			\
 	   "=c" (ecx),			\
