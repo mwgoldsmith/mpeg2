@@ -311,4 +311,4 @@ dnl
 AC_SUBST(all_includes)
 AC_SUBST(all_libraries)
 
-AC_OUTPUT([     drivers/Makefile.am 		include/Makefile 		libmpeg2/Makefile 		src/Makefile 		test/Makefile 		video/Makefile ])
+AC_OUTPUT([     Makefile 		autotools/Makefile 		drivers/Makefile 		include/Makefile 		libmpeg2/Makefile 		src/Makefile 		test/Makefile 		video/Makefile ])
