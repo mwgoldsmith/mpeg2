@@ -432,7 +432,7 @@ static void MC_put_xy_8_altivec (uint8_t * dest, uint8_t * ref,
 	"	vspltisb	%v3,  1			\n"
 	"	lvsl		%v5,  %r5,  %r4		\n"
 	"	vmrghb		%v4,  %v4,  %v4		\n"
-	"	li		%r9,  16		\n"
+	"	li		%r9,  8			\n"
 	"	vmrghb		%v5,  %v5,  %v5		\n"
 	"	lvx		%v1,  0,    %r4		\n"
 	"	vpkuhum		%v4,  %v4,  %v4		\n"
@@ -462,7 +462,7 @@ static void MC_put_xy_8_altivec (uint8_t * dest, uint8_t * ref,
 	"	vand		%v0,  %v0,  %v13	\n"
 	"	vsububm		%v13, %v1,  %v0		\n"
 	"._L41:						\n"
-	"	li		%r9,  16		\n"
+	"	li		%r9,  8			\n"
 	"	lvx		%v0,  %r9,  %r4		\n"
 	"	lvx		%v1,  0,    %r4		\n"
 	"	stvewx		%v13, 0,    %r3		\n"
@@ -471,7 +471,7 @@ static void MC_put_xy_8_altivec (uint8_t * dest, uint8_t * ref,
 	"	stvewx		%v13, %r9,  %r3		\n"
 	"	vperm		%v11, %v1,  %v0,  %v4	\n"
 	"	add		%r4,  %r4,  %r5		\n"
-	"	li		%r9,  16		\n"
+	"	li		%r9,  8			\n"
 	"	vavgub		%v9,  %v11, %v10	\n"
 	"	lvx		%v0,  %r9,  %r4		\n"
 	"	vxor		%v8,  %v11, %v10	\n"
@@ -499,7 +499,7 @@ static void MC_put_xy_8_altivec (uint8_t * dest, uint8_t * ref,
 	"	add		%r3,  %r3,  %r5		\n"
 	"	vsububm		%v13, %v0,  %v1		\n"
 	"	bdnz		._L41			\n"
-	"	li		%r9,  16		\n"
+	"	li		%r9,  8			\n"
 	"	lvx		%v0,  %r9,  %r4		\n"
 	"	lvx		%v1,  0,    %r4		\n"
 	"	stvewx		%v13, 0,    %r3		\n"
@@ -966,7 +966,7 @@ static void MC_avg_xy_8_altivec (uint8_t * dest, uint8_t * ref,
 	"	vspltisb	%v19, 1			\n"
 	"	lvsl		%v3,  %r5,  %r4		\n"
 	"	vmrghb		%v2,  %v2,  %v2		\n"
-	"	li		%r9,  16		\n"
+	"	li		%r9,  8			\n"
 	"	vmrghb		%v3,  %v3,  %v3		\n"
 	"	lvx		%v9,  0,    %r4		\n"
 	"	vpkuhum		%v2,  %v2,  %v2		\n"
@@ -998,7 +998,7 @@ static void MC_avg_xy_8_altivec (uint8_t * dest, uint8_t * ref,
 	"	vsububm		%v0,  %v0,  %v1		\n"
 	"	vavgub		%v13, %v4,  %v0		\n"
 	"._L81:						\n"
-	"	li		%r9,  16		\n"
+	"	li		%r9,  8			\n"
 	"	lvx		%v1,  %r9,  %r4		\n"
 	"	lvx		%v9,  0,    %r4		\n"
 	"	lvx		%v4,  %r5,  %r3		\n"
@@ -1009,7 +1009,7 @@ static void MC_avg_xy_8_altivec (uint8_t * dest, uint8_t * ref,
 	"	stvewx		%v13, %r9,  %r3		\n"
 	"	vxor		%v7,  %v11, %v10	\n"
 	"	add		%r4,  %r4,  %r5		\n"
-	"	li		%r9,  16		\n"
+	"	li		%r9,  8			\n"
 	"	vavgub		%v8,  %v11, %v10	\n"
 	"	lvx		%v1,  %r9,  %r4		\n"
 	"	vor		%v0,  %v7,  %v5		\n"
@@ -1039,7 +1039,7 @@ static void MC_avg_xy_8_altivec (uint8_t * dest, uint8_t * ref,
 	"	add		%r3,  %r3,  %r5		\n"
 	"	vavgub		%v13, %v4,  %v0		\n"
 	"	bdnz		._L81			\n"
-	"	li		%r9,  16		\n"
+	"	li		%r9,  8			\n"
 	"	lvx		%v1,  %r9,  %r4		\n"
 	"	lvx		%v9,  0,    %r4		\n"
 	"	lvx		%v4,  %r5,  %r3		\n"
@@ -1384,7 +1384,6 @@ void MC_put_xy_16_altivec (unsigned char * dest, unsigned char * ref,
 		   vec_and (vec_and (ones, vec_or (xor0, xor1)),
 			    vec_xor (avg0, avg1)));
 
-
     do {
 	ref0 = vec_ld (0, ref);
 	ref1 = vec_ld (16, ref);
@@ -1444,7 +1443,7 @@ void MC_put_xy_8_altivec (unsigned char * dest, unsigned char * ref,
     height = (height >> 1) - 1;
 
     ref0 = vec_ld (0, ref);
-    ref1 = vec_ld (16, ref);
+    ref1 = vec_ld (8, ref);
     ref += stride;
     A = vec_perm (ref0, ref1, perm0A);
     B = vec_perm (ref0, ref1, perm0B);
@@ -1452,7 +1451,7 @@ void MC_put_xy_8_altivec (unsigned char * dest, unsigned char * ref,
     xor0 = vec_xor (A, B);
 
     ref0 = vec_ld (0, ref);
-    ref1 = vec_ld (16, ref);
+    ref1 = vec_ld (8, ref);
     ref += stride;
     A = vec_perm (ref0, ref1, perm1A);
     B = vec_perm (ref0, ref1, perm1B);
@@ -1462,10 +1461,9 @@ void MC_put_xy_8_altivec (unsigned char * dest, unsigned char * ref,
 		   vec_and (vec_and (ones, vec_or (xor0, xor1)),
 			    vec_xor (avg0, avg1)));
 
-
     do {
 	ref0 = vec_ld (0, ref);
-	ref1 = vec_ld (16, ref);
+	ref1 = vec_ld (8, ref);
 	ref += stride;
 	vec_ste ((vector_u32_t)tmp, 0, (unsigned int *)dest);
 	vec_ste ((vector_u32_t)tmp, 4, (unsigned int *)dest);
@@ -1479,7 +1477,7 @@ void MC_put_xy_8_altivec (unsigned char * dest, unsigned char * ref,
 				vec_xor (avg0, avg1)));
 
 	ref0 = vec_ld (0, ref);
-	ref1 = vec_ld (16, ref);
+	ref1 = vec_ld (8, ref);
 	ref += stride;
 	vec_ste ((vector_u32_t)tmp, 0, (unsigned int *)dest);
 	vec_ste ((vector_u32_t)tmp, 4, (unsigned int *)dest);
@@ -1494,7 +1492,7 @@ void MC_put_xy_8_altivec (unsigned char * dest, unsigned char * ref,
     } while (--height);
 
     ref0 = vec_ld (0, ref);
-    ref1 = vec_ld (16, ref);
+    ref1 = vec_ld (8, ref);
     vec_ste ((vector_u32_t)tmp, 0, (unsigned int *)dest);
     vec_ste ((vector_u32_t)tmp, 4, (unsigned int *)dest);
     dest += stride;
@@ -1525,12 +1523,12 @@ void MC_put_xy_8_altivec (unsigned char * dest, unsigned char * ref,
 
     do {
 	ref0 = vec_ld (0, ref);
-	ref1 = vec_ld (16, ref);
+	ref1 = vec_ld (8, ref);
 	ref += stride;
 	A = vec_perm (ref0, ref1, permA);
 	B = vec_perm (ref0, ref1, permB);
 	ref0 = vec_ld (0, ref);
-	ref1 = vec_ld (16, ref);
+	ref1 = vec_ld (8, ref);
 	C = vec_perm (ref0, ref1, permA);
 	D = vec_perm (ref0, ref1, permB);
 
@@ -1883,7 +1881,6 @@ void MC_avg_xy_16_altivec (unsigned char * dest, unsigned char * ref,
 				  vec_and (vec_and (ones, vec_or (xor0, xor1)),
 					   vec_xor (avg0, avg1))));
 
-
     do {
 	ref0 = vec_ld (0, ref);
 	ref1 = vec_ld (16, ref);
@@ -1948,7 +1945,7 @@ void MC_avg_xy_8_altivec (unsigned char * dest, unsigned char * ref,
     height = (height >> 1) - 1;
 
     ref0 = vec_ld (0, ref);
-    ref1 = vec_ld (16, ref);
+    ref1 = vec_ld (8, ref);
     ref += stride;
     A = vec_perm (ref0, ref1, perm0A);
     B = vec_perm (ref0, ref1, perm0B);
@@ -1956,7 +1953,7 @@ void MC_avg_xy_8_altivec (unsigned char * dest, unsigned char * ref,
     xor0 = vec_xor (A, B);
 
     ref0 = vec_ld (0, ref);
-    ref1 = vec_ld (16, ref);
+    ref1 = vec_ld (8, ref);
     ref += stride;
     prev = vec_ld (0, dest);
     A = vec_perm (ref0, ref1, perm1A);
@@ -1967,10 +1964,9 @@ void MC_avg_xy_8_altivec (unsigned char * dest, unsigned char * ref,
 				  vec_and (vec_and (ones, vec_or (xor0, xor1)),
 					   vec_xor (avg0, avg1))));
 
-
     do {
 	ref0 = vec_ld (0, ref);
-	ref1 = vec_ld (16, ref);
+	ref1 = vec_ld (8, ref);
 	ref += stride;
 	prev = vec_ld (stride, dest);
 	vec_ste ((vector_u32_t)tmp, 0, (unsigned int *)dest);
@@ -1986,7 +1982,7 @@ void MC_avg_xy_8_altivec (unsigned char * dest, unsigned char * ref,
 					 vec_xor (avg0, avg1))));
 
 	ref0 = vec_ld (0, ref);
-	ref1 = vec_ld (16, ref);
+	ref1 = vec_ld (8, ref);
 	ref += stride;
 	prev = vec_ld (stride, dest);
 	vec_ste ((vector_u32_t)tmp, 0, (unsigned int *)dest);
@@ -2003,7 +1999,7 @@ void MC_avg_xy_8_altivec (unsigned char * dest, unsigned char * ref,
     } while (--height);
 
     ref0 = vec_ld (0, ref);
-    ref1 = vec_ld (16, ref);
+    ref1 = vec_ld (8, ref);
     prev = vec_ld (stride, dest);
     vec_ste ((vector_u32_t)tmp, 0, (unsigned int *)dest);
     vec_ste ((vector_u32_t)tmp, 4, (unsigned int *)dest);
