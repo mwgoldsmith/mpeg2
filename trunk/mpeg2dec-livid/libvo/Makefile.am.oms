@@ -1,0 +1,87 @@
+##
+## Process this file with automake to produce Makefile.in
+##
+libdir = $(PLUGIN_DIR)
+
+INCLUDES = $(all_includes) -I$(top_srcdir)/include
+
+EXTRA_DIST		=	configure.incl \
+				yuv2rgb_mlib.c yuv2rgb_mmx.c \
+				acconfig.h.incl video_out_ggi.c
+
+LIBVIDEO_HEAD		=	rescale.h \
+				log.h yuv2rgb.h mga_vid.h 3dfx.h \
+				yuv2rgb_mmx.h
+
+OMS_LIBS		=	-L$(top_builddir)/src/oms/.libs -loms
+
+noinst_HEADERS		=	$(LIBVIDEO_HEAD) tux.h
+
+
+## Libs
+
+
+YUV_ACCEL_OBJS		=	yuv2rgb_mlib.lo yuv2rgb_mmx.lo
+
+if STANDALONE_LIBVO
+noinst_LTLIBRARIES	=	@LIBS_VIDEO_OUTPUT_NOINST@
+else
+lib_LTLIBRARIES		=	@LIBVO_PLUGINS@
+endif
+
+
+EXTRA_LTLIBRARIES	=	display_null.la display_x11.la \
+				display_3dfx.la display_mga.la \
+				display_sdl.la display_md5.la \
+				display_pgm.la display_ggi.la
+
+
+
+display_x11_la_HEADER 	= 	$(LIBVIDEO_HEAD)
+display_x11_la_SOURCES	= 	video_out_x11.c yuv2rgb.c \
+				rescale.c oms_plugin.c
+display_x11_la_LDFLAGS	= 	-rpath $(libdir) -avoid-version -module \
+				-Wl,-soname,display_x11
+display_x11_la_LIBADD	= 	$(YUV_ACCEL_OBJS) $(X_LIBS) $(LIBVO_LIBS) $(OMS_LIBS)
+
+display_3dfx_la_HEADER	=	$(LIBVIDEO_HEAD) 3dfx.h 
+display_3dfx_la_SOURCES	=	video_out_3dfx.c oms_plugin.c
+display_3dfx_la_LDFLAGS	=	-rpath $(libdir) -avoid-version -module \
+				-Wl,-soname,display_3dfx
+display_3dfx_la_LIBADD	=	$(OMS_LIBS)
+
+display_mga_la_HEADER 	=	$(LIBVIDEO_HEAD) mga_vid.h
+display_mga_la_SOURCES	=	video_out_mga.c oms_plugin.c
+display_mga_la_LDFLAGS	=	-rpath $(libdir)  -avoid-version -module \
+				-Wl,-soname,display_mga
+display_mga_la_LIBADD	=	$(OMS_LIBS)
+
+display_sdl_la_HEADER	=	$(LIBVIDEO_HEAD)
+display_sdl_la_SOURCES	=	video_out_sdl.c oms_plugin.c
+display_sdl_la_LDFLAGS	=	-rpath $(libdir)  -avoid-version -module \
+				-Wl,-soname,display_sdl $(LIBVO_LIBS)
+display_sdl_la_LIBADD	=	$(OMS_LIBS)
+
+display_ggi_la_HEADER	=	$(LIBVIDEO_HEAD)
+display_ggi_la_SOURCES	=	video_out_ggi.c oms_plugin.c
+display_ggi_la_LDFLAGS	=	-rpath $(libdir)  -avoid-version -module \
+				-Wl,-soname,display_ggi $(LIBVO_LIBS)
+display_ggi_la_LIBADD	=	$(OMS_LIBS)
+
+display_null_la_HEADER	=	$(LIBVIDEO_HEAD)
+display_null_la_SOURCES	=	video_out_null.c oms_plugin.c
+display_null_la_LDFLAGS	=	-rpath $(libdir) -avoid-version -module \
+				-Wl,-soname,display_null
+display_null_la_LIBADD	=	$(OMS_LIBS)
+
+display_md5_la_HEADER	=	$(LIBVIDEO_HEAD)
+display_md5_la_SOURCES	=	video_out_md5.c oms_plugin.c
+display_md5_la_LDFLAGS	=	-rpath $(libdir) -avoid-version -module \
+				-Wl,-soname,display_md5
+display_md5_la_LIBADD	=	$(OMS_LIBS)
+
+display_prm_la_HEADER	=	$(LIBVIDEO_HEAD)
+display_pgm_la_SOURCES	=	video_out_pgm.c oms_plugin.c
+display_pgm_la_LDFLAGS	=	-rpath $(libdir) -avoid-version -module \
+				-Wl,-soname,display_pgm
+display_pgm_la_LIBADD	=	$(OMS_LIBS)
