@@ -55,12 +55,11 @@ static struct x11_priv_s {
     GC gc;
     XVisualInfo vinfo;
     XImage *ximage;
-    int depth, bpp, mode;
+    int depth, bpp;
     int X_already_started;
 
     // XSHM
     XShmSegmentInfo Shminfo; // num_buffers
-    int gXErrorFlag;
 
     int win_width, win_height;
 } x11_priv;
@@ -68,9 +67,7 @@ static struct x11_priv_s {
 static int x11_open (void)
 {
     int screen;
-    unsigned int fg, bg;
     XSizeHints hint;
-    XEvent xev;
     XGCValues xgcv;
     Colormap theCmap;
     XSetWindowAttributes xswa;
@@ -97,11 +94,6 @@ static int x11_open (void)
     hint.width = 320;
     hint.height = 200;
     hint.flags = PPosition | PSize;
-
-    /* Get some colors */
-
-    bg = WhitePixel (priv->display, screen);
-    fg = BlackPixel (priv->display, screen);
 
     /*
      *
@@ -155,11 +147,6 @@ static int x11_open (void)
 
     // Map window
     XMapWindow (priv->display, priv->window);
-
-    // Wait for map
-    do {
-	XNextEvent (priv->display, &xev);
-    } while (xev.type != MapNotify || xev.xmap.event != priv->window);
 
     XSelectInput (priv->display, priv->window, NoEventMask);
 
@@ -227,6 +214,7 @@ static void _xshm_destroy (XShmSegmentInfo *Shminfo)
 static int x11_setup (vo_output_video_attr_t *attr)
 {
     XSizeHints hint;
+    int mode;
     struct x11_priv_s *priv = &x11_priv;
 
     x11_open ();
@@ -268,7 +256,7 @@ static int x11_setup (vo_output_video_attr_t *attr)
     priv->bpp = priv->ximage->bits_per_pixel;
 
     // If we have blue in the lowest bit then obviously RGB 
-    priv->mode = ((priv->ximage->blue_mask & 0x01)) ? MODE_RGB : MODE_BGR;
+    mode = ((priv->ximage->blue_mask & 0x01)) ? MODE_RGB : MODE_BGR;
 
 #ifdef WORDS_BIGENDIAN 
     if (priv->ximage->byte_order != MSBFirst) {
@@ -279,7 +267,7 @@ static int x11_setup (vo_output_video_attr_t *attr)
 	return -1;
     }
 
-    yuv2rgb_init ((priv->depth == 24) ? priv->bpp : priv->depth, priv->mode);
+    yuv2rgb_init ((priv->depth == 24) ? priv->bpp : priv->depth, mode);
     return 0;
 }
 
