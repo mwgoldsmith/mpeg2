@@ -110,7 +110,7 @@ typedef struct mpeg2_info_s {
     const mpeg2_fbuf_t * display_fbuf;
     const mpeg2_fbuf_t * discard_fbuf;
     const uint8_t * user_data;
-    int user_data_len;
+    unsigned int user_data_len;
 } mpeg2_info_t;
 
 typedef struct mpeg2dec_s mpeg2dec_t;
