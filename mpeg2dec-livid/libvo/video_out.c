@@ -51,9 +51,6 @@ vo_output_video_t* video_out_drivers[] =
 #ifdef LIBVO_MGA
 	&video_out_mga,
 #endif
-#ifdef LIBVO_3DFX
-	&video_out_3dfx,
-#endif
 #ifdef LIBVO_SYNCFB
 	&video_out_syncfb,
 #endif
