@@ -56,7 +56,6 @@ mpeg2dec_t * mpeg2_init (uint32_t mm_accel)
 	(uint8_t *) mpeg2_malloc (BUFFER_SIZE + 4, ALLOC_CHUNK);
 
     mpeg2dec->shift = 0xffffff00;
-    mpeg2dec->last_sequence.width = (unsigned int) -1;
     mpeg2dec->state = STATE_INVALID;
     mpeg2dec->code = 0xb4;
     mpeg2dec->skip = 0;
@@ -146,8 +145,10 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
     };
     uint8_t code;
 
-    switch (mpeg2dec->state) {
-    case STATE_END:
+#define RECEIVED(code,state) (((state) << 8) + (code))
+
+    switch (RECEIVED (mpeg2dec->code, mpeg2dec->state)) {
+    case RECEIVED (0xb7, STATE_SLICE):
 	mpeg2_header_end (mpeg2dec);
 	return STATE_END;
 
@@ -174,8 +175,6 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
     } else
 	process_header[code & 0x0b] (mpeg2dec);
 
-#define RECEIVED(code,state) (((state) << 8) + (code))
-
     switch (RECEIVED (mpeg2dec->code, mpeg2dec->state)) {
 
     /* state transition after a sequence header */
@@ -194,13 +193,6 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	if (!memcmp (&(mpeg2dec->last_sequence), &(mpeg2dec->sequence),
 		     sizeof (sequence_t)))
 	    mpeg2dec->state = STATE_SEQUENCE_REPEATED;
-	mpeg2dec->last_sequence = mpeg2dec->sequence;
-	break;
-
-    /* end of sequence */
-    case RECEIVED (0xb7, STATE_SLICE):
-	mpeg2dec->state = STATE_END;
-	mpeg2dec->last_sequence.width = (unsigned int) -1;
 	break;
 
     /* other legal state transitions */
@@ -210,6 +202,7 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
     case RECEIVED (0x01, STATE_PICTURE):
     case RECEIVED (0x01, STATE_PICTURE_2ND):
     case RECEIVED (0xb3, STATE_SLICE):
+    case RECEIVED (0xb7, STATE_SLICE):
     case RECEIVED (0xb8, STATE_SLICE):
 	break;
 

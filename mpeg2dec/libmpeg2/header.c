@@ -106,6 +106,10 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
     if ((buffer[6] & 0x20) != 0x20)
 	return 1;	/* missing marker_bit */
 
+    mpeg2dec->last_sequence.width = -1;
+    if (mpeg2dec->state != STATE_INVALID)
+	mpeg2dec->last_sequence = mpeg2dec->sequence;
+
     i = (buffer[0] << 16) | (buffer[1] << 8) | buffer[2];
     sequence->display_width = sequence->picture_width = width = i >> 12;
     sequence->display_height = sequence->picture_height = height = i & 0xfff;
