@@ -37,7 +37,4 @@ void idct_block_mmx(sint_16* foo);
 void
 idct_end_mmx()
 {
-	emms();
 }
-
-
