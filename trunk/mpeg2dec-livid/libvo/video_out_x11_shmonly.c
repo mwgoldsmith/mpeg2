@@ -56,7 +56,6 @@ static struct x11_priv_s {
     XVisualInfo vinfo;
     XImage *ximage;
     int bpp;
-    int X_already_started;	// = 0
 
     // XSHM
     XShmSegmentInfo Shminfo; // num_buffers
@@ -252,7 +251,6 @@ static int x11_close(void *plugin)
     if (priv->window)
 	XDestroyWindow (priv->display, priv->window);
     XCloseDisplay (priv->display);
-    priv->X_already_started = 0;
 
     return 0;
 }

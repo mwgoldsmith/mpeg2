@@ -48,12 +48,6 @@ vo_output_video_t* video_out_drivers[] =
 #ifdef LIBVO_SDL
 	&video_out_sdl,
 #endif
-#ifdef LIBVO_MGA
-	&video_out_mga,
-#endif
-#ifdef LIBVO_SYNCFB
-	&video_out_syncfb,
-#endif
 	&video_out_null,
 	&video_out_pgm,
 	&video_out_md5,
