@@ -1,4 +1,4 @@
-CFLAGS = @CFLAGS@ @LIBMPEG2_CFLAGS@
+AM_CFLAGS = @CFLAGS@ @LIBMPEG2_CFLAGS@
 
 lib_LTLIBRARIES = libmpeg2.la
 libmpeg2_la_SOURCES = alloc.c decode.c header.c cpu_state.c slice.c \
