@@ -373,22 +373,31 @@ void mpeg2_pts (mpeg2dec_t * mpeg2dec, uint32_t pts)
     mpeg2dec->bytes_since_pts = 0;
 }
 
-mpeg2dec_t * mpeg2_init (uint32_t mm_accel)
+uint32_t mpeg2_accel (uint32_t accel)
 {
-    static int do_init = 1;
+    static int mpeg2_accels = 0;
+
+    if (!mpeg2_accels) {
+	if (accel & MPEG2_ACCEL_DETECT)
+	    accel |= mpeg2_detect_accel ();
+	mpeg2_accels = accel |= MPEG2_ACCEL_DETECT;
+	mpeg2_cpu_state_init (accel);
+	mpeg2_idct_init (accel);
+	mpeg2_mc_init (accel);
+    }
+    return mpeg2_accels & ~MPEG2_ACCEL_DETECT;
+}
+
+mpeg2dec_t * mpeg2_init (void)
+{
     mpeg2dec_t * mpeg2dec;
+
+    mpeg2_accel (MPEG2_ACCEL_DETECT);
 
     mpeg2dec = (mpeg2dec_t *) mpeg2_malloc (sizeof (mpeg2dec_t),
 					    ALLOC_MPEG2DEC);
     if (mpeg2dec == NULL)
 	return NULL;
-
-    if (do_init) {
-	do_init = 0;
-	mpeg2_cpu_state_init (mm_accel);
-	mpeg2_idct_init (mm_accel);
-	mpeg2_mc_init (mm_accel);
-    }
 
     memset (mpeg2dec, 0, sizeof (mpeg2dec_t));
 

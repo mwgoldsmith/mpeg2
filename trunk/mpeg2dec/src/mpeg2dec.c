@@ -191,6 +191,7 @@ static void handle_args (int argc, char ** argv)
 
 	case 'c':
 	    disable_accel = 1;
+	    mpeg2_accel (0);
 	    break;
 
 	default:
@@ -686,7 +687,7 @@ int main (int argc, char ** argv)
 	fprintf (stderr, "Can not open output\n");
 	return 1;
     }
-    mpeg2dec = mpeg2_init (accel);
+    mpeg2dec = mpeg2_init ();
     if (mpeg2dec == NULL)
 	exit (1);
 
