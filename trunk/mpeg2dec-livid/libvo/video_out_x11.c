@@ -1,4 +1,5 @@
-// fix event handling. wait for unmap before close display.
+// make sure shm is not reused while the server uses it
+// get rid of memcpy in xv/xvshm
 
 /* 
  * video_out_x11.c, X11 interface
@@ -38,6 +39,7 @@ int XShmGetEventBase (Display *);
 
 #ifdef LIBVO_XV
 #include <X11/extensions/Xvlib.h>
+#define FOURCC_YV12 0x32315659
 #endif
 
 #include "video_out.h"
@@ -485,7 +487,7 @@ static int xv_check_yv12 (XvPortID port)
 
     formatValues = XvListImageFormats (priv->display, port, &formats);
     for (i = 0; i < formats; i++)
-	if ((formatValues[i].id == 0x32315659) &&
+	if ((formatValues[i].id == FOURCC_YV12) &&
 	    (! (strcmp (formatValues[i].guid, "YV12")))) {
 	    XFree (formatValues);
 	    return 0;
@@ -521,7 +523,7 @@ static int xv_create_image (int width, int height)
 {
     struct x11_priv_s * priv = &x11_priv;
 
-    priv->xvimage = XvCreateImage (priv->display, priv->port, 0x32315659,
+    priv->xvimage = XvCreateImage (priv->display, priv->port, FOURCC_YV12,
 				   NULL /* data */, width, height);
     if (priv->xvimage == NULL)
 	return 1;
@@ -649,7 +651,7 @@ static int xvshm_create_image (int width, int height)
 {
     struct x11_priv_s * priv = &x11_priv;
 
-    priv->xvimage = XvShmCreateImage (priv->display, priv->port, 0x32315659,
+    priv->xvimage = XvShmCreateImage (priv->display, priv->port, FOURCC_YV12,
 				      NULL /* data */, width, height,
 				      &(priv->shminfo));
     if (priv->xvimage == NULL)
