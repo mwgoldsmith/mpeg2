@@ -74,11 +74,13 @@ AC_CHECK_HEADERS(getopt.h)
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
+AC_TYPE_SIZE_T
 AC_C_BIGENDIAN
 AC_C_ATTRIBUTE_ALIGNED
 
 dnl Checks for library functions.
 AC_CHECK_FUNCS([memalign])
+AC_TYPE_SIGNAL
 
 builtin([include],[libmpeg2/configure.incl])
 builtin([include],[libvo/configure.incl])
