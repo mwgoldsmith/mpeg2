@@ -421,7 +421,7 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 	    } else if (header[3] < 0xb9) {
 		fprintf (stderr,
 			 "looks like a video stream, not system stream\n");
-		exit (1);
+		DONEBYTES (4);
 	    } else {
 		NEEDBYTES (6);
 		DONEBYTES (6);
