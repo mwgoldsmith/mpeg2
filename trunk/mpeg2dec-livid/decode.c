@@ -60,7 +60,7 @@ static void find_next_start_code()
   while ((code = bitstream_show(24))!=0x01L)
 	{
 		//fprintf(stderr,"tried %08x\n",code);
-    Flush_Buffer(8);
+    bitstream_flush(8);
 	}
 }
 

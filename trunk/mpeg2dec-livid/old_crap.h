@@ -2,13 +2,13 @@
 void Initialize_Buffer(void); 
 int Get_Byte(void);
 int Get_Word(void);
-unsigned int Show_Bits(int N);
-unsigned int Get_Bits1(void);
-void Flush_Buffer(int N);
-unsigned int Get_Bits(int N);
+unsigned int bitstream_show(int N);
+unsigned int bitstream_get1(void);
+void bitstream_flush(int N);
+unsigned int bitstream_get(int N);
 void Next_Packet(void);
-void Flush_Buffer32(void);
-unsigned int Get_Bits32(void);
+void bitstream_flush32(void);
+unsigned int bitstream_get32(void);
 int Get_Long(void);
 #endif
 

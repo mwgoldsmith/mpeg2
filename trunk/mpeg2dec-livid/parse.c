@@ -133,7 +133,7 @@ void parse_marker_bit(char *string)
 {
   int marker;
 
-  marker = Get_Bits(1);
+  marker = bitstream_get(1);
 
   if(!marker)
     fprintf(stderr,"(parse) %s marker_bit set to 0\n",string);
@@ -145,34 +145,34 @@ parse_sequence_header(picture_t *picture)
 {
 	uint_32 i;
 
-  picture->horizontal_size             = Get_Bits(12);
-  picture->vertical_size               = Get_Bits(12);
+  picture->horizontal_size             = bitstream_get(12);
+  picture->vertical_size               = bitstream_get(12);
 
 	//XXX this needs field fixups
 	picture->coded_picture_height = ((picture->vertical_size + 15)/16) * 16;
 	picture->coded_picture_width  = ((picture->horizontal_size   + 15)/16) * 16;
 
-  picture->aspect_ratio_information    = Get_Bits(4);
-  picture->frame_rate_code             = Get_Bits(4);
-  picture->bit_rate_value              = Get_Bits(18);
+  picture->aspect_ratio_information    = bitstream_get(4);
+  picture->frame_rate_code             = bitstream_get(4);
+  picture->bit_rate_value              = bitstream_get(18);
   parse_marker_bit("sequence_header");
-  picture->vbv_buffer_size             = Get_Bits(10);
-  picture->constrained_parameters_flag = Get_Bits(1);
+  picture->vbv_buffer_size             = bitstream_get(10);
+  picture->constrained_parameters_flag = bitstream_get(1);
 
-  if((picture->use_custom_intra_quantizer_matrix = Get_Bits(1)))
+  if((picture->use_custom_intra_quantizer_matrix = bitstream_get(1)))
   {
 		picture->intra_quantizer_matrix = picture->custom_intra_quantization_matrix;
     for (i=0; i < 64; i++)
-      picture->custom_intra_quantization_matrix[scan_norm[i]] = Get_Bits(8);
+      picture->custom_intra_quantization_matrix[scan_norm[i]] = bitstream_get(8);
   }
 	else
 		picture->intra_quantizer_matrix = default_intra_quantization_matrix;
 
-  if((picture->use_custom_non_intra_quantizer_matrix = Get_Bits(1)))
+  if((picture->use_custom_non_intra_quantizer_matrix = bitstream_get(1)))
   {
 		picture->non_intra_quantizer_matrix = picture->custom_non_intra_quantization_matrix;
     for (i=0; i < 64; i++)
-      picture->custom_non_intra_quantization_matrix[scan_norm[i]] = Get_Bits(8);
+      picture->custom_non_intra_quantization_matrix[scan_norm[i]] = bitstream_get(8);
   }
 	else
 		picture->non_intra_quantizer_matrix = default_non_intra_quantization_matrix;
@@ -186,7 +186,7 @@ parse_extension(picture_t *picture)
 {
 	uint_32 code;
 
-	code = Get_Bits(4);
+	code = bitstream_get(4);
 		
 	switch(code)
 	{
@@ -203,7 +203,7 @@ parse_extension(picture_t *picture)
 			break;
 
 		default:
-			fprintf(stderr,"(parse) unsupported extension %d\n",code);
+			fprintf(stderr,"(parse) unsupported extension %x\n",code);
 			exit(1);
 	}
 }
@@ -211,25 +211,25 @@ parse_extension(picture_t *picture)
 void
 parse_user_data(void)
 {
-  while (Show_Bits(24)!=0x01L)
-    Flush_Buffer(8);
+  while (bitstream_show(24)!=0x01L)
+    bitstream_flush(8);
 }
 
 static void
 parse_sequence_extension(picture_t *picture)
 {
 
-  /*picture->profile_and_level_indication = */ Get_Bits(8);
-  picture->progressive_sequence           =    Get_Bits(1);
-  picture->chroma_format                  =    Get_Bits(2);
-  /*picture->horizontal_size_extension    = */ Get_Bits(2);
-  /*picture->vertical_size_extension      = */ Get_Bits(2);
-  /*picture->bit_rate_extension           = */ Get_Bits(12);
+  /*picture->profile_and_level_indication = */ bitstream_get(8);
+  picture->progressive_sequence           =    bitstream_get(1);
+  picture->chroma_format                  =    bitstream_get(2);
+  /*picture->horizontal_size_extension    = */ bitstream_get(2);
+  /*picture->vertical_size_extension      = */ bitstream_get(2);
+  /*picture->bit_rate_extension           = */ bitstream_get(12);
   parse_marker_bit("sequence_extension");
-  /*picture->vbv_buffer_size_extension    = */ Get_Bits(8);
-  /*picture->low_delay                    = */ Get_Bits(1);
-  /*picture->frame_rate_extension_n       = */ Get_Bits(2);
-  /*picture->frame_rate_extension_d       = */ Get_Bits(5);
+  /*picture->vbv_buffer_size_extension    = */ bitstream_get(8);
+  /*picture->low_delay                    = */ bitstream_get(1);
+  /*picture->frame_rate_extension_n       = */ bitstream_get(2);
+  /*picture->frame_rate_extension_d       = */ bitstream_get(5);
 
 	stats_sequence_ext(picture);
 	//
@@ -245,19 +245,19 @@ parse_sequence_extension(picture_t *picture)
 static void
 parse_sequence_display_extension(picture_t *picture)
 {
-  picture->video_format      = Get_Bits(3);
-  picture->color_description = Get_Bits(1);
+  picture->video_format      = bitstream_get(3);
+  picture->color_description = bitstream_get(1);
 
   if (picture->color_description)
   {
-    picture->color_primaries          = Get_Bits(8);
-    picture->transfer_characteristics = Get_Bits(8);
-    picture->matrix_coefficients      = Get_Bits(8);
+    picture->color_primaries          = bitstream_get(8);
+    picture->transfer_characteristics = bitstream_get(8);
+    picture->matrix_coefficients      = bitstream_get(8);
   }
 
-  picture->display_horizontal_size = Get_Bits(14);
+  picture->display_horizontal_size = bitstream_get(14);
   parse_marker_bit("sequence_display_extension");
-  picture->display_vertical_size   = Get_Bits(14);
+  picture->display_vertical_size   = bitstream_get(14);
 
 	stats_sequence_display_ext(picture);
 }
@@ -265,14 +265,14 @@ parse_sequence_display_extension(picture_t *picture)
 void 
 parse_gop_header(picture_t *picture)
 {
-  picture->drop_flag   = Get_Bits(1);
-  picture->hour        = Get_Bits(5);
-  picture->minute      = Get_Bits(6);
+  picture->drop_flag   = bitstream_get(1);
+  picture->hour        = bitstream_get(5);
+  picture->minute      = bitstream_get(6);
   parse_marker_bit("gop_header");
-  picture->sec         = Get_Bits(6);
-  picture->frame       = Get_Bits(6);
-  picture->closed_gop  = Get_Bits(1);
-  picture->broken_link = Get_Bits(1);
+  picture->sec         = bitstream_get(6);
+  picture->frame       = bitstream_get(6);
+  picture->closed_gop  = bitstream_get(1);
+  picture->broken_link = bitstream_get(1);
 
 	stats_gop_header(picture);
 
@@ -282,19 +282,19 @@ parse_gop_header(picture_t *picture)
 static void 
 parse_picture_coding_extension(picture_t *picture)
 {
-  picture->f_code[0][0] = Get_Bits(4);
-  picture->f_code[0][1] = Get_Bits(4);
-  picture->f_code[1][0] = Get_Bits(4);
-  picture->f_code[1][1] = Get_Bits(4);
+  picture->f_code[0][0] = bitstream_get(4);
+  picture->f_code[0][1] = bitstream_get(4);
+  picture->f_code[1][0] = bitstream_get(4);
+  picture->f_code[1][1] = bitstream_get(4);
 
-  picture->intra_dc_precision         = Get_Bits(2);
-  picture->picture_structure          = Get_Bits(2);
-  picture->top_field_first            = Get_Bits(1);
-  picture->frame_pred_frame_dct       = Get_Bits(1);
-  picture->concealment_motion_vectors = Get_Bits(1);
-  picture->q_scale_type               = Get_Bits(1);
-  picture->intra_vlc_format           = Get_Bits(1);
-  picture->alternate_scan             = Get_Bits(1);
+  picture->intra_dc_precision         = bitstream_get(2);
+  picture->picture_structure          = bitstream_get(2);
+  picture->top_field_first            = bitstream_get(1);
+  picture->frame_pred_frame_dct       = bitstream_get(1);
+  picture->concealment_motion_vectors = bitstream_get(1);
+  picture->q_scale_type               = bitstream_get(1);
+  picture->intra_vlc_format           = bitstream_get(1);
+  picture->alternate_scan             = bitstream_get(1);
 
 #ifdef __i386__
 	if(picture->alternate_scan)
@@ -308,19 +308,19 @@ parse_picture_coding_extension(picture_t *picture)
 		picture->scan = scan_norm;
 #endif
 
-  picture->repeat_first_field         = Get_Bits(1);
-	/*chroma_420_type isn't used */       Get_Bits(1);
-  picture->progressive_frame          = Get_Bits(1);
-  picture->composite_display_flag     = Get_Bits(1);
+  picture->repeat_first_field         = bitstream_get(1);
+	/*chroma_420_type isn't used */       bitstream_get(1);
+  picture->progressive_frame          = bitstream_get(1);
+  picture->composite_display_flag     = bitstream_get(1);
 
   if (picture->composite_display_flag)
   {
 		//This info is not used in the decoding process
-    /* picture->v_axis            = */ Get_Bits(1);
-    /* picture->field_sequence    = */ Get_Bits(3);
-    /* picture->sub_carrier       = */ Get_Bits(1);
-    /* picture->burst_amplitude   = */ Get_Bits(7);
-    /* picture->sub_carrier_phase = */ Get_Bits(8);
+    /* picture->v_axis            = */ bitstream_get(1);
+    /* picture->field_sequence    = */ bitstream_get(3);
+    /* picture->sub_carrier       = */ bitstream_get(1);
+    /* picture->burst_amplitude   = */ bitstream_get(7);
+    /* picture->sub_carrier_phase = */ bitstream_get(8);
   }
 
 	//XXX die gracefully if we encounter a field picture based stream
@@ -336,19 +336,19 @@ parse_picture_coding_extension(picture_t *picture)
 void 
 parse_picture_header(picture_t *picture)
 {
-  picture->temporal_reference  = Get_Bits(10);
-  picture->picture_coding_type = Get_Bits(3);
-  picture->vbv_delay           = Get_Bits(16);
+  picture->temporal_reference  = bitstream_get(10);
+  picture->picture_coding_type = bitstream_get(3);
+  picture->vbv_delay           = bitstream_get(16);
 
   if (picture->picture_coding_type==P_TYPE || picture->picture_coding_type==B_TYPE)
   {
-    picture->full_pel_forward_vector = Get_Bits(1);
-    picture->forward_f_code = Get_Bits(3);
+    picture->full_pel_forward_vector = bitstream_get(1);
+    picture->forward_f_code = bitstream_get(3);
   }
   if (picture->picture_coding_type==B_TYPE)
   {
-    picture->full_pel_backward_vector = Get_Bits(1);
-    picture->backward_f_code = Get_Bits(3);
+    picture->full_pel_backward_vector = bitstream_get(1);
+    picture->backward_f_code = bitstream_get(3);
   }
 
 	stats_picture_header(picture);
@@ -361,7 +361,7 @@ parse_slice_header(const picture_t *picture, slice_t *slice)
 
 	uint_32 intra_slice_flag;
 
-  slice->quantizer_scale_code = Get_Bits(5);
+  slice->quantizer_scale_code = bitstream_get(5);
 
 	if (picture->q_scale_type)
   	slice->quantizer_scale = non_linear_quantizer_scale[slice->quantizer_scale_code];
@@ -369,17 +369,17 @@ parse_slice_header(const picture_t *picture, slice_t *slice)
   	slice->quantizer_scale = slice->quantizer_scale_code << 1 ;
 		
 
-  if ((intra_slice_flag = Get_Bits(1)))
+  if ((intra_slice_flag = bitstream_get(1)))
   {
 		//Ignore the value of intra_slice
-    Get_Bits(1);
+    bitstream_get(1);
 
-    slice->slice_picture_id_enable = Get_Bits(1);
-		slice->slice_picture_id = Get_Bits(6);
+    slice->slice_picture_id_enable = bitstream_get(1);
+		slice->slice_picture_id = bitstream_get(6);
 
 		//Ignore all the extra_data
-		while(Get_Bits1())
-			Flush_Buffer(8);
+		while(bitstream_get(1))
+			bitstream_flush(8);
 	}
 
 	//reset intra dc predictor
@@ -400,7 +400,7 @@ vlc_get_block_coeff(uint_16 non_intra_dc,uint_16 intra_vlc_format)
 	sint_16 val;
 
 	//this routines handles intra AC and non-intra AC/DC coefficients
-	code = Show_Bits(16);
+	code = bitstream_show(16);
  
 	if (code>=16384 && !intra_vlc_format)
 	{
@@ -435,20 +435,21 @@ vlc_get_block_coeff(uint_16 non_intra_dc,uint_16 intra_vlc_format)
 		tab = &DCTtab6[code-16];
 	else
 	{
-		fprintf(stderr,"invalid Huffman code in vlc_get_block_coeff()\n");
+		fprintf(stderr,"(vlc) invalid huffman code 0x%x in vlc_get_block_coeff()\n",code);
+		exit(1);
 		return 0;
 	}
 
-	Flush_Buffer(tab->len);
+	bitstream_flush(tab->len);
 
 	if (tab->run==64) // end_of_block 
 		return 0;
 
 	if (tab->run==65) /* escape */
 	{
-		run = Get_Bits(6);
+		run = bitstream_get(6);
 
-		val = Get_Bits(12);
+		val = bitstream_get(12);
 
 		if ((val&2047)==0)
 		{
@@ -464,7 +465,7 @@ vlc_get_block_coeff(uint_16 non_intra_dc,uint_16 intra_vlc_format)
 		run = tab->run;
 		val = tab->level;
 		 
-		if(Get_Bits(1)) //sign bit
+		if(bitstream_get(1)) //sign bit
 			val = -val;
 	}
 
@@ -595,7 +596,7 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
   {
     if (picture_structure==FRAME_PICTURE) // frame_motion_type 
     {
-      mb->motion_type = picture->frame_pred_frame_dct ? MC_FRAME : Get_Bits(2);
+      mb->motion_type = picture->frame_pred_frame_dct ? MC_FRAME : bitstream_get(2);
 			if(!picture->frame_pred_frame_dct)
       {
         printf("frame_motion_type (");
@@ -607,7 +608,7 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
     }
     else // field_motion_type 
     {
-      mb->motion_type = Get_Bits(2);
+      mb->motion_type = bitstream_get(2);
     }
   }
   else if ((mb->macroblock_type & MACROBLOCK_INTRA) && picture->concealment_motion_vectors)
@@ -637,14 +638,14 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
   // get dct_type (frame DCT / field DCT) 
 	if( (picture_structure==FRAME_PICTURE) && (!picture->frame_pred_frame_dct) && 
 			(mb->macroblock_type & (MACROBLOCK_PATTERN|MACROBLOCK_INTRA)) )
-		mb->dct_type =  Get_Bits(1);
+		mb->dct_type =  bitstream_get(1);
 	else
 		mb->dct_type =  0;
 
 
 	if (mb->macroblock_type & MACROBLOCK_QUANT)
   {
-    quantizer_scale_code = Get_Bits(5);
+    quantizer_scale_code = bitstream_get(5);
 
 		//The quantizer scale code propogates up to the slice level
 		if(picture->q_scale_type)
@@ -676,7 +677,7 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
   }
 
   if ((mb->macroblock_type & MACROBLOCK_INTRA) && picture->concealment_motion_vectors)
-    Flush_Buffer(1); // remove marker_bit 
+    bitstream_flush(1); // remove marker_bit 
 
   // 6.3.17.4 Coded block pattern 
   if (mb->macroblock_type & MACROBLOCK_PATTERN)
@@ -686,13 +687,13 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
     if (picture->chroma_format==CHROMA_422)
     {
       // coded_block_pattern_1 
-      mb->coded_block_pattern = (mb->coded_block_pattern<<2) | Get_Bits(2); 
+      mb->coded_block_pattern = (mb->coded_block_pattern<<2) | bitstream_get(2); 
 
 		}
 		else if (picture->chroma_format==CHROMA_444)
 		{
 			// coded_block_pattern_2 
-			mb->coded_block_pattern = (mb->coded_block_pattern<<6) | Get_Bits(6); 
+			mb->coded_block_pattern = (mb->coded_block_pattern<<6) | bitstream_get(6); 
 		}
 	}
   else
