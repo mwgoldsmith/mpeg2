@@ -44,152 +44,158 @@ static slice_t slice;
 int16_t DCTblock[64] ALIGN_16_BYTE;
 
 typedef struct {
-    char run, level, len;
+    uint8_t run;
+    uint8_t level;
+    uint8_t len;
 } DCTtab;
 
 DCTtab DCT_16 [] = {
-    { 1,18,16}, { 1,17,16}, { 1,16,16}, { 1,15,16},
-    { 6, 3,16}, {16, 2,16}, {15, 2,16}, {14, 2,16},
-    {13, 2,16}, {12, 2,16}, {11, 2,16}, {31, 1,16},
-    {30, 1,16}, {29, 1,16}, {28, 1,16}, {27, 1,16}
+    {129, 0, 0}, {129, 0, 0}, {129, 0, 0}, {129, 0, 0},
+    {129, 0, 0}, {129, 0, 0}, {129, 0, 0}, {129, 0, 0},
+    {129, 0, 0}, {129, 0, 0}, {129, 0, 0}, {129, 0, 0},
+    {129, 0, 0}, {129, 0, 0}, {129, 0, 0}, {129, 0, 0},
+    {  2,18, 0}, {  2,17, 0}, {  2,16, 0}, {  2,15, 0},
+    {  7, 3, 0}, { 17, 2, 0}, { 16, 2, 0}, { 15, 2, 0},
+    { 14, 2, 0}, { 13, 2, 0}, { 12, 2, 0}, { 32, 1, 0},
+    { 31, 1, 0}, { 30, 1, 0}, { 29, 1, 0}, { 28, 1, 0}
 };
 
 DCTtab DCT_15 [] = {
-    { 0,40,15}, { 0,39,15}, { 0,38,15}, { 0,37,15},
-    { 0,36,15}, { 0,35,15}, { 0,34,15}, { 0,33,15},
-    { 0,32,15}, { 1,14,15}, { 1,13,15}, { 1,12,15},
-    { 1,11,15}, { 1,10,15}, { 1, 9,15}, { 1, 8,15},
-    { 0,31,14}, { 0,31,14}, { 0,30,14}, { 0,30,14},
-    { 0,29,14}, { 0,29,14}, { 0,28,14}, { 0,28,14},
-    { 0,27,14}, { 0,27,14}, { 0,26,14}, { 0,26,14},
-    { 0,25,14}, { 0,25,14}, { 0,24,14}, { 0,24,14},
-    { 0,23,14}, { 0,23,14}, { 0,22,14}, { 0,22,14},
-    { 0,21,14}, { 0,21,14}, { 0,20,14}, { 0,20,14},
-    { 0,19,14}, { 0,19,14}, { 0,18,14}, { 0,18,14},
-    { 0,17,14}, { 0,17,14}, { 0,16,14}, { 0,16,14}
+    {  1,40,15}, {  1,39,15}, {  1,38,15}, {  1,37,15},
+    {  1,36,15}, {  1,35,15}, {  1,34,15}, {  1,33,15},
+    {  1,32,15}, {  2,14,15}, {  2,13,15}, {  2,12,15},
+    {  2,11,15}, {  2,10,15}, {  2, 9,15}, {  2, 8,15},
+    {  1,31,14}, {  1,31,14}, {  1,30,14}, {  1,30,14},
+    {  1,29,14}, {  1,29,14}, {  1,28,14}, {  1,28,14},
+    {  1,27,14}, {  1,27,14}, {  1,26,14}, {  1,26,14},
+    {  1,25,14}, {  1,25,14}, {  1,24,14}, {  1,24,14},
+    {  1,23,14}, {  1,23,14}, {  1,22,14}, {  1,22,14},
+    {  1,21,14}, {  1,21,14}, {  1,20,14}, {  1,20,14},
+    {  1,19,14}, {  1,19,14}, {  1,18,14}, {  1,18,14},
+    {  1,17,14}, {  1,17,14}, {  1,16,14}, {  1,16,14}
 };
 
 DCTtab DCT_13 [] = {
-    {10, 2,13}, { 9, 2,13}, { 5, 3,13}, { 3, 4,13},
-    { 2, 5,13}, { 1, 7,13}, { 1, 6,13}, { 0,15,13},
-    { 0,14,13}, { 0,13,13}, { 0,12,13}, {26, 1,13},
-    {25, 1,13}, {24, 1,13}, {23, 1,13}, {22, 1,13},
-    { 0,11,12}, { 0,11,12}, { 8, 2,12}, { 8, 2,12},
-    { 4, 3,12}, { 4, 3,12}, { 0,10,12}, { 0,10,12},
-    { 2, 4,12}, { 2, 4,12}, { 7, 2,12}, { 7, 2,12},
-    {21, 1,12}, {21, 1,12}, {20, 1,12}, {20, 1,12},
-    { 0, 9,12}, { 0, 9,12}, {19, 1,12}, {19, 1,12},
-    {18, 1,12}, {18, 1,12}, { 1, 5,12}, { 1, 5,12},
-    { 3, 3,12}, { 3, 3,12}, { 0, 8,12}, { 0, 8,12},
-    { 6, 2,12}, { 6, 2,12}, {17, 1,12}, {17, 1,12}
+    { 11, 2,13}, { 10, 2,13}, {  6, 3,13}, {  4, 4,13},
+    {  3, 5,13}, {  2, 7,13}, {  2, 6,13}, {  1,15,13},
+    {  1,14,13}, {  1,13,13}, {  1,12,13}, { 27, 1,13},
+    { 26, 1,13}, { 25, 1,13}, { 24, 1,13}, { 23, 1,13},
+    {  1,11,12}, {  1,11,12}, {  9, 2,12}, {  9, 2,12},
+    {  5, 3,12}, {  5, 3,12}, {  1,10,12}, {  1,10,12},
+    {  3, 4,12}, {  3, 4,12}, {  8, 2,12}, {  8, 2,12},
+    { 22, 1,12}, { 22, 1,12}, { 21, 1,12}, { 21, 1,12},
+    {  1, 9,12}, {  1, 9,12}, { 20, 1,12}, { 20, 1,12},
+    { 19, 1,12}, { 19, 1,12}, {  2, 5,12}, {  2, 5,12},
+    {  4, 3,12}, {  4, 3,12}, {  1, 8,12}, {  1, 8,12},
+    {  7, 2,12}, {  7, 2,12}, { 18, 1,12}, { 18, 1,12}
 };
 
 DCTtab DCT_B14_10 [] = {
-    {16, 1,10}, { 5, 2,10}, { 0, 7,10}, { 2, 3,10},
-    { 1, 4,10}, {15, 1,10}, {14, 1,10}, { 4, 2,10}
+    { 17, 1,10}, {  6, 2,10}, {  1, 7,10}, {  3, 3,10},
+    {  2, 4,10}, { 16, 1,10}, { 15, 1,10}, {  5, 2,10}
 };
 
 DCTtab DCT_B14_8 [] = {
-    {65, 0, 6}, {65, 0, 6}, {65, 0, 6}, {65, 0, 6},
-    { 2, 2, 7}, { 2, 2, 7}, { 9, 1, 7}, { 9, 1, 7},
-    { 0, 4, 7}, { 0, 4, 7}, { 8, 1, 7}, { 8, 1, 7},
-    { 7, 1, 6}, { 7, 1, 6}, { 7, 1, 6}, { 7, 1, 6},
-    { 6, 1, 6}, { 6, 1, 6}, { 6, 1, 6}, { 6, 1, 6},
-    { 1, 2, 6}, { 1, 2, 6}, { 1, 2, 6}, { 1, 2, 6},
-    { 5, 1, 6}, { 5, 1, 6}, { 5, 1, 6}, { 5, 1, 6},
-    {13, 1, 8}, { 0, 6, 8}, {12, 1, 8}, {11, 1, 8},
-    { 3, 2, 8}, { 1, 3, 8}, { 0, 5, 8}, {10, 1, 8}
+    { 65, 0, 6}, { 65, 0, 6}, { 65, 0, 6}, { 65, 0, 6},
+    {  3, 2, 7}, {  3, 2, 7}, { 10, 1, 7}, { 10, 1, 7},
+    {  1, 4, 7}, {  1, 4, 7}, {  9, 1, 7}, {  9, 1, 7},
+    {  8, 1, 6}, {  8, 1, 6}, {  8, 1, 6}, {  8, 1, 6},
+    {  7, 1, 6}, {  7, 1, 6}, {  7, 1, 6}, {  7, 1, 6},
+    {  2, 2, 6}, {  2, 2, 6}, {  2, 2, 6}, {  2, 2, 6},
+    {  6, 1, 6}, {  6, 1, 6}, {  6, 1, 6}, {  6, 1, 6},
+    { 14, 1, 8}, {  1, 6, 8}, { 13, 1, 8}, { 12, 1, 8},
+    {  4, 2, 8}, {  2, 3, 8}, {  1, 5, 8}, { 11, 1, 8}
 };
 
 DCTtab DCT_B14AC_5 [] = {
-		{ 0, 3, 5}, { 4, 1, 5}, { 3, 1, 5},
-    { 0, 2, 4}, { 0, 2, 4}, { 2, 1, 4}, { 2, 1, 4},
-    { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3},
-    {64, 0, 2}, {64, 0, 2}, {64, 0, 2}, {64, 0, 2},
-    {64, 0, 2}, {64, 0, 2}, {64, 0, 2}, {64, 0, 2},
-    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
-    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}
+		 {  1, 3, 5}, {  5, 1, 5}, {  4, 1, 5},
+    {  1, 2, 4}, {  1, 2, 4}, {  3, 1, 4}, {  3, 1, 4},
+    {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3},
+    {129, 0, 2}, {129, 0, 2}, {129, 0, 2}, {129, 0, 2},
+    {129, 0, 2}, {129, 0, 2}, {129, 0, 2}, {129, 0, 2},
+    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
+    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}
 };
 
 DCTtab DCT_B14DC_5 [] = {
-		{ 0, 3, 5}, { 4, 1, 5}, { 3, 1, 5},
-    { 0, 2, 4}, { 0, 2, 4}, { 2, 1, 4}, { 2, 1, 4},
-    { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3},
-    { 0, 1, 1}, { 0, 1, 1}, { 0, 1, 1}, { 0, 1, 1},
-    { 0, 1, 1}, { 0, 1, 1}, { 0, 1, 1}, { 0, 1, 1},
-    { 0, 1, 1}, { 0, 1, 1}, { 0, 1, 1}, { 0, 1, 1},
-    { 0, 1, 1}, { 0, 1, 1}, { 0, 1, 1}, { 0, 1, 1}
+		 {  1, 3, 5}, {  5, 1, 5}, {  4, 1, 5},
+    {  1, 2, 4}, {  1, 2, 4}, {  3, 1, 4}, {  3, 1, 4},
+    {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3},
+    {  1, 1, 1}, {  1, 1, 1}, {  1, 1, 1}, {  1, 1, 1},
+    {  1, 1, 1}, {  1, 1, 1}, {  1, 1, 1}, {  1, 1, 1},
+    {  1, 1, 1}, {  1, 1, 1}, {  1, 1, 1}, {  1, 1, 1},
+    {  1, 1, 1}, {  1, 1, 1}, {  1, 1, 1}, {  1, 1, 1}
 };
 
 DCTtab DCT_B15_10 [] = {
-    { 5, 2, 9}, { 5, 2, 9}, {14, 1, 9}, {14, 1, 9},
-    { 2, 4,10}, {16, 1,10}, {15, 1, 9}, {15, 1, 9}
+    {  6, 2, 9}, {  6, 2, 9}, { 15, 1, 9}, { 15, 1, 9},
+    {  3, 4,10}, { 17, 1,10}, { 16, 1, 9}, { 16, 1, 9}
 };
 
 DCTtab DCT_B15_8 [] = {
-    {65, 0, 6}, {65, 0, 6}, {65, 0, 6}, {65, 0, 6},
-    { 7, 1, 7}, { 7, 1, 7}, { 8, 1, 7}, { 8, 1, 7},
-    { 6, 1, 7}, { 6, 1, 7}, { 2, 2, 7}, { 2, 2, 7},
-    { 0, 7, 6}, { 0, 7, 6}, { 0, 7, 6}, { 0, 7, 6},
-    { 0, 6, 6}, { 0, 6, 6}, { 0, 6, 6}, { 0, 6, 6},
-    { 4, 1, 6}, { 4, 1, 6}, { 4, 1, 6}, { 4, 1, 6},
-    { 5, 1, 6}, { 5, 1, 6}, { 5, 1, 6}, { 5, 1, 6},
-    { 1, 5, 8}, {11, 1, 8}, { 0,11, 8}, { 0,10, 8},
-    {13, 1, 8}, {12, 1, 8}, { 3, 2, 8}, { 1, 4, 8},
-    { 2, 1, 5}, { 2, 1, 5}, { 2, 1, 5}, { 2, 1, 5},
-    { 2, 1, 5}, { 2, 1, 5}, { 2, 1, 5}, { 2, 1, 5},
-    { 1, 2, 5}, { 1, 2, 5}, { 1, 2, 5}, { 1, 2, 5},
-    { 1, 2, 5}, { 1, 2, 5}, { 1, 2, 5}, { 1, 2, 5},
-    { 3, 1, 5}, { 3, 1, 5}, { 3, 1, 5}, { 3, 1, 5},
-    { 3, 1, 5}, { 3, 1, 5}, { 3, 1, 5}, { 3, 1, 5},
-    { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3},
-    { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3},
-    { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3},
-    { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3},
-    { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3},
-    { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3},
-    { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3},
-    { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3},
-    {64, 0, 4}, {64, 0, 4}, {64, 0, 4}, {64, 0, 4},
-    {64, 0, 4}, {64, 0, 4}, {64, 0, 4}, {64, 0, 4},
-    {64, 0, 4}, {64, 0, 4}, {64, 0, 4}, {64, 0, 4},
-    {64, 0, 4}, {64, 0, 4}, {64, 0, 4}, {64, 0, 4},
-    { 0, 3, 4}, { 0, 3, 4}, { 0, 3, 4}, { 0, 3, 4},
-    { 0, 3, 4}, { 0, 3, 4}, { 0, 3, 4}, { 0, 3, 4},
-    { 0, 3, 4}, { 0, 3, 4}, { 0, 3, 4}, { 0, 3, 4},
-    { 0, 3, 4}, { 0, 3, 4}, { 0, 3, 4}, { 0, 3, 4},
-    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
-    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
-    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
-    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
-    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
-    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
-    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
-    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
-    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
-    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
-    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
-    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
-    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
-    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
-    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
-    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
-    { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3},
-    { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3},
-    { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3},
-    { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3},
-    { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3},
-    { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3},
-    { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3},
-    { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3},
-    { 0, 4, 5}, { 0, 4, 5}, { 0, 4, 5}, { 0, 4, 5},
-    { 0, 4, 5}, { 0, 4, 5}, { 0, 4, 5}, { 0, 4, 5},
-    { 0, 5, 5}, { 0, 5, 5}, { 0, 5, 5}, { 0, 5, 5},
-    { 0, 5, 5}, { 0, 5, 5}, { 0, 5, 5}, { 0, 5, 5},
-    { 9, 1, 7}, { 9, 1, 7}, { 1, 3, 7}, { 1, 3, 7},
-    {10, 1, 7}, {10, 1, 7}, { 0, 8, 7}, { 0, 8, 7},
-    { 0, 9, 7}, { 0, 9, 7}, { 0,12, 8}, { 0,13, 8},
-    { 2, 3, 8}, { 4, 2, 8}, { 0,14, 8}, { 0,15, 8}
+    { 65, 0, 6}, { 65, 0, 6}, { 65, 0, 6}, { 65, 0, 6},
+    {  8, 1, 7}, {  8, 1, 7}, {  9, 1, 7}, {  9, 1, 7},
+    {  7, 1, 7}, {  7, 1, 7}, {  3, 2, 7}, {  3, 2, 7},
+    {  1, 7, 6}, {  1, 7, 6}, {  1, 7, 6}, {  1, 7, 6},
+    {  1, 6, 6}, {  1, 6, 6}, {  1, 6, 6}, {  1, 6, 6},
+    {  5, 1, 6}, {  5, 1, 6}, {  5, 1, 6}, {  5, 1, 6},
+    {  6, 1, 6}, {  6, 1, 6}, {  6, 1, 6}, {  6, 1, 6},
+    {  2, 5, 8}, { 12, 1, 8}, {  1,11, 8}, {  1,10, 8},
+    { 14, 1, 8}, { 13, 1, 8}, {  4, 2, 8}, {  2, 4, 8},
+    {  3, 1, 5}, {  3, 1, 5}, {  3, 1, 5}, {  3, 1, 5},
+    {  3, 1, 5}, {  3, 1, 5}, {  3, 1, 5}, {  3, 1, 5},
+    {  2, 2, 5}, {  2, 2, 5}, {  2, 2, 5}, {  2, 2, 5},
+    {  2, 2, 5}, {  2, 2, 5}, {  2, 2, 5}, {  2, 2, 5},
+    {  4, 1, 5}, {  4, 1, 5}, {  4, 1, 5}, {  4, 1, 5},
+    {  4, 1, 5}, {  4, 1, 5}, {  4, 1, 5}, {  4, 1, 5},
+    {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3},
+    {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3},
+    {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3},
+    {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3},
+    {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3},
+    {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3},
+    {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3},
+    {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3},
+    {129, 0, 4}, {129, 0, 4}, {129, 0, 4}, {129, 0, 4},
+    {129, 0, 4}, {129, 0, 4}, {129, 0, 4}, {129, 0, 4},
+    {129, 0, 4}, {129, 0, 4}, {129, 0, 4}, {129, 0, 4},
+    {129, 0, 4}, {129, 0, 4}, {129, 0, 4}, {129, 0, 4},
+    {  1, 3, 4}, {  1, 3, 4}, {  1, 3, 4}, {  1, 3, 4},
+    {  1, 3, 4}, {  1, 3, 4}, {  1, 3, 4}, {  1, 3, 4},
+    {  1, 3, 4}, {  1, 3, 4}, {  1, 3, 4}, {  1, 3, 4},
+    {  1, 3, 4}, {  1, 3, 4}, {  1, 3, 4}, {  1, 3, 4},
+    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
+    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
+    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
+    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
+    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
+    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
+    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
+    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
+    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
+    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
+    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
+    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
+    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
+    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
+    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
+    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
+    {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3},
+    {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3},
+    {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3},
+    {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3},
+    {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3},
+    {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3},
+    {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3},
+    {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3},
+    {  1, 4, 5}, {  1, 4, 5}, {  1, 4, 5}, {  1, 4, 5},
+    {  1, 4, 5}, {  1, 4, 5}, {  1, 4, 5}, {  1, 4, 5},
+    {  1, 5, 5}, {  1, 5, 5}, {  1, 5, 5}, {  1, 5, 5},
+    {  1, 5, 5}, {  1, 5, 5}, {  1, 5, 5}, {  1, 5, 5},
+    { 10, 1, 7}, { 10, 1, 7}, {  2, 3, 7}, {  2, 3, 7},
+    { 11, 1, 7}, { 11, 1, 7}, {  1, 8, 7}, {  1, 8, 7},
+    {  1, 9, 7}, {  1, 9, 7}, {  1,12, 8}, {  1,13, 8},
+    {  3, 3, 8}, {  5, 2, 8}, {  1,14, 8}, {  1,15, 8}
 };
 
 static int non_linear_quantizer_scale[32] =
@@ -212,105 +218,219 @@ static inline int get_quantizer_scale (int q_scale_type)
 	return quantizer_scale_code << 1;
 }
 
-static void slice_get_intra_block (const picture_t * picture,
-				   slice_t * slice,
-				   int16_t * dest, int cc)
+static void slice_get_intra_block_B14 (const picture_t * picture,
+				       slice_t * slice, int16_t * dest)
 {
-    int i = 1;
+    int i;
     int j;
     int val;
     const uint8_t * scan = picture->scan;
-    uint8_t * quant_matrix = picture->intra_quantizer_matrix;
+    uint8_t * quant_matrix = picture->non_intra_quantizer_matrix;
     int quantizer_scale = slice->quantizer_scale;
     int mismatch;
-    uint32_t code;
     DCTtab * tab;
+    uint32_t bit_buf;
+    int bits;
 
-    needbits ();
-    //Get the intra DC coefficient and inverse quantize it
-    if (cc == 0)
-	slice->dc_dct_pred[0] += Get_Luma_DC_dct_diff ();
-    else
-	slice->dc_dct_pred[cc] += Get_Chroma_DC_dct_diff ();
-    dest[0] = slice->dc_dct_pred[cc] << (3 - picture->intra_dc_precision);
-
-    i = 1;
+    i = 0;
     mismatch = ~dest[0];
 
+    bit_buf = bitstream_buffer;
+    bits = bitstream_avail_bits;
+
+    NEEDBITS (bit_buf, bits);
+
     while (1) {
-	needbits ();
-	code = bitstream_show ();
+	if (bit_buf >= 0x28000000) {
 
-	if (picture->intra_vlc_format) {
-	    if (code >= 0x04000000)
-		tab = DCT_B15_8 - 4 + (code >> 24);
-	    else if (code >= 0x02000000)
-		tab = DCT_B15_10 - 8 + (code >> 22);
-	    else if (code >= 0x00800000)
-		tab = DCT_13 - 16 + (code >> 19);
-	    else if (code >= 0x00200000)
-		tab = DCT_15 - 16 + (code >> 17);
-	    else if (code >= 0x00100000)
-		tab = DCT_16 - 16 + (code >> 16);
-	    else {
-		fprintf (stderr,
-			 "(vlc) invalid huffman code 0x%x in vlc_get_block_coeff ()\n",
-			 code);
-		exit (1);
-		break;
-	    }
-	} else {
-	    if (code >= 0x28000000)
-		tab = DCT_B14AC_5 - 5 + (code >> 27);
-	    else if (code >= 0x04000000)
-		tab = DCT_B14_8 - 4 + (code >> 24);
-	    else if (code >= 0x02000000)
-		tab = DCT_B14_10 - 8 + (code >> 22);
-	    else if (code >= 0x00800000)
-		tab = DCT_13 - 16 + (code >> 19);
-	    else if (code >= 0x00200000)
-		tab = DCT_15 - 16 + (code >> 17);
-	    else if (code >= 0x00100000)
-		tab = DCT_16 - 16 + (code >> 16);
-	    else {
-		fprintf (stderr,
-			 "(vlc) invalid huffman code 0x%x in vlc_get_block_coeff ()\n",
-			 code);
-		exit (1);
-		break;
-	    }
-	}
+	    tab = DCT_B14AC_5 - 5 + UBITS (bit_buf, 5);
 
-	bitstream_flush (tab->len);
-
-	if (tab->run==64) // end_of_block 
-	    break;
-
-	if (tab->run==65) /* escape */ {
-	    i += bitstream_get (6);
-
-	    needbits ();
-	    val = bitstream_get (12);
-	    if (val >= 2048)
-		val = val - 4096;
-
-	    j = scan[i++];
-	    val = (val * quantizer_scale * quant_matrix[j]) / 16;
-
-	    mismatch ^= dest[j] = val;
-	} else {
 	    i += tab->run;
-	    j = scan[i++];
+	    if (i >= 64)
+		break;	// end of block
+
+	normal_code:
+	    j = scan[i];
+	    bit_buf <<= tab->len;
+	    bits += tab->len + 1;
 	    val = (tab->level * quantizer_scale * quant_matrix[j]) >> 4;
 
-	    needbits ();	// FIXME get rid of this one
-	    if (bitstream_get (1)) //sign bit
-		val = -val;
+	    // if (bitstream_get (1)) val = -val;
+	    val = (val ^ SBITS (bit_buf, 1)) - SBITS (bit_buf, 1);
 
-	    mismatch ^= dest[j] = val;
+	    dest[j] = val;
+	    mismatch ^= val;
+
+	    bit_buf <<= 1;
+	    NEEDBITS (bit_buf, bits);
+
+	    continue;
+
+	} else if (bit_buf >= 0x04000000) {
+
+	    tab = DCT_B14_8 - 4 + UBITS (bit_buf, 8);
+
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+
+	    // escape code
+
+	    i += UBITS (bit_buf << 6, 6) - 64;
+	    if (i >= 64)
+		break;	// illegal, but check needed to avoid buffer overflow
+
+	    j = scan[i];
+
+	    DUMPBITS (bit_buf, bits, 12);
+	    NEEDBITS (bit_buf, bits);
+	    val = (SBITS (bit_buf, 12) *
+		   quantizer_scale * quant_matrix[j]) / 16;
+
+	    dest[j] = val;
+	    mismatch ^= val;
+
+	    DUMPBITS (bit_buf, bits, 12);
+	    NEEDBITS (bit_buf, bits);
+
+	    continue;
+
+	} else if (bit_buf >= 0x02000000) {
+	    tab = DCT_B14_10 - 8 + UBITS (bit_buf, 10);
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+	} else if (bit_buf >= 0x00800000) {
+	    tab = DCT_13 - 16 + UBITS (bit_buf, 13);
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+	} else if (bit_buf >= 0x00200000) {
+	    tab = DCT_15 - 16 + UBITS (bit_buf, 15);
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+	} else {
+	    tab = DCT_16 + UBITS (bit_buf, 16);
+	    bit_buf <<= 16;
+	    bit_buf |= getword () << (bits + 16);
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
 	}
+	break;	// illegal, but check needed to avoid buffer overflow
     }
     dest[63] ^= mismatch & 1;
+    DUMPBITS (bit_buf, bits, 2);	// dump end of block code
+    bitstream_buffer = bit_buf;
+    bitstream_avail_bits = bits;
+}
+
+static void slice_get_intra_block_B15 (const picture_t * picture,
+				       slice_t * slice, int16_t * dest)
+{
+    int i;
+    int j;
+    int val;
+    const uint8_t * scan = picture->scan;
+    uint8_t * quant_matrix = picture->non_intra_quantizer_matrix;
+    int quantizer_scale = slice->quantizer_scale;
+    int mismatch;
+    DCTtab * tab;
+    uint32_t bit_buf;
+    int bits;
+
+    i = 0;
+    mismatch = ~dest[0];
+
+    bit_buf = bitstream_buffer;
+    bits = bitstream_avail_bits;
+
+    NEEDBITS (bit_buf, bits);
+
+    while (1) {
+	if (bit_buf >= 0x04000000) {
+
+	    tab = DCT_B15_8 - 4 + UBITS (bit_buf, 8);
+
+	    i += tab->run;
+	    if (i < 64) {
+
+	    normal_code:
+		j = scan[i];
+		bit_buf <<= tab->len;
+		bits += tab->len + 1;
+		val = (tab->level * quantizer_scale * quant_matrix[j]) >> 4;
+
+		// if (bitstream_get (1)) val = -val;
+		val = (val ^ SBITS (bit_buf, 1)) - SBITS (bit_buf, 1);
+
+		dest[j] = val;
+		mismatch ^= val;
+
+		bit_buf <<= 1;
+		NEEDBITS (bit_buf, bits);
+
+		continue;
+
+	    } else {
+
+		// end of block. I commented out this code because if we
+		// dont exit here we will still exit at the later test :)
+
+		//if (i >= 128) break;	// end of block
+
+		// escape code
+
+		i += UBITS (bit_buf << 6, 6) - 64;
+		if (i >= 64)
+		    break;	// illegal, but check against buffer overflow
+
+		j = scan[i];
+
+		DUMPBITS (bit_buf, bits, 12);
+		NEEDBITS (bit_buf, bits);
+		val = (SBITS (bit_buf, 12) *
+		       quantizer_scale * quant_matrix[j]) / 16;
+
+		dest[j] = val;
+		mismatch ^= val;
+
+		DUMPBITS (bit_buf, bits, 12);
+		NEEDBITS (bit_buf, bits);
+
+		continue;
+
+	    }
+	} else if (bit_buf >= 0x02000000) {
+	    tab = DCT_B15_10 - 8 + UBITS (bit_buf, 10);
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+	} else if (bit_buf >= 0x00800000) {
+	    tab = DCT_13 - 16 + UBITS (bit_buf, 13);
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+	} else if (bit_buf >= 0x00200000) {
+	    tab = DCT_15 - 16 + UBITS (bit_buf, 15);
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+	} else {
+	    tab = DCT_16 + UBITS (bit_buf, 16);
+	    bit_buf <<= 16;
+	    bit_buf |= getword () << (bits + 16);
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+	}
+	break;	// illegal, but check needed to avoid buffer overflow
+    }
+    dest[63] ^= mismatch & 1;
+    DUMPBITS (bit_buf, bits, 4);	// dump end of block code
+    bitstream_buffer = bit_buf;
+    bitstream_avail_bits = bits;
 }
 
 static void slice_get_non_intra_block (const picture_t * picture,
@@ -323,102 +443,128 @@ static void slice_get_non_intra_block (const picture_t * picture,
     uint8_t * quant_matrix = picture->non_intra_quantizer_matrix;
     int quantizer_scale = slice->quantizer_scale;
     int mismatch;
-    uint32_t code;
     DCTtab * tab;
+    uint32_t bit_buf;
+    int bits;
 
-    i = 0;
+    i = -1;
     mismatch = 1;
 
-    needbits ();
-    code = bitstream_show ();
+    bit_buf = bitstream_buffer;
+    bits = bitstream_avail_bits;
 
-    if (code >= 0x28000000)
-	tab = DCT_B14DC_5 - 5 + (code >> 27);
-    else if (code >= 0x04000000)
-	tab = DCT_B14_8 - 4 + (code >> 24);
-    else if (code >= 0x02000000)
-	tab = DCT_B14_10 - 8 + (code >> 22);
-    else if (code >= 0x00800000)
-	tab = DCT_13 - 16 + (code >> 19);
-    else if (code >= 0x00200000)
-	tab = DCT_15 - 16 + (code >> 17);
-    else if (code >= 0x00100000)
-	tab = DCT_16 - 16 + (code >> 16);
-    else {
-	fprintf (stderr,
-		 "(vlc) invalid huffman code 0x%x in vlc_get_block_coeff ()\n",
-		 code);
-	exit (1);
-	return;
-    }
+    NEEDBITS (bit_buf, bits);
+    if (bit_buf >= 0x28000000) {
+	tab = DCT_B14DC_5 - 5 + UBITS (bit_buf, 5);
+	goto entry_1;
+    } else
+	goto entry_2;
 
-    goto gotit;
- 
     while (1) {
-	needbits ();
-	code = bitstream_show ();
+	if (bit_buf >= 0x28000000) {
 
-	if (code >= 0x28000000)
-	    tab = DCT_B14AC_5 - 5 + (code >> 27);
-	else if (code >= 0x04000000)
-	    tab = DCT_B14_8 - 4 + (code >> 24);
-	else if (code >= 0x02000000)
-	    tab = DCT_B14_10 - 8 + (code >> 22);
-	else if (code >= 0x00800000)
-	    tab = DCT_13 - 16 + (code >> 19);
-	else if (code >= 0x00200000)
-	    tab = DCT_15 - 16 + (code >> 17);
-	else if (code >= 0x00100000)
-	    tab = DCT_16 - 16 + (code >> 16);
-	else {
-	    fprintf (stderr,
-		     "(vlc) invalid huffman code 0x%x in vlc_get_block_coeff ()\n",
-		     code);
-	    exit (1);
-	    break;
-	}
+	    tab = DCT_B14AC_5 - 5 + UBITS (bit_buf, 5);
 
-    gotit:
-
-	bitstream_flush (tab->len);
-
-	if (tab->run==64) // end_of_block 
-	    break;
-
-	if (tab->run==65) /* escape */ {
-	    int k;
-
-	    i += bitstream_get (6);
-
-	    needbits ();
-	    val = bitstream_get (12);
-	    if (val >= 2048)
-		val = val - 4096;
-
-	    j = scan[i++];
-	    k = (val > 0) ? 1 : ((val < 0) ? -1 : 0);
-	    val = ((2 * val + k) * quantizer_scale * quant_matrix[j]) / 32;
-
-	    mismatch ^= dest[j] = val;
-	} else {
+	entry_1:
 	    i += tab->run;
-	    j = scan[i++];
+	    if (i >= 64)
+		break;	// end of block
+
+	normal_code:
+	    j = scan[i];
+	    bit_buf <<= tab->len;
+	    bits += tab->len + 1;
 	    val = ((2*tab->level+1) * quantizer_scale * quant_matrix[j]) >> 5;
 
-	    needbits ();	// FIXME get rid of this one
-	    if (bitstream_get (1)) //sign bit
-		val = -val;
+	    // if (bitstream_get (1)) val = -val;
+	    val = (val ^ SBITS (bit_buf, 1)) - SBITS (bit_buf, 1);
 
-	    mismatch ^= dest[j] = val;
+	    dest[j] = val;
+	    mismatch ^= val;
+
+	    bit_buf <<= 1;
+	    NEEDBITS (bit_buf, bits);
+
+	    continue;
+
 	}
+
+    entry_2:
+	if (bit_buf >= 0x04000000) {
+
+	    tab = DCT_B14_8 - 4 + UBITS (bit_buf, 8);
+
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+
+	    // escape code
+
+	    i += UBITS (bit_buf << 6, 6) - 64;
+	    if (i >= 64)
+		break;	// illegal, but check needed to avoid buffer overflow
+
+	    j = scan[i];
+
+	    DUMPBITS (bit_buf, bits, 12);
+	    NEEDBITS (bit_buf, bits);
+	    val = 2 * (SBITS (bit_buf, 12) + SBITS (bit_buf, 1)) + 1;
+	    val = (val * quantizer_scale * quant_matrix[j]) / 32;
+
+	    dest[j] = val;
+	    mismatch ^= val;
+
+	    DUMPBITS (bit_buf, bits, 12);
+	    NEEDBITS (bit_buf, bits);
+
+	    continue;
+
+	} else if (bit_buf >= 0x02000000) {
+	    tab = DCT_B14_10 - 8 + UBITS (bit_buf, 10);
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+	} else if (bit_buf >= 0x00800000) {
+	    tab = DCT_13 - 16 + UBITS (bit_buf, 13);
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+	} else if (bit_buf >= 0x00200000) {
+	    tab = DCT_15 - 16 + UBITS (bit_buf, 15);
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+	} else {
+	    tab = DCT_16 + UBITS (bit_buf, 16);
+	    bit_buf <<= 16;
+	    bit_buf |= getword () << (bits + 16);
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+	}
+	break;	// illegal, but check needed to avoid buffer overflow
     }
     dest[63] ^= mismatch & 1;
+    DUMPBITS (bit_buf, bits, 2);	// dump end of block code
+    bitstream_buffer = bit_buf;
+    bitstream_avail_bits = bits;
 }
 
 static inline void slice_intra_DCT (picture_t * picture, slice_t * slice,
 				    int cc, uint8_t * dest, int stride)
 {
-    slice_get_intra_block (picture, slice, DCTblock, cc);
+    needbits ();
+    //Get the intra DC coefficient and inverse quantize it
+    if (cc == 0)
+	slice->dc_dct_pred[0] += Get_Luma_DC_dct_diff ();
+    else
+	slice->dc_dct_pred[cc] += Get_Chroma_DC_dct_diff ();
+    DCTblock[0] = slice->dc_dct_pred[cc] << (3 - picture->intra_dc_precision);
+
+    if (picture->intra_vlc_format)
+	slice_get_intra_block_B15 (picture, slice, DCTblock);
+    else
+	slice_get_intra_block_B14 (picture, slice, DCTblock);
     idct_block_copy (DCTblock, dest, stride);
     memset (DCTblock, 0, sizeof (int16_t) * 64);
 }
@@ -573,7 +719,7 @@ do {								\
 	routine (& ((slice).b_motion), dest, offset, stride,	\
 		 ((direction) & MACROBLOCK_MOTION_FORWARD ?	\
 		  mc_functions.avg : mc_functions.put));	\
-} while (0);
+} while (0)
 
 static int get_macroblock_modes (int picture_coding_type,
 				 int frame_pred_frame_dct)
