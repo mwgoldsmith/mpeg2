@@ -257,7 +257,7 @@ static void stats_picture_coding_extension (uint8_t * buffer)
 	     alternate_scan, repeat_first_field, progressive_frame);
 }
 
-void stats_header (int code, uint8_t * buffer)
+void mpeg2_stats (int code, uint8_t * buffer)
 {
     if (! (debug_is_on ()))
 	return;

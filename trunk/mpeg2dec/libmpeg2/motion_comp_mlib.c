@@ -176,6 +176,6 @@ static void MC_avg_xy_8_mlib (uint8_t * dest, uint8_t * ref,
 	mlib_VideoInterpAveXY_U8_U8_8x4 (dest, ref, stride, stride);
 }
 
-MOTION_COMP_EXTERN (mlib)
+MPEG2_MC_EXTERN (mlib)
 
 #endif

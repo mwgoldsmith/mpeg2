@@ -55,7 +55,7 @@ static int16_t constants[5][8] ATTR_ALIGN(16) = {
  * I then do some simple trimming on the function prolog/trailers
  */
 
-void idct_block_copy_altivec (int16_t * block, uint8_t * dest, int stride)
+void mpeg2_idct_copy_altivec (int16_t * block, uint8_t * dest, int stride)
 {
     asm ("						\n"
 	"#	stwu		%r1,  -128(%r1)		\n"
@@ -246,7 +246,7 @@ void idct_block_copy_altivec (int16_t * block, uint8_t * dest, int stride)
 	 );
 }
 
-void idct_block_add_altivec (int16_t * block, uint8_t * dest, int stride)
+void mpeg2_idct_add_altivec (int16_t * block, uint8_t * dest, int stride)
 {
     asm ("						\n"
 	"#	stwu		%r1,  -192(%r1)		\n"
@@ -466,20 +466,20 @@ void idct_block_add_altivec (int16_t * block, uint8_t * dest, int stride)
 	 );
 }
 
-void idct_altivec_init (void)
+void mpeg2_idct_altivec_init (void)
 {
-    extern uint8_t scan_norm[64];
-    extern uint8_t scan_alt[64];
+    extern uint8_t mpeg2_scan_norm[64];
+    extern uint8_t mpeg2_scan_alt[64];
     int i, j;
 
     i = constants[0][0];	/* just pretending - keeps gcc happy */
 
     /* the altivec idct uses a transposed input, so we patch scan tables */
     for (i = 0; i < 64; i++) {
-	j = scan_norm[i];
-	scan_norm[i] = (j >> 3) | ((j & 7) << 3);
-	j = scan_alt[i];
-	scan_alt[i] = (j >> 3) | ((j & 7) << 3);
+	j = mpeg2_scan_norm[i];
+	mpeg2_scan_norm[i] = (j >> 3) | ((j & 7) << 3);
+	j = mpeg2_scan_alt[i];
+	mpeg2_scan_alt[i] = (j >> 3) | ((j & 7) << 3);
     }
 }
 
@@ -605,7 +605,7 @@ static vector_s16_t constants[5] = {
     (vector_s16_t)(19266, 26722, 25172, 22654, 19266, 22654, 25172, 26722)
 };
 
-void idct_block_copy_altivec (vector_s16_t * block, unsigned char * dest,
+void mpeg2_idct_copy_altivec (vector_s16_t * block, unsigned char * dest,
 			      int stride)
 {
     vector_u8_t tmp;
@@ -627,7 +627,7 @@ void idct_block_copy_altivec (vector_s16_t * block, unsigned char * dest,
     COPY (dest, vx7)
 }
 
-void idct_block_add_altivec (vector_s16_t * block, unsigned char * dest,
+void mpeg2_idct_add_altivec (vector_s16_t * block, unsigned char * dest,
 			     int stride)
 {
     vector_u8_t tmp;

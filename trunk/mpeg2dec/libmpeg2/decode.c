@@ -49,9 +49,9 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
 
     if (do_init) {
 	do_init = 0;
-	cpu_state_init (mm_accel);
-	idct_init (mm_accel);
-	motion_comp_init (mm_accel);
+	mpeg2_cpu_state_init (mm_accel);
+	mpeg2_idct_init (mm_accel);
+	mpeg2_mc_init (mm_accel);
     }
 
     mpeg2dec->chunk_buffer = memalign (16, BUFFER_SIZE + 4);
@@ -69,7 +69,7 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
     memset (mpeg2dec->picture, 0, sizeof (picture_t));
 
     /* initialize supstructures */
-    header_state_init (mpeg2dec->picture);
+    mpeg2_header_state_init (mpeg2dec->picture);
 }
 
 static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
@@ -82,7 +82,7 @@ static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
     if (mpeg2dec->is_sequence_needed && (code != 0xb3))
 	return 0;
 
-    stats_header (code, buffer);
+    mpeg2_stats (code, buffer);
 
     picture = mpeg2dec->picture;
     is_frame_done = 0;
@@ -102,7 +102,7 @@ static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
 
     switch (code) {
     case 0x00:	/* picture_start_code */
-	if (header_process_picture_header (picture, buffer)) {
+	if (mpeg2_header_picture (picture, buffer)) {
 	    fprintf (stderr, "bad picture header\n");
 	    exit (1);
 	}
@@ -111,7 +111,7 @@ static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
 	break;
 
     case 0xb3:	/* sequence_header_code */
-	if (header_process_sequence_header (picture, buffer)) {
+	if (mpeg2_header_sequence (picture, buffer)) {
 	    fprintf (stderr, "bad sequence header\n");
 	    exit (1);
 	}
@@ -133,7 +133,7 @@ static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
 	break;
 
     case 0xb5:	/* extension_start_code */
-	if (header_process_extension (picture, buffer)) {
+	if (mpeg2_header_extension (picture, buffer)) {
 	    fprintf (stderr, "bad extension\n");
 	    exit (1);
 	}
@@ -169,7 +169,7 @@ static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
 	}
 
 	if (!(mpeg2dec->drop_frame))
-	    slice_process (picture, code, buffer);
+	    mpeg2_slice (picture, code, buffer);
     }
 
     return is_frame_done;

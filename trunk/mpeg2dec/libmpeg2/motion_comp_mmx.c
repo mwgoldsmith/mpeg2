@@ -44,8 +44,8 @@
 
 
 /* some rounding constants */
-mmx_t round1 = {0x0001000100010001LL};
-mmx_t round4 = {0x0002000200020002LL};
+static mmx_t round1 = {0x0001000100010001LL};
+static mmx_t round4 = {0x0002000200020002LL};
 
 /*
  * This code should probably be compiled with loop unrolling
@@ -512,7 +512,7 @@ static void MC_put_y_8_mmx (uint8_t * dest, uint8_t * ref,
 }
 
 
-MOTION_COMP_EXTERN (mmx)
+MPEG2_MC_EXTERN (mmx)
 
 
 
@@ -913,7 +913,7 @@ static void MC_put_xy_8_mmxext (uint8_t * dest, uint8_t * ref,
 }
 
 
-MOTION_COMP_EXTERN (mmxext)
+MPEG2_MC_EXTERN (mmxext)
 
 
 
@@ -1014,6 +1014,6 @@ static void MC_put_xy_8_3dnow (uint8_t * dest, uint8_t * ref,
 }
 
 
-MOTION_COMP_EXTERN (3dnow)
+MPEG2_MC_EXTERN (3dnow)
 
 #endif
