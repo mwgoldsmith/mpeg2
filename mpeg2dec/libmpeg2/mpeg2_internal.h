@@ -63,14 +63,7 @@ struct mpeg2_decoder_s {
     int bitstream_bits;			/* used bits in working set */
     const uint8_t * bitstream_ptr;	/* buffer with stream data */
 
-    /* DCT coefficients */
-    int16_t DCTblock[64] ATTR_ALIGN(16);
-
     uint8_t * dest[3];
-    uint8_t * picture_dest[3];
-    void (* convert) (void * fbuf_id, uint8_t * const * src,
-		      unsigned int v_offset);
-    void * fbuf_id;
 
     int offset;
     int stride;
@@ -88,6 +81,14 @@ struct mpeg2_decoder_s {
 
     /* predictor for DC coefficients in intra blocks */
     int16_t dc_dct_pred[3];
+
+    /* DCT coefficients */
+    int16_t DCTblock[64] ATTR_ALIGN(16);
+
+    uint8_t * picture_dest[3];
+    void (* convert) (void * fbuf_id, uint8_t * const * src,
+		      unsigned int v_offset);
+    void * fbuf_id;
 
     int quantizer_scale;	/* remove */
     int dmv_offset;		/* remove */
