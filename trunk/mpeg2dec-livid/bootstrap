@@ -4,6 +4,8 @@ set -x
 aclocal -I autotools
 libtoolize --force --copy
 autoheader
+#add --include-deps if you want to compile with cc in IRIX !
+#automake --add-missing --copy --include-deps
 automake --add-missing --copy
 autoconf
 rm -f config.cache
