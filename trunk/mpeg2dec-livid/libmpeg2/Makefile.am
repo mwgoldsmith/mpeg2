@@ -1,9 +1,3 @@
-#FIXME should remove
-INCLUDES = \
-	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/video \
-	-I$(top_srcdir)/src/plugin/output/video
-
 CFLAGS = @CFLAGS@ @LIBMPEG2_CFLAGS@
 
 noinst_LTLIBRARIES = libmpeg2.la
@@ -17,5 +11,4 @@ libmpeg2_la_SOURCES = decode.c header.c stats.c slice.c \
 # decode.c idct_mmx.c motion_comp_mmx.c
 libmpeg2_la_LIBADD = @LIBMPEG2_LIBS@
 
-#EXTRA_DIST = configure.incl vlc.h mpeg2_internal.h
-EXTRA_DIST = configure.incl vlc.h mpeg2_internal.h mpeg2.h
+EXTRA_DIST = configure.incl vlc.h mpeg2_internal.h

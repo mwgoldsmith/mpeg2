@@ -1,2 +1,4 @@
-#EXTRA_DIST = mpeg2.h video_out.h mm_accel.h mmx.h attributes.h
 EXTRA_DIST = mm_accel.h mmx.h attributes.h
+
+dist-hook:
+	cp $(srcdir)/mpeg2.h $(srcdir)/video_out.h $(distdir)

@@ -1,5 +1,10 @@
 #! /bin/sh
 set -x
+
+# work around some limitations in CVS magic
+ln -s ../libmpeg2/mpeg2.h_ include/mpeg2.h 2>/dev/null
+ln -s ../video/video_out.h_ include/video_out.h 2>/dev/null
+
 aclocal -I autotools
 libtoolize --force --copy
 autoheader
