@@ -27,9 +27,6 @@
 /* Define if you have the `__builtin_expect' function. */
 /* #undef HAVE_BUILTIN_EXPECT */
 
-/* Define to 1 if you have the <ddraw.h> header file. */
-#define HAVE_DDRAW_H 1
-
 /* Define to 1 if you have the <dlfcn.h> header file. */
 /* #undef HAVE_DLFCN_H */
 
