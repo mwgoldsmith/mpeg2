@@ -37,6 +37,14 @@ mpeg2_config_t config;
 
 void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output)
 {
+    static int do_init = 1;
+
+    if (do_init) {
+	do_init = 0;
+	idct_init ();
+	motion_comp_init ();
+    }
+
     mpeg2dec->shift = 0;
     mpeg2dec->is_display_initialized = 0;
     mpeg2dec->is_sequence_needed = 1;
@@ -48,15 +56,13 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output)
     mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
     mpeg2dec->code = 0xff;
 
-    mpeg2dec->picture= (picture_t *) malloc (sizeof (picture_t));
+    mpeg2dec->picture = (picture_t *) malloc (sizeof (picture_t));
     memset (mpeg2dec->picture, 0, sizeof (picture_t));
 
     config.flags = mm_accel () | MM_ACCEL_MLIB;
 
     // initialize supstructures
     header_state_init (mpeg2dec->picture);
-    idct_init ();
-    motion_comp_init ();
 }
 
 static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
