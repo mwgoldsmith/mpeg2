@@ -34,10 +34,10 @@
 #include "mpeg2_internal.h"
 
 #include "motion_comp.h"
-#include "bitstream.h"
 #include "idct.h"
 #include "header.h"
 #include "slice.h"
+#include "stats.h"
 
 #ifdef __i386__
 #include "mmx.h"
@@ -204,13 +204,12 @@ mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end)
 		if(is_sequence_needed && code != SEQUENCE_HEADER_CODE)
 			continue;
 
-		bitstream_init(chunk_buffer);
-		bitstream_get(8);
+		stats_header (code, chunk_buffer + 1);
 
 		//deal with the header otherwise
 		if (code == SEQUENCE_HEADER_CODE)
 		{
-			header_process_sequence_header(&picture); 
+			header_process_sequence_header (&picture, chunk_buffer + 1);
 			is_sequence_needed = 0;
 
 			if(!is_display_initialized)
@@ -220,22 +219,16 @@ mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end)
 				is_display_initialized = 1;
 			}
 		}
-		else if(code == SEQUENCE_END_CODE)
-			is_sequence_needed = 1;
 		else if (code == PICTURE_START_CODE)
 		{
-			header_process_picture_header(&picture);
+			header_process_picture_header (&picture, chunk_buffer + 1);
 			decode_reorder_frames();
 		}
 		else if (code == EXTENSION_START_CODE)
-			header_process_extension(&picture);
-		else if (code == GROUP_START_CODE)
-			header_process_gop_header(&picture);
-		else if (code == USER_DATA_START_CODE)
-			header_process_user_data();
+			header_process_extension (&picture, chunk_buffer + 1);
 		else if (code >= SLICE_START_CODE_MIN && code <= SLICE_START_CODE_MAX)
 		{
-			is_frame_done = slice_process(&picture,chunk_buffer); 
+			is_frame_done = slice_process (&picture, code, chunk_buffer + 1);
 
 			if(picture.picture_coding_type == B_TYPE)
 			{
@@ -265,7 +258,8 @@ mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end)
 
 		//FIXME blah
 #ifdef __i386__
-		emms();
+		if (config.flags & MPEG2_MMX_ENABLE)
+			emms();
 #endif
 
 		if(is_frame_done)

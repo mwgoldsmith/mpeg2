@@ -21,9 +21,7 @@
  *
  */
  
-void header_state_init(picture_t *picture);
-void header_process_picture_header(picture_t *picture);
-void header_process_sequence_header(picture_t *picture);
-void header_process_gop_header(picture_t *picture);
-void header_process_extension(picture_t *picture);
-void header_process_user_data(void);
+void header_state_init (picture_t * picture);
+void header_process_picture_header (picture_t * picture, uint_8 * buffer);
+void header_process_sequence_header (picture_t * picture, uint_8 * buffer);
+void header_process_extension (picture_t * picture, uint_8 * buffer);
