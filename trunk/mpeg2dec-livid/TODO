@@ -11,8 +11,7 @@
 		* possible chunk buffer overflow (writing or reading back)
 		* destination macroblock overflow
 		* MC source out of bounds (maybe signal handler for that one ?)
-	* make the decoder reentrant (if the speed impact is small enough)
-	* win32 display ?
+		* dont just fprintf and exit
 
 * structural optimizations
 	* integrate idct_add and idct_copy into the main idct routine
