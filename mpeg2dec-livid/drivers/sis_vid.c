@@ -41,8 +41,8 @@
 #define MGA_VID_MAJOR 178
 
 
-#ifndef PCI_DEVICE_ID_SIS_6323 
-#define PCI_DEVICE_ID_SIS_6323 0x6326
+#ifndef PCI_DEVICE_ID_SI_6323 
+#define PCI_DEVICE_ID_SI_6323 0x6326
 #endif
 
 
@@ -299,7 +299,7 @@ static int mga_vid_find_card(void)
 {
 	struct pci_dev *dev = NULL;
 
-	if((dev = pci_find_device(PCI_VENDOR_ID_SIS, PCI_DEVICE_ID_SIS_6323, NULL)))
+	if((dev = pci_find_device(PCI_VENDOR_ID_SI, PCI_DEVICE_ID_SI_6323, NULL)))
 	{
 		printk("sis_vid: Found SiS 6326\n");
 	}
