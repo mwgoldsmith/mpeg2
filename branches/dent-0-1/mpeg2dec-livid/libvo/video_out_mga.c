@@ -116,7 +116,7 @@ static inline void write_frame_g200_mmx (uint8_t *y, uint8_t *cr, uint8_t *cb)
 	}
 
 	for (h=0; h < _mga_priv.mga_vid_config.src_height/2; h++) {
-		for(w=0; w < mga_vid_config.src_width/16; w++) {
+		for(w=0; w < _mga_priv.mga_vid_config.src_width/16; w++) {
 			asm volatile (
 			"movq 		   (%1),%%mm0\n\t"
 			"movq 		  %%mm0,%%mm1\n\t"
@@ -209,9 +209,9 @@ static inline void write_slice_g200_mmx (uint8_t *y,uint8_t *cr, uint8_t *cb,uin
 
 	dest = _mga_priv.vid_data +  _mga_priv.bespitch * _mga_priv.mga_vid_config.src_height + 
 		_mga_priv.bespitch * 8 * slice_num;
-
+        
 	for (h=0; h < 8; h++) {
-		for(w=0; w < mga_vid_config.src_width/16; w++) {
+		for(w=0; w < _mga_priv.mga_vid_config.src_width/16; w++) {
 #if 0
 			movq_m2r (cb, mm0);
 			movq_r2r (%mm0, %mm1);
