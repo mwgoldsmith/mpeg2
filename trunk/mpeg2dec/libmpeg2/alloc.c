@@ -30,11 +30,6 @@
 #include "attributes.h"
 #include "mpeg2_internal.h"
 
-#if defined(HAVE_MEMALIGN) && !defined(__cplusplus)
-/* some systems have memalign() but no declaration for it */
-void * memalign (size_t align, size_t size);
-#endif
-
 void * (* mpeg2_malloc_hook) (int size, int reason) = NULL;
 int (* mpeg2_free_hook) (void * buf) = NULL;
 
@@ -48,9 +43,6 @@ void * mpeg2_malloc (int size, int reason)
 	    return buf;
     }
 
-#if defined(HAVE_MEMALIGN) && !defined(__cplusplus) && !defined(DEBUG)
-    return memalign (64, size);
-#else
     buf = (char *) malloc (size + 63 + sizeof (void **));
     if (buf) {
 	char * align_buf;
@@ -61,7 +53,6 @@ void * mpeg2_malloc (int size, int reason)
 	return align_buf;
     }
     return NULL;
-#endif
 }
 
 void mpeg2_free (void * buf)
@@ -69,9 +60,5 @@ void mpeg2_free (void * buf)
     if (mpeg2_free_hook && mpeg2_free_hook (buf))
 	return;
 
-#if defined(HAVE_MEMALIGN) && !defined(__cplusplus) && !defined(DEBUG)
-    free (buf);
-#else
     free (*(((void **)buf) - 1));
-#endif
 }
