@@ -24,7 +24,7 @@
 //
 // This will get amusing in a few months I'm sure
 //
-// motion_comp.c rewrite counter:  5
+// motion_comp.c rewrite counter:  6
 //
 
 #include <stdlib.h>
@@ -36,63 +36,30 @@
 
 #include "mb_buffer.h"
 #include "motion_comp.h"
-//#include "motion_comp_mmx.h"
+#include "motion_comp_mmx.h"
 //#include "motion_comp_mlib.h"
 
-
-static uint_8 clip_lut[1024];
-#define clip_to_u8(x) clip_lut[(x)+384]
-
-static void
-motion_comp_idct_copy (uint_8 * dst, sint_16 * block, uint_32 stride)
+static void (* put_table [8]) (uint_8 *, uint_8 *, sint_32, sint_32) = 
 {
-	int x, y;
+	motion_comp_put_16x16_mmx,   motion_comp_put_x_16x16_mmx,
+	motion_comp_put_y_16x16_mmx, motion_comp_put_xy_16x16_mmx,
+	motion_comp_put_8x8_mmx,     motion_comp_put_x_8x8_mmx,
+	motion_comp_put_y_8x8_mmx,     motion_comp_put_xy_8x8_mmx,
+};
 
-	for (y = 0; y < 8; y++) 
-	{
-		for (x = 0; x < 8; x++)
-			dst[x] = clip_to_u8 (block[x]);
-		dst += stride;
-		block += 8;
-	}
-}
-
-static void
-motion_comp_idct_add (uint_8 * dst, sint_16 * block, uint_32 stride)
+static void (* ave_table [8]) (uint_8 *, uint_8 *, sint_32, sint_32) = 
 {
-	int x, y;
+	motion_comp_avg_16x16_mmx,   motion_comp_avg_x_16x16_mmx,
+	motion_comp_avg_y_16x16_mmx, motion_comp_avg_xy_16x16_mmx,
+	motion_comp_avg_8x8_mmx,     motion_comp_avg_x_8x8_mmx,
+	motion_comp_avg_y_8x8_mmx,     motion_comp_avg_xy_8x8_mmx,
+};
 
-	for (y = 0; y < 8; y++) 
-	{
-		for (x = 0; x < 8; x++)
-			dst[x] = clip_to_u8 (dst[x] + block[x]);
-		dst += stride;
-		block += 8;
-	}
-}
 
-void
-motion_comp_init (void)
-{
-    sint_32 i;
+void (*motion_comp_idct_copy) (uint_8 * dst, sint_16 * block, uint_32 stride);
+void (*motion_comp_idct_add) (uint_8 * dst, sint_16 * block, uint_32 stride);
 
-    for ( i =-384; i < 640; i++)
-	clip_lut[i+384] = i < 0 ? 0 : (i > 255 ? 255 : i);
-
-//FIXME turn mmx back on
-//#ifdef __i386__
 #if 0
-    if (config.flags & MPEG2_MMX_ENABLE)
-	motion_comp = motion_comp_mmx;
-#if HAVE_MLIB
-    else if(1 || config.flags & MPEG2_MLIB_ENABLE) // FIXME
-	motion_comp = motion_comp_mlib;
-#endif
-    else
-#endif
-	//FIXME fill in function table here
-}
-
 static void (* put_table [8]) (uint_8 *, uint_8 *, sint_32, sint_32) = 
 {
 	motion_comp_put_16x16,   motion_comp_put_x_16x16,
@@ -108,6 +75,28 @@ static void (* ave_table [8]) (uint_8 *, uint_8 *, sint_32, sint_32) =
 	motion_comp_avg_8x8,     motion_comp_avg_x_8x8,
 	motion_comp_avg_y_8x8,     motion_comp_avg_xy_8x8,
 };
+#endif
+
+void
+motion_comp_init (void)
+{
+
+//FIXME turn mmx back on
+#ifdef __i386__
+    if (config.flags & MPEG2_MMX_ENABLE)
+		{
+			motion_comp_idct_add = motion_comp_idct_add_mmx;
+			motion_comp_idct_copy = motion_comp_idct_copy_mmx;
+		}
+#if HAVE_MLIB
+	else if(1 || config.flags & MPEG2_MLIB_ENABLE) // FIXME
+		motion_comp = motion_comp_mlib;
+#endif
+	else
+#endif
+	//FIXME fill in function table here
+		motion_comp_c_init();
+}
 
 void motion_block (void (** table) (uint_8 *, uint_8 *, sint_32, sint_32),
 		   int x_pred, int y_pred, int field_select,

@@ -21,4 +21,47 @@
  *
  */
 
-void motion_comp_mmx(picture_t *picture,mb_buffer_t *mb_buffer);
+void motion_comp_idct_add_mmx (uint_8 * dst, sint_16 * block, uint_32 stride);
+void motion_comp_idct_copy_mmx (uint_8 * dst, sint_16 * block, uint_32 stride);
+
+//There are 2 sets of eight worker functions. One set is for the normal
+//case and the other is for the averaging case.
+//
+//These functions are defined in the motion_comp_[c|mmx].c files.
+//
+void motion_comp_put_16x16_mmx (uint_8 *curr_block, uint_8 *ref_block, 
+		sint_32 stride, sint_32 height);
+void motion_comp_put_x_16x16_mmx (uint_8 *curr_block, uint_8 *ref_block, 
+		sint_32 stride, sint_32 height);
+void motion_comp_put_y_16x16_mmx (uint_8 *curr_block, uint_8 *ref_block, 
+		sint_32 stride, sint_32 height);
+void motion_comp_put_xy_16x16_mmx (uint_8 *curr_block, uint_8 *ref_block, 
+		sint_32 stride, sint_32 height);
+
+void motion_comp_put_8x8_mmx (uint_8 *curr_block, uint_8 *ref_block, 
+		sint_32 stride, sint_32 height);
+void motion_comp_put_x_8x8_mmx (uint_8 *curr_block, uint_8 *ref_block, 
+		sint_32 stride, sint_32 height);
+void motion_comp_put_y_8x8_mmx (uint_8 *curr_block, uint_8 *ref_block, 
+		sint_32 stride, sint_32 height);
+void motion_comp_put_xy_8x8_mmx (uint_8 *curr_block, uint_8 *ref_block, 
+		sint_32 stride, sint_32 height);
+
+
+void motion_comp_avg_16x16_mmx (uint_8 *curr_block, uint_8 *ref_block, 
+		sint_32 stride, sint_32 height);
+void motion_comp_avg_x_16x16_mmx (uint_8 *curr_block, uint_8 *ref_block, 
+		sint_32 stride, sint_32 height); 
+void motion_comp_avg_y_16x16_mmx (uint_8 *curr_block, uint_8 *ref_block, 
+		sint_32 stride, sint_32 height);
+void motion_comp_avg_xy_16x16_mmx (uint_8 *curr_block, uint_8 *ref_block, 
+		sint_32 stride, sint_32 height);
+
+void motion_comp_avg_8x8_mmx (uint_8 *curr_block, uint_8 *ref_block, 
+		sint_32 stride, sint_32 height);
+void motion_comp_avg_x_8x8_mmx (uint_8 *curr_block, uint_8 *ref_block, 
+		sint_32 stride, sint_32 height); 
+void motion_comp_avg_y_8x8_mmx (uint_8 *curr_block, uint_8 *ref_block, 
+		sint_32 stride, sint_32 height); 
+void motion_comp_avg_xy_8x8_mmx (uint_8 *curr_block, uint_8 *ref_block, 
+		sint_32 stride, sint_32 height); 

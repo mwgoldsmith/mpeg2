@@ -35,21 +35,17 @@
 #include "mb_buffer.h"
 #include "motion_comp.h"
 
+static uint_8 clip_lut[1024];
+static uint_8 *clip_to_u8;
+
 //
 //  All the heavy lifting for motion_comp.c is done in here.
 //
 //  This should serve as a reference implementation. Optimized versions
 //  in assembler are a must for speed.
 
-//FIXME convert soft_video names to motion comp names... -AH
-
-// VideoCopyRef - Copy block from reference block to current block
-// ---------------------------------------------------------------
 void
-motion_comp_avg_16x16 (uint_8 *curr_block,
-				  uint_8 *ref_block,
-				  sint_32 stride,
-				  sint_32 height)
+motion_comp_avg_16x16 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride, sint_32 height)
 {
 	int x, y;
 
@@ -63,10 +59,7 @@ motion_comp_avg_16x16 (uint_8 *curr_block,
 }
 
 void
-motion_comp_avg_8x8 (uint_8 *curr_block,
-				uint_8 *ref_block,
-				sint_32 stride,
-				sint_32 height)
+motion_comp_avg_8x8 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride, sint_32 height)
 {
   int x, y;
 
@@ -80,10 +73,7 @@ motion_comp_avg_8x8 (uint_8 *curr_block,
 }
 
 void
-motion_comp_put_16x16 (uint_8 *curr_block,
-			       uint_8 *ref_block,
-			       sint_32 stride,
-			       sint_32 height)
+motion_comp_put_16x16 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride, sint_32 height)
 {
   int x, y;
 
@@ -97,10 +87,7 @@ motion_comp_put_16x16 (uint_8 *curr_block,
 }
 
 void
-motion_comp_put_8x8 (uint_8 *curr_block,
-			     uint_8 *ref_block,
-			     sint_32 stride,
-			     sint_32 height)
+motion_comp_put_8x8 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride, sint_32 height)
 {
 	int x, y;
 
@@ -113,8 +100,6 @@ motion_comp_put_8x8 (uint_8 *curr_block,
 	}
 }
 
-// VideoInterp*X - Half pixel interpolation in the x direction
-// ------------------------------------------------------------------
 void
 motion_comp_avg_x_16x16 (uint_8 *curr_block, 
 				  uint_8 *ref_block, 
@@ -169,10 +154,7 @@ motion_comp_put_x_16x16 (uint_8 *curr_block,
 }
 
 void
-motion_comp_put_x_8x8 (uint_8 *curr_block, 
-			     uint_8 *ref_block, 
-			     sint_32 stride,   
-			     sint_32 height) 
+motion_comp_put_x_8x8 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride,   sint_32 height) 
 {
 	int x, y;
 
@@ -185,13 +167,8 @@ motion_comp_put_x_8x8 (uint_8 *curr_block,
 	}
 }
 
-// VideoInterp*XY - half pixel interpolation in both x and y directions
-// --------------------------------------------------------------------
 void
-motion_comp_avg_xy_16x16 (uint_8 *curr_block,
-				   uint_8 *ref_block, 
-				   sint_32 stride,   
-				   sint_32 height) 
+motion_comp_avg_xy_16x16 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride,   sint_32 height) 
 {
 	int x, y;
 
@@ -206,10 +183,7 @@ motion_comp_avg_xy_16x16 (uint_8 *curr_block,
 }
      
 void
-motion_comp_avg_xy_8x8 (uint_8 *curr_block,
-				 uint_8 *ref_block, 
-				 sint_32 stride,   
-				 sint_32 height) 
+motion_comp_avg_xy_8x8 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride, sint_32 height) 
 {
 	int x, y;
 
@@ -224,10 +198,7 @@ motion_comp_avg_xy_8x8 (uint_8 *curr_block,
 }
      
 void
-motion_comp_put_xy_16x16 (uint_8 *curr_block, 
-				uint_8 *ref_block, 
-				sint_32 stride,   
-				sint_32 height) 
+motion_comp_put_xy_16x16 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride,   sint_32 height) 
 {
 	int x, y;
 
@@ -242,10 +213,7 @@ motion_comp_put_xy_16x16 (uint_8 *curr_block,
 }
      
 void
-motion_comp_put_xy_8x8 (uint_8 *curr_block, 
-			      uint_8 *ref_block, 
-			      sint_32 stride,   
-			      sint_32 height) 
+motion_comp_put_xy_8x8 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride, sint_32 height) 
 {
 	int x, y;
 
@@ -259,13 +227,8 @@ motion_comp_put_xy_8x8 (uint_8 *curr_block,
 	}
 }
      
-// VideoInterp*Y - half pixel interpolation in the y direction
-// -----------------------------------------------------------
 void
-motion_comp_avg_y_16x16 (uint_8 *curr_block, 
-				  uint_8 *ref_block, 
-				  sint_32 stride,   
-				  sint_32 height) 
+motion_comp_avg_y_16x16 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride,   sint_32 height) 
 {
 	int x, y;
 
@@ -280,10 +243,7 @@ motion_comp_avg_y_16x16 (uint_8 *curr_block,
 }
      
 void
-motion_comp_avg_y_8x8 (uint_8 *curr_block, 
-				uint_8 *ref_block, 
-				sint_32 stride,   
-				sint_32 height) 
+motion_comp_avg_y_8x8 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride,   sint_32 height) 
 {
 	int x, y;
 
@@ -298,10 +258,7 @@ motion_comp_avg_y_8x8 (uint_8 *curr_block,
 }
      
 void
-motion_comp_put_y_16x16 (uint_8 *curr_block, 
-			       uint_8 *ref_block, 
-			       sint_32 stride,   
-			       sint_32 height) 
+motion_comp_put_y_16x16 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride,   sint_32 height) 
 {
 	int x,y;
 
@@ -315,10 +272,7 @@ motion_comp_put_y_16x16 (uint_8 *curr_block,
 }
 
 void
-motion_comp_put_y_8x8 (uint_8 *curr_block, 
-			     uint_8 *ref_block, 
-			     sint_32 stride,   
-			     sint_32 height) 
+motion_comp_put_y_8x8 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride,   sint_32 height) 
 {
 	int x,y;
 
@@ -329,4 +283,42 @@ motion_comp_put_y_8x8 (uint_8 *curr_block,
 		curr_block += stride;
 		ref_block += stride;
 	}
+}
+
+void
+motion_comp_idct_copy_c (uint_8 * dst, sint_16 * block, uint_32 stride)
+{
+	int x, y;
+
+	for (y = 0; y < 8; y++) 
+	{
+		for (x = 0; x < 8; x++)
+			dst[x] = block[x];
+		dst += stride;
+		block += 8;
+	}
+}
+
+void
+motion_comp_idct_add_c (uint_8 * dst, sint_16 * block, uint_32 stride)
+{
+	int x, y;
+
+	for (y = 0; y < 8; y++) 
+	{
+		for (x = 0; x < 8; x++)
+			dst[x] = clip_to_u8 [dst[x] + block[x]];
+		dst += stride;
+		block += 8;
+	}
+}
+
+void motion_comp_c_init(void)
+{
+	sint_32 i;
+
+	for ( i =-384; i < 640; i++)
+		clip_lut[i+384] = i < 0 ? 0 : (i > 255 ? 255 : i);
+
+	clip_to_u8 = clip_lut + 384;
 }

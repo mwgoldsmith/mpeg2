@@ -219,7 +219,7 @@ static int Get_D_macroblock_type()
 
 
 
-int Get_motion_code()
+int Get_motion_code(void)
 {
   int code;
 
@@ -292,7 +292,7 @@ int Get_motion_code()
 }
 
 /* get differential motion vector (for dual prime prediction) */
-int Get_dmvector()
+int Get_dmvector(void)
 {
 #ifdef TRACE
   if (Trace_Flag)
@@ -317,7 +317,7 @@ int Get_dmvector()
   }
 }
 
-int Get_coded_block_pattern()
+int Get_coded_block_pattern(void)
 {
   int code;
 
@@ -385,7 +385,7 @@ int Get_coded_block_pattern()
   return CBPtab2[code].val;
 }
 
-int Get_macroblock_address_increment()
+int Get_macroblock_address_increment(void)
 {
   int code, val;
 
@@ -485,7 +485,7 @@ int Get_macroblock_address_increment()
    the spec, yet the results, dct_diff, are the same.
 */
 
-int Get_Luma_DC_dct_diff()
+int Get_Luma_DC_dct_diff(void)
 {
   int code, size, dct_diff;
 
@@ -563,7 +563,7 @@ int Get_Luma_DC_dct_diff()
 }
 
 
-int Get_Chroma_DC_dct_diff()
+int Get_Chroma_DC_dct_diff(void)
 {
   int code, size, dct_diff;
 

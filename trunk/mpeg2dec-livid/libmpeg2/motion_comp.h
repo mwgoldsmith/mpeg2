@@ -24,6 +24,11 @@
 void motion_comp_init(void);
 void motion_comp(picture_t * picture, mb_buffer_t * mb_buffer);
 
+//prototypes for the C fallback versions of motion_comp
+void motion_comp_c_init(void);
+void motion_comp_idct_add_c (uint_8 * dst, sint_16 * block, uint_32 stride);
+void motion_comp_idct_copy_c (uint_8 * dst, sint_16 * block, uint_32 stride);
+
 //There are 2 sets of eight worker functions. One set is for the normal
 //case and the other is for the averaging case.
 //

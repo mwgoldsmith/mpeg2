@@ -29,6 +29,7 @@
 #include <sys/time.h>
 #include "config.h"
 #include "libmpeg2/mpeg2.h"
+#include "display.h"
 
 uint_8 buf[2048];
 FILE *in_file;
@@ -49,7 +50,7 @@ static void print_fps(void)
 			frame_counter, elapsed, frame_counter / elapsed);
 }
  
-static signal_handler(int sig)
+static void signal_handler(int sig)
 {
 	print_fps();
 	signal(sig, SIG_DFL);
