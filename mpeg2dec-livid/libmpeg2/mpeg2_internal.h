@@ -109,11 +109,6 @@ typedef struct picture_s {
     /* bool to use different vlc tables */
     int intra_vlc_format;
 
-    /* last macroblock in the picture */
-    int last_mba;
-    /* width of picture in macroblocks */
-    int mb_width;
-
     /* stuff derived from bitstream */
 
     /* pointer to the zigzag scan we're supposed to be using */
@@ -136,6 +131,7 @@ typedef struct picture_s {
     int top_field_first; /* this one is actually used for DMV MC */
     int repeat_first_field;
     int progressive_frame;
+    int bitrate;
 } picture_t;
 
 typedef struct mpeg2_config_s {
