@@ -261,7 +261,7 @@ display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 
 			/* all done (I hope...) */
 			X_already_started++;
-			return;
+			return 1;
 		}
 	}
 #endif
