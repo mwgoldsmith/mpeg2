@@ -444,6 +444,8 @@ int main (int argc, char ** argv)
 
     handle_args (argc, argv);
 
+    if (demux_pva)
+	pva_loop ();
     if (demux_pid)
 	ts_loop ();
     else
