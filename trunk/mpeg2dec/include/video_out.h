@@ -50,4 +50,4 @@ typedef struct {
 void vo_accel (uint32_t accel);
 
 /* return NULL terminated array of all drivers */
-vo_driver_t * vo_drivers (void);
+vo_driver_t const * vo_drivers (void);
