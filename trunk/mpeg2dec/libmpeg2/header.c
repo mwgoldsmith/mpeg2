@@ -81,21 +81,6 @@ void mpeg2_header_state_init (mpeg2dec_t * mpeg2dec)
     mpeg2dec->first = 1;
 }
 
-static void simplify (unsigned int * num, unsigned int * denum)
-{
-    int a, b, tmp;
-
-    a = *num;
-    b = *denum;
-    while (a) {
-	tmp = a;
-	a = b % tmp;
-	b = tmp;
-    }
-    *num /= b;
-    *denum /= b;
-}
-
 static void reset_info (mpeg2_info_t * info)
 {
     info->current_picture = info->current_picture_2nd = NULL;
@@ -127,24 +112,7 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
 
     sequence->flags = SEQ_FLAG_PROGRESSIVE_SEQUENCE;
 
-    switch (buffer[3] >> 4) {
-    case 0:	case 15:	/* illegal */
-	sequence->pixel_width = sequence->pixel_height = 0;		break;
-    case 1:	/* square pixels */
-	sequence->flags |= SEQ_FLAG_SQUARE_PIXEL;
-	sequence->pixel_width = sequence->pixel_height = 1;		break;
-    case 3:	/* 720x576 16:9 */
-	sequence->pixel_width = 64;	sequence->pixel_height = 45;	break;
-    case 6:	/* 720x480 16:9 */
-	sequence->pixel_width = 32;	sequence->pixel_height = 27;	break;
-    case 12:	/* 720*480 4:3 */
-	sequence->pixel_width = 8;	sequence->pixel_height = 9;	break;
-    default:
-	sequence->pixel_width = 2000;
-	sequence->pixel_height = 88 * (buffer[3] >> 4) + 1171;
-	simplify (&(sequence->pixel_width), &(sequence->pixel_height));
-    }
-
+    sequence->pixel_width = buffer[3] >> 4;	/* aspect ratio */
     sequence->frame_period = 0;
     if ((buffer[3] & 15) < 9)
 	sequence->frame_period = frame_period[buffer[3] & 15];
@@ -217,28 +185,6 @@ static int sequence_ext (mpeg2dec_t * mpeg2dec)
 	((buffer[1] << 13) | (buffer[2] << 5)) & 0x3000;
     height = sequence->display_height = sequence->picture_height +=
 	(buffer[2] << 7) & 0x3000;
-    do {
-	switch (sequence->pixel_height) {
-	case 1:		/* square pixels */
-	    continue;
-	case 1347:	/* 4:3 aspect ratio */
-	    sequence->pixel_width = 4 * height;
-	    sequence->pixel_height = 3 * width;
-	    break;
-	case 45:	/* 16:9 aspect ratio */
-	    sequence->pixel_width = 16 * height;
-	    sequence->pixel_height = 9 * width;
-	    break;
-	case 1523:	/* 2.21:1 aspect ratio */
-	    sequence->pixel_width = 221 * height;
-	    sequence->pixel_height = 100 * width;
-	    break;
-	default:
-	    sequence->pixel_width = sequence->pixel_height = 0;
-	    continue;
-	}
-	simplify (&(sequence->pixel_width), &(sequence->pixel_height));
-    } while (0);
     flags = sequence->flags | SEQ_FLAG_MPEG2;
     decoder->progressive_sequence = buffer[1] >> 3;
     if (!(decoder->progressive_sequence)) {
@@ -304,16 +250,66 @@ static int sequence_display_ext (mpeg2dec_t * mpeg2dec)
     sequence->display_height =
 	((buffer[2]& 1 ) << 13) | (buffer[3] << 5) | (buffer[4] >> 3);
 
-    if (!(sequence->flags & SEQ_FLAG_SQUARE_PIXEL)) {
-	sequence->pixel_width *= sequence->picture_width;
-	sequence->pixel_height *= sequence->picture_height;
-	simplify (&(sequence->pixel_width), &(sequence->pixel_height));
-	sequence->pixel_width *= sequence->display_height;
-	sequence->pixel_height *= sequence->display_width;
-	simplify (&(sequence->pixel_width), &(sequence->pixel_height));
-    }
-
     return 0;
+}
+
+static void simplify (unsigned int * num, unsigned int * denum)
+{
+    int a, b, tmp;
+
+    a = *num;
+    b = *denum;
+    while (a) {
+	tmp = a;
+	a = b % tmp;
+	b = tmp;
+    }
+    *num /= b;
+    *denum /= b;
+}
+
+void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
+{
+    sequence_t * sequence = &(mpeg2dec->sequence);
+
+    if (sequence->flags & SEQ_FLAG_MPEG2) {
+	int width;
+	int height;
+	switch (sequence->pixel_width) {
+	case 1:		/* square pixels */
+	    sequence->pixel_width = sequence->pixel_height = 1;
+	    return;
+	case 2:		/* 4:3 aspect ratio */
+	    width = 4; height = 3;
+	    break;
+	case 3:		/* 16:9 aspect ratio */
+	    width = 16; height = 9;
+	    break;
+	case 4:		/* 2.21:1 aspect ratio */
+	    width = 221; height = 100;
+	    break;
+	default:	/* illegal */
+	    sequence->pixel_width = sequence->pixel_height = 0;
+	    return;
+	}
+	sequence->pixel_width = width * sequence->display_height;
+	sequence->pixel_height = height * sequence->display_width;
+    } else switch (sequence->pixel_width) {
+    case 0:	case 15:	/* illegal */
+	sequence->pixel_width = sequence->pixel_height = 0;		break;
+    case 1:	/* square pixels */
+	sequence->pixel_width = sequence->pixel_height = 1;		break;
+    case 3:	/* 720x576 16:9 */
+	sequence->pixel_width = 64;	sequence->pixel_height = 45;	break;
+    case 6:	/* 720x480 16:9 */
+	sequence->pixel_width = 32;	sequence->pixel_height = 27;	break;
+    case 12:	/* 720*480 4:3 */
+	sequence->pixel_width = 8;	sequence->pixel_height = 9;	break;
+    default:
+	sequence->pixel_width = 2000;
+	sequence->pixel_height = 88 * sequence->pixel_width + 1171;
+    }
+    simplify (&(sequence->pixel_width), &(sequence->pixel_height));
 }
 
 int mpeg2_header_gop (mpeg2dec_t * mpeg2dec)
