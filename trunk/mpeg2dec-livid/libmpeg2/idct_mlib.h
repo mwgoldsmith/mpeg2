@@ -22,4 +22,4 @@
  */
 
 void idct_block_copy_mlib (sint_16 * block, uint_8 * dest, int stride);
-void idct_block_copy_mlib (sint_16 * block, uint_8 * dest, int stride);
+void idct_block_add_mlib (sint_16 * block, uint_8 * dest, int stride);
