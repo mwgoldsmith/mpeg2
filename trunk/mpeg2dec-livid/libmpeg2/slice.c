@@ -160,7 +160,7 @@ static inline int get_motion_delta (int f_code)
 	return 0;
     } else if (bit_buf >= 0x0c000000) {
 
-	tab = MV_6 - 3 + UBITS (bit_buf, 6);
+	tab = MV_4 + UBITS (bit_buf, 4);
 	delta = (tab->delta << f_code) + 1;
 	bits += tab->len + f_code + 1;
 	bit_buf <<= tab->len;
