@@ -1058,6 +1058,55 @@ static inline void motion_block (void (** table) (uint8_t *, uint8_t *,
 }
 
 
+static void motion_mp1 (slice_t * slice, motion_t * motion,
+			uint8_t * dest[3], int offset, int width,
+			void (** table) (uint8_t *, uint8_t *, int, int))
+{
+#define bit_buf (slice->bitstream_buf)
+#define bits (slice->bitstream_bits)
+#define bit_ptr (slice->bitstream_ptr)
+    int motion_x, motion_y;
+
+    NEEDBITS (bit_buf, bits, bit_ptr);
+    motion_x = motion->pmv[0][0] + get_motion_delta (slice, motion->f_code[0]);
+    motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
+    motion->pmv[0][0] = motion_x;
+
+    NEEDBITS (bit_buf, bits, bit_ptr);
+    motion_y = motion->pmv[0][1] + get_motion_delta (slice, motion->f_code[0]);
+    motion_y = bound_motion_vector (motion_y, motion->f_code[0]);
+    motion->pmv[0][1] = motion_y;
+
+    if (motion->f_code[1]) {
+	motion_x <<= 1;
+	motion_y <<= 1;
+    }
+
+    motion_block (table, motion_x, motion_y, dest, offset,
+		  motion->ref[0], offset, width, 16, 0);
+#undef bit_buf
+#undef bits
+#undef bit_ptr
+}
+
+static void motion_mp1_reuse (slice_t * slice, motion_t * motion,
+			      uint8_t * dest[3], int offset, int width,
+			      void (** table) (uint8_t *, uint8_t *, int, int))
+{
+    int motion_x, motion_y;
+
+    motion_x = motion->pmv[0][0];
+    motion_y = motion->pmv[0][1];
+
+    if (motion->f_code[1]) {
+	motion_x <<= 1;
+	motion_y <<= 1;
+    }
+
+    motion_block (table, motion_x, motion_y, dest, offset,
+		  motion->ref[0], offset, width, 16, 0);
+}
+
 static void motion_fr_frame (slice_t * slice, motion_t * motion,
 			     uint8_t * dest[3], int offset, int width,
 			     void (** table) (uint8_t *, uint8_t *, int, int))
@@ -1565,7 +1614,19 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	    }
 	} else {
 
-	    if (picture->picture_structure == FRAME_PICTURE)
+	    if (picture->mpeg1) {
+		if ((macroblock_modes & MOTION_TYPE_MASK) == MC_FRAME)
+		    MOTION (motion_mp1, macroblock_modes, slice,
+			    dest, offset,width);
+		else {
+		    // non-intra mb without forward mv in a P picture
+		    slice.f_motion.pmv[0][0] = slice.f_motion.pmv[0][1] = 0;
+		    slice.f_motion.pmv[1][0] = slice.f_motion.pmv[1][1] = 0;
+
+		    MOTION (motion_fr_zero, MACROBLOCK_MOTION_FORWARD, slice,
+			    dest, offset, width);
+		}
+	    } else if (picture->picture_structure == FRAME_PICTURE)
 		switch (macroblock_modes & MOTION_TYPE_MASK) {
 		case MC_FRAME:
 		    MOTION (motion_fr_frame, macroblock_modes, slice,
@@ -1703,7 +1764,10 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		} while (--mba_inc);
 	    } else {
 		do {
-		    if (picture->picture_structure == FRAME_PICTURE)
+		    if (picture->mpeg1)
+			MOTION (motion_mp1_reuse, macroblock_modes,
+				slice, dest, offset, width);
+		    else if (picture->picture_structure == FRAME_PICTURE)
 			MOTION (motion_fr_reuse, macroblock_modes,
 				slice, dest, offset, width);
 		    else
