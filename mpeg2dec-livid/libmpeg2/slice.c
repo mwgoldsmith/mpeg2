@@ -1256,6 +1256,9 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     width = picture->coded_picture_width;
     offset = (code - 1) * width * 4;
 
+    if (picture->picture_structure != FRAME_PICTURE)
+	offset <<= 1;
+
     slice.f_motion.ref[0][0] =
 	picture->forward_reference_frame[0] + offset * 4;
     slice.f_motion.ref[0][1] = picture->forward_reference_frame[1] + offset;
@@ -1282,6 +1285,28 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     dest[0] = picture->current_frame[0] + offset * 4;
     dest[1] = picture->current_frame[1] + offset;
     dest[2] = picture->current_frame[2] + offset;
+
+    switch (picture->picture_structure) {
+    case BOTTOM_FIELD:
+	dest[0] += width;
+	dest[1] += width >> 1;
+	dest[2] += width >> 1;
+	// follow thru
+    case TOP_FIELD:
+	width <<= 1;
+	if (picture->picture_coding_type != I_TYPE) {
+	    // we do not support P or B field pictures, clear them
+	    int i;
+	    for (i = 0; i < 16; i++) {
+		memset (dest[0], 0, width >> 1);	dest[0] += width;
+	    }
+	    for (i = 0; i < 8; i++) {
+		memset (dest[1], 0, width >> 2);	dest[1] += width >> 1;
+		memset (dest[2], 0, width >> 2);	dest[2] += width >> 1;
+	    }
+	    return 0;
+	}
+    }
 
     //reset intra dc predictor
     slice.dc_dct_pred[0]=slice.dc_dct_pred[1]=slice.dc_dct_pred[2]= 

@@ -11,6 +11,7 @@ dirs=`awk -F '#' '{print $1}' $testfile`
 md5=mmx.md5
 if [ $# -ge 2 ]; then md5=$2.md5; fi
 
+rm -fr data
 mkdir data
 cd data
 
