@@ -45,6 +45,9 @@ typedef struct vo_image_buffer_s
 	uint32_t width;
 	uint32_t format;
 	uint8_t *base;
+	uint8_t *y;
+	uint8_t *u;
+	uint8_t *v;
 	void *private;
 } vo_image_buffer_t;
 

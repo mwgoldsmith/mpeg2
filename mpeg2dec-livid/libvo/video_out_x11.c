@@ -643,6 +643,9 @@ allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format)
 		allocate_xvimage(xvimage_counter);
 
 		image->base = xvimage[xvimage_counter]->data;
+		image->y = image->base;
+		image->v = image->base + (width * height);
+		image->u = image->base + (width * height * 5 / 4);
 		image->height = height;
 		image->width = width;
 		image->format = format;
