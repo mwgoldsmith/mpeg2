@@ -350,7 +350,7 @@ void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
 	mpeg2dec->state = STATE_SEQUENCE_REPEATED;
     else if (mpeg2dec->sequence.width != (unsigned)-1) {
 	mpeg2dec->action = mpeg2_seek_sequence;
-	mpeg2dec->state = STATE_INVALID;	// XXXX STATE_END ?
+	mpeg2dec->state = STATE_INVALID;	/* XXXX STATE_INVALID_END ? */
 	return;
     }
     mpeg2dec->sequence = *sequence;
