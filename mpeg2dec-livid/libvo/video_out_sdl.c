@@ -94,14 +94,14 @@ typedef struct sdl_instance_s {
     int prediction_index;
     sdl_frame_t frame[3];
 
-	/* SDL YUV surface & overlay */
-	SDL_Surface *surface;
+    /* SDL YUV surface & overlay */
+    SDL_Surface *surface;
 	
-	/* surface attributes for windowed mode */
-	Uint32 sdlflags;
+    /* surface attributes for windowed mode */
+    Uint32 sdlflags;
 
-	/* Bits per Pixel */
-	Uint8 bpp;
+    /* Bits per Pixel */
+    Uint8 bpp;
 
 } sdl_instance_t;
 
@@ -121,16 +121,17 @@ extern vo_instance_t sdl_vo_instance;
 
 static void check_events (void)
 {
-	sdl_instance_t * this = &sdl_static_instance;
-	SDL_Event event;
+    sdl_instance_t * this = &sdl_static_instance;
+    SDL_Event event;
 	
-	/* capture window resize events */
-	while (SDL_PollEvent(&event)) {
-		if (event.type == SDL_VIDEORESIZE)
-			this->surface = SDL_SetVideoMode(event.resize.w, event.resize.h, this->bpp, this->sdlflags);
-		if (event.type == SDL_KEYDOWN)
-			SDL_Delay(4000);
-	}
+    /* capture window resize events */
+    while (SDL_PollEvent (&event)) {
+	if (event.type == SDL_VIDEORESIZE)
+	    this->surface = SDL_SetVideoMode (event.resize.w, event.resize.h,
+					      this->bpp, this->sdlflags);
+	if (event.type == SDL_KEYDOWN)
+	    SDL_Delay (4000);
+    }
 }
 
 
@@ -144,20 +145,20 @@ static void check_events (void)
 static void sdl_draw_frame (vo_frame_t * _frame)
 {
     sdl_frame_t * frame;
-	sdl_instance_t * this;
+    sdl_instance_t * this;
 
-	frame = (sdl_frame_t *)_frame;
-	this = (sdl_instance_t *)frame->vo.this;
+    frame = (sdl_frame_t *)_frame;
+    this = (sdl_instance_t *)frame->vo.this;
 	
-	/* blit to the YUV overlay */
-	SDL_DisplayYUVOverlay (frame->overlay, &this->surface->clip_rect);
+    /* blit to the YUV overlay */
+    SDL_DisplayYUVOverlay (frame->overlay, &(this->surface->clip_rect));
 	
-	/* check for events */
-	check_events();
+    /* check for events */
+    check_events ();
 	
-	/* Unlock the frame - the frame is 100% filled with data to display 
-	 * We Lock it again when the frame was displayed. */
-	SDL_UnlockYUVOverlay (frame->overlay);
+    /* Unlock the frame - the frame is 100% filled with data to display 
+     * We Lock it again when the frame was displayed. */
+    SDL_UnlockYUVOverlay (frame->overlay);
 }
 
 static int sdl_alloc_frames (sdl_instance_t * this, int width, int height)
@@ -183,7 +184,7 @@ static int sdl_alloc_frames (sdl_instance_t * this, int width, int height)
 	SDL_LockYUVOverlay (this->frame[i].overlay);	
     }
 	
-	return 0;
+    return 0;
 }
 
 
@@ -192,7 +193,7 @@ static void sdl_free_frames (sdl_instance_t * this)
     int i;
 
     for (i = 0; i < 3; i++)
-	SDL_FreeYUVOverlay(this->frame[i].overlay);
+	SDL_FreeYUVOverlay (this->frame[i].overlay);
 }
 
 vo_frame_t * sdl_get_frame (vo_instance_t * _this, int prediction)
@@ -219,79 +220,82 @@ vo_frame_t * sdl_get_frame (vo_instance_t * _this, int prediction)
 
 static vo_instance_t * sdl_setup (vo_instance_t * _this, int width, int height)
 {
-	sdl_instance_t * this;
-	const SDL_VideoInfo *vidInfo = NULL;
-	
-	if (_this != NULL)
-		return NULL;
-	
-	this = &sdl_static_instance;
+    sdl_instance_t * this;
+    const SDL_VideoInfo * vidInfo = NULL;
 
-	/* Cleanup YUV Overlay structures */
-	this->surface = NULL;
+    if (_this != NULL)
+	return NULL;
 	
-	/* Reset the configuration vars to its default values */
-	this->bpp = 0;
-	this->sdlflags = SDL_HWSURFACE|SDL_RESIZABLE;
+    this = &sdl_static_instance;
 
-	/* initialize the SDL Video system */
-	if (SDL_Init (SDL_INIT_VIDEO)) {
-		fprintf (stderr, "sdl video initialization failed.\n");
-		return NULL;
-	}
-
-	/* get information about the graphics adapter */
-	vidInfo = SDL_GetVideoInfo ();
+    /* Cleanup YUV Overlay structures */
+    this->surface = NULL;
 	
-	/* test for normal resizeable & windowed hardware accellerated surfaces */
+    /* Reset the configuration vars to its default values */
+    this->bpp = 0;
+    this->sdlflags = SDL_HWSURFACE|SDL_RESIZABLE;
+
+    /* initialize the SDL Video system */
+    if (SDL_Init (SDL_INIT_VIDEO)) {
+	fprintf (stderr, "sdl video initialization failed.\n");
+	return NULL;
+    }
+
+    /* get information about the graphics adapter */
+    vidInfo = SDL_GetVideoInfo ();
+	
+    /* test for normal resizeable & windowed hardware accellerated surfaces */
+    if (!SDL_ListModes (vidInfo->vfmt, this->sdlflags)) {
+		
+	/*
+	 * test for NON hardware accelerated resizeable surfaces - poor you. 
+	 * That's all we have. If this fails there's nothing left.
+	 * Theoretically there could be Fullscreenmodes left -
+	 * we ignore this for now.
+	 */
+	this->sdlflags &= ~SDL_HWSURFACE;
 	if (!SDL_ListModes (vidInfo->vfmt, this->sdlflags)) {
-		
-		/* test for NON hardware accelerated resizeable surfaces - poor you. 
-		 * That's all we have. If this fails there's nothing left.
-		 * Theoretically there could be Fullscreenmodes left - we ignore this for now.
-		 */
-		this->sdlflags &= ~SDL_HWSURFACE;
-		if (!SDL_ListModes (vidInfo->vfmt, this->sdlflags)) {
-			fprintf(stderr, "sdl couldn't get any acceptable sdl videomode for output.\n");
-			return NULL;
-		}
+	    fprintf(stderr, "sdl couldn't get any acceptable sdl videomode for output.\n");
+	    return NULL;
 	}
-	
-		
-   /* YUV overlays need at least 16-bit color depth, but the
+    }
+
+   /*
+    * YUV overlays need at least 16-bit color depth, but the
     * display might less. The SDL AAlib target says it can only do
     * 8-bits, for example. So, if the display is less than 16-bits,
     * we'll force the BPP to 16, and pray that SDL can emulate for us.
-	 */
-	this->bpp = vidInfo->vfmt->BitsPerPixel;
-	if (this->bpp < 16) {
-		fprintf(stderr, "sdl has to emulate a 16 bit surfaces, that will slow things down.\n");
-		this->bpp = 16;  
-	}
+    */
+    this->bpp = vidInfo->vfmt->BitsPerPixel;
+    if (this->bpp < 16) {
+	fprintf(stderr, "sdl has to emulate a 16 bit surfaces, that will slow things down.\n");
+	this->bpp = 16;  
+    }
 	
-	/* We dont want those in our event queue */
-	SDL_EventState(SDL_ACTIVEEVENT, SDL_IGNORE);
-	SDL_EventState(SDL_KEYUP, SDL_IGNORE);
-	SDL_EventState(SDL_MOUSEMOTION, SDL_IGNORE);
-	SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_IGNORE);
-	SDL_EventState(SDL_MOUSEBUTTONUP, SDL_IGNORE); 
-	SDL_EventState(SDL_QUIT, SDL_IGNORE);
-	SDL_EventState(SDL_SYSWMEVENT, SDL_IGNORE);
+    /* We dont want those in our event queue */
+    SDL_EventState(SDL_ACTIVEEVENT, SDL_IGNORE);
+    SDL_EventState(SDL_KEYUP, SDL_IGNORE);
+    SDL_EventState(SDL_MOUSEMOTION, SDL_IGNORE);
+    SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_IGNORE);
+    SDL_EventState(SDL_MOUSEBUTTONUP, SDL_IGNORE); 
+    SDL_EventState(SDL_QUIT, SDL_IGNORE);
+    SDL_EventState(SDL_SYSWMEVENT, SDL_IGNORE);
 	
-	SDL_WM_SetCaption ("sdl video out", NULL);
+    SDL_WM_SetCaption ("sdl video out", NULL);
 
-	if (!(this->surface = SDL_SetVideoMode (width, height, this->bpp, this->sdlflags))) {
-		fprintf (stderr, "sdl could not set the desired video mode\n");
-		return NULL;
-	}
+    if (!(this->surface = SDL_SetVideoMode (width, height, this->bpp,
+					    this->sdlflags))) {
+	fprintf (stderr, "sdl could not set the desired video mode\n");
+	return NULL;
+    }
 
-	if (sdl_alloc_frames (this, width, height)) {
-		fprintf (stderr, "sdl could not allocate frame buffers\n");
-		return NULL;
-	}
+    if (sdl_alloc_frames (this, width, height)) {
+	fprintf (stderr, "sdl could not allocate frame buffers\n");
+	return NULL;
+    }
 	 
-	this->vo = sdl_vo_instance;
-	return (vo_instance_t *)this;
+    this->vo = sdl_vo_instance;
+    return (vo_instance_t *)this;
 }
 
 
@@ -305,21 +309,19 @@ static vo_instance_t * sdl_setup (vo_instance_t * _this, int width, int height)
 
 vo_instance_t * vo_sdl_setup (vo_instance_t * _this, int width, int height)
 {
-	setenv("SDL_VIDEO_YUV_HWACCEL", "1", 1);
-	setenv("SDL_VIDEO_X11_NODIRECTCOLOR", "1", 1);
-	return sdl_setup (_this, width, height);
+    return sdl_setup (_this, width, height);
 }
 
 vo_instance_t * vo_sdlsw_setup (vo_instance_t * _this, int width, int height)
 {
-	setenv("SDL_VIDEO_YUV_HWACCEL", "0", 1);
-	return sdl_setup (_this, width, height);
+    setenv ("SDL_VIDEO_YUV_HWACCEL", "0", 1);
+    return sdl_setup (_this, width, height);
 }
 
 vo_instance_t * vo_sdlaa_setup (vo_instance_t * _this, int width, int height)
 {
-	setenv("SDL_VIDEODRIVER", "aalib", 1);
-	return sdl_setup (_this, width, height);
+    setenv ("SDL_VIDEODRIVER", "aalib", 1);
+    return sdl_setup (_this, width, height);
 }
 
 
@@ -332,16 +334,16 @@ vo_instance_t * vo_sdlaa_setup (vo_instance_t * _this, int width, int height)
 
 static void sdl_close (vo_instance_t * _this)
 {
-	sdl_instance_t * this = (sdl_instance_t *)_this;
+    sdl_instance_t * this = (sdl_instance_t *)_this;
 
-	sdl_free_frames (this);
+    sdl_free_frames (this);
 
-	/* Free our blitting surface */
-	if (this->surface)
-		SDL_FreeSurface(this->surface);
+    /* Free our blitting surface */
+    if (this->surface)
+	SDL_FreeSurface(this->surface);
 	
-	/* Cleanup SDL */
-	SDL_QuitSubSystem(SDL_INIT_VIDEO);
+    /* Cleanup SDL */
+    SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
 
 
