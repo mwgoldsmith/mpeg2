@@ -39,6 +39,8 @@
 static SDL_Surface *surface = NULL;
 static SDL_Overlay *overlay = NULL;
 static SDL_Rect dispSize;
+static Uint8 *keyState = NULL;
+
 
 static inline int findArrayEnd(SDL_Rect **array)
 /*
@@ -54,11 +56,16 @@ static inline int findArrayEnd(SDL_Rect **array)
 } // findArrayEnd
 
 
-    /*
-     * hopefully the display_init() spec will be changing soon, so this
-     *  separate function is temporary.
-     */
-static int display_init_with_retval(uint_32 width, uint_32 height)
+uint_32 display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
+/*
+ * Initialize an SDL surface and an SDL YUV overlay.
+ *
+ *    params : width  == width of video we'll be displaying.
+ *             height == height of video we'll be displaying.
+ *             fullscreen == want to be fullscreen?
+ *             title == Title for window titlebar.
+ *   returns : non-zero on success, zero on error.
+ */
 {
     int rc = 0;
     int i = 0;
@@ -66,14 +73,11 @@ static int display_init_with_retval(uint_32 width, uint_32 height)
     int desiredWidth = -1;
     int desiredHeight = -1;
     SDL_Rect **modes = NULL;
-    Uint32 sdlflags = SDL_HWSURFACE /* | SDL_FULLSCREEN */ ;
+    Uint32 sdlflags = SDL_HWSURFACE;
     Uint8 bpp;
 
-        // !!! i need a way to switch out of fullscreen on demand.
-        // !!!  Should I trap keyboard events? Should I let the application
-        // !!!  do that and instruct me on when to switch?  Going fullscreen
-        // !!!  without a way to stop the program/switch to a window is
-        // !!!  basically a terrorist act.  (*shrug*)
+    if (fullscreen)
+        sdlflags |= SDL_FULLSCREEN;
 
     rc = SDL_Init(SDL_INIT_VIDEO);
     if (rc != 0)
@@ -134,8 +138,11 @@ static int display_init_with_retval(uint_32 width, uint_32 height)
     dispSize.w = width;
     dispSize.h = height;
 
-        // hide cursor when fullscreen.
-    SDL_ShowCursor((sdlflags & SDL_FULLSCREEN) ? 0 : 1);
+        // hide cursor. The cursor is annoying in fullscreen, and when
+        //  using the SDL AAlib target, it tries to draw the cursor,
+        //  which slows us down quite a bit.
+//    if ((sdlflags & SDL_FULLSCREEN) ||
+    SDL_ShowCursor(0);
 
         // YUV overlays need at least 16-bit color depth, but the
         //  display might less. The SDL AAlib target says it can only do
@@ -146,7 +153,7 @@ static int display_init_with_retval(uint_32 width, uint_32 height)
     {
         printf("\n\n"
                "WARNING: Your SDL display target wants to be at a color\n"
-               " depth of (%d), so we will emulate 16-bit color.\n"
+               " depth of (%d), so we need to emulate 16-bit color.\n"
                " This is going to slow things down; you might want to\n"
                " increase your display's color depth, if possible.\n", bpp);
         bpp = 16;  // (*shrug*)
@@ -159,10 +166,10 @@ static int display_init_with_retval(uint_32 width, uint_32 height)
         return(0);
     } // if
 
-        //  display_init() should probably pass in a string, in case
-        //  a title bar is available; this would be decidedly better
-        //  than the below, or "I hate X11."  !!!
-    SDL_WM_SetCaption("There is no spoon.", NULL);
+    if (title == NULL)
+        title = "There is no spoon.";
+
+    SDL_WM_SetCaption(title, "MPEG2DEC");
 
     overlay = SDL_CreateYUVOverlay(width, height, SDL_IYUV_OVERLAY, surface);
     if (overlay == NULL)
@@ -171,44 +178,35 @@ static int display_init_with_retval(uint_32 width, uint_32 height)
         return(0);
     } // if
 
+    keyState = SDL_GetKeyState(NULL);
     return(-1);  // non-zero == SUCCESS. Oooh yeah.
-}
-
-
-void display_init(uint_32 width, uint_32 height)
-/*
- * Initialize an SDL surface and an SDL YUV overlay.
- *
- *    params : width  == width of video we'll be displaying.
- *             height == height of video we'll be displaying.
- *   returns : void.  (FOR NOW!)
- */
-{
-
-    if (display_init_with_retval(width, height) == 0)
-        exit(1);
 } // display_init
 
 
-void display_frame(uint_8 *src[])
+uint_32 display_frame(uint_8 *src[])
 /*
  * Draw a frame to the SDL surface.
  *
  *   params : *src[] == the Y, U, and V planes that make up the frame.
- *  returns : void.
+ *  returns : non-zero on success, zero on error.
  */
 {
     int plane = (dispSize.w * dispSize.h);
     int halfPlane = ((dispSize.w / 2) * (dispSize.h / 2));
     char *dst;
 
+    SDL_PumpEvents();  // get keyboard and win resize events.
+    if ( (SDL_GetModState() & KMOD_ALT) &&
+         ((keyState[SDLK_KP_ENTER] == SDL_PRESSED) ||
+          (keyState[SDLK_RETURN] == SDL_PRESSED)) )
+    {
+        SDL_WM_ToggleFullScreen(surface);
+    } // if
+
     if (SDL_LockYUVOverlay(overlay) != 0)
     {
-            // This should theoretically not happen intermitently;
-            // chances are it'll always happen or never happen.
-            // Therefore, it might be worth aborting if it does.
-        printf("SDL: Couldn't lock YUV overlay! Skipping frame.\n");
-        return;
+        printf("SDL: Couldn't lock YUV overlay!\n");
+        return(0);
     } // if
 
     dst = overlay->pixels;
@@ -220,6 +218,8 @@ void display_frame(uint_8 *src[])
 
     SDL_UnlockYUVOverlay(overlay);
     SDL_DisplayYUVOverlay(overlay, &dispSize);
+
+    return(-1);
 } // display_frame
 
 // end of display_sdl.c ...

@@ -57,7 +57,7 @@ typedef struct mpeg2_frame_s
 
 typedef struct mpeg2_display_s
 {
-	void (*init)(uint_32 width, uint_32 height);
+	void (*init)(uint_32 width, uint_32 height, uint_32 fullscreen, char *title);
 	void (*draw_frame)(uint_8 *src[]);
 } mpeg2_display_t;
 

@@ -21,5 +21,43 @@
  *
  */
 
-void display_frame(uint_8 *src[]);
-void display_init(uint_32 width, uint_32 height);
+/*
+ * Initialize the display driver.
+ *
+ *    params : width  == width of video to display.
+ *             height == height of video to display.
+ *             fullscreen == non-zero if driver should attempt to
+ *                           render in fullscreen mode. Zero if
+ *                           a windowed mode is requested. This is
+ *                           merely a request; if the driver can only do
+ *                           fullscreen (like fbcon) or windowed (like X11),
+ *                           than this param may be disregarded.
+ *             title == string for titlebar of window. May be disregarded
+ *                      if there is no such thing as a window to your
+ *                      driver. Make a copy of this string, if you need it.
+ *   returns : non-zero on successful initialization, zero on error.
+ *              The program will probably respond to an error condition
+ *              by terminating.
+ */
+uint_32 display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title);
+
+/*
+ * Display a new frame of the video. This gets called very rapidly, so
+ *  the more efficient you can make your implementation of this function,
+ *  the better.
+ *
+ *    params : *src[] == A array with three elements. This is a YUV
+ *                       stream, with the Y plane in src[0], U in src[1],
+ *                       and V in src[2]. There is enough data for an image
+ *                       that is (WxH) pixels, where W and H are the width
+ *                       and height parameters that were previously passed
+ *                       to display_init().
+ *                         Information on the YUV format can be found at:
+ *                           http://www.webartz.com/fourcc/fccyuv.htm#IYUV
+ *
+ *   returns : non-zero on successful rendering, zero on error.
+ *              The program will probably respond to an error condition
+ *              by terminating.
+ */
+uint_32 display_frame(uint_8 *src[]);
+

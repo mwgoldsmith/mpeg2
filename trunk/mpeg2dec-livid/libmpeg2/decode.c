@@ -187,6 +187,7 @@ decode_reorder_frames(void)
 }
 
 
+
 uint_32
 mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end) 
 {
@@ -257,7 +258,7 @@ mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end)
 			//we can't initialize the display until we know how big the picture is
 			if(!is_display_initialized)
 			{
-				mpeg2_display.init(mpeg2_frame.width,mpeg2_frame.height);
+				mpeg2_display.init(mpeg2_frame.width,mpeg2_frame.height,0,0);
 				is_display_initialized = 1;
 			}
 			mpeg2_display.draw_frame(mpeg2_frame.frame);

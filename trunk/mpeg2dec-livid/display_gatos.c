@@ -61,7 +61,7 @@ static uint_32 horizontal_size = 720;
 static uint_32 vertical_size = 480;
 static unsigned long winbg = 0x102030;
 
-void display_frame(uint_8 *src[]) {
+uint_32 display_frame(uint_8 *src[]) {
 
 #ifdef GATOS_RAGE_INTERLACED
   unsigned char *Y=src[0], *Cb1=src[1], *Cr1=src[2], *Cb2=src[1], *Cr2=src[2];
@@ -239,18 +239,20 @@ void display_frame(uint_8 *src[]) {
       }
     }
 #endif
+
+    return(-1);  // non-zero == success.
   }
 
 #ifndef GATOS_RAGE_INTERLACED
 void switch_mode(int mode);
 #endif
 
-void display_init(uint_32 width, uint_32 height) {
+uint_32 display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title) {
   // ATI video via GATOS
   printf("GATOS init(%d,%d)\n", width, height);
   gatos_setverbosity(1);
   if(gatos_init(GATOS_WRITE_BUFFER|GATOS_OVERLAY))
-    { perror(_("display: gatos_init()")); exit(1); }
+    { perror(_("display: gatos_init()")); return(0); }
 
 #ifdef GATOS_R128_INTERLACED
   gatos_setcapturemode(GATOS_MODE_INTERLACED, 0, width, height);
@@ -274,6 +276,8 @@ void display_init(uint_32 width, uint_32 height) {
 
   if(gatos_setcolorkey(winbg)) {
     perror(_("xatitv: gatos_setcolorkey()"));
-    exit(1);
+    return(0);
     }
+
+    return(-1);  // non-zero == success.
   }
