@@ -160,7 +160,9 @@ struct mpeg2dec_s {
     uint32_t pts, pts_current, pts_previous;
     int num_pts;
     int bytes_since_pts;
+
     int first;
+    int alloc_index;
 
     sequence_t last_sequence;
     sequence_t sequence;

@@ -107,8 +107,6 @@ void mpeg2_convert (mpeg2dec_t * mpeg2dec,
 				      struct convert_init_s *), void * arg);
 void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id);
 void mpeg2_custom_fbuf (mpeg2dec_t * mpeg2dec, int custom_fbuf);
-void mpeg2_set_buf_alloc (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id);
-void mpeg2_set_buf_alloc_XXX (mpeg2dec_t * mpeg2dec);
 void mpeg2_init_fbuf (decoder_t * decoder, uint8_t * current_fbuf[3],
 		      uint8_t * forward_fbuf[3], uint8_t * backward_fbuf[3]);
 
