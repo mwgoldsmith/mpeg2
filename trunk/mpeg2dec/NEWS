@@ -30,6 +30,9 @@ limited though. My good resolution for 2004 is to write better
 documentation :) In the mean time feel free to ask on mpeg2dec-devel
 or on irc.freenode.net channel #livid
 
+The speed has not changed much since last release - we tend to be
+about 1% faster. That's not too bad considering we have new features.
+
 
 mpeg2dec-0.3.1 Fri Dec 13 22:15:36 PST 2002
 
