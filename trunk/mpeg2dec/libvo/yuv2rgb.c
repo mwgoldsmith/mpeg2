@@ -355,7 +355,8 @@ static yuv2rgb_c_internal * yuv2rgb_c_init (int order, int bpp)
     return yuv2rgb;
 }
 
-static void convert_yuv2rgb_c (void * _id, uint8_t * const * src)
+static void convert_yuv2rgb_c (void * _id, uint8_t * const * src,
+			       unsigned int v_offset)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
     uint8_t * dst;
@@ -364,7 +365,7 @@ static void convert_yuv2rgb_c (void * _id, uint8_t * const * src)
     uint8_t * pv;
     int loop;
 
-    dst = id->rgb_ptr;
+    dst = id->rgb_ptr + id->rgb_stride * v_offset;
     py = src[0]; pu = src[1]; pv = src[2];
 
     loop = 8;
@@ -376,7 +377,6 @@ static void convert_yuv2rgb_c (void * _id, uint8_t * const * src)
 	pv += id->uv_stride;
 	dst += 2 * id->rgb_stride;
     } while (--loop);
-    id->rgb_ptr = dst;
 }
 
 static void convert_start (void * _id, uint8_t * const * dest, int flags)
