@@ -37,7 +37,7 @@
 
 
 #if 0
-// C row IDCT - its just here to document the SSE and MMX versions
+// C row IDCT - its just here to document the MMXEXT and MMX versions
 static inline void idct_row (int16_t * row, int offset,
 			     int16_t * table, int32_t * rounder)
 {
@@ -76,18 +76,18 @@ static inline void idct_row (int16_t * row, int offset,
 #endif
 
 
-// SSE row IDCT
+// MMXEXT row IDCT
 
-#define sse_table(c1,c2,c3,c4,c5,c6,c7)	{  c4,  c2, -c4, -c2,	\
-					   c4,  c6,  c4,  c6,	\
-					   c1,  c3, -c1, -c5,	\
-					   c5,  c7,  c3, -c7,	\
-					   c4, -c6,  c4, -c6,	\
-					  -c4,  c2,  c4, -c2,	\
-					   c5, -c1,  c3, -c1,	\
-					   c7,  c3,  c7, -c5 }
+#define mmxext_table(c1,c2,c3,c4,c5,c6,c7)	{  c4,  c2, -c4, -c2,	\
+						   c4,  c6,  c4,  c6,	\
+						   c1,  c3, -c1, -c5,	\
+						   c5,  c7,  c3, -c7,	\
+						   c4, -c6,  c4, -c6,	\
+						  -c4,  c2,  c4, -c2,	\
+						   c5, -c1,  c3, -c1,	\
+						   c7,  c3,  c7, -c5 }
 
-static inline void sse_row_head (int16_t * row, int offset, int16_t * table)
+static inline void mmxext_row_head (int16_t * row, int offset, int16_t * table)
 {
     movq_m2r (*(row+offset), mm2);	// mm2 = x6 x4 x2 x0
 
@@ -103,7 +103,7 @@ static inline void sse_row_head (int16_t * row, int offset, int16_t * table)
     pshufw_r2r (mm2, mm2, 0x4e);	// mm2 = x2 x0 x6 x4
 }
 
-static inline void sse_row (int16_t * table, int32_t * rounder)
+static inline void mmxext_row (int16_t * table, int32_t * rounder)
 {
     movq_m2r (*(table+8), mm1);		// mm1 = -C5 -C1 C3 C1
     pmaddwd_r2r (mm2, mm4);		// mm4 = C4*x0+C6*x2 C4*x4+C6*x6
@@ -142,7 +142,7 @@ static inline void sse_row (int16_t * table, int32_t * rounder)
     psubd_r2r (mm5, mm4);		// mm4 = a3-b3 a2-b2 + rounder
 }
 
-static inline void sse_row_tail (int16_t * row, int store)
+static inline void mmxext_row_tail (int16_t * row, int store)
 {
     psrad_i2r (ROW_SHIFT, mm0);		// mm0 = y3 y2
 
@@ -160,8 +160,8 @@ static inline void sse_row_tail (int16_t * row, int store)
     movq_r2m (mm4, *(row+store+4));	// save y7 y6 y5 y4
 }
 
-static inline void sse_row_mid (int16_t * row, int store,
-				int offset, int16_t * table)
+static inline void mmxext_row_mid (int16_t * row, int store,
+				   int offset, int16_t * table)
 {
     movq_m2r (*(row+offset), mm2);	// mm2 = x6 x4 x2 x0
     psrad_i2r (ROW_SHIFT, mm0);		// mm0 = y3 y2
@@ -317,7 +317,7 @@ static inline void mmx_row_mid (int16_t * row, int store,
 
 
 #if 0
-// C column IDCT - its just here to document the SSE and MMX versions
+// C column IDCT - its just here to document the MMXEXT and MMX versions
 static inline void idct_col (int16_t * col, int offset)
 {
 // multiplication - as implemented on mmx
@@ -655,18 +655,18 @@ static void block_add (int16_t * block, uint8_t * dest, int stride)
 }
 
 
-declare_idct (sse_idct, sse_table,
-	      sse_row_head, sse_row, sse_row_tail, sse_row_mid)
+declare_idct (mmxext_idct, mmxext_table,
+	      mmxext_row_head, mmxext_row, mmxext_row_tail, mmxext_row_mid)
 
-void idct_block_copy_sse (int16_t * block, uint8_t * dest, int stride)
+void idct_block_copy_mmxext (int16_t * block, uint8_t * dest, int stride)
 {
-    sse_idct (block);
+    mmxext_idct (block);
     block_copy (block, dest, stride);
 }
 
-void idct_block_add_sse (int16_t * block, uint8_t * dest, int stride)
+void idct_block_add_mmxext (int16_t * block, uint8_t * dest, int stride)
 {
-    sse_idct (block);
+    mmxext_idct (block);
     block_add (block, dest, stride);
 }
 
@@ -693,7 +693,7 @@ void idct_mmx_init (void)
     extern uint8_t scan_alt[64];
     int i, j;
 
-    // the mmx/sse idct uses a reordered input, so we patch scan tables
+    // the mmx/mmxext idct uses a reordered input, so we patch scan tables
 
     for (i = 0; i < 64; i++) {
 	j = scan_norm[i];

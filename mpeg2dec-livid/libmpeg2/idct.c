@@ -67,9 +67,9 @@ void idct_init (void)
 {
 #ifdef ARCH_X86
     if (config.flags & MM_ACCEL_X86_MMXEXT) {
-	fprintf (stderr, "Using SSE for IDCT transform\n");
-	idct_block_copy = idct_block_copy_sse;
-	idct_block_add = idct_block_add_sse;
+	fprintf (stderr, "Using MMXEXT for IDCT transform\n");
+	idct_block_copy = idct_block_copy_mmxext;
+	idct_block_add = idct_block_add_mmxext;
 	idct_mmx_init ();
     } else if (config.flags & MM_ACCEL_X86_MMX) {
 	fprintf (stderr, "Using MMX for IDCT transform\n");
