@@ -50,7 +50,7 @@ fi
 for dir in $dirs; do
     if [ -f $basedir/$dir/stream ]; then
 	echo $dir
-	$mpeg2dec -vv $accel -o md5 $basedir/$dir/stream >dump 2>&1 >md5
+	$mpeg2dec -vvvv $accel -o md5 $basedir/$dir/stream >dump 2>&1 >md5
 	if [ -f $basedir/$dir/$md5 ]; then
 	    diff -wu md5 $basedir/$dir/$md5 || error=1
 	else

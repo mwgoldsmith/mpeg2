@@ -649,6 +649,7 @@ int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec)
 
 mpeg2_state_t mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec)
 {
+    mpeg2dec->info.user_data = NULL; mpeg2dec->info.user_data_len = 0;
     mpeg2dec->state = ((mpeg2dec->picture->nb_fields > 1 ||
 			mpeg2dec->state == STATE_PICTURE_2ND) ?
 		       STATE_SLICE : STATE_SLICE_1ST);

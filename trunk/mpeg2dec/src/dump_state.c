@@ -255,4 +255,26 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
     default:
 	fprintf (f, "\n");
     }
+    if (verbose > 2 && info->user_data_len) {
+	fprintf (f, "         USER_DATA %d bytes\n", info->user_data_len);
+	if (verbose > 3)
+	    for (i = 0; i < info->user_data_len; i += 16) {
+		int j;
+
+		fprintf (f, "         ");
+		for (j = i; j < i + 16; j++)
+		    if (j < info->user_data_len)
+			fprintf (f, "%02x ", info->user_data[j]);
+		    else
+			fprintf (f, "   ");
+		fprintf (f, " ");
+		for (j = i; j < i + 16; j++)
+		    if (j < info->user_data_len &&
+			32 <= info->user_data[j] && info->user_data[j] <= 126)
+			fprintf (f, "%c", info->user_data[j]);
+		    else
+			fprintf (f, " ");
+		fprintf (f, "\n");
+	    }
+    }
 }
