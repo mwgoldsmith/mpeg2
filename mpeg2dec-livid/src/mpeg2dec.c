@@ -102,19 +102,14 @@ static void signal_handler (int sig)
 
 static void print_usage (char * argv[])
 {
-    int i = 0;
+    int i;
 
     fprintf (stderr,"usage: %s [-o mode] [-s] file\n"
 	     "\t-s\tsystem stream (.vob file)\n"
 	     "\t-o\tvideo_output mode\n", argv[0]);
 
-    while (video_out_drivers[i] != NULL) {
-	const vo_info_t *info;
-		
-	info = video_out_drivers[i++]->vo_info;
-
-	fprintf (stderr, "\t\t\t%s\t%s\n", info->short_name, info->name);
-    }
+    for (i = 0; video_out_drivers[i]; i++)
+	fprintf (stderr, "\t\t\t%s\n", video_out_drivers[i]->name);
 
     exit (1);
 }
@@ -128,14 +123,11 @@ static void handle_args (int argc, char * argv[])
 	switch (c) {
 	case 'o':
 	    for (i=0; video_out_drivers[i] != NULL; i++) {
-		const vo_info_t *info;
-
-	        info = video_out_drivers[i]->vo_info;
-		if (strcmp (info->short_name,optarg) == 0)
+		if (strcmp (video_out_drivers[i]->name, optarg) == 0)
 		    video_out = video_out_drivers[i];
 	    }
 	    if (video_out == NULL) {
-		fprintf (stderr,"Invalid video driver: %s\n", optarg);
+		fprintf (stderr, "Invalid video driver: %s\n", optarg);
 		print_usage (argv);
 	    }
 	    break;
