@@ -43,6 +43,8 @@ typedef struct {
   char run, level, len;
 } DCTtab;
 
+#define ERROR -1
+
 /* Table B-3, macroblock_type in P-pictures, codes 001..1xx */
 static VLCtab PMBtab0[8] = {
   {ERROR,0},

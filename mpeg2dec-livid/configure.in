@@ -2,11 +2,11 @@ dnl Autoconf configuration script mpeg2dec
 dnl 
 dnl Aaron Holtzman - May 1999
 dnl
-AC_INIT(parse.c)
+AC_INIT(mpeg2dec.c)
 AC_CANONICAL_HOST
 AC_PREREQ(2.13)
 AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE(mpeg2dec, 0.1.7)
+AM_INIT_AUTOMAKE(mpeg2dec, 0.1.7-cvs)
 
 AM_MAINTAINER_MODE
 AC_PROG_CC
@@ -136,4 +136,4 @@ ppc-*) AC_DEFINE(__ppc__);;
 *) echo "$host is not currently supported by mpeg2dec"; exit 1;;
 esac
 
-AC_OUTPUT( tools/Makefile drivers/Makefile Makefile ) 
+AC_OUTPUT( libmpeg2/Makefile tools/Makefile drivers/Makefile Makefile ) 

@@ -28,14 +28,15 @@
 #include <signal.h>
 #include <sys/time.h>
 #include "config.h"
-#include "mpeg2.h"
+#include "libmpeg2/mpeg2.h"
 
 uint_8 buf[2048];
 FILE *in_file;
 static struct timeval tv_beg;
 static uint_32 frame_counter = 0;
+static uint_32 is_display_initialized = 0;
 
-static void sighandler(int sig) 
+static void print_fps(void) 
 {
 	struct timeval tv_end;
 	float elapsed;
@@ -46,11 +47,14 @@ static void sighandler(int sig)
 			(tv_end.tv_usec - tv_beg.tv_usec) / 1000000.0;        
 	printf("\n %u frames in %5.2f seconds ( %5.3f fps )\n", 
 			frame_counter, elapsed, frame_counter / elapsed);
-
+}
+ 
+static signal_handler(int sig)
+{
+	print_fps();
 	signal(sig, SIG_DFL);
 	raise(sig);
 }
- 
 void fill_buffer(uint_8 **start,uint_8 **end)
 {
 	uint_32 bytes_read;
@@ -60,8 +64,11 @@ void fill_buffer(uint_8 **start,uint_8 **end)
 	*start = buf;
 	*end   = buf + bytes_read;
 
-	if(bytes_read != 2048)
-		exit(1);
+	if(bytes_read < 2048)
+	{
+		print_fps();
+		exit(0);
+	}
 }
 
 int main(int argc,char *argv[])
@@ -74,7 +81,7 @@ int main(int argc,char *argv[])
 		exit(1);
 	}
 
-	printf(PACKAGE"-"VERSION" (C) 1999 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>\n");
+	printf(PACKAGE"-"VERSION" (C) 2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>\n");
 
 	if(argv[1][0] != '-')
 	{
@@ -90,7 +97,7 @@ int main(int argc,char *argv[])
 	else
 		in_file = stdin;
 
-	signal(SIGINT, sighandler);
+	signal(SIGINT, signal_handler);
 
 	//FIXME this should go in mpeg2_init
 	bitstream_init(fill_buffer);
@@ -98,17 +105,27 @@ int main(int argc,char *argv[])
 	mpeg2_init();
 
 	gettimeofday(&tv_beg, NULL);
+
+
 	while(1)
 	{
 		my_frame = mpeg2_decode_frame();
-		//XXX remove
+		
 		if( my_frame  != NULL ) 
 		{
+			//FIXME
+			//we can't initialize the display until we know how big the picture is
+			if(!is_display_initialized)
+			{
+				display_init(my_frame->width,my_frame->height);
+				is_display_initialized = 1;
+			}
+
 			display_frame(my_frame->frame);
-			printf("frame_counter = %d\n",frame_counter++);
+			//printf("frame_counter = %d\n",frame_counter++);
+			frame_counter++;
 		}
 	}
-
   return 0;
 }
 

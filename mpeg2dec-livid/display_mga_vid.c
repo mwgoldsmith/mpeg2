@@ -29,9 +29,10 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
-#include "debug.h"
-#include "mpeg2.h"
-#include "mpeg2_internal.h"
+#include "libmpeg2/debug.h"
+#include "libmpeg2/mpeg2.h"
+//FIXME
+#include "libmpeg2/mpeg2_internal.h"
 
 #include "drivers/mga_vid.h"
 #include "display.h"
