@@ -141,6 +141,9 @@ static inline uint8_t * copy_chunk (mpeg2dec_t * mpeg2dec,
     uint8_t * limit;
     uint8_t byte;
 
+    if (current == end)
+	return NULL;
+
     shift = mpeg2dec->shift;
     chunk_ptr = mpeg2dec->chunk_ptr;
     limit = current + (mpeg2dec->chunk_buffer + BUFFER_SIZE - chunk_ptr);
@@ -187,22 +190,21 @@ startcode:
     return current;
 }
 
-int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
+int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 {
-    int ret;
+    int state;
     uint8_t code;
     decoder_t * decoder;
 
-    ret = 0;
-
-    while (current != end) {
+    state = mpeg2dec->state;
+    while (1) {
 	code = mpeg2dec->code;
-	current = copy_chunk (mpeg2dec, current, end);
-	if (current == NULL)
-	    return ret;
+	*current = copy_chunk (mpeg2dec, *current, end);
+	if (*current == NULL)
+	    return -1;
 
 	/* wait for sequence_header_code */
-	if (mpeg2dec->state == STATE_INVALID && code != 0xb3)
+	if (state == STATE_INVALID && code != 0xb3)
 	    continue;
 
 	mpeg2_stats (code, mpeg2dec->chunk_buffer);
@@ -214,14 +216,21 @@ int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
 	    mpeg2_header_picture (mpeg2dec->chunk_buffer,
 				  &(mpeg2dec->info.picture), decoder);
 	    break;
+	case 0xb2:	/* user_data_start_code */
+	    /* XXXXXXXX check correctness */
+	    break;
 	case 0xb3:	/* sequence_header_code */
 	    mpeg2_header_sequence (mpeg2dec->chunk_buffer,
 				   &(mpeg2dec->info.sequence), decoder);
-	    mpeg2dec->state = STATE_SEQUENCE;
+	    state = STATE_SEQUENCE;
 	    break;
 	case 0xb5:	/* extension_start_code */
+	    /* XXXXXXXXXXXXX check correctness */
 	    mpeg2_header_extension (mpeg2dec->chunk_buffer,
 				    &(mpeg2dec->info), decoder);
+	    break;
+	case 0xb8:	/* group_start_code */
+	    /* XXXXXXXXXXXX parse */
 	    break;
 	default:
 	    if (code < 0xb0)
@@ -230,7 +239,7 @@ int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
 
 #define RECEIVED(code,state) (((state) << 8) + (code))
 
-	switch (RECEIVED (mpeg2dec->code, mpeg2dec->state)) {
+	switch (RECEIVED (mpeg2dec->code, state)) {
 
 	/* legal state transitions */
 	case RECEIVED (0x00, STATE_SEQUENCE):
@@ -240,14 +249,6 @@ int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
 	case RECEIVED (0xb7, STATE_SLICE):
 	case RECEIVED (0xb8, STATE_SEQUENCE):
 	case RECEIVED (0xb8, STATE_SLICE):
-	    switch (mpeg2dec->state) {
-	    case STATE_SEQUENCE:
-		crap2 (mpeg2dec);		/* alloc picture buffers */
-		break;
-	    case STATE_SLICE:
-		ret += crap1 (mpeg2dec);	/* display picture, swap buf */
-		break;
-	    }
 	    switch (mpeg2dec->code) {
 	    case 0x00:	/* picture_start_code */
 		mpeg2dec->state = STATE_PICTURE;	break;
@@ -258,6 +259,7 @@ int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
 	    case 0xb8:	/* group_start_code */
 		mpeg2dec->state = STATE_GOP;		break;
 	    }
+	    return state;
 
 	/* legal headers within a given state */
 	case RECEIVED (0xb2, STATE_SEQUENCE):
@@ -273,15 +275,35 @@ int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
 	illegal:
 		/* illegal codes (0x00 - 0xb8) or system codes (0xb9 - 0xff) */
 		break;
-	    } else if (mpeg2dec->state == STATE_SLICE)
+	    } else if (state == STATE_SLICE)
 		break;		/* second slice and later */
-	    else if (mpeg2dec->state != STATE_PICTURE)
+	    else if (state != STATE_PICTURE)
 		goto illegal;	/* slice at unexpected place */
 	    mpeg2dec->state = STATE_SLICE;
-	    crap3 (mpeg2dec);	/* done decoding picture */
+	    return STATE_PICTURE;
 	}
     }
-    return ret;
+}
+
+int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
+{
+    int ret;
+
+    ret = 0;
+    while (1)
+	switch (mpeg2_buffer (mpeg2dec, &current, end)) {
+	case -1:
+	    return ret;
+	case STATE_SEQUENCE:
+	    crap2 (mpeg2dec);		/* alloc picture buffers */ 
+	    break; 
+	case STATE_PICTURE:
+	    crap3 (mpeg2dec);		/* done decoding picture */
+	    break;
+	case STATE_SLICE:
+	    ret += crap1 (mpeg2dec);	/* display picture, swap buf */
+	    break;
+	}
 }
 
 void mpeg2_pts (mpeg2dec_t * mpeg2dec, uint32_t pts)
