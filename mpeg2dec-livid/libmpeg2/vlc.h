@@ -19,29 +19,26 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-static inline uint32_t getword (void)
-{
-    uint32_t value;
+#define GETWORD(bit_buf,shift,bit_ptr)				\
+do {								\
+    bit_buf |= ((bit_ptr[0] << 8) | bit_ptr[1]) << (shift);	\
+    bit_ptr += 2;						\
+} while (0)
 
-    value = (bitstream_ptr[0] << 8) | bitstream_ptr[1];
-    bitstream_ptr += 2;
-    return value;
-}
-
-static inline void bitstream_init (uint8_t * start)
+static inline void bitstream_init (slice_t * slice, uint8_t * start)
 {
-    bitstream_ptr = start;
-    bitstream_bits = 0;
-    bitstream_buf = getword () << 16;
+    slice->bitstream_buf = 0;    GETWORD (slice->bitstream_buf, 16, start);
+    slice->bitstream_ptr = start;
+    slice->bitstream_bits = 0;
 }
 
 // make sure that there are at least 16 valid bits in bit_buf
-#define NEEDBITS(bit_buf,bits)		\
-do {					\
-    if (bits > 0) {			\
-	bit_buf |= getword () << bits;	\
-	bits -= 16;			\
-    }					\
+#define NEEDBITS(bit_buf,bits,bit_ptr)		\
+do {						\
+    if (bits > 0) {				\
+	GETWORD (bit_buf, bits, bit_ptr);	\
+	bits -= 16;				\
+    }						\
 } while (0)
 
 // remove num valid bits from bit_buf
