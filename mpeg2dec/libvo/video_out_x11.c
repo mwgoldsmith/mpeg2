@@ -167,7 +167,7 @@ typedef struct x11_instance_s {
     void (* teardown) (struct x11_instance_s * instance);
 } x11_instance_t;
 
-static int open_display (x11_instance_t * instance)
+static int open_display (x11_instance_t * instance, int width, int height)
 {
     int major;
     int minor;
@@ -232,7 +232,7 @@ static int open_display (x11_instance_t * instance)
     instance->window =
 	XCreateWindow (instance->display,
 		       DefaultRootWindow (instance->display),
-		       0 /* x */, 0 /* y */, instance->width, instance->height,
+		       0 /* x */, 0 /* y */, width, height,
 		       0 /* border_width */, instance->vinfo.depth,
 		       InputOutput, instance->vinfo.visual,
 		       (CWBackPixmap | CWBackingStore | CWBorderPixel |
@@ -399,7 +399,8 @@ static void x11_close (vo_instance_t * _instance)
 {
     x11_instance_t * instance = (x11_instance_t *) _instance;
 
-    instance->teardown (instance);
+    if (instance->teardown != NULL)
+	instance->teardown (instance);
     XFreeGC (instance->display, instance->gc);
     XDestroyWindow (instance->display, instance->window);
     XCloseDisplay (instance->display);
@@ -541,27 +542,27 @@ static int common_setup (vo_instance_t * _instance, unsigned int width,
     x11_instance_t * instance = (x11_instance_t *) _instance;
 
     if (instance->vo.close) {
-        /* Already setup, just adjust to the new size */
-        instance->teardown (instance);
-
-        instance->width = width;
-        instance->height = height;
+	/* Already setup, just adjust to the new size */
+	if (instance->teardown != NULL)
+	    instance->teardown (instance);
         XResizeWindow (instance->display, instance->window, width, height);
     } else {
-        /* Not setup yet, do the full monty */
-        instance->vo.set_fbuf = NULL;
-        instance->vo.discard = NULL;
-        instance->vo.start_fbuf = x11_start_fbuf;
-        instance->width = width;
-        instance->height = height;
-
-        if (open_display (instance))
+	/* Not setup yet, do the full monty */
+        if (open_display (instance, width, height))
             return 1;
-
         XMapWindow (instance->display, instance->window);
     }
-
+    instance->vo.setup_fbuf = NULL;
+    instance->vo.start_fbuf = NULL;
+    instance->vo.set_fbuf = NULL;
+    instance->vo.draw = NULL;
+    instance->vo.discard = NULL;
+    instance->vo.close = x11_close;
+    instance->width = width;
+    instance->height = height;
     instance->index = 0;
+    instance->teardown = NULL;
+    result->convert = NULL;
 
 #ifdef LIBVO_XV
     if (instance->xv == 1 &&
@@ -569,13 +570,14 @@ static int common_setup (vo_instance_t * _instance, unsigned int width,
 	!xv_check_extension (instance, FOURCC_YV12, "YV12") &&
 	!xv_alloc_frames (instance, 3 * width * height / 2, FOURCC_YV12)) {
 	instance->vo.setup_fbuf = xv_setup_fbuf;
+	instance->vo.start_fbuf = x11_start_fbuf;
 	instance->vo.draw = xv_draw_frame;
 	instance->teardown = xv_teardown;
-	result->convert = NULL;
     } else if (instance->xv && (chroma_width == width >> 1) &&
 	       !xv_check_extension (instance, FOURCC_UYVY, "UYVY") &&
 	       !xv_alloc_frames (instance, 2 * width * height, FOURCC_UYVY)) {
 	instance->vo.setup_fbuf = x11_setup_fbuf;
+	instance->vo.start_fbuf = x11_start_fbuf;
 	instance->vo.draw = xv_draw_frame;
 	instance->teardown = xv_teardown;
 	result->convert = convert_uyvy;
@@ -583,6 +585,7 @@ static int common_setup (vo_instance_t * _instance, unsigned int width,
 #endif
     if (!x11_alloc_frames (instance)) {
 	instance->vo.setup_fbuf = x11_setup_fbuf;
+	instance->vo.start_fbuf = x11_start_fbuf;
 	instance->vo.draw = x11_draw_frame;
 	instance->teardown = x11_teardown;
 
@@ -618,10 +621,7 @@ static int common_setup (vo_instance_t * _instance, unsigned int width,
 			 ((instance->vinfo.depth == 24) ?
 			  instance->frame[0].ximage->bits_per_pixel :
 			  instance->vinfo.depth));
-    } else
-	return 1;
-
-    instance->vo.close = x11_close;
+    }
 
     return 0;
 }

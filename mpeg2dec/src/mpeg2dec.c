@@ -316,6 +316,7 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 		output->setup_fbuf (output, buf, &id);
 		mpeg2_set_buf (mpeg2dec, buf, id);
 	    }
+	    mpeg2_skip (mpeg2dec, (output->draw == NULL));
 	    break;
 	case STATE_PICTURE:
 	    /* might skip */
@@ -336,7 +337,7 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 	case STATE_INVALID_END:
 	    /* draw current picture */
 	    /* might free frame buffer */
-	    if (info->display_fbuf) {
+	    if (output->draw && info->display_fbuf) {
 		output->draw (output, info->display_fbuf->buf,
 			      info->display_fbuf->id);
 		print_fps (0);
