@@ -54,12 +54,9 @@ picture_t picture;
 //global config struct
 mpeg2_config_t config;
 
-//
-//the current start code chunk we are working on
-//we max out at 65536 bytes as that is the largest
-//slice we will see in MP@ML streams.
-// (we make no pretenses ofdecoding anything more than that)
-static uint8_t chunk_buffer[65536 + 4];
+// the maximum chunk size is determined by vbv_buffer_size which is 224K for
+// MP@ML streams. (we make no pretenses ofdecoding anything more than that)
+static uint8_t chunk_buffer[224 * 1024 + 4];
 static uint32_t shift = 0;
 
 static uint32_t is_display_initialized = 0;
