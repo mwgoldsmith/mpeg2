@@ -3,6 +3,8 @@
 # This was lifted from the Gimp, and adapted slightly by
 # Raph Levien .
 
+#cat m4/libtool.m4 > acinclude.m4
+
 DIE=0
 
 PROG=mpeg2dec
@@ -15,14 +17,13 @@ PROG=mpeg2dec
         DIE=1
 }
 
-# Do we really need libtool?
-#(libtool --version) < /dev/null > /dev/null 2>&1 || {
-#        echo
-#        echo "You must have libtool installed to compile $PROG."
-#        echo "Get ftp://ftp.gnu.org/pub/gnu/libtool-1.2.tar.gz"
-#        echo "(or a newer version if it is available)"
-#        DIE=1
-#}
+(libtool --version) < /dev/null > /dev/null 2>&1 || {
+        echo
+        echo "You must have libtool installed to compile $PROG."
+        echo "Get ftp://ftp.gnu.org/pub/gnu/libtool-1.2.tar.gz"
+        echo "(or a newer version if it is available)"
+        DIE=1
+}
 
 (automake --version) < /dev/null > /dev/null 2>&1 || {
         echo
@@ -49,6 +50,7 @@ do
   aclocal $aclocalinclude; \
   autoheader; automake --foreign -a; autoconf)
 done
+
 ./configure "$@"
 
 echo 

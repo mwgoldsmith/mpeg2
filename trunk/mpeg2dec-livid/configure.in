@@ -12,7 +12,30 @@ AM_MAINTAINER_MODE
 AC_PROG_CC
 AC_PROG_GCC_TRADITIONAL
 AC_PROG_RANLIB
+AC_PROG_LN_S
 AC_C_BIGENDIAN
+
+AC_LIBTOOL_DLOPEN
+AM_DISABLE_STATIC
+AM_PROG_LIBTOOL
+
+
+dnl
+dnl Add pathname where linux header files are (optional)
+dnl
+AC_ARG_WITH(kernel-includes,
+    [  --with-kernel-includes  using kernel header files],
+    [case "$withval" in
+      yes)
+        KERNEL_INCLUDES="-I/usr/src/linux/include"
+      ;;
+      *)
+        KERNEL_INCLUDES="-I$withval"
+      ;;
+    esac],[
+    KERNEL_INCLUDES="-I/usr/src/linux/include"
+])
+AC_SUBST(KERNEL_INCLUDES)
 
 
 dnl 
@@ -32,10 +55,11 @@ if test "x$DISPLAY_DRIVER" = x -a x$enable_mga = xyes; then
     AC_MSG_RESULT(not found)
   fi
 fi
+AM_CONDITIONAL(BUILD_MGA_DRIVER, test "$DRIVERS" = "drivers")
 
 dnl gatos is disabled for now, switch sense back later
 AC_ARG_ENABLE(gatos, 
-  [  --enable-gatos         make a version not using GATOS],
+  [  --enable-gatos          make a version not using GATOS],
   enable_gatos=yes, enable_gatos=no)
 if test "x$DISPLAY_DRIVER" = x -a x$enable_gatos = xyes; then
    AC_CHECK_LIB(gatos, main, [ DISPLAY_DRIVER=display_gatos.o 
@@ -88,6 +112,7 @@ fi
 
 dnl Checks for libraries. (X11)
 AC_PATH_XTRA
+AM_CONDITIONAL(HAVE_X, test "x$no_x" != "xyes")
 
 dnl Figure out which OS we're on and what to do about it
 case "$host" in
@@ -100,7 +125,7 @@ dnl Set the appropriate architecture define
 case "$host" in
 i?86-*)
 	AC_DEFINE(__i386__) 
-	LIB_CONFIG_OBJS="$LIB_CONFIG_OBJS idct_mmx.o idct_block_mmx.o motion_comp_mmx.o";;
+	LIB_CONFIG_OBJS="$LIB_CONFIG_OBJS idct_mmx.lo idct_block_mmx.lo motion_comp_mmx.lo";;
 alpha*-*) AC_DEFINE(__alpha__);;
 sparc-*) AC_DEFINE(__sparc__);;
 ppc-*) AC_DEFINE(__ppc__);;
