@@ -60,6 +60,7 @@ static int is_display_initialized = 0;
 static int is_sequence_needed = 1;
 static int drop_flag = 0;
 static int drop_frame = 0;
+static int in_slice = 0;
 
 void mpeg2_init (void)
 {
@@ -158,12 +159,35 @@ static int parse_chunk (plugin_output_video_t *output, int code, uint8_t *buffer
 static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 #endif
 {
-    int is_frame_done = 0;
+    int is_frame_done;
 
     if (is_sequence_needed && code != 0xb3)	/* b3 = sequence_header_code */
 	return 0;
 
     stats_header (code, buffer);
+
+    is_frame_done = in_slice && ((!code) || (code >= 0xb0));
+
+    if (is_frame_done && (!drop_frame)) {
+	if ((HACK_MODE == 2) || (picture.mpeg1)) {
+	    uint8_t ** bar;
+
+	    if (picture.picture_coding_type == B_TYPE)
+		bar = picture.throwaway_frame;
+	    else
+		bar = picture.forward_reference_frame;
+
+	    output->draw_frame (bar);
+	}
+	output->flip_page ();
+    }
+
+#ifdef ARCH_X86
+    if (config.flags & OMS_ACCEL_X86_MMX)
+	emms ();
+#endif
+
+    in_slice = 0;
 
     switch (code) {
     case 0x00:	/* picture_start_code */
@@ -220,19 +244,19 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 	drop_frame |= drop_flag && (picture.picture_coding_type == B_TYPE);
 	
 	if (!drop_frame) {
-	    uint8_t ** bar;
 
-	    is_frame_done = slice_process (&picture, code, buffer);
-
-	    if (picture.picture_coding_type == B_TYPE)
-		bar = picture.throwaway_frame;
-	    else
-		bar = picture.forward_reference_frame;
+	    slice_process (&picture, code, buffer);
 
 	    if ((HACK_MODE < 2) && (!picture.mpeg1)) {
 
 		uint8_t * foo[3];
+		uint8_t ** bar;
 		int offset;
+
+		if (picture.picture_coding_type == B_TYPE)
+		    bar = picture.throwaway_frame;
+		else
+		    bar = picture.forward_reference_frame;
 
 		offset = (code-1) * 4 * picture.coded_picture_width;
 		if ((! HACK_MODE) && (picture.picture_coding_type == B_TYPE))
@@ -243,17 +267,14 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 		foo[2] = bar[2] + offset;
 
 		output->draw_slice (foo, code-1);
-
-	    } else if (is_frame_done)
-		output->draw_frame (bar);
-
-	    if (is_frame_done)
-		output->flip_page ();
+	    }
 
 #ifdef ARCH_X86
 	    if (config.flags & OMS_ACCEL_X86_MMX)
 		emms ();
 #endif
+
+	    in_slice = 1;
 	}
     }
 
@@ -307,13 +328,17 @@ void mpeg2_close (plugin_output_video_t * output)
 void mpeg2_close (vo_functions_t * output)
 #endif
 {
-	if (is_display_initialized)
-		output->draw_frame (picture.backward_reference_frame);
+    static uint8_t finalizer[] = {0,0,1,0};
+
+    mpeg2_decode_data (output, finalizer, finalizer+4);
+
+    if (is_display_initialized)
+	output->draw_frame (picture.backward_reference_frame);
 
 #ifdef __OMS__
-	output->free_image_buffer (picture.backward_reference_frame);
-	output->free_image_buffer (picture.forward_reference_frame);
-	output->free_image_buffer (picture.throwaway_frame);
+    output->free_image_buffer (picture.backward_reference_frame);
+    output->free_image_buffer (picture.forward_reference_frame);
+    output->free_image_buffer (picture.throwaway_frame);
 #endif
 }
 
