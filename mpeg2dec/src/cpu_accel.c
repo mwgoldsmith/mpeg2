@@ -28,7 +28,7 @@
 #include "mm_accel.h"
 
 #ifdef ARCH_X86
-static uint32_t arch_accel (void)
+static inline uint32_t arch_accel (void)
 {
     uint32_t eax, ebx, ecx, edx;
     int AMD;
@@ -123,7 +123,7 @@ static RETSIGTYPE sigill_handler (int sig)
     siglongjmp (jmpbuf, 1);
 }
 
-static uint32_t arch_accel (void)
+static inline uint32_t arch_accel (void)
 {
     signal (SIGILL, sigill_handler);
     if (sigsetjmp (jmpbuf, 1)) {

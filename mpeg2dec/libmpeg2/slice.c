@@ -1208,8 +1208,9 @@ static void motion_fr_dmv (decoder_t * decoder, motion_t * motion,
 #undef bit_ptr
 }
 
-static void motion_reuse (decoder_t * decoder, motion_t * motion,
-			  void (** table) (uint8_t *, uint8_t *, int, int))
+static inline void motion_reuse (decoder_t * decoder, motion_t * motion,
+				 void (** table) (uint8_t *, uint8_t *,
+						  int, int))
 {
     int motion_x, motion_y;
     unsigned int pos_x, pos_y, xy_half, offset;
@@ -1220,8 +1221,9 @@ static void motion_reuse (decoder_t * decoder, motion_t * motion,
     MOTION (table, motion->ref[0], motion_x, motion_y, 16, 0);
 }
 
-static void motion_zero (decoder_t * decoder, motion_t * motion,
-			 void (** table) (uint8_t *, uint8_t *, int, int))
+static inline void motion_zero (decoder_t * decoder, motion_t * motion,
+				void (** table) (uint8_t *, uint8_t *,
+						 int, int))
 {
     unsigned int offset;
 
