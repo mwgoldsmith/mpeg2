@@ -1,5 +1,5 @@
 /*
- * yuv2rgb_mmx.c
+ * rgb_mmx.c
  * Copyright (C) 2000-2003 Silicon Integrated System Corp.
  * All Rights Reserved.
  *
@@ -192,8 +192,8 @@ static inline void mmx_unpack_32rgb (uint8_t * image, const int cpu)
     movntq (mm4, *(image+24));
 }
 
-static inline void yuv420_rgb16 (void * const _id, uint8_t * const * src,
-				 const unsigned int v_offset, const int cpu)
+static inline void rgb16 (void * const _id, uint8_t * const * src,
+			  const unsigned int v_offset, const int cpu)
 {
     convert_rgb_t * const id = (convert_rgb_t *) _id;
     uint8_t * dst;
@@ -227,8 +227,8 @@ static inline void yuv420_rgb16 (void * const _id, uint8_t * const * src,
     } while (i);
 }
 
-static inline void yuv420_argb32 (void * const _id, uint8_t * const * src,
-				  const unsigned int v_offset, const int cpu)
+static inline void argb32 (void * const _id, uint8_t * const * src,
+			   const unsigned int v_offset, const int cpu)
 {
     convert_rgb_t * const id = (convert_rgb_t *) _id;
     uint8_t * dst;
@@ -265,28 +265,28 @@ static inline void yuv420_argb32 (void * const _id, uint8_t * const * src,
 static void mmxext_rgb16 (void * id, uint8_t * const * src,
 			  unsigned int v_offset)
 {
-    yuv420_rgb16 (id, src, v_offset, CPU_MMXEXT);
+    rgb16 (id, src, v_offset, CPU_MMXEXT);
 }
 
 static void mmxext_argb32 (void * id, uint8_t * const * src,
 			   unsigned int v_offset)
 {
-    yuv420_argb32 (id, src, v_offset, CPU_MMXEXT);
+    argb32 (id, src, v_offset, CPU_MMXEXT);
 }
 
 static void mmx_rgb16 (void * id, uint8_t * const * src, unsigned int v_offset)
 {
-    yuv420_rgb16 (id, src, v_offset, CPU_MMX);
+    rgb16 (id, src, v_offset, CPU_MMX);
 }
 
 static void mmx_argb32 (void * id, uint8_t * const * src,
 			unsigned int v_offset)
 {
-    yuv420_argb32 (id, src, v_offset, CPU_MMX);
+    argb32 (id, src, v_offset, CPU_MMX);
 }
 
-mpeg2convert_copy * mpeg2convert_rgb_mmxext (int order, int bpp,
-					     const mpeg2_sequence_t * seq)
+mpeg2convert_copy_t * mpeg2convert_rgb_mmxext (int order, int bpp,
+					       const mpeg2_sequence_t * seq)
 {
     if (order == MPEG2CONVERT_RGB && seq->chroma_width < seq->width) {
 	if (bpp == 16)
@@ -297,8 +297,8 @@ mpeg2convert_copy * mpeg2convert_rgb_mmxext (int order, int bpp,
     return NULL;	/* Fallback to C */
 }
 
-mpeg2convert_copy * mpeg2convert_rgb_mmx (int order, int bpp,
-					  const mpeg2_sequence_t * seq)
+mpeg2convert_copy_t * mpeg2convert_rgb_mmx (int order, int bpp,
+					    const mpeg2_sequence_t * seq)
 {
     if (order == MPEG2CONVERT_RGB && seq->chroma_width < seq->width) {
 	if (bpp == 16)
