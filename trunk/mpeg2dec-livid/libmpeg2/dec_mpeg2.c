@@ -14,7 +14,6 @@
 #include <oms/log.h>
 #include <oms/plugin/codec.h>
 
-#include "video_out.h"
 #include "mpeg2.h"
 
 static int _mpeg2dec_open	(void *plugin, void *foo);

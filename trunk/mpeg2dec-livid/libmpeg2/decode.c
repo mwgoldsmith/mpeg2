@@ -28,8 +28,10 @@
 #include <oms/oms.h>
 #include <oms/plugin/output_video.h>
 #endif
- 
+
+#ifndef __OMS__
 #include "video_out.h"
+#endif
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 #include "oms_accel.h"
@@ -79,38 +81,38 @@ static void decode_allocate_image_buffers (plugin_output_video_t *output, pictur
 static void decode_allocate_image_buffers (vo_functions_t * output, picture_t * picture)
 #endif
 {
-	int frame_size;
-	vo_image_buffer_t *tmp = NULL;
+    int frame_size;
+    vo_image_buffer_t *tmp = NULL;
 
-	frame_size = picture->coded_picture_width * picture->coded_picture_height;
+    frame_size = picture->coded_picture_width * picture->coded_picture_height;
 
-	// allocate images in YV12 format
+    // allocate images in YV12 format
 #ifdef __OMS__
-	tmp = output->allocate_image_buffer (picture->coded_picture_width, picture->coded_picture_height, 0x32315659);
+    tmp = output->allocate_image_buffer (picture->coded_picture_width, picture->coded_picture_height, 0x32315659);
 #else
-	tmp = output->allocate_image_buffer();
+    tmp = output->allocate_image_buffer();
 #endif
-	picture->throwaway_frame[0] = tmp->base;
-	picture->throwaway_frame[1] = tmp->base + frame_size * 5 / 4;
-	picture->throwaway_frame[2] = tmp->base + frame_size;
+    picture->throwaway_frame[0] = tmp->base;
+    picture->throwaway_frame[1] = tmp->base + frame_size * 5 / 4;
+    picture->throwaway_frame[2] = tmp->base + frame_size;
 
 #ifdef __OMS__
-	tmp = output->allocate_image_buffer(picture->coded_picture_width, picture->coded_picture_height, 0x32315659);
+    tmp = output->allocate_image_buffer(picture->coded_picture_width, picture->coded_picture_height, 0x32315659);
 #else
-	tmp = output->allocate_image_buffer();
+    tmp = output->allocate_image_buffer();
 #endif
-	picture->backward_reference_frame[0] = tmp->base;
-	picture->backward_reference_frame[1] = tmp->base + frame_size * 5 / 4;
-	picture->backward_reference_frame[2] = tmp->base + frame_size;
+    picture->backward_reference_frame[0] = tmp->base;
+    picture->backward_reference_frame[1] = tmp->base + frame_size * 5 / 4;
+    picture->backward_reference_frame[2] = tmp->base + frame_size;
     
 #ifdef __OMS__
-	tmp = output->allocate_image_buffer(picture->coded_picture_width, picture->coded_picture_height, 0x32315659);
+    tmp = output->allocate_image_buffer(picture->coded_picture_width, picture->coded_picture_height, 0x32315659);
 #else
-	tmp = output->allocate_image_buffer();
+    tmp = output->allocate_image_buffer();
 #endif
-	picture->forward_reference_frame[0] = tmp->base;
-	picture->forward_reference_frame[1] = tmp->base + frame_size * 5 / 4;
-	picture->forward_reference_frame[2] = tmp->base + frame_size;
+    picture->forward_reference_frame[0] = tmp->base;
+    picture->forward_reference_frame[1] = tmp->base + frame_size * 5 / 4;
+    picture->forward_reference_frame[2] = tmp->base + frame_size;
 }
 
 
@@ -178,21 +180,21 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 
 	if (!is_display_initialized) {
 #ifdef __OMS__
-		plugin_output_video_attr_t attr;
-		attr.width = picture.coded_picture_width;
-		attr.height = picture.coded_picture_height;
-		attr.fullscreen = 0;
-		attr.title = NULL;
+	    plugin_output_video_attr_t attr;
+	    attr.width = picture.coded_picture_width;
+	    attr.height = picture.coded_picture_height;
+	    attr.fullscreen = 0;
+	    attr.title = NULL;
 
-		output->setup (&attr);
+	    output->setup (&attr);
 #else
-		if (output->init (picture.coded_picture_width,picture.coded_picture_height,0,0,0x32315659)) {
-		    printf ("display init failed\n");
-		    exit (1);
-		}
+	    if (output->init (picture.coded_picture_width,picture.coded_picture_height,0,0,0x32315659)) {
+		printf ("display init failed\n");
+		exit (1);
+	    }
 #endif
-		decode_allocate_image_buffers (output, &picture);
-		is_display_initialized = 1;
+	    decode_allocate_image_buffers (output, &picture);
+	    is_display_initialized = 1;
 	}
 	break;
 
@@ -311,5 +313,5 @@ void mpeg2_drop (int flag)
 
 void mpeg2_output_init (int flag)
 {
-	is_display_initialized = flag;
+    is_display_initialized = flag;
 }
