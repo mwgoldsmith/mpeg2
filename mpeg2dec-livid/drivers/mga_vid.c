@@ -47,7 +47,7 @@
 
 #define MGA_VID_MAJOR 178
 
-#define MGA_VIDMEM_SIZE 16
+#define MGA_VIDMEM_SIZE mga_ram_size
 
 #ifndef PCI_DEVICE_ID_MATROX_G200_PCI 
 #define PCI_DEVICE_ID_MATROX_G200_PCI 0x0520
@@ -140,10 +140,13 @@ static uint_8 *mga_mmio_base = 0;
 static uint_32 mga_mem_base = 0; 
 static uint_32 mga_src_base = 0;
 
+static uint_32 mga_ram_size = 0;
+
 static struct pci_dev *pci_dev;
 
 static struct video_window mga_win;
 static mga_vid_config_t mga_config; 
+
 
 //All register offsets are converted to word aligned offsets (32 bit)
 //because we want all our register accesses to be 32 bits
@@ -392,7 +395,7 @@ static int mga_vid_set_config(mga_vid_config_t *config)
 
 static int mga_vid_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
 {
-
+  
 	switch(cmd) 
 	{
 		case MGA_VID_CONFIG:
@@ -403,7 +406,8 @@ static int mga_vid_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			//FIXME remove
 
 			printk("mga_vid: Received configuration\n");
-			if(copy_from_user(&mga_config,(mga_vid_config_t*) arg,sizeof(mga_vid_config_t)))
+
+ 			if(copy_from_user(&mga_config,(mga_vid_config_t*) arg,sizeof(mga_vid_config_t)))
 			{
 				printk("mga_vid: failed copy from userspace\n");
 				return(-EFAULT);
@@ -412,11 +416,14 @@ static int mga_vid_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			  mga_config.card_type = MGA_G400;
 			else
 			  mga_config.card_type = MGA_G200;
+		       
+			mga_config.ram_size = mga_ram_size;
+
 			if (copy_to_user((mga_vid_config_t *) arg, &mga_config, sizeof(mga_vid_config_t)))
-			  {
-			    printk("mga_vid: failed copy to userspace\n");
-			    return(-EFAULT);
-			  }
+			{
+				printk("mga_vid: failed copy to userspace\n");
+				return(-EFAULT);
+			}
 			return mga_vid_set_config(&mga_config);	
 		break;
 
@@ -449,6 +456,7 @@ static int mga_vid_ioctl(struct inode *inode, struct file *file, unsigned int cm
 static int mga_vid_find_card(void)
 {
 	struct pci_dev *dev = NULL;
+	unsigned int card_option, temp;
 
 	if((dev = pci_find_device(PCI_VENDOR_ID_MATROX, PCI_DEVICE_ID_MATROX_G400, NULL)))
 	{
@@ -480,8 +488,60 @@ static int mga_vid_find_card(void)
 	mga_mmio_base = ioremap_nocache(dev->base_address[1] & PCI_BASE_ADDRESS_MEM_MASK,0x4000);
 	mga_mem_base =  dev->base_address[0] & PCI_BASE_ADDRESS_MEM_MASK;
 #endif
-	printk("MMIO at 0x%p\n", mga_mmio_base);
-	printk("Frame at 0x%08lX\n", mga_mem_base);
+	printk("mga_vid: MMIO at 0x%p\n", mga_mmio_base);
+	printk("mga_vid: Frame Buffer at 0x%08lX\n", mga_mem_base);
+
+	pci_read_config_dword(dev,  0x40, &card_option);
+	printk("OPTION word: 0x%08x\n", card_option);
+
+	temp = (card_option & 0x1c00) >> 10;
+	if (is_g400)
+	{
+		// We are using a G400.  Using docs dated June 2, 1999 faithfully...
+		if (temp == 0)
+		{
+			if (card_option & (1<<14))  // HARDPWMSK bit
+				//FIXME! hack to 16 megs cuz autodetect is still borked -AH
+				// SGRAM, a 32 megger
+				mga_ram_size = 16;
+			else
+				// SDRAM, a 16 megger 
+				mga_ram_size = 16;
+		}
+		else
+		{
+			switch(temp)
+			{
+				case 1:
+				case 2:
+					mga_ram_size = 16;
+				break;
+
+				case 3:
+				case 5:
+					mga_ram_size = 64;
+				break;
+				case 4:
+					mga_ram_size = 32;
+				break;
+
+				default:
+				// something wierd is going on. set to smallest size, just in case.
+					mga_ram_size = 8;
+				break;
+			}
+		}
+	}
+	else
+	{
+		// We are using a G200.  Docs dated november 30, 1998 seem incorrect. This works for me, YMMV.
+		if (0 == (temp & 0x3)) 
+			mga_ram_size = 8;
+		else
+			mga_ram_size = 16;
+	}
+      
+	printk("mga_vid: RAMSIZE seems to be %d MB\n", (unsigned int) mga_ram_size);
 	
 	return TRUE;
 }
