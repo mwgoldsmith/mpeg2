@@ -33,7 +33,8 @@
 
 #include "attributes.h"
 #include "mmx.h"
-#include "yuv2rgb.h"
+#include "video_out.h"
+#include "video_out_internal.h"
 
 #define CPU_MMXEXT 0
 #define CPU_MMX 1
@@ -298,23 +299,27 @@ static void mmx_argb32 (uint8_t * image,
 		   rgb_stride, y_stride, uv_stride, CPU_MMX);
 }
 
-yuv2rgb_fun yuv2rgb_init_mmxext (int bpp, int mode)
+int yuv2rgb_init_mmxext (int bpp, int mode)
 {
-    if ((bpp == 16) && (mode == MODE_RGB))
-	return mmxext_rgb16;
-    else if ((bpp == 32) && (mode == MODE_RGB))
-	return mmxext_argb32;
-
-    return NULL; /* Fallback to C */
+    if ((bpp == 16) && (mode == MODE_RGB)) {
+	yuv2rgb = mmxext_rgb16;
+	return 0;
+    } else if ((bpp == 32) && (mode == MODE_RGB)) {
+	yuv2rgb = mmxext_argb32;
+	return 0;
+    } else
+	return 1;	/* Fallback to C */
 }
 
-yuv2rgb_fun yuv2rgb_init_mmx (int bpp, int mode)
+int yuv2rgb_init_mmx (int bpp, int mode)
 {
-    if ((bpp == 16) && (mode == MODE_RGB))
-	return mmx_rgb16;
-    else if ((bpp == 32) && (mode == MODE_RGB))
-	return mmx_argb32;
-
-    return NULL; /* Fallback to C */
+    if ((bpp == 16) && (mode == MODE_RGB)) {
+	yuv2rgb = mmx_rgb16;
+	return 0;
+    } else if ((bpp == 32) && (mode == MODE_RGB)) {
+	yuv2rgb = mmx_argb32;
+	return 0;
+    } else
+	return 1;	/* Fallback to C */
 }
 #endif
