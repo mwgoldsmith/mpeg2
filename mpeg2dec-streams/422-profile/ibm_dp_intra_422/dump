@@ -1,0 +1,135 @@
+      5a S- --- --- - SEQUENCE MPEG2 422@ML 720x512 chroma 360x512 fps 29.97 maxBps 6250000 vbv 1179648 picture 720x512 display 720x512 pixel 128x135
+      62 SG --- --- - GOP  0: 0: 0: 1
+      73 SG AA- --- ? PICTURE I fields 2 TFF time_ref 0 offset 0/0 0/0
+   32ea2 SG aa- --- ? SLICE
+   32fb9 SG BB- aa- ? PICTURE P fields 2 TFF time_ref 1 offset 0/0 0/0
+  1510da SG bb- aa- ? SLICE
+  1510ec SG CC- bb- a PICTURE P fields 2 TFF time_ref 2 offset 0/0 0/0
+  15120c SG cc- bb- a SLICE
+  15121e SG DD- cc- b PICTURE P fields 2 TFF time_ref 3 offset 0/0 0/0
+  15133e SG dd- cc- b SLICE
+  151350 SG EE- dd- c PICTURE P fields 2 TFF time_ref 4 offset 0/0 0/0
+  151470 SG ee- dd- c SLICE
+  151482 SG FF- ee- d PICTURE P fields 2 TFF time_ref 5 offset 0/0 0/0
+  1515a2 SG ff- ee- d SLICE
+  1515b4 SG GG- ff- e PICTURE P fields 2 TFF time_ref 6 offset 0/0 0/0
+  164656 SG gg- ff- e SLICE
+  164668 SG HH- gg- f PICTURE P fields 2 TFF time_ref 7 offset 0/0 0/0
+  280f97 SG hh- gg- f SLICE
+  2810ae SG II- hh- g PICTURE P fields 2 TFF time_ref 8 offset 0/0 0/0
+  2811ce SG ii- hh- g SLICE
+  2811e0 SG JJ- ii- h PICTURE P fields 2 TFF time_ref 9 offset 0/0 0/0
+  281300 SG jj- ii- h SLICE
+  281312 SG KK- jj- i PICTURE P fields 2 TFF time_ref 10 offset 0/0 0/0
+  281432 SG kk- jj- i SLICE
+  281444 SG LL- kk- j PICTURE P fields 2 TFF time_ref 11 offset 0/0 0/0
+  281564 SG ll- kk- j SLICE
+  281576 SG MM- ll- k PICTURE P fields 2 TFF time_ref 12 offset 0/0 0/0
+  295e09 SG mm- ll- k SLICE
+  295e1b SG NN- mm- l PICTURE P fields 2 TFF time_ref 13 offset 0/0 0/0
+  3b5134 SG nn- mm- l SLICE
+  3b5146 SG OO- nn- m PICTURE P fields 2 TFF time_ref 14 offset 0/0 0/0
+  3b5266 SG oo- nn- m SLICE
+  3b5278 SG PP- oo- n PICTURE P fields 2 TFF time_ref 15 offset 0/0 0/0
+  3b5398 SG pp- oo- n SLICE
+  3b53aa SG QQ- pp- o PICTURE P fields 2 TFF time_ref 16 offset 0/0 0/0
+  3b54ca SG qq- pp- o SLICE
+  3b54dc SG RR- qq- p PICTURE P fields 2 TFF time_ref 17 offset 0/0 0/0
+  3b55fc SG rr- qq- p SLICE
+  3b560e SG SS- rr- q PICTURE P fields 2 TFF time_ref 18 offset 0/0 0/0
+  3c75bc SG ss- rr- q SLICE
+  3c75ce SG TT- ss- r PICTURE P fields 2 TFF time_ref 19 offset 0/0 0/0
+  4e150e SG tt- ss- r SLICE
+  4e1520 SG UU- tt- s PICTURE P fields 2 TFF time_ref 20 offset 0/0 0/0
+  4e1640 SG uu- tt- s SLICE
+  4e1652 SG VV- uu- t PICTURE P fields 2 TFF time_ref 21 offset 0/0 0/0
+  4e1772 SG vv- uu- t SLICE
+  4e1784 SG WW- vv- u PICTURE P fields 2 TFF time_ref 22 offset 0/0 0/0
+  4e18a4 SG ww- vv- u SLICE
+  4e18b6 SG XX- ww- v PICTURE P fields 2 TFF time_ref 23 offset 0/0 0/0
+  4e19d6 SG xx- ww- v SLICE
+  4e19e8 SG YY- xx- w PICTURE P fields 2 TFF time_ref 24 offset 0/0 0/0
+  4f8d6f SG yy- xx- w SLICE
+  4f8d81 SG ZZ- yy- x PICTURE P fields 2 TFF time_ref 25 offset 0/0 0/0
+  6138bf SG zz- yy- x SLICE
+  6138d1 SG AA- zz- y PICTURE P fields 2 TFF time_ref 26 offset 0/0 0/0
+  6139f1 SG aa- zz- y SLICE
+  613a03 SG BB- aa- z PICTURE P fields 2 TFF time_ref 27 offset 0/0 0/0
+  613b23 SG bb- aa- z SLICE
+  613b35 SG CC- bb- a PICTURE P fields 2 TFF time_ref 28 offset 0/0 0/0
+  613c55 SG cc- bb- a SLICE
+  613c67 SG DD- cc- b PICTURE P fields 2 TFF time_ref 29 offset 0/0 0/0
+  613d87 SG dd- cc- b SLICE
+  613d99 SG EE- dd- c PICTURE P fields 2 TFF time_ref 30 offset 0/0 0/0
+  62a523 SG ee- dd- c SLICE
+  62a535 SG FF- ee- d PICTURE P fields 2 TFF time_ref 31 offset 0/0 0/0
+  744477 SG ff- ee- d SLICE
+  744489 SG GG- ff- e PICTURE P fields 2 TFF time_ref 32 offset 0/0 0/0
+  7445a9 SG gg- ff- e SLICE
+  7445bb SG HH- gg- f PICTURE P fields 2 TFF time_ref 33 offset 0/0 0/0
+  7446db SG hh- gg- f SLICE
+  7446ed SG II- hh- g PICTURE P fields 2 TFF time_ref 34 offset 0/0 0/0
+  74480d SG ii- hh- g SLICE
+  74481f SG JJ- ii- h PICTURE P fields 2 TFF time_ref 35 offset 0/0 0/0
+  74493f SG jj- ii- h SLICE
+  744951 SG KK- jj- i PICTURE P fields 2 TFF time_ref 36 offset 0/0 0/0
+  75bcd6 SG kk- jj- i SLICE
+  75bce8 SG LL- kk- j PICTURE P fields 2 TFF time_ref 37 offset 0/0 0/0
+  87980c SG ll- kk- j SLICE
+  87981e SG MM- ll- k PICTURE P fields 2 TFF time_ref 38 offset 0/0 0/0
+  87993e SG mm- ll- k SLICE
+  879950 SG NN- mm- l PICTURE P fields 2 TFF time_ref 39 offset 0/0 0/0
+  879a70 SG nn- mm- l SLICE
+  879a82 SG OO- nn- m PICTURE P fields 2 TFF time_ref 40 offset 0/0 0/0
+  879ba2 SG oo- nn- m SLICE
+  879bb4 SG PP- oo- n PICTURE P fields 2 TFF time_ref 41 offset 0/0 0/0
+  879cd4 SG pp- oo- n SLICE
+  879ce6 SG QQ- pp- o PICTURE P fields 2 TFF time_ref 42 offset 0/0 0/0
+  88d489 SG qq- pp- o SLICE
+  88d49b SG RR- qq- p PICTURE P fields 2 TFF time_ref 43 offset 0/0 0/0
+  9a6de2 SG rr- qq- p SLICE
+  9a6df4 SG SS- rr- q PICTURE P fields 2 TFF time_ref 44 offset 0/0 0/0
+  9a6f14 SG ss- rr- q SLICE
+  9a6f26 SG TT- ss- r PICTURE P fields 2 TFF time_ref 45 offset 0/0 0/0
+  9a7046 SG tt- ss- r SLICE
+  9a7058 SG UU- tt- s PICTURE P fields 2 TFF time_ref 46 offset 0/0 0/0
+  9a7178 SG uu- tt- s SLICE
+  9a718a SG VV- uu- t PICTURE P fields 2 TFF time_ref 47 offset 0/0 0/0
+  9a72aa SG vv- uu- t SLICE
+  9a72bc SG WW- vv- u PICTURE P fields 2 TFF time_ref 48 offset 0/0 0/0
+  9bec3c SG ww- vv- u SLICE
+  9bec4e SG XX- ww- v PICTURE P fields 2 TFF time_ref 49 offset 0/0 0/0
+  ade565 SG xx- ww- v SLICE
+  ade577 SG YY- xx- w PICTURE P fields 2 TFF time_ref 50 offset 0/0 0/0
+  ade697 SG yy- xx- w SLICE
+  ade6a9 SG ZZ- yy- x PICTURE P fields 2 TFF time_ref 51 offset 0/0 0/0
+  ade7c9 SG zz- yy- x SLICE
+  ade7db SG AA- zz- y PICTURE P fields 2 TFF time_ref 52 offset 0/0 0/0
+  ade8fb SG aa- zz- y SLICE
+  ade90d SG BB- aa- z PICTURE P fields 2 TFF time_ref 53 offset 0/0 0/0
+  adea2d SG bb- aa- z SLICE
+  adea3f SG CC- bb- a PICTURE P fields 2 TFF time_ref 54 offset 0/0 0/0
+  af03f0 SG cc- bb- a SLICE
+  af0402 SG DD- cc- b PICTURE P fields 2 TFF time_ref 55 offset 0/0 0/0
+  c0fd19 SG dd- cc- b SLICE
+  c0fd2b SG EE- dd- c PICTURE P fields 2 TFF time_ref 56 offset 0/0 0/0
+  c0fe4b SG ee- dd- c SLICE
+  c0fe5d SG FF- ee- d PICTURE P fields 2 TFF time_ref 57 offset 0/0 0/0
+  c0ff7d SG ff- ee- d SLICE
+  c0ff8f SG GG- ff- e PICTURE P fields 2 TFF time_ref 58 offset 0/0 0/0
+  c100af SG gg- ff- e SLICE
+  c100c1 SG HH- gg- f PICTURE P fields 2 TFF time_ref 59 offset 0/0 0/0
+  c101e1 SG hh- gg- f SLICE
+  c101f3 SG II- hh- g PICTURE P fields 2 TFF time_ref 60 offset 0/0 0/0
+  c21ba3 SG ii- hh- g SLICE
+  c21bb5 SG JJ- ii- h PICTURE P fields 2 TFF time_ref 61 offset 0/0 0/0
+  d3ccec SG jj- ii- h SLICE
+  d3ccfe SG KK- jj- i PICTURE P fields 2 TFF time_ref 62 offset 0/0 0/0
+  d3ce1e SG kk- jj- i SLICE
+  d3ce30 SG LL- kk- j PICTURE P fields 2 TFF time_ref 63 offset 0/0 0/0
+  d3cf50 SG ll- kk- j SLICE
+  d3cf62 SG MM- ll- k PICTURE P fields 2 TFF time_ref 64 offset 0/0 0/0
+  d3d082 SG mm- ll- k SLICE
+  d3d094 SG NN- mm- l PICTURE P fields 2 TFF time_ref 65 offset 0/0 0/0
+  d3d1b4 SG nn- mm- l SLICE
+  d3d1b4 SG --- nn- m END
