@@ -198,6 +198,34 @@ static int header_process_sequence_extension (picture_t * picture,
     return 0;
 }
 
+static int header_process_quant_matrix_extension (picture_t * picture,
+						  uint8_t * buffer)
+{
+    int i;
+    uint8_t * scan;
+
+#ifdef __i386__
+    if (config.flags & MPEG2_MMX_ENABLE)
+	scan = scan_norm_mmx;
+    else
+#endif
+	scan = scan_norm;
+    if (buffer[0] & 8) {
+	for (i = 0; i < 64; i++)
+	    picture->intra_quantizer_matrix[scan[i]] =
+		(buffer[i] << 5) | (buffer[i+1] >> 3);
+	buffer += 64;
+    }
+
+    if (buffer[0] & 4) {
+	for (i = 0; i < 64; i++)
+	    picture->non_intra_quantizer_matrix[scan[i]] =
+		(buffer[i] << 6) | (buffer[i+1] >> 2);
+    }
+
+    return 0;
+}
+
 static int header_process_picture_coding_extension (picture_t * picture, uint8_t * buffer)
 {
     if ((buffer[2] & 3) != 3)
@@ -244,6 +272,9 @@ int header_process_extension (picture_t * picture, uint8_t * buffer)
     switch (buffer[0] & 0xf0) {
     case 0x10:	// sequence extension
 	return header_process_sequence_extension (picture, buffer);
+
+    case 0x30:	// quant matrix extension
+	return header_process_quant_matrix_extension (picture, buffer);
 
     case 0x80:	// picture coding extension
 	return header_process_picture_coding_extension (picture, buffer);
