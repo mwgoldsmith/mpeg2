@@ -24,16 +24,13 @@
 #ifndef CONVERT_H
 #define CONVERT_H
 
-#define CONVERT_FRAME 0
-#define CONVERT_TOP_FIELD 1
-#define CONVERT_BOTTOM_FIELD 2
-#define CONVERT_BOTH_FIELDS 3
-
 typedef struct convert_init_s {
     void * id;
     int id_size;
     int buf_size[3];
-    void (* start) (void * id, uint8_t * const * dest, int flags);
+    void (* start) (void * id, const mpeg2_fbuf_t * fbuf,
+		    const mpeg2_picture_t * picture, const mpeg2_gop_t * gop,
+		    const mpeg2_sequence_t * sequence);
     void (* copy) (void * id, uint8_t * const * src, unsigned int v_offset);
 } convert_init_t;
 

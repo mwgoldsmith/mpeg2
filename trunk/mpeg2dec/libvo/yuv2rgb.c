@@ -470,21 +470,23 @@ static void convert_yuv2rgb_c (void * _id, uint8_t * const * src,
     } while (--loop);
 }
 
-static void convert_start (void * _id, uint8_t * const * dest, int flags)
+static void convert_start (void * _id, const mpeg2_fbuf_t * fbuf,
+			   const mpeg2_picture_t * picture,
+			   const mpeg2_gop_t * gop,
+			   const mpeg2_sequence_t * sequence)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
-    id->rgb_ptr = dest[0];
-    switch (flags) {
-    case CONVERT_BOTTOM_FIELD:
-	id->rgb_ptr += id->rgb_stride_frame;
-	/* break thru */
-    case CONVERT_TOP_FIELD:
+    id->rgb_ptr = fbuf->buf[0];
+    if (picture->nb_fields == 1) {
 	id->uv_stride = id->uv_stride_frame << 1;
 	id->rgb_stride = id->rgb_stride_frame << 1;
-	id->dither_offset = (flags == CONVERT_BOTTOM_FIELD) ? 48 : 16;
+	id->dither_offset = 16;
 	id->dither_stride = 128;
-	break;
-    default:
+	if (!(picture->flags & PIC_FLAG_TOP_FIELD_FIRST)) {
+	    id->rgb_ptr += id->rgb_stride_frame;
+	    id->dither_offset = 48;
+	}
+    } else {
 	id->uv_stride = id->uv_stride_frame;
 	id->rgb_stride = id->rgb_stride_frame;
 	id->dither_offset = 0;
