@@ -5,10 +5,9 @@
 	* export header/picture/slice user data
 	* dont crash on bad streams, make sure we can resync after a while
 		* possible chunk buffer overflow while reading bits
-		* MC source out of bounds (maybe signal handler for that one ?)
 		* dont just fprintf and exit
 	* synchronization stuff
-	* investigate IDCT precision issue
+	* IDCT precision with sparse matrixes
 	* sparc IDCT/MC optimizations; get rid of mlib code
 
 * structural optimizations
@@ -32,5 +31,4 @@
 * clean up
 	* clean up header file usage
 	* clean up picture_t structure (some variables should be local ?)
-	* clean up DMV and field MC code
 	* clean up yuv2rgb for interlaced pictures (handling of uv)
