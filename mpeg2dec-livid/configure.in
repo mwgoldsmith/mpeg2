@@ -84,7 +84,9 @@ AC_TYPE_SIGNAL
 builtin([include],[libmpeg2/configure.incl])
 builtin([include],[libvo/configure.incl])
 
-if test x"$GCC" = x"yes"; then
+AC_ARG_ENABLE([warnings],
+    [  --enable-warnings       treat warnings as errors])
+if test x"$enable_warnings" = x"yes" -a x"$GCC" = x"yes"; then
     dnl compiler warnings
     OPT_CFLAGS="$CFLAGS -Wall -Werror"
     AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS])
