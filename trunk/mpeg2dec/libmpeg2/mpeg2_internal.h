@@ -54,6 +54,8 @@ typedef struct {
     int f_code[2];
 } motion_t;
 
+struct vo_frame_s;
+
 struct decoder_s {
     /* first, state that carries information from one macroblock to the */
     /* next inside a slice, and is never used outside of mpeg2_slice() */
@@ -68,6 +70,9 @@ struct decoder_s {
 
     uint8_t * dest[3];
     uint8_t * picture_dest[3];
+    void (* convert) (struct vo_frame_s * frame, uint8_t ** src);
+    struct vo_frame_s * frame_id;
+
     int offset;
     int stride;
     int uv_stride;
@@ -126,10 +131,6 @@ struct decoder_s {
 
     /* pointer to the zigzag scan we're supposed to be using */
     uint8_t * scan;
-
-    struct vo_frame_s * current_frame;
-    struct vo_frame_s * forward_reference_frame;
-    struct vo_frame_s * backward_reference_frame;
 
     int second_field;
 

@@ -335,6 +335,7 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
     /* XXXXXX decode extra_information_picture as well */
 
     mpeg2dec->ext_state = PIC_CODING_EXT;
+    picture->nb_fields = 2;
 
     return 0;
 }

@@ -1416,9 +1416,8 @@ do {									\
     decoder->offset += 16;						\
     if (decoder->offset == decoder->width) {				\
 	do { /* just so we can use the break statement */		\
-	    if (decoder->current_frame->copy) {				\
-		decoder->current_frame->copy (decoder->current_frame,	\
-					      decoder->dest);		\
+	    if (decoder->convert) {					\
+		decoder->convert (decoder->frame_id, decoder->dest);	\
 		if (decoder->coding_type == B_TYPE)			\
 		    break;						\
 	    }								\
@@ -1436,8 +1435,8 @@ do {									\
     }									\
 } while (0)
 
-void mpeg2_init_fbuf (decoder_t * decoder, vo_frame_t * current_fbuf, 
-		      vo_frame_t * forward_fbuf, vo_frame_t * backward_fbuf)
+void mpeg2_init_fbuf (decoder_t * decoder, uint8_t * current_fbuf[3],
+		      uint8_t * forward_fbuf[3], uint8_t * backward_fbuf[3])
 {
     int offset, stride, height, bottom_field;
 
@@ -1446,17 +1445,17 @@ void mpeg2_init_fbuf (decoder_t * decoder, vo_frame_t * current_fbuf,
     offset = bottom_field ? stride : 0;
     height = decoder->height;
 
-    decoder->picture_dest[0] = current_fbuf->base[0] + offset;
-    decoder->picture_dest[1] = current_fbuf->base[1] + (offset >> 1);
-    decoder->picture_dest[2] = current_fbuf->base[2] + (offset >> 1);
+    decoder->picture_dest[0] = current_fbuf[0] + offset;
+    decoder->picture_dest[1] = current_fbuf[1] + (offset >> 1);
+    decoder->picture_dest[2] = current_fbuf[2] + (offset >> 1);
 
-    decoder->f_motion.ref[0][0] = forward_fbuf->base[0] + offset;
-    decoder->f_motion.ref[0][1] = forward_fbuf->base[1] + (offset >> 1);
-    decoder->f_motion.ref[0][2] = forward_fbuf->base[2] + (offset >> 1);
+    decoder->f_motion.ref[0][0] = forward_fbuf[0] + offset;
+    decoder->f_motion.ref[0][1] = forward_fbuf[1] + (offset >> 1);
+    decoder->f_motion.ref[0][2] = forward_fbuf[2] + (offset >> 1);
 
-    decoder->b_motion.ref[0][0] = backward_fbuf->base[0] + offset;
-    decoder->b_motion.ref[0][1] = backward_fbuf->base[1] + (offset >> 1);
-    decoder->b_motion.ref[0][2] = backward_fbuf->base[2] + (offset >> 1);
+    decoder->b_motion.ref[0][0] = backward_fbuf[0] + offset;
+    decoder->b_motion.ref[0][1] = backward_fbuf[1] + (offset >> 1);
+    decoder->b_motion.ref[0][2] = backward_fbuf[2] + (offset >> 1);
 
     if (decoder->picture_structure != FRAME_PICTURE) {
 	decoder->dmv_offset = bottom_field ? 1 : -1;
@@ -1469,13 +1468,13 @@ void mpeg2_init_fbuf (decoder_t * decoder, vo_frame_t * current_fbuf,
 	if (decoder->second_field && (decoder->coding_type != B_TYPE))
 	    forward_fbuf = current_fbuf;
 
-	decoder->f_motion.ref[1][0] = forward_fbuf->base[0] + offset;
-	decoder->f_motion.ref[1][1] = forward_fbuf->base[1] + (offset >> 1);
-	decoder->f_motion.ref[1][2] = forward_fbuf->base[2] + (offset >> 1);
+	decoder->f_motion.ref[1][0] = forward_fbuf[0] + offset;
+	decoder->f_motion.ref[1][1] = forward_fbuf[1] + (offset >> 1);
+	decoder->f_motion.ref[1][2] = forward_fbuf[2] + (offset >> 1);
 
-	decoder->b_motion.ref[1][0] = backward_fbuf->base[0] + offset;
-	decoder->b_motion.ref[1][1] = backward_fbuf->base[1] + (offset >> 1);
-	decoder->b_motion.ref[1][2] = backward_fbuf->base[2] + (offset >> 1);
+	decoder->b_motion.ref[1][0] = backward_fbuf[0] + offset;
+	decoder->b_motion.ref[1][1] = backward_fbuf[1] + (offset >> 1);
+	decoder->b_motion.ref[1][2] = backward_fbuf[2] + (offset >> 1);
 
 	stride <<= 1;
 	height >>= 1;
@@ -1507,7 +1506,7 @@ static inline int slice_init (decoder_t * decoder, int code)
 
     decoder->v_offset = (code - 1) * 16;
     offset = 0;
-    if (!(decoder->current_frame->copy) || decoder->coding_type != B_TYPE)
+    if (decoder->convert == NULL || decoder->coding_type != B_TYPE)
 	offset = (code - 1) * decoder->stride * 4;
 
     decoder->dest[0] = decoder->picture_dest[0] + offset * 4;
@@ -1551,8 +1550,7 @@ static inline int slice_init (decoder_t * decoder, int code)
 
     while (decoder->offset - decoder->width >= 0) {
 	decoder->offset -= decoder->width;
-	if ((decoder->current_frame->copy == NULL) ||
-	    (decoder->coding_type != B_TYPE)) {
+	if (decoder->convert == NULL || decoder->coding_type != B_TYPE) {
 	    decoder->dest[0] += 16 * decoder->stride;
 	    decoder->dest[1] += 4 * decoder->stride;
 	    decoder->dest[2] += 4 * decoder->stride;

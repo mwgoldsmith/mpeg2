@@ -102,6 +102,10 @@ typedef struct {
     int num_pts;
     int bytes_since_pts;
 
+    vo_frame_t * current_frame;
+    vo_frame_t * forward_reference_frame;
+    vo_frame_t * backward_reference_frame;
+
     sequence_t last_sequence;
     sequence_t sequence;
     picture_t picture;
@@ -116,8 +120,8 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_extension (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec);
 
-void mpeg2_init_fbuf (decoder_t * decoder, vo_frame_t * current_fbuf,
-		      vo_frame_t * forward_fbuf, vo_frame_t * backward_fbuf);
+void mpeg2_init_fbuf (decoder_t * decoder, uint8_t * current_fbuf[3],
+		      uint8_t * forward_fbuf[3], uint8_t * backward_fbuf[3]);
 
 void mpeg2_slice (decoder_t * decoder, int code, uint8_t * buffer);
 
