@@ -159,6 +159,7 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
     mpeg2dec->display_offset_x = mpeg2dec->display_offset_y = 0;
 
     reset_info (&(mpeg2dec->info));
+    mpeg2dec->info.gop = NULL;
     return 0;
 }
 
@@ -336,8 +337,19 @@ void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
 
 int mpeg2_header_gop (mpeg2dec_t * mpeg2dec)
 {
-    mpeg2dec->state = STATE_GOP;
+    uint8_t * buffer = mpeg2dec->chunk_start;
+    gop_t * gop = &(mpeg2dec->gop);
+
     reset_info (&(mpeg2dec->info));
+    if (! (buffer[1] & 8))
+	return 1;
+    mpeg2dec->info.gop = gop;
+    gop->hours = (buffer[0] >> 2) & 31;
+    gop->minutes = ((buffer[0] << 4) | (buffer[1] >> 4)) & 63;
+    gop->seconds = ((buffer[1] << 3) | (buffer[2] >> 5)) & 63;
+    gop->pictures = ((buffer[2] << 1) | (buffer[3] >> 7)) & 63;
+    gop->flags = (buffer[0] >> 7) | ((buffer[3] >> 4) & 6);
+    mpeg2dec->state = STATE_GOP;
     return 0;
 }
 

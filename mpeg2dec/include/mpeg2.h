@@ -56,6 +56,18 @@ typedef struct {
     uint8_t matrix_coefficients;
 } sequence_t;
 
+#define GOP_FLAG_DROP_FRAME 1
+#define GOP_FLAG_BROKEN_LINK 2
+#define GOP_FLAG_CLOSED_GOP 4
+
+typedef struct {
+    uint8_t hours;
+    uint8_t minutes;
+    uint8_t seconds;
+    uint8_t pictures;
+    uint32_t flags;
+} gop_t;
+
 #define PIC_MASK_CODING_TYPE 7
 #define PIC_FLAG_CODING_TYPE_I 1
 #define PIC_FLAG_CODING_TYPE_P 2
@@ -86,6 +98,7 @@ typedef struct {
 
 typedef struct {
     const sequence_t * sequence;
+    const gop_t * gop;
     const picture_t * current_picture;
     const picture_t * current_picture_2nd;
     const fbuf_t * current_fbuf;

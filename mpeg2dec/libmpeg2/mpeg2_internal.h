@@ -174,6 +174,7 @@ struct mpeg2dec_s {
 
     sequence_t new_sequence;
     sequence_t sequence;
+    gop_t gop;
     picture_t pictures[4];
     picture_t * picture;
     /*const*/ fbuf_t * fbuf[3];	/* 0: current fbuf, 1-2: prediction fbufs */
