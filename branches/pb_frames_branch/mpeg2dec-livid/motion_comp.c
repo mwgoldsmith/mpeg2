@@ -148,7 +148,7 @@ motion_comp_non_intra_frame(picture_t *picture,mb_buffer_t *mb_buffer)
 
 		if(mb[i].macroblock_type & MACROBLOCK_MOTION_BACKWARD)
 		{
-      printf("backward_mv %d,%d\n",mb[i].b_motion_vectors[0][0] >> 1,mb[i].b_motion_vectors[0][1] >> 1);
+      //fprintf(stderr,"(motion_comp) backward_mv %d,%d\n",mb[i].b_motion_vectors[0][0] >> 1,mb[i].b_motion_vectors[0][1] >> 1);
 			x_pred = (mb[i].b_motion_vectors[0][0] >> 1) + x;
 			y_pred = (mb[i].b_motion_vectors[0][1] >> 1) + y;
 
@@ -174,7 +174,7 @@ motion_comp_non_intra_frame(picture_t *picture,mb_buffer_t *mb_buffer)
 		}
 		else if(mb[i].macroblock_type & MACROBLOCK_MOTION_FORWARD)
 		{
-      printf("forward_mv %d,%d\n",mb[i].f_motion_vectors[0][0] >> 1,mb[i].f_motion_vectors[0][1] >> 1);
+      //fprintf(stderr,"(motion_comp) forward_mv %d,%d\n",mb[i].f_motion_vectors[0][0] >> 1,mb[i].f_motion_vectors[0][1] >> 1);
 			x_pred = (mb[i].f_motion_vectors[0][0] >> 1) + x;
 			y_pred = (mb[i].f_motion_vectors[0][1] >> 1) + y;
 

@@ -215,11 +215,12 @@ mpeg2_decode_frame(void)
 	
 	decode_find_header(PICTURE_START_CODE,&picture);
 	parse_picture_header(&picture);
-	decode_reorder_frames();
 
 	//XXX We only do I-frames now
-	//if( picture.picture_coding_type != I_TYPE) 
-		//return;
+	if( picture.picture_coding_type != I_TYPE) 
+		return &mpeg2_frame;
+
+	decode_reorder_frames();
 
 	last_mba = ((picture.coded_picture_height * picture.coded_picture_width) >> 8) - 1;
 	mb_width = picture.coded_picture_width >> 4;
@@ -237,7 +238,6 @@ mpeg2_decode_frame(void)
 		code = decode_find_header(SLICE_START_CODE_MIN,&picture);
 
 		mba = ((code &0xff) - 1) * mb_width - 1;
-		//printf("starting mba %d of %d  mbwidth=%d\n",mba,last_mba,mb_width);
 		
 		parse_slice_header(&picture,&slice);
 		do
