@@ -184,92 +184,89 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	code = mpeg2dec->code;
 	if (copy_chunk (mpeg2dec))
 	    return -1;
+    }
 
-	/* wait for sequence_header_code */
-	if (mpeg2dec->state == STATE_INVALID && code != 0xb3)
+    /* wait for sequence_header_code */
+    if (mpeg2dec->state == STATE_INVALID && code != 0xb3)
+	goto next_chunk;
+
+    switch (code) {
+    case 0x00:	/* picture_start_code */
+	mpeg2_header_picture (mpeg2dec);
+	break;
+    case 0xb2:	/* user_data_start_code */
+	mpeg2_header_user_data (mpeg2dec);
+	break;
+    case 0xb3:	/* sequence_header_code */
+	mpeg2_header_sequence (mpeg2dec);
+	break;
+    case 0xb5:	/* extension_start_code */
+	mpeg2_header_extension (mpeg2dec);
+	break;
+    case 0xb8:	/* group_start_code */
+	mpeg2_header_gop (mpeg2dec);
+	break;
+    default:
+	if (code >= 0xb0)
+	    break;
+	if (mpeg2dec->state != STATE_SLICE &&
+	    mpeg2dec->state != STATE_SLICE_1ST)
+	    mpeg2_header_slice (mpeg2dec);
+	if (! (mpeg2dec->picture->flags & PIC_FLAG_SKIP))
+	    mpeg2_slice (&(mpeg2dec->decoder), code, mpeg2dec->chunk_start);
+	if ((unsigned) (mpeg2dec->code - 1) < 0xb0)
 	    goto next_chunk;
-
-	switch (code) {
-	case 0x00:	/* picture_start_code */
-	    mpeg2_header_picture (mpeg2dec);
-	    break;
-	case 0xb2:	/* user_data_start_code */
-	    mpeg2_header_user_data (mpeg2dec);
-	    break;
-	case 0xb3:	/* sequence_header_code */
-	    mpeg2_header_sequence (mpeg2dec);
-	    break;
-	case 0xb5:	/* extension_start_code */
-	    mpeg2_header_extension (mpeg2dec);
-	    break;
-	case 0xb8:	/* group_start_code */
-	    mpeg2_header_gop (mpeg2dec);
-	    break;
-	default:
-	    if (code >= 0xb0)
-		break;
-	    if (mpeg2dec->state != STATE_SLICE &&
-		mpeg2dec->state != STATE_SLICE_1ST)
-		mpeg2_header_slice (mpeg2dec);
-	    if (! (mpeg2dec->picture->flags & PIC_FLAG_SKIP))
-		mpeg2_slice (&(mpeg2dec->decoder), code,
-			     mpeg2dec->chunk_start);
-	}
+    }
 
 #define RECEIVED(code,state) (((state) << 8) + (code))
 
-	switch (RECEIVED (mpeg2dec->code, mpeg2dec->state)) {
+    switch (RECEIVED (mpeg2dec->code, mpeg2dec->state)) {
 
 	/* state transition after a sequence header */
-	case RECEIVED (0x00, STATE_SEQUENCE):
-	case RECEIVED (0xb8, STATE_SEQUENCE):
-	    mpeg2_header_sequence_finalize (mpeg2dec);
-	    if (repeated_sequence (&(mpeg2dec->last_sequence),
-				   &(mpeg2dec->sequence)))
-		mpeg2dec->state = STATE_SEQUENCE_REPEATED;
-	    mpeg2dec->last_sequence = mpeg2dec->sequence;
+    case RECEIVED (0x00, STATE_SEQUENCE):
+    case RECEIVED (0xb8, STATE_SEQUENCE):
+	mpeg2_header_sequence_finalize (mpeg2dec);
+	if (repeated_sequence (&(mpeg2dec->last_sequence),
+			       &(mpeg2dec->sequence)))
+	    mpeg2dec->state = STATE_SEQUENCE_REPEATED;
+	mpeg2dec->last_sequence = mpeg2dec->sequence;
+	break;
+
+    /* end of sequence */
+    case RECEIVED (0xb7, STATE_SLICE):
+	mpeg2dec->state = STATE_END;
+	mpeg2dec->last_sequence.width = (unsigned int) -1;
+	break;
+
+    /* other legal state transitions */
+    case RECEIVED (0x00, STATE_GOP):
+    case RECEIVED (0x00, STATE_SLICE_1ST):
+    case RECEIVED (0x00, STATE_SLICE):
+    case RECEIVED (0xb3, STATE_SLICE):
+    case RECEIVED (0xb8, STATE_SLICE):
+	break;
+
+    /* legal headers within a given state */
+    case RECEIVED (0xb2, STATE_SEQUENCE):
+    case RECEIVED (0xb2, STATE_GOP):
+    case RECEIVED (0xb2, STATE_PICTURE):
+    case RECEIVED (0xb2, STATE_PICTURE_2ND):
+    case RECEIVED (0xb5, STATE_SEQUENCE):
+    case RECEIVED (0xb5, STATE_PICTURE):
+    case RECEIVED (0xb5, STATE_PICTURE_2ND):
+	goto next_chunk;
+
+    default:
+	if ((mpeg2dec->code < 0xb0) &&
+	    (mpeg2dec->state == STATE_PICTURE ||
+	     mpeg2dec->state == STATE_PICTURE_2ND))
 	    break;
 
-	/* end of sequence */
-	case RECEIVED (0xb7, STATE_SLICE):
-	    mpeg2dec->state = STATE_END;
-	    mpeg2dec->last_sequence.width = (unsigned int) -1;
-	    break;
-
-	/* other legal state transitions */
-	case RECEIVED (0x00, STATE_GOP):
-	case RECEIVED (0x00, STATE_SLICE_1ST):
-	case RECEIVED (0x00, STATE_SLICE):
-	case RECEIVED (0xb3, STATE_SLICE):
-	case RECEIVED (0xb8, STATE_SLICE):
-	    break;
-
-	/* legal headers within a given state */
-	case RECEIVED (0xb2, STATE_SEQUENCE):
-	case RECEIVED (0xb2, STATE_GOP):
-	case RECEIVED (0xb2, STATE_PICTURE):
-	case RECEIVED (0xb2, STATE_PICTURE_2ND):
-	case RECEIVED (0xb5, STATE_SEQUENCE):
-	case RECEIVED (0xb5, STATE_PICTURE):
-	case RECEIVED (0xb5, STATE_PICTURE_2ND):
-	    goto next_chunk;
-
-	default:
-	    if (likely (mpeg2dec->code < 0xb0)) {
-		if (likely (mpeg2dec->state == STATE_SLICE_1ST ||
-			    mpeg2dec->state == STATE_SLICE))
-		    goto next_chunk;
-		else if (mpeg2dec->state == STATE_PICTURE ||
-			 mpeg2dec->state == STATE_PICTURE_2ND)
-		    break;
-	    }
-
-	case RECEIVED (0x00, STATE_PICTURE):
-	case RECEIVED (0x00, STATE_PICTURE_2ND):
-	    mpeg2dec->state = STATE_INVALID;
-	    mpeg2dec->chunk_start = mpeg2dec->chunk_buffer;
-	    goto next_chunk;
-	}
+    case RECEIVED (0x00, STATE_PICTURE):
+    case RECEIVED (0x00, STATE_PICTURE_2ND):
+	mpeg2dec->state = STATE_INVALID;
+	mpeg2dec->chunk_start = mpeg2dec->chunk_buffer;
+	goto next_chunk;
     }
 
     mpeg2dec->chunk_start = mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
