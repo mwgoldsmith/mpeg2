@@ -45,14 +45,43 @@
 #define B_TYPE 3
 #define D_TYPE 4
 
-/* The picture struct contains all of the top level state information */
-/* (ie everything except slice and macroblock state) */
+typedef struct motion_s {
+    uint8_t * ref[2][3];
+    int pmv[2][2];
+    int f_code[2];
+} motion_t;
+
 typedef struct picture_s {
+    /* first, state that carries information from one macroblock to the */
+    /* next inside a slice, and is never used outside of slice_process() */
+
+    /* DCT coefficients - should be kept aligned ! */
+    int16_t DCTblock[64];
+
+    /* bit parsing stuff */
+    uint32_t bitstream_buf;	/* current 32 bit working set of buffer */
+    int bitstream_bits;		/* used bits in working set */
+    uint8_t * bitstream_ptr;	/* buffer with stream data */
+
+    /* Motion vectors */
+    /* The f_ and b_ correspond to the forward and backward motion */
+    /* predictors */
+    motion_t b_motion;
+    motion_t f_motion;
+
+    /* predictor for DC coefficients in intra blocks */
+    int16_t dc_dct_pred[3];
+
+    uint16_t quantizer_scale;	/* remove */
+
+
+    /* now non-slice-specific information */
+
     /* sequence header stuff */
     uint8_t intra_quantizer_matrix [64];
     uint8_t non_intra_quantizer_matrix [64];
 
-    /*The width and height of the picture snapped to macroblock units */
+    /* The width and height of the picture snapped to macroblock units */
     int coded_picture_width;
     int coded_picture_height;
 
@@ -107,35 +136,6 @@ typedef struct picture_s {
     int repeat_first_field;
     int progressive_frame;
 } picture_t;
-
-typedef struct motion_s {
-    uint8_t * ref[2][3];
-    int pmv[2][2];
-    int f_code[2];
-} motion_t;
-
-/* state that is carried from one macroblock to the next inside */
-/* of a same slice */
-typedef struct slice_s {
-    /* DCT coefficients - should be kept aligned ! */
-    int16_t DCTblock[64];
-
-    /* bit parsing stuff */
-    uint32_t bitstream_buf;	/* current 32 bit working set of buffer */
-    int bitstream_bits;		/* used bits in working set */
-    uint8_t * bitstream_ptr;	/* buffer with stream data */
-
-    /* Motion vectors */
-    /* The f_ and b_ correspond to the forward and backward motion */
-    /* predictors */
-    motion_t b_motion;
-    motion_t f_motion;
-
-    /* predictor for DC coefficients in intra blocks */
-    int16_t dc_dct_pred[3];
-
-    uint16_t quantizer_scale;	/* remove */
-} slice_t;
 
 typedef struct mpeg2_config_s {
     /* Bit flags that enable various things */

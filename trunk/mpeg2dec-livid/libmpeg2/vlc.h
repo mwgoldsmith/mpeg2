@@ -25,11 +25,11 @@ do {								\
     bit_ptr += 2;						\
 } while (0)
 
-static inline void bitstream_init (slice_t * slice, uint8_t * start)
+static inline void bitstream_init (picture_t * picture, uint8_t * start)
 {
-    slice->bitstream_buf = 0;    GETWORD (slice->bitstream_buf, 16, start);
-    slice->bitstream_ptr = start;
-    slice->bitstream_bits = 0;
+    picture->bitstream_buf = 0;    GETWORD (picture->bitstream_buf, 16, start);
+    picture->bitstream_ptr = start;
+    picture->bitstream_bits = 0;
 }
 
 /* make sure that there are at least 16 valid bits in bit_buf */

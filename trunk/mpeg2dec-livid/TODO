@@ -1,7 +1,7 @@
 * before 0.2.0 :
 	* libmpeg2 reentrancy
 	* check if mlib is working - DCTblock alignment problem
-	* generic slice handling, plus sdl implementation
+	* generic slice yuv2rgb handling, plus nullrgb and sdl implementations
 	* clean up frame_t declaration and usage (libvo/libmpeg2) + video_out.h
 	* clean up yuv2rgb for interlaced pictures (handling of uv)
 
@@ -14,7 +14,6 @@
 
 * structural optimizations
 	* integrate idct_add and idct_copy into the main idct routine
-	* get rid of slice structure, put it into picture
 	* do yuv per sub-slice (probably big speed boost)
 	* try different memory arrangements for pictures (yuyv, stride, ...)
 	* once we have sync, call draw_frame before decoding I or P not after
