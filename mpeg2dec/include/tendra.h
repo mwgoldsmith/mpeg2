@@ -21,8 +21,13 @@
 
 #pragma TenDRA begin
 #pragma TenDRA longlong type warning
+
+#ifdef TenDRA_check
+
 #pragma TenDRA conversion analysis (pointer-int explicit) off
 #pragma TenDRA implicit function declaration off
 
 /* avoid the "No declarations in translation unit" problem */
 int TenDRA;
+
+#endif /* TenDRA_check */

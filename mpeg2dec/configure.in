@@ -97,6 +97,9 @@ if test x"$enable_warnings" != x"no" -a x"$GCC" = x"yes"; then
     dnl compiler warnings
     OPT_CFLAGS="$CFLAGS -Wall -Werror"
     AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS])
+elif test x"$CC" = x"tcc"; then
+    dnl TenDRA portability checking compiler
+    CFLAGS="$CFLAGS -DTenDRA_check"
 fi
 
 AC_C_ATTRIBUTE_ALIGNED
