@@ -1,4 +1,4 @@
-      f1 S- --- --- - SEQUENCE MPEG2 MP@ML COMPONENT UNSPEC_COLORS 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
+      f1 S- --- --- - SEQUENCE MPEG2 MP@ML COMPONENT UNSPEC_COLORS 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9 guessed 10x11
          USER_DATA 71 bytes
          e6 1d 37 2f 00 0e e6 1d 37 31 40 28 23 29 4d 50    7/    71@(#)MP
          45 47 20 45 6e 63 6f 64 65 72 20 76 32 2e 37 20  EG Encoder v2.7 
@@ -32,7 +32,7 @@
    bd18f SG ll- ll- l SLICE
    bd1b2 SG MM- MM- M PICTURE B fields 2 TFF time_ref 11 offset 0/0 0/0
    c75ed SG mm- mm- m SLICE
-   c76da S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT UNSPEC_COLORS 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
+   c76da S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT UNSPEC_COLORS 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9 guessed 10x11
          USER_DATA 71 bytes
          e6 1d 37 2f 00 0e e6 1d 37 31 40 28 23 29 4d 50    7/    71@(#)MP
          45 47 20 45 6e 63 6f 64 65 72 20 76 32 2e 37 20  EG Encoder v2.7 
@@ -70,7 +70,7 @@
   19fe24 SG aa- aa- a SLICE
   19fe47 SG BB- BB- B PICTURE B fields 2 TFF time_ref 13 offset 0/0 0/0
   1ab490 SG bb- bb- b SLICE
-  1ab57d S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT UNSPEC_COLORS 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
+  1ab57d S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT UNSPEC_COLORS 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9 guessed 10x11
          USER_DATA 71 bytes
          e6 1d 37 2f 00 0e e6 1d 37 31 40 28 23 29 4d 50    7/    71@(#)MP
          45 47 20 45 6e 63 6f 64 65 72 20 76 32 2e 37 20  EG Encoder v2.7 
@@ -108,7 +108,7 @@
   2868f5 SG pp- pp- p SLICE
   286918 SG QQ- QQ- Q PICTURE B fields 2 TFF time_ref 13 offset 0/0 0/0
   291625 SG qq- qq- q SLICE
-  291712 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT UNSPEC_COLORS 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
+  291712 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT UNSPEC_COLORS 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9 guessed 10x11
          USER_DATA 71 bytes
          e6 1d 37 2f 00 0e e6 1d 37 31 40 28 23 29 4d 50    7/    71@(#)MP
          45 47 20 45 6e 63 6f 64 65 72 20 76 32 2e 37 20  EG Encoder v2.7 
@@ -146,7 +146,7 @@
   36aede SG ee- ee- e SLICE
   36af01 SG FF- FF- F PICTURE B fields 2 TFF time_ref 13 offset 0/0 0/0
   3766ea SG ff- ff- f SLICE
-  3767d7 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT UNSPEC_COLORS 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
+  3767d7 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT UNSPEC_COLORS 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9 guessed 10x11
          USER_DATA 71 bytes
          e6 1d 37 2f 00 0e e6 1d 37 31 40 28 23 29 4d 50    7/    71@(#)MP
          45 47 20 45 6e 63 6f 64 65 72 20 76 32 2e 37 20  EG Encoder v2.7 

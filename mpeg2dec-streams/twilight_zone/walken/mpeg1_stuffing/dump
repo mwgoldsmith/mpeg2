@@ -1,4 +1,4 @@
-      50 S- --- --- - SEQUENCE CONST PROG 352x288 chroma 176x144 fps 25 maxBps 143950 vbv 34816 picture 352x288 display 352x288 pixel 16x15
+      50 S- --- --- - SEQUENCE CONST PROG 352x288 chroma 176x144 fps 25 maxBps 143950 vbv 34816 picture 352x288 display 352x288 pixel 59x54 guessed 59x54
       58 SG --- --- - GOP  0: 3:45: 7
       60 SG AA- --- ? PICTURE I PROG fields 2 time_ref 2 offset 0/0
     23ad SG aa- --- ? SLICE
@@ -49,7 +49,7 @@
    20540 SG ww- ww- w SLICE
    20549 SG XX- XX- X PICTURE B PROG fields 2 time_ref 10 offset 0/0
    21bbf SG xx- xx- x SLICE
-   21c0b S- --- --- - SEQUENCE_REPEATED CONST PROG 352x288 chroma 176x144 fps 25 maxBps 143950 vbv 34816 picture 352x288 display 352x288 pixel 16x15
+   21c0b S- --- --- - SEQUENCE_REPEATED CONST PROG 352x288 chroma 176x144 fps 25 maxBps 143950 vbv 34816 picture 352x288 display 352x288 pixel 59x54 guessed 59x54
    21c13 SG --- --- - GOP  0: 3:46: 6
    21c1b SG YY- vv- s PICTURE I PROG fields 2 time_ref 2 offset 0/0
    24446 SG yy- vv- s SLICE
@@ -100,7 +100,7 @@
    42110 SG uu- uu- u SLICE
    42119 SG VV- VV- V PICTURE B PROG fields 2 time_ref 10 offset 0/0
    4378e SG vv- vv- v SLICE
-   437da S- --- --- - SEQUENCE_REPEATED CONST PROG 352x288 chroma 176x144 fps 25 maxBps 143950 vbv 34816 picture 352x288 display 352x288 pixel 16x15
+   437da S- --- --- - SEQUENCE_REPEATED CONST PROG 352x288 chroma 176x144 fps 25 maxBps 143950 vbv 34816 picture 352x288 display 352x288 pixel 59x54 guessed 59x54
    437e2 SG --- --- - GOP  0: 3:47: 5
    437ea SG WW- tt- q PICTURE I PROG fields 2 time_ref 2 offset 0/0
    460bb SG ww- tt- q SLICE
@@ -151,7 +151,7 @@
    63ce0 SG ss- ss- s SLICE
    63ce9 SG TT- TT- T PICTURE B PROG fields 2 time_ref 10 offset 0/0
    6535e SG tt- tt- t SLICE
-   653aa S- --- --- - SEQUENCE_REPEATED CONST PROG 352x288 chroma 176x144 fps 25 maxBps 143950 vbv 34816 picture 352x288 display 352x288 pixel 16x15
+   653aa S- --- --- - SEQUENCE_REPEATED CONST PROG 352x288 chroma 176x144 fps 25 maxBps 143950 vbv 34816 picture 352x288 display 352x288 pixel 59x54 guessed 59x54
    653b2 SG --- --- - GOP  0: 3:48: 4
    653ba SG UU- rr- o PICTURE I PROG fields 2 time_ref 2 offset 0/0
    67c58 SG uu- rr- o SLICE
@@ -202,7 +202,7 @@
    858b1 SG qq- qq- q SLICE
    858ba SG RR- RR- R PICTURE B PROG fields 2 time_ref 10 offset 0/0
    86f2f SG rr- rr- r SLICE
-   86f7b S- --- --- - SEQUENCE_REPEATED CONST PROG 352x288 chroma 176x144 fps 25 maxBps 143950 vbv 34816 picture 352x288 display 352x288 pixel 16x15
+   86f7b S- --- --- - SEQUENCE_REPEATED CONST PROG 352x288 chroma 176x144 fps 25 maxBps 143950 vbv 34816 picture 352x288 display 352x288 pixel 59x54 guessed 59x54
    86f83 SG --- --- - GOP  0: 3:49: 3
    86f8b SG SS- pp- m PICTURE I PROG fields 2 time_ref 2 offset 0/0
    89902 SG ss- pp- m SLICE
@@ -253,7 +253,7 @@
    a747f SG oo- oo- o SLICE
    a7488 SG PP- PP- P PICTURE B PROG fields 2 time_ref 10 offset 0/0
    a8b0c SG pp- pp- p SLICE
-   a8b58 S- --- --- - SEQUENCE_REPEATED CONST PROG 352x288 chroma 176x144 fps 25 maxBps 143950 vbv 34816 picture 352x288 display 352x288 pixel 16x15
+   a8b58 S- --- --- - SEQUENCE_REPEATED CONST PROG 352x288 chroma 176x144 fps 25 maxBps 143950 vbv 34816 picture 352x288 display 352x288 pixel 59x54 guessed 59x54
    a8b60 SG --- --- - GOP  0: 3:50: 2
    a8b68 SG QQ- nn- k PICTURE I PROG fields 2 time_ref 2 offset 0/0
    ab5d8 SG qq- nn- k SLICE

@@ -1,4 +1,4 @@
-      1a S- --- --- - SEQUENCE MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 217088 picture 720x576 display 720x576 pixel 64x45
+      1a S- --- --- - SEQUENCE MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 217088 picture 720x576 display 720x576 pixel 64x45 guessed 118x81
       2b S- AA- --- ? PICTURE I fields 2 TFF time_ref 0 offset 0/0 0/0
     f52f S- aa- --- ? SLICE
     f541 S- BB- aa- ? PICTURE P fields 2 TFF time_ref 3 offset 0/0 0/0
@@ -25,7 +25,7 @@
    a2e62 S- jl- jl- j SLICE_1ST
    a2e74 S- jlM jlM j PICTURE_2ND B fields 1 time_ref 8 offset 0/0
    b4fe7 S- jlm jlm j SLICE
-   b4ffd S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 217088 picture 720x576 display 720x576 pixel 64x45
+   b4ffd S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 217088 picture 720x576 display 720x576 pixel 64x45 guessed 118x81
    b500e S- KN- hj- e PICTURE I fields 2 TFF time_ref 12 offset 0/0 0/0
    cdb92 S- kn- hj- e SLICE
    cdba4 S- LO- LO- L PICTURE B fields 2 TFF time_ref 10 offset 0/0 0/0
@@ -64,7 +64,7 @@
   17f4e6 S- ve- ve- v SLICE_1ST
   17f4f8 S- veF veF v PICTURE_2ND B fields 1 time_ref 20 offset 0/0
   193039 S- vef vef v SLICE
-  19304f S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 217088 picture 720x576 display 720x576 pixel 64x45
+  19304f S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 217088 picture 720x576 display 720x576 pixel 64x45 guessed 118x81
   193060 S- WG- tb- q PICTURE I fields 2 TFF time_ref 24 offset 0/0 0/0
   1a34ef S- wg- tb- q SLICE
   1a3501 S- XH- XH- X PICTURE B fields 2 TFF time_ref 22 offset 0/0 0/0
@@ -99,7 +99,7 @@
   259674 S- hv- hv- h SLICE_1ST
   259686 S- hvW hvW h PICTURE_2ND B fields 1 time_ref 32 offset 0/0
   26eecb S- hvw hvw h SLICE
-  26eee1 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 217088 picture 720x576 display 720x576 pixel 64x45
+  26eee1 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 217088 picture 720x576 display 720x576 pixel 64x45 guessed 118x81
   26eef2 S- IX- ft- c PICTURE I fields 2 TFF time_ref 36 offset 0/0 0/0
   27dd92 S- ix- ft- c SLICE
   27dda4 S- JY- JY- J PICTURE B fields 2 TFF time_ref 34 offset 0/0 0/0

@@ -1,4 +1,4 @@
-      26 S- --- --- - SEQUENCE MPEG2 profile 9c PAL BT.470-2/B,G 720x480 chroma 720x480 fps 30 maxBps 6553600 vbv 1222656 picture 720x480 display 720x480 pixel 8x9
+      26 S- --- --- - SEQUENCE MPEG2 profile 9c PAL BT.470-2/B,G 720x480 chroma 720x480 fps 30 maxBps 6553600 vbv 1222656 picture 720x480 display 720x480 pixel 8x9 guessed 10x11
       2e SG --- --- - GOP  0: 0: 0: 0
       48 SG AA- --- ? PICTURE I fields 2 TFF time_ref 0 offset 0/0 0/0
          USER_DATA 5 bytes
