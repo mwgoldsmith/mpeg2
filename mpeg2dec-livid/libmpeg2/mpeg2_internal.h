@@ -54,8 +54,21 @@
 #define D_TYPE 4
 
 //use gcc attribs to align critical data structures
+#ifdef ATTRIBUTE_ALIGNED_MAX
+#if ATTRIBUTE_ALIGNED_MAX > 16
 #define ALIGN_16_BYTE __attribute__ ((aligned (16)))
+#else
+#define ALIGN_16_BYTE __attribute__ ((aligned (ATTRIBUTE_ALIGNED_MAX)))
+#endif
+#if ATTRIBUTE_ALIGNED_MAX > 8
 #define ALIGN_8_BYTE __attribute__ ((aligned (8)))
+#else
+#define ALIGN_8_BYTE __attribute__ ((aligned (ATTRIBUTE_ALIGNED_MAX)))
+#endif
+#else
+#define ALIGN_16_BYTE
+#define ALIGN_8_BYTE
+#endif
 
 //The picture struct contains all of the top level state
 //information (ie everything except slice and macroblock

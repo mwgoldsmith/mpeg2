@@ -214,6 +214,9 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 	break;
 
     default:
+	if (code >= 0xb9)
+	    printf ("stream not demultiplexed ?\n");
+
 	if (code >= 0xb0)
 	    break;
 
