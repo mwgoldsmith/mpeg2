@@ -62,6 +62,7 @@ static uint32_t shift = 0;
 static int is_display_initialized = 0;
 static int is_sequence_needed = 1;
 static int drop_flag = 0;
+static int drop_frame = 0;
 
 void mpeg2_init (void)
 {
@@ -169,6 +170,12 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 	    printf ("bad picture header\n");
 	    exit (1);
 	}
+	
+	if (drop_flag && (picture.picture_coding_type == B_TYPE))
+		drop_frame = 1;
+	else 
+		drop_frame = 0;
+
 	decode_reorder_frames ();
 	break;
 
@@ -207,7 +214,7 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 	if ((code >= 0xb0) || (!code))
 	    break;
 
-	if ((!drop_flag) || (picture.picture_coding_type != B_TYPE)) {
+	if (!drop_frame) {
 	    uint8_t ** bar;
 
 	    is_frame_done = slice_process (&picture, code, buffer);
@@ -241,8 +248,8 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 #ifdef __i386__
 	    if (config.flags & MPEG2_MMX_ENABLE)
 		emms ();
-#endif
 	}
+#endif
     }
 
     return is_frame_done;
