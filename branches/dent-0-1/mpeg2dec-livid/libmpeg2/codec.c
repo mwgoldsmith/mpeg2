@@ -74,13 +74,9 @@ static int _mpeg2dec_close	(plugin_t *plugin);
 static int _mpeg2dec_read	(plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t *buf_entry);
 
 static plugin_codec_video_t codec_mpeg2dec = {
-        NULL,			// priv
-        _mpeg2dec_open,		// open
-        _mpeg2dec_close,	// close
-        _mpeg2dec_read,		// read
-        NULL,			// output (will be inserted automagically)
-	NULL,
-	NULL
+        open:		_mpeg2dec_open,
+        close:		_mpeg2dec_close,
+        read:		_mpeg2dec_read,
 };
 
 

@@ -40,15 +40,14 @@ static void _null_free_image_buffer   (vo_image_buffer_t* image);
 static vo_image_buffer_t* _null_allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format);
 
 static plugin_output_video_t video_null = {
-	NULL,
-	_null_open,
-	_null_close,
-	_null_setup,
-	_null_draw_frame,
-	_null_draw_slice,
-	_null_flip_page,
-	_null_allocate_image_buffer,
-	_null_free_image_buffer
+	open:		_null_open,
+	close:		_null_close,
+	setup:		_null_setup,
+	draw_frame:	_null_draw_frame,
+	draw_slice:	_null_draw_slice,
+	flip_page:	_null_flip_page,
+	allocate_image_buffer:	_null_allocate_image_buffer,
+	free_image_buffer:	_null_free_image_buffer
 };
 
 

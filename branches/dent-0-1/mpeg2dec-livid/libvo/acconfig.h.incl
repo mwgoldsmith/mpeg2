@@ -1,4 +1,4 @@
-/* Have X11 unstalled on this system */
+/* Have X11 installed on this system */
 #undef HAVE_X11
 
 /* Have Xv extension */

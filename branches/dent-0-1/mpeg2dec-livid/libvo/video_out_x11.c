@@ -68,15 +68,15 @@ static struct x11_priv_s {
 } _x11_priv;
 
 static plugin_output_video_t video_x11 = {
-        &_x11_priv,
-        _x11_open,
-        _x11_close,
-        _x11_setup,
-	draw_frame,
-	draw_slice,
-        flip_page,
-        allocate_image_buffer,
-        free_image_buffer
+        priv:		&_x11_priv,
+        open:		_x11_open,
+        close:		_x11_close,
+        setup:		_x11_setup,
+	draw_frame:	draw_frame,
+	draw_slice:	draw_slice,
+        flip_page:	flip_page,
+        allocate_image_buffer:	allocate_image_buffer,
+        free_image_buffer:	free_image_buffer
 };
 
 /* private prototypes */
@@ -132,7 +132,7 @@ _x11_setup(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 {
 	int screen;
 	unsigned int fg, bg;
-	char *hello = (title == NULL) ? "I hate X11" : title;
+	char *hello = title ? title : "I hate X11";
 	char *name = ":0.0";
 	XSizeHints hint;
 	XVisualInfo vinfo;

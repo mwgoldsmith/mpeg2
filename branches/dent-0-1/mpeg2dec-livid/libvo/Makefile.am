@@ -5,44 +5,20 @@
 AUTOMAKE_OPTIONS = no-dependencies foreign
 
 
-DEFS = $(CFLAGS) @DEFS@ @X_CFLAGS@
+DEFS = $(CFLAGS) @DEFS@
 INCLUDES = -I$(top_builddir)/include/oms -I$(top_builddir)/include
 libdir = $(OMS_PLUGINDIR)
 
 
 ## Libs
-if HAVE_X11
-DISPLAY_X11 = display_x11.la
-else
-DISPLAY_X11 = 
-endif
-
-if HAVE_3DFX
-DISPLAY_3DFX = display_3dfx.la
-else
-DISPLAY_3DFX =
-endif
-
-if HAVE_MGA
-DISPLAY_MGA = display_mga.la
-else
-DISPLAY_MGA =
-endif
-
-if HAVE_SDL
-DISPLAY_SDL = display_sdl.la
-else
-DISPLAY_SDL =
-endif
-
-
-lib_LTLIBRARIES = display_null.la $(DISPLAY_X11) $(DISPLAY_3DFX) $(DISPLAY_MGA) $(DISPLAY_SDL)
-
+lib_LTLIBRARIES = display_null.la $(LIBS_VIDEO_OUTPUT)
+EXTRA_lib_LTLIBRARIES = display_x11.la display_3dfx.la display_mga.la display_sdl.la 
 display_x11_la_SOURCES = video_out_x11.c yuv2rgb.c
-EXTRA_display_x11_la_SOURCES = yuv2rgb_mmx.c yuv2rgb_mlib.c
 display_x11_la_DEPENDENCIES = @X11_CONFIG_OBJS@
+display_x11_la_CFLAGS = $(CFLAGS) @DEFS@ @X_CFLAGS@
 display_x11_la_LIBADD = @X11_CONFIG_OBJS@ @X_PRE_LIBS@ @X_LIBS@ -lXext
 display_x11_la_LDFLAGS = -avoid-version -module -Wl,-soname,display_x11
+EXTRA_display_x11_la_SOURCES = yuv2rgb_mmx.c yuv2rgb_mlib.c
 
 display_3dfx_la_SOURCES = video_out_3dfx.c
 display_3dfx_la_LDFLAGS = -avoid-version -module -Wl,-soname,display_3dfx

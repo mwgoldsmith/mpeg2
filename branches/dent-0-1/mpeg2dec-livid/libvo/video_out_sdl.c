@@ -59,15 +59,14 @@ static void free_image_buffer	(vo_image_buffer_t* image);
 static vo_image_buffer_t *allocate_image_buffer (uint32_t height, uint32_t width, uint32_t format);
 
 static plugin_output_video_t video_sdl = {
-        NULL,
-        _sdl_open,
-        _sdl_close,
-        _sdl_setup,
-        _sdl_draw_frame,
-        _sdl_draw_slice,
-        flip_page,
-        allocate_image_buffer,
-        free_image_buffer
+        open:		_sdl_open,
+        close:		_sdl_close,
+        setup:		_sdl_setup,
+        draw_frame:	_sdl_draw_frame,
+        draw_slice:	_sdl_draw_slice,
+        flip_page:	flip_page,
+        allocate_image_buffer:	allocate_image_buffer,
+        free_image_buffer:	free_image_buffer
 };
 
 

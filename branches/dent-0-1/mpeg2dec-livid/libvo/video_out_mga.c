@@ -64,10 +64,10 @@ static struct mga_priv_s {
 } _mga_priv;
 
 static plugin_output_video_t video_mga = {
-	&_mga_priv,
-	_mga_open,
-	_mga_close,
-	_mga_setup,
+	priv:		&_mga_priv,
+	open:		_mga_open,
+	close:		_mga_close,
+	setup:		_mga_setup,
 	NULL,		// will be inserted when opened (see below)
 	NULL,		// will be inserted when opened (see below)
 	flip_page,
