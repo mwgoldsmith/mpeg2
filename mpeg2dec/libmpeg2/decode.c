@@ -114,7 +114,7 @@ void mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t * start, uint8_t * end)
     mpeg2dec->buf_end = end;
 }
 
-static inline int seek_chunk_internal (mpeg2dec_t * mpeg2dec)
+static inline int seek_chunk (mpeg2dec_t * mpeg2dec)
 {
     int size, skipped;
 
@@ -129,10 +129,10 @@ static inline int seek_chunk_internal (mpeg2dec_t * mpeg2dec)
     return 0;
 }
 
-static int mpeg2_seek_chunk (mpeg2dec_t * mpeg2dec)
+static int seek_slice (mpeg2dec_t * mpeg2dec)
 {
     do
-	if (seek_chunk_internal (mpeg2dec))
+	if (seek_chunk (mpeg2dec))
 	    return -1;
     while (mpeg2dec->code >= 0xb0 && mpeg2dec->code != 0xb3 &&
 	   mpeg2dec->code != 0xb7 && mpeg2dec->code != 0xb8);
@@ -145,7 +145,7 @@ int mpeg2_seek_header (mpeg2dec_t * mpeg2dec)
     while (mpeg2dec->code != 0xb3 &&
 	   ((mpeg2dec->code != 0xb7 && mpeg2dec->code != 0xb8 &&
 	     mpeg2dec->code) || mpeg2dec->sequence.width == -1))
-	if (seek_chunk_internal (mpeg2dec))
+	if (seek_chunk (mpeg2dec))
 	    return -1;
     mpeg2dec->chunk_start = mpeg2dec->chunk_buffer;
     return 0;
@@ -194,7 +194,7 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 		if (!copied) {
 		    /* filled the chunk buffer without finding a start code */
 		    mpeg2dec->bytes_since_pts += size_chunk;
-		    mpeg2dec->action = mpeg2_seek_chunk;
+		    mpeg2dec->action = seek_slice;
 		    return STATE_INVALID;
 		}
 	    }
