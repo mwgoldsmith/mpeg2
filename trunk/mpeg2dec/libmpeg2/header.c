@@ -351,8 +351,8 @@ void mpeg2_header_matrix_finalize (mpeg2dec_t * mpeg2dec)
 
 static mpeg2_state_t invalid_end_action (mpeg2dec_t * mpeg2dec)
 {
-    mpeg2_header_state_init (mpeg2dec);
     mpeg2_reset_info (&(mpeg2dec->info));
+    mpeg2_header_state_init (mpeg2dec);
     mpeg2dec->sequence = mpeg2dec->new_sequence;
     mpeg2dec->action = mpeg2_seek_header;
     mpeg2dec->state = STATE_SEQUENCE;
@@ -795,6 +795,9 @@ mpeg2_state_t mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec)
 
 static mpeg2_state_t seek_sequence (mpeg2dec_t * mpeg2dec)
 {
+    mpeg2_reset_info (&(mpeg2dec->info));
+    mpeg2dec->info.sequence = NULL;
+    mpeg2dec->info.gop = NULL;
     mpeg2_header_state_init (mpeg2dec);
     mpeg2dec->action = mpeg2_seek_header;
     return mpeg2_seek_header (mpeg2dec);
