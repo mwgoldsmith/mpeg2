@@ -21,35 +21,31 @@
  *
  */
 
-// macroblock type 
+// macroblock modes
 #define MACROBLOCK_INTRA                        1
 #define MACROBLOCK_PATTERN                      2
 #define MACROBLOCK_MOTION_BACKWARD              4
 #define MACROBLOCK_MOTION_FORWARD               8
 #define MACROBLOCK_QUANT                        16
-#define SPATIAL_TEMPORAL_WEIGHT_CODE_FLAG       32
-#define PERMITTED_SPATIAL_TEMPORAL_WEIGHT_CLASS 64
+#define DCT_TYPE_INTERLACED                     32
+// motion_type
+#define MOTION_TYPE_MASK (3*64)
+#define MOTION_TYPE_BASE 64
+#define MC_FIELD (1*64)
+#define MC_FRAME (2*64)
+#define MC_16X8  (2*64)
+#define MC_DMV   (3*64)
 
-//picture structure 
+//picture structure
 #define TOP_FIELD     1
 #define BOTTOM_FIELD  2
 #define FRAME_PICTURE 3
 
-//picture coding type 
+//picture coding type
 #define I_TYPE 1
 #define P_TYPE 2
 #define B_TYPE 3
 #define D_TYPE 4
-
-// motion_type 
-#define MC_FIELD 1
-#define MC_FRAME 2
-#define MC_16X8  2
-#define MC_DMV   3
-
-// mv_format 
-#define MV_FIELD 0
-#define MV_FRAME 1
 
 //use gcc attribs to align critical data structures
 #define ALIGN_16_BYTE __attribute__ ((aligned (16)))
@@ -117,48 +113,27 @@ typedef struct picture_s
 	uint_16 progressive_frame;
 } picture_t;
 
+typedef struct motion_s
+{
+	uint_8 * ref_frame[3];
+	sint_16 pmv[2][2];
+	uint_8 f_code[2];
+} motion_t;
+
 // state that is carried from one macroblock to the next inside of a same slice
 typedef struct slice_s
 {
 	//Motion vectors
 	//The f_ and b_ correspond to the forward and backward motion
 	//predictors
-	sint_16 f_pmv[2][2];
-	sint_16 b_pmv[2][2];
+	motion_t b_motion;
+	motion_t f_motion;
 
 	// predictor for DC coefficients in intra blocks
 	sint_16 dc_dct_pred[3];
 
-	uint_16 quantizer_scale;
+	uint_16 quantizer_scale;	// remove
 } slice_t;
-
-typedef struct macroblock_s
-{
-	sint_16 blocks [6*64];
-
-	uint_16 mba;
-	uint_16 macroblock_type;
-
-	//Motion vector stuff
-	//The f_ and b_ correspond to the forward and backward motion
-	//predictors
-	uint_16 motion_type;
-	uint_16 motion_vector_count;
-	sint_16 b_motion_vectors[2][2];
-	sint_16 f_motion_vectors[2][2];
-	sint_16 f_motion_vertical_field_select[2];
-	sint_16 b_motion_vertical_field_select[2];
-	sint_16 dmvector[2];
-	uint_16 mv_format;
-	uint_16 mvscale;
-
-	uint_16 dmv;
-	uint_16 dct_type;
-	uint_16 coded_block_pattern; 
-	uint_16 quantizer_scale_code;
-
-	uint_16 skipped;
-} macroblock_t;
 
 //The only global variable,
 //the config struct
@@ -172,6 +147,5 @@ int Get_Luma_DC_dct_diff(void);
 int Get_Chroma_DC_dct_diff(void);
 int Get_macroblock_type(int picture_coding_type);
 int Get_motion_code(void);
-int Get_dmvector(void);
 int Get_coded_block_pattern(void);
 int Get_macroblock_address_increment(void);

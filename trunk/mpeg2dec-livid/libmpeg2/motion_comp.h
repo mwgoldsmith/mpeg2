@@ -23,7 +23,6 @@
 
 void motion_comp_init(void);
 void motion_comp_c_init(void);
-void motion_comp (picture_t * picture, macroblock_t *mb);
 
 typedef struct mc_functions_s
 {
@@ -50,3 +49,8 @@ extern mc_functions_t mc_functions_c;
 extern mc_functions_t mc_functions_mmx;
 extern mc_functions_t mc_functions_mlib;
 
+void motion_block (void (** table) (uint_8 *, uint_8 *, int, int),
+				   int x_pred, int y_pred,
+				   uint_8 * dest[3], int dest_offset,
+				   uint_8 * src[3], int src_offset,
+				   int pitch, int height);

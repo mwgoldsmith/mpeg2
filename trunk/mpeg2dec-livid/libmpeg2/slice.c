@@ -35,9 +35,12 @@
 #include "bitstream.h"
 #include "idct.h"
 
+extern mc_functions_t mc_functions;
+extern void (*idct_block)(sint_16 *block);
+
 //XXX put these on the stack in slice_process?
 static slice_t slice;
-static macroblock_t mb ALIGN_16_BYTE;
+sint_16 DCTblock[64] ALIGN_16_BYTE;
 
 typedef struct {
 	char run, level, len;
@@ -55,25 +58,16 @@ uint_32 non_linear_quantizer_scale[32] =
 	56,64,72,80,88,96,104,112
 };
 
-void
-slice_get_slice_header(const picture_t *picture, slice_t *slice)
+static inline int get_quantizer_scale (int q_scale_type)
 {
-	uint_32 quantizer_scale_code;
+	int quantizer_scale_code;
 
 	quantizer_scale_code = bitstream_get(5);
 
-	if (picture->q_scale_type)
-		slice->quantizer_scale = non_linear_quantizer_scale[quantizer_scale_code];
+	if(q_scale_type)
+		return non_linear_quantizer_scale[quantizer_scale_code];
 	else
-		slice->quantizer_scale = quantizer_scale_code << 1 ;
-
-	//Ignore intra_slice and all the extra data
-	while(bitstream_get(1))
-		bitstream_flush(8);
-
-	//reset intra dc predictor
-	slice->dc_dct_pred[0]=slice->dc_dct_pred[1]=slice->dc_dct_pred[2]= 
-			1<<(picture->intra_dc_precision + 7) ;
+		return quantizer_scale_code << 1;
 }
 
 //This needs to be rewritten
@@ -198,292 +192,57 @@ slice_get_non_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest)
 	}
 }
 
-//This should inline easily into slice_get_motion_vector
-static inline sint_16 compute_motion_vector(sint_16 vec,uint_16 r_size,sint_16 motion_code,
-		sint_16 motion_residual)
+static inline void slice_intra_DCT (picture_t * picture, slice_t * slice,
+									int cc, uint_8 * dest, int pitch)
 {
-	sint_16 lim;
-
-	lim = 16<<r_size;
-
-	if (motion_code>0)
-	{
-		vec+= ((motion_code-1)<<r_size) + motion_residual + 1;
-		if (vec>=lim)
-			vec-= lim + lim;
-	}
-	else if (motion_code<0) 
-	{
-		vec-= ((-motion_code-1)<<r_size) + motion_residual + 1;
-		if (vec<-lim)
-			vec+= lim + lim;
-	}
-	return vec;
+	slice_get_intra_block (picture, slice, DCTblock, cc);
+	idct_block (DCTblock);
+	mc_functions.idct_copy (dest, DCTblock, pitch);
+	memset (DCTblock, 0, sizeof(sint_16) * 64);
 }
 
-static void slice_get_motion_vector(sint_16 *prev_mv, sint_16 *curr_mv,const uint_8 *f_code,
-		macroblock_t *mb)
+static inline void slice_non_intra_DCT (picture_t * picture, slice_t * slice,
+										uint_8 * dest, int pitch)
 {
-	sint_16 motion_code, motion_residual;
-	sint_16 r_size;
+	slice_get_non_intra_block (picture, slice, DCTblock);
+	idct_block (DCTblock);
+	mc_functions.idct_add (dest, DCTblock, pitch);
+	memset (DCTblock, 0, sizeof(sint_16) * 64);
+}
 
-	//fprintf(stderr,"motion_vec: h_r_size %d v_r_size %d\n",f_code[0],f_code[1]);
+static int get_motion_delta (int f_code)
+{
+	int motion_code, motion_residual;
 
-	// horizontal component
-	r_size = f_code[0];
 	motion_code = Get_motion_code();
+	if (motion_code == 0)
+		return 0;
+
 	motion_residual =  0;
-	if (r_size!=0 && motion_code!=0) 
-		motion_residual = bitstream_get(r_size);
+	if (f_code != 0)
+		motion_residual = bitstream_get (f_code);
 
-	curr_mv[0] = compute_motion_vector(prev_mv[0],r_size,motion_code,motion_residual);
-	prev_mv[0] = curr_mv[0];
-
-	//XXX dmvectors are unsed right now...
-	if (mb->dmv)
-		mb->dmvector[0] = Get_dmvector();
-
-	// vertical component 
-	r_size = f_code[1];
-	motion_code     = Get_motion_code();
-	motion_residual =  0;
-	if (r_size!=0 && motion_code!=0) 
-		motion_residual =  bitstream_get(r_size);
-
-	if (mb->mvscale)
-		prev_mv[1] >>= 1; 
-
-	curr_mv[1] = compute_motion_vector(prev_mv[1],r_size,motion_code,motion_residual);
-
-	if (mb->mvscale)
-		curr_mv[1] <<= 1;
-
-	prev_mv[1] = curr_mv[1];
-
-	//XXX dmvectors are unsed right now...
-	if (mb->dmv)
-		mb->dmvector[1] = Get_dmvector();
-}
-
-//These next two functions are very similar except that they
-//don't have to switch between forward and backward data structures.
-//The jury is still out on whether is was worth it.
-static void slice_get_forward_motion_vectors(const picture_t *picture,slice_t *slice, 
-		macroblock_t *mb)
-{
-	if (mb->motion_vector_count==1)
-	{
-		if (mb->mv_format==MV_FIELD && !mb->dmv)
-		{
-			fprintf(stderr,"field based mv\n");
-			mb->f_motion_vertical_field_select[1] = 
-				mb->f_motion_vertical_field_select[0] = bitstream_get(1);
-		}
-
-		slice_get_motion_vector(slice->f_pmv[0],mb->f_motion_vectors[0],picture->f_code[0],mb);
-
-		/* update other motion vector predictors */
-		slice->f_pmv[1][0] = slice->f_pmv[0][0];
-		slice->f_pmv[1][1] = slice->f_pmv[0][1];
-	}
+	if (motion_code > 0)
+		return ((motion_code - 1) << f_code) + motion_residual + 1;
 	else
-	{
-		mb->f_motion_vertical_field_select[0] = bitstream_get(1);
-		slice_get_motion_vector(slice->f_pmv[0],mb->f_motion_vectors[0],picture->f_code[0],mb);
-
-		mb->f_motion_vertical_field_select[1] = bitstream_get(1);
-		slice_get_motion_vector(slice->f_pmv[1],mb->f_motion_vectors[1],picture->f_code[0],mb);
-	}
+		return ((motion_code + 1) << f_code) - motion_residual - 1;
 }
 
-static void slice_get_backward_motion_vectors(const picture_t *picture,slice_t *slice, 
-		macroblock_t *mb)
+static inline int bound_motion_vector (int vector, int f_code)
 {
-	if (mb->motion_vector_count==1)
-	{
-		if (mb->mv_format==MV_FIELD && !mb->dmv)
-		{
-			fprintf(stderr,"field based mv\n");
-			mb->b_motion_vertical_field_select[1] = 
-				mb->b_motion_vertical_field_select[0] = bitstream_get(1);
-		}
+#if 1
+	int limit;
 
-		slice_get_motion_vector(slice->b_pmv[0],mb->b_motion_vectors[0],picture->f_code[1],mb);
+	limit = 16 << f_code;
 
-		/* update other motion vector predictors */
-		slice->b_pmv[1][0] = slice->b_pmv[0][0];
-		slice->b_pmv[1][1] = slice->b_pmv[0][1];
-	}
-	else
-	{
-		mb->b_motion_vertical_field_select[0] = bitstream_get(1);
-		slice_get_motion_vector(slice->b_pmv[0],mb->b_motion_vectors[0],picture->f_code[1],mb);
-
-		mb->b_motion_vertical_field_select[1] = bitstream_get(1);
-		slice_get_motion_vector(slice->b_pmv[1],mb->b_motion_vectors[1],picture->f_code[1],mb);
-	}
-}
-
-inline void slice_reset_pmv(slice_t *slice)
-{
-	memset(slice->b_pmv,0,sizeof(sint_16) * 4);
-	memset(slice->f_pmv,0,sizeof(sint_16) * 4);
-}
-
-void
-slice_get_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
-{
-	uint_32 quantizer_scale_code;
-	//uint_32 picture_structure = picture->picture_structure;
-
-	// get macroblock_type 
-	mb->macroblock_type = Get_macroblock_type(picture->picture_coding_type);
-
-	// get frame/field motion type 
-	if (mb->macroblock_type & (MACROBLOCK_MOTION_FORWARD|MACROBLOCK_MOTION_BACKWARD))
-	{
-		//if (picture_structure == FRAME_PICTURE) // frame_motion_type 
-		mb->motion_type = picture->frame_pred_frame_dct ? MC_FRAME : bitstream_get(2);
-		//else // field_motion_type 
-		//mb->motion_type = bitstream_get(2);
-	}
-	else if ((mb->macroblock_type & MACROBLOCK_INTRA) && picture->concealment_motion_vectors)
-	{
-		// concealment motion vectors 
-		//mb->motion_type = (picture_structure==FRAME_PICTURE) ? MC_FRAME : MC_FIELD;
-		mb->motion_type = MC_FRAME;
-	}
-
-	// derive motion_vector_count, mv_format and dmv, (table 6-17, 6-18)
-	//if (picture_structure==FRAME_PICTURE)
-	{
-		mb->motion_vector_count = (mb->motion_type==MC_FIELD) ? 2 : 1;
-		mb->mv_format = (mb->motion_type==MC_FRAME) ? MV_FRAME : MV_FIELD;
-	}
-#if 0
-	else
-	{
-		mb->motion_vector_count = (mb->motion_type==MC_16X8) ? 2 : 1;
-		mb->mv_format = MV_FIELD;
-	}
+	if (vector >= limit)
+		return vector - 2*limit;
+	else if (vector < -limit)
+		return vector + 2*limit;
+	else return vector;
+#else
+	return (vector << (27 - f_code)) >> (27 - f_code);
 #endif
-
-	mb->dmv = (mb->motion_type==MC_DMV); // dual prime
-
-	//Set if we need to scale motion vector prediction by 1/2
-	mb->mvscale = ((mb->mv_format==MV_FIELD) /* && (picture_structure==FRAME_PICTURE) */ );
-
-	// get dct_type (frame DCT / field DCT) 
-	if( /* (picture_structure==FRAME_PICTURE) && */ (!picture->frame_pred_frame_dct) && 
-			(mb->macroblock_type & (MACROBLOCK_PATTERN|MACROBLOCK_INTRA)) )
-		mb->dct_type =  bitstream_get(1);
-	else
-		mb->dct_type =  0;
-
-
-	if (mb->macroblock_type & MACROBLOCK_QUANT)
-	{
-		quantizer_scale_code = bitstream_get(5);
-
-		//The quantizer scale code propogates up to the slice level
-		if(picture->q_scale_type)
-			slice->quantizer_scale = non_linear_quantizer_scale[quantizer_scale_code];
-		else
-			slice->quantizer_scale = quantizer_scale_code << 1;
-	}
-		
-
-	// 6.3.17.2 Motion vectors 
-
-	//decode forward motion vectors 
-	if ((mb->macroblock_type & MACROBLOCK_MOTION_FORWARD) || 
-			((mb->macroblock_type & MACROBLOCK_INTRA) && picture->concealment_motion_vectors))
-			slice_get_forward_motion_vectors(picture,slice,mb);
-
-	//decode backward motion vectors 
-	if (mb->macroblock_type & MACROBLOCK_MOTION_BACKWARD)
-			slice_get_backward_motion_vectors(picture,slice,mb);
-
-	if ((mb->macroblock_type & MACROBLOCK_INTRA) && picture->concealment_motion_vectors)
-		bitstream_flush(1); // remove marker_bit 
-
-	//6.3.17.4 Coded block pattern 
-	mb->coded_block_pattern = 0;
-	if (mb->macroblock_type & MACROBLOCK_PATTERN)
-		mb->coded_block_pattern = Get_coded_block_pattern();
-
-	if (mb->macroblock_type & MACROBLOCK_INTRA)
-	{
-		mb->coded_block_pattern = 0x3f;
-
-		// Decode lum blocks
-		slice_get_intra_block(picture,slice,&mb->blocks[0*64],0);
-		slice_get_intra_block(picture,slice,&mb->blocks[1*64],0);
-		slice_get_intra_block(picture,slice,&mb->blocks[2*64],0);
-		slice_get_intra_block(picture,slice,&mb->blocks[3*64],0);
-		// Decode chroma blocks
-		slice_get_intra_block(picture,slice,&mb->blocks[4*64],1);
-		slice_get_intra_block(picture,slice,&mb->blocks[5*64],2);
-	}
-	//coded_block_pattern is set only if there are blocks in bitstream
-	else if(mb->coded_block_pattern)
-	{
-		// Decode lum blocks 
-		if (mb->coded_block_pattern & 0x20)
-			slice_get_non_intra_block(picture,slice,&mb->blocks[0*64]);
-		if (mb->coded_block_pattern & 0x10)
-			slice_get_non_intra_block(picture,slice,&mb->blocks[1*64]);
-		if (mb->coded_block_pattern & 0x08)
-			slice_get_non_intra_block(picture,slice,&mb->blocks[2*64]);
-		if (mb->coded_block_pattern & 0x04)
-			slice_get_non_intra_block(picture,slice,&mb->blocks[3*64]);
-		
-		// Decode chroma blocks 
-		if (mb->coded_block_pattern & 0x2)
-			slice_get_non_intra_block(picture,slice,&mb->blocks[4*64]);
-
-		if (mb->coded_block_pattern & 0x1)
-			slice_get_non_intra_block(picture,slice,&mb->blocks[5*64]);
-	}
-
-	// 7.2.1 DC coefficients in intra blocks 
-	if (!(mb->macroblock_type & MACROBLOCK_INTRA))
-	{
-		//FIXME this looks suspicious...should be reset to 2^(intra_dc_precision+7)
-		//
-		//lets see if it works
-		slice->dc_dct_pred[0]=slice->dc_dct_pred[1]=slice->dc_dct_pred[2]= 
-			1<<(picture->intra_dc_precision + 7) ;
-	}
-
-	//7.6.3.4 Resetting motion vector predictors 
-	if ((mb->macroblock_type & MACROBLOCK_INTRA) && !picture->concealment_motion_vectors)
-		slice_reset_pmv(slice);
-
-
-	// special "No_MC" macroblock_type case 
-	// 7.6.3.5 Prediction in P pictures 
-	if ((picture->picture_coding_type==P_TYPE) 
-		&& !(mb->macroblock_type & (MACROBLOCK_MOTION_FORWARD|MACROBLOCK_INTRA)))
-	{
-		// non-intra mb without forward mv in a P picture 
-		// 7.6.3.4 Resetting motion vector predictors 
-		slice_reset_pmv(slice);
-		memset(mb->f_motion_vectors[0],0,8);
-		mb->macroblock_type |= MACROBLOCK_MOTION_FORWARD;
-
-		//6.3.17.1 Macroblock modes, frame_motion_type 
-		// if (picture->picture_structure==FRAME_PICTURE)
-			mb->motion_type = MC_FRAME;
-#if 0
-		else
-		{
-			mb->motion_type = MC_FIELD;
-			// predict from field of same parity 
-			mb->f_motion_vertical_field_select[0]= (picture->picture_structure==BOTTOM_FIELD);
-		}
-#endif
-	}
 }
 
 void
@@ -491,80 +250,324 @@ slice_init(void)
 {
 }
 
+void motion_frame (motion_t * motion, uint_8 * dest[3], int offset, int width,
+				   void (** table) (uint_8 *, uint_8 *, int, int))
+{
+	int motion_x, motion_y;
+
+	motion_x = motion->pmv[0][0] + get_motion_delta (motion->f_code[0]);
+	motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
+	motion->pmv[1][0] = motion->pmv[0][0] = motion_x;
+
+	motion_y = motion->pmv[0][1] + get_motion_delta (motion->f_code[1]);
+	motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
+	motion->pmv[1][1] = motion->pmv[0][1] = motion_y;
+
+	motion_block (table, motion_x, motion_y, dest, offset,
+				  motion->ref_frame, offset, width, 16);
+}
+
+void motion_field (motion_t * motion, uint_8 * dest[3], int offset, int width,
+				   void (** table) (uint_8 *, uint_8 *, int, int))
+{
+	int vertical_field_select;
+	int motion_x, motion_y;
+
+	vertical_field_select = bitstream_get(1);
+
+	motion_x = motion->pmv[0][0] + get_motion_delta (motion->f_code[0]);
+	motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
+	motion->pmv[0][0] = motion_x;
+
+	motion_y = (motion->pmv[0][1] >> 1) + get_motion_delta (motion->f_code[1]);
+	//motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
+	motion->pmv[0][1] = motion_y << 1;
+
+	motion_block (table, motion_x, motion_y, dest, offset,
+				  motion->ref_frame, offset + vertical_field_select * width,
+				  width * 2, 8);
+
+	vertical_field_select = bitstream_get(1);
+
+	motion_x = motion->pmv[1][0] + get_motion_delta (motion->f_code[0]);
+	motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
+	motion->pmv[1][0] = motion_x;
+
+	motion_y = (motion->pmv[1][1] >> 1) + get_motion_delta (motion->f_code[1]);
+	//motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
+	motion->pmv[1][1] = motion_y << 1;
+
+	motion_block (table, motion_x, motion_y, dest, offset + width,
+				  motion->ref_frame, offset + vertical_field_select * width,
+				  width * 2, 8);
+}
+
+// like motion_frame, but reuse previous motion vectors
+void motion_reuse (motion_t * motion, uint_8 * dest[3], int offset, int width,
+				   void (** table) (uint_8 *, uint_8 *, int, int))
+{
+	motion_block (table, motion->pmv[0][0], motion->pmv[0][1], dest, offset,
+				  motion->ref_frame, offset, width, 16);
+}
+
+// like motion_frame, but use null motion vectors
+void motion_zero (motion_t * motion, uint_8 * dest[3], int offset, int width,
+				  void (** table) (uint_8 *, uint_8 *, int, int))
+{
+	motion_block (table, 0, 0, dest, offset,
+				  motion->ref_frame, offset, width, 16);
+}
+
+// like motion_frame, but no actual motion compensation
+void motion_conceal (motion_t * motion)
+{
+	int tmp;
+
+	bitstream_flush (1); // remove marker_bit
+
+	tmp = motion->pmv[0][0] + get_motion_delta (motion->f_code[0]);
+	tmp = bound_motion_vector (tmp, motion->f_code[0]);
+	motion->pmv[1][0] = motion->pmv[0][0] = tmp;
+
+	tmp = motion->pmv[0][1] + get_motion_delta (motion->f_code[1]);
+	tmp = bound_motion_vector (tmp, motion->f_code[1]);
+	motion->pmv[1][1] = motion->pmv[0][1] = tmp;
+}
+
+
+#define MOTION(routine,direction,slice,dest,offset,pitch)	\
+do {														\
+	if ((direction) & MACROBLOCK_MOTION_FORWARD)			\
+		routine (&((slice).f_motion), dest, offset, pitch,	\
+				 mc_functions.put);							\
+	if ((direction) & MACROBLOCK_MOTION_BACKWARD)			\
+		routine (&((slice).b_motion), dest, offset, pitch,	\
+				 ((direction) & MACROBLOCK_MOTION_FORWARD ?	\
+				  mc_functions.avg : mc_functions.put));	\
+} while (0);
+
+uint_32 get_macroblock_modes (int picture_coding_type,
+							  int frame_pred_frame_dct)
+{
+	uint_32 macroblock_modes;
+
+	macroblock_modes = Get_macroblock_type (picture_coding_type);
+
+	if (frame_pred_frame_dct)
+		return macroblock_modes | MC_FRAME;
+
+	// get frame/field motion type 
+	if (macroblock_modes & (MACROBLOCK_MOTION_FORWARD | MACROBLOCK_MOTION_BACKWARD))
+		macroblock_modes |= bitstream_get (2) * MOTION_TYPE_BASE;
+
+	if (macroblock_modes & (MACROBLOCK_INTRA | MACROBLOCK_PATTERN))
+		macroblock_modes |= bitstream_get (1) * DCT_TYPE_INTERLACED;
+
+	return macroblock_modes;
+}
 
 uint_32
 slice_process (picture_t * picture, uint_8 code, uint_8 * buffer)
 {
 	uint_32 mba;      
 	uint_32 mba_inc;
-	uint_32 prev_macroblock_type = 0; 
-	uint_32 mb_width = picture->coded_picture_width >> 4;
-	uint_32 i;
+	uint_32 macroblock_modes;
+	int width;
+	uint_8 * dest[3];
+	int offset;
 
-	mba = (code - 1) * mb_width - 1;
+
+	width = picture->coded_picture_width;
+	mba = (code - 1) * (picture->coded_picture_width >> 4);
+	offset = (code - 1) * width * 4;
+
+	dest[0] = picture->current_frame[0] + offset * 4;
+	dest[1] = picture->current_frame[1] + offset;
+	dest[2] = picture->current_frame[2] + offset;
+	slice.f_motion.ref_frame[0] = picture->forward_reference_frame[0] + offset * 4;
+	slice.f_motion.ref_frame[1] = picture->forward_reference_frame[1] + offset;
+	slice.f_motion.ref_frame[2] = picture->forward_reference_frame[2] + offset;
+	slice.f_motion.f_code[0] = picture->f_code[0][0];
+	slice.f_motion.f_code[1] = picture->f_code[0][1];
+	slice.f_motion.pmv[0][0] = slice.f_motion.pmv[0][1] = 0;
+	slice.f_motion.pmv[1][0] = slice.f_motion.pmv[1][1] = 0;
+	slice.b_motion.ref_frame[0] = picture->backward_reference_frame[0] + offset * 4;
+	slice.b_motion.ref_frame[1] = picture->backward_reference_frame[1] + offset;
+	slice.b_motion.ref_frame[2] = picture->backward_reference_frame[2] + offset;
+	slice.b_motion.f_code[0] = picture->f_code[1][0];
+	slice.b_motion.f_code[1] = picture->f_code[1][1];
+	slice.b_motion.pmv[0][0] = slice.b_motion.pmv[0][1] = 0;
+	slice.b_motion.pmv[1][0] = slice.b_motion.pmv[1][1] = 0;
+
+	//reset intra dc predictor
+	slice.dc_dct_pred[0]=slice.dc_dct_pred[1]=slice.dc_dct_pred[2]= 
+		1<<(picture->intra_dc_precision + 7) ;
 
 	bitstream_init (buffer);
 
-	slice_reset_pmv(&slice);
-	slice_get_slice_header(picture,&slice);
-	do
-	{
-		mba_inc = Get_macroblock_address_increment();
+	slice.quantizer_scale = get_quantizer_scale (picture->q_scale_type);
 
-		if(mba_inc > 1)
+	//Ignore intra_slice and all the extra data
+	while (bitstream_get (1))
+		bitstream_flush (8);
+
+	mba_inc = Get_macroblock_address_increment() - 1;
+	mba += mba_inc;
+	offset = 16 * mba_inc;
+
+	while (1)
+	{
+		macroblock_modes = get_macroblock_modes (picture->picture_coding_type, picture->frame_pred_frame_dct);
+
+		if (macroblock_modes & MACROBLOCK_QUANT)
+			slice.quantizer_scale = get_quantizer_scale (picture->q_scale_type);
+
+		if (macroblock_modes & MACROBLOCK_INTRA)
 		{
-			//FIXME: this should be a function in slice.c instead
+			int DCT_offset, DCT_pitch;
+
+			if (picture->concealment_motion_vectors)
+				motion_conceal (&slice.f_motion);
+			else
+			{
+				slice.f_motion.pmv[0][0] = slice.f_motion.pmv[0][1] = 0;
+				slice.f_motion.pmv[1][0] = slice.f_motion.pmv[1][1] = 0;
+				slice.b_motion.pmv[0][0] = slice.b_motion.pmv[0][1] = 0;
+				slice.b_motion.pmv[1][0] = slice.b_motion.pmv[1][1] = 0;
+			}
+
+			if (macroblock_modes & DCT_TYPE_INTERLACED)
+			{
+				DCT_offset = width;
+				DCT_pitch = width * 2;
+			}
+			else
+			{
+				DCT_offset = width * 8;
+				DCT_pitch = width;
+			}
+
+			// Decode lum blocks
+			slice_intra_DCT (picture, &slice, 0, dest[0] + offset, DCT_pitch);
+			slice_intra_DCT (picture, &slice, 0, dest[0] + offset + 8, DCT_pitch);
+			slice_intra_DCT (picture, &slice, 0, dest[0] + offset + DCT_offset, DCT_pitch);
+			slice_intra_DCT (picture, &slice, 0, dest[0] + offset + DCT_offset + 8, DCT_pitch);
+
+			// Decode chroma blocks
+			slice_intra_DCT (picture, &slice, 1, dest[1] + (offset>>1), width>>1);
+			slice_intra_DCT (picture, &slice, 2, dest[2] + (offset>>1), width>>1);
+		}
+		else
+		{
+			switch (macroblock_modes & MOTION_TYPE_MASK)
+			{
+			case MC_FRAME:
+				MOTION (motion_frame, macroblock_modes, slice, dest,
+						offset, width);
+				break;
+
+			case MC_FIELD:
+				MOTION (motion_field, macroblock_modes, slice, dest,
+						offset, width);
+				break;
+
+			case 0:
+				// non-intra mb without forward mv in a P picture
+				slice.f_motion.pmv[0][0] = slice.f_motion.pmv[0][1] = 0;
+				slice.f_motion.pmv[1][0] = slice.f_motion.pmv[1][1] = 0;
+
+				MOTION (motion_zero, MACROBLOCK_MOTION_FORWARD,
+						slice, dest, offset, width);
+				break;
+			}
+
+			//6.3.17.4 Coded block pattern
+			if (macroblock_modes & MACROBLOCK_PATTERN)
+			{
+				int coded_block_pattern;
+				int DCT_offset, DCT_pitch;
+
+				if (macroblock_modes & DCT_TYPE_INTERLACED)
+				{
+					DCT_offset = width;
+					DCT_pitch = width * 2;
+				}
+				else
+				{
+					DCT_offset = width * 8;
+					DCT_pitch = width;
+				}
+
+				coded_block_pattern = Get_coded_block_pattern();
+
+				// Decode lum blocks
+
+				if (coded_block_pattern & 0x20)
+					slice_non_intra_DCT (picture, &slice, dest[0] + offset, DCT_pitch);
+				if (coded_block_pattern & 0x10)
+					slice_non_intra_DCT (picture, &slice, dest[0] + offset + 8, DCT_pitch);
+				if (coded_block_pattern & 0x08)
+					slice_non_intra_DCT (picture, &slice, dest[0] + offset + DCT_offset, DCT_pitch);
+				if (coded_block_pattern & 0x04)
+					slice_non_intra_DCT (picture, &slice, dest[0] + offset + DCT_offset + 8, DCT_pitch);
+
+				// Decode chroma blocks
+
+				if (coded_block_pattern & 0x2)
+					slice_non_intra_DCT (picture, &slice, dest[1] + (offset>>1), width >> 1);
+				if (coded_block_pattern & 0x1)
+					slice_non_intra_DCT (picture, &slice, dest[2] + (offset>>1), width >> 1);
+			}
+
+			slice.dc_dct_pred[0]=slice.dc_dct_pred[1]=slice.dc_dct_pred[2]=
+				1 << (picture->intra_dc_precision + 7);
+		}
+
+		mba++;
+		offset += 16;
+
+		if (! bitstream_show (11))
+			break;
+
+		mba_inc = Get_macroblock_address_increment() - 1;
+
+		if (mba_inc)
+		{
 			//reset intra dc predictor on skipped block
 			slice.dc_dct_pred[0]=slice.dc_dct_pred[1]=slice.dc_dct_pred[2]=
 				1<<(picture->intra_dc_precision + 7);
 
-			mb.coded_block_pattern = 0;
-			mb.skipped = 1;
-
 			//handling of skipped mb's differs between P_TYPE and B_TYPE
 			//pictures
-			if(picture->picture_coding_type == P_TYPE)
+			if (picture->picture_coding_type == P_TYPE)
 			{
-				slice_reset_pmv(&slice);
-				memset(mb.f_motion_vectors[0],0,8);
-				mb.macroblock_type = MACROBLOCK_MOTION_FORWARD;
+				slice.f_motion.pmv[0][0] = slice.f_motion.pmv[0][1] = 0;
+				slice.f_motion.pmv[1][0] = slice.f_motion.pmv[1][1] = 0;
 
-				for(i=0; i< mba_inc - 1; i++)
+				do
 				{
-					mb.mba = ++mba;
-					motion_comp(picture,&mb);
+					MOTION (motion_zero, MACROBLOCK_MOTION_FORWARD,
+							slice, dest, offset, width);
+
+					mba++;
+					offset += 16;
 				}
+				while (--mba_inc);
 			}
 			else
 			{
-				memcpy(mb.f_motion_vectors[0],slice.f_pmv,8);
-				memcpy(mb.b_motion_vectors[0],slice.b_pmv,8);
-				mb.macroblock_type = prev_macroblock_type;
-
-				for(i=0; i< mba_inc - 1; i++)
+				do
 				{
-					mb.mba = ++mba;
-					motion_comp(picture,&mb);
+					MOTION (motion_reuse, macroblock_modes,
+							slice, dest, offset, width);
+
+					mba++;
+					offset += 16;
 				}
+				while (--mba_inc);
 			}
-			mb.skipped = 0;
 		}
-		
-		mb.mba = ++mba; 
-
-		slice_get_macroblock(picture,&slice,&mb);
-
-		//we store the last macroblock mv flags, as skipped b-frame blocks
-		//inherit them
-		prev_macroblock_type = mb.macroblock_type & (MACROBLOCK_MOTION_FORWARD | MACROBLOCK_MOTION_BACKWARD);
-
-		idct(&mb);
-		motion_comp(picture,&mb);
-
 	}
-	while(bitstream_show(23));
 
 	return (mba >= picture->last_mba);
 }
-
-
