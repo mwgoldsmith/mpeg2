@@ -180,9 +180,13 @@ struct mpeg2dec_s {
     uint8_t first_decode_slice;
     uint8_t nb_decode_slices;
 
+    unsigned int user_data_len;
+
     mpeg2_sequence_t new_sequence;
     mpeg2_sequence_t sequence;
+    mpeg2_gop_t new_gop;
     mpeg2_gop_t gop;
+    mpeg2_picture_t new_picture;
     mpeg2_picture_t pictures[4];
     mpeg2_picture_t * picture;
     /*const*/ mpeg2_fbuf_t * fbuf[3];	/* 0: current fbuf, 1-2: prediction fbufs */
@@ -237,8 +241,9 @@ mpeg2_state_t mpeg2_header_picture_start (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_picture (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_extension (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec);
-void mpeg2_header_matrix_finalize (mpeg2dec_t * mpeg2dec);
 void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec);
+void mpeg2_header_gop_finalize (mpeg2dec_t * mpeg2dec);
+void mpeg2_header_picture_finalize (mpeg2dec_t * mpeg2dec);
 mpeg2_state_t mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec);
 mpeg2_state_t mpeg2_header_end (mpeg2dec_t * mpeg2dec);
 void mpeg2_set_fbuf (mpeg2dec_t * mpeg2dec, int b_type);

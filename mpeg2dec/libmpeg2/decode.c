@@ -143,6 +143,7 @@ mpeg2_state_t mpeg2_seek_header (mpeg2dec_t * mpeg2dec)
 	if (seek_chunk (mpeg2dec) == STATE_BUFFER)
 	    return STATE_BUFFER;
     mpeg2dec->chunk_start = mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
+    mpeg2dec->user_data_len = 0;
     return (mpeg2dec->code ? mpeg2_parse_header (mpeg2dec) :
 	    mpeg2_header_picture_start (mpeg2dec));
 }
@@ -223,6 +224,7 @@ mpeg2_state_t mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
     int size_buffer, size_chunk, copied;
 
     mpeg2dec->action = mpeg2_parse_header;
+    mpeg2dec->info.user_data = NULL;	mpeg2dec->info.user_data_len = 0;
     while (1) {
 	size_buffer = mpeg2dec->buf_end - mpeg2dec->buf_start;
 	size_chunk = (mpeg2dec->chunk_buffer + BUFFER_SIZE -
@@ -264,11 +266,12 @@ mpeg2_state_t mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
 
 	/* other legal state transitions */
 	case RECEIVED (0x00, STATE_GOP):
+	    mpeg2_header_gop_finalize (mpeg2dec);
 	    mpeg2dec->action = mpeg2_header_picture_start;
 	    break;
 	case RECEIVED (0x01, STATE_PICTURE):
 	case RECEIVED (0x01, STATE_PICTURE_2ND):
-	    mpeg2_header_matrix_finalize (mpeg2dec);
+	    mpeg2_header_picture_finalize (mpeg2dec);
 	    mpeg2dec->action = mpeg2_header_slice_start;
 	    break;
 
@@ -289,6 +292,7 @@ mpeg2_state_t mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
 	}
 
 	mpeg2dec->chunk_start = mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
+	mpeg2dec->user_data_len = 0;
 	return mpeg2dec->state;
     }
 }
@@ -411,6 +415,8 @@ void mpeg2_reset (mpeg2dec_t * mpeg2dec, int full_reset)
 
     mpeg2_reset_info(&(mpeg2dec->info));
     mpeg2dec->info.gop = NULL;
+    mpeg2dec->info.user_data = NULL;
+    mpeg2dec->info.user_data_len = 0;
     if (full_reset) {
 	mpeg2dec->info.sequence = NULL;
 	mpeg2_header_state_init (mpeg2dec);
