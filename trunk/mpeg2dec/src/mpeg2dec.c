@@ -42,12 +42,11 @@
 static uint8_t buffer[BUFFER_SIZE];
 static FILE * in_file;
 static uint32_t frame_counter = 0;
-
 static struct timeval tv_beg, tv_end, tv_start;
 static int elapsed;
 static int total_elapsed;
 static int last_count = 0;
-static int demux_ps = 0;
+static int demux_track = 0;
 static int disable_accel = 0;
 static mpeg2dec_t mpeg2dec;
 static vo_open_t * output_open = NULL;
@@ -111,8 +110,9 @@ static void print_usage (char * argv[])
     int i;
     vo_driver_t * drivers;
 
-    fprintf (stderr, "usage: %s [-o mode] [-s] [-c] file\n"
-	     "\t-s\tuse program stream demultiplexer\n"
+    fprintf (stderr, "usage: %s [-o <mode>] [-s[<track>]] [-c] <file>\n"
+	     "\t-s\tuse program stream demultiplexer, "
+	     "track 0-15 or 0xe0-0xef\n"
 	     "\t-c\tuse c implementation, disables all accelerations\n"
 	     "\t-o\tvideo output mode\n", argv[0]);
 
@@ -130,7 +130,7 @@ static void handle_args (int argc, char * argv[])
     int i;
 
     drivers = vo_drivers ();
-    while ((c = getopt (argc, argv, "sco:")) != -1) {
+    while ((c = getopt (argc, argv, "s::co:")) != -1)
 	switch (c) {
 	case 'o':
 	    for (i = 0; drivers[i].name != NULL; i++)
@@ -143,7 +143,18 @@ static void handle_args (int argc, char * argv[])
 	    break;
 
 	case 's':
-	    demux_ps = 1;
+	    demux_track = 0xe0;
+	    if (optarg != NULL) {
+		char * s;
+
+		demux_track = strtol (optarg, &s, 16);
+		if (demux_track < 0xe0)
+		    demux_track += 0xe0;
+		if ((demux_track < 0xe0) || (demux_track > 0xef) || (*s)) {
+		    fprintf (stderr, "Invalid track number: %s\n", optarg);
+		    print_usage (argv);
+		}
+	    }
 	    break;
 
 	case 'c':
@@ -153,7 +164,6 @@ static void handle_args (int argc, char * argv[])
 	default:
 	    print_usage (argv);
 	}
-    }
 
     /* -o not specified, use a default driver */
     if (output_open == NULL)
@@ -228,34 +238,34 @@ static void ps_loop (void)
 		    goto copy;
 		buf = tmp1;
 		break;
-	    case 0xe0:	/* video */
-		tmp2 = buf + 6 + (buf[4] << 8) + buf[5];
-		if (tmp2 > end)
-		    goto copy;
-		if ((buf[6] & 0xc0) == 0x80)	/* mpeg2 */
-		    tmp1 = buf + 9 + buf[8];
-		else {	/* mpeg1 */
-		    for (tmp1 = buf + 6; *tmp1 == 0xff; tmp1++)
-			if (tmp1 == buf + 6 + 16) {
-			    fprintf (stderr, "too much stuffing\n");
-			    buf = tmp2;
-			    break;
-			}
-		    if ((*tmp1 & 0xc0) == 0x40)
-			tmp1 += 2;
-		    tmp1 += mpeg1_skip_table [*tmp1 >> 4];
-		}
-		if (tmp1 < tmp2) {
-		    int num_frames;
-
-		    num_frames = mpeg2_decode_data (&mpeg2dec, tmp1, tmp2);
-		    while (num_frames--)
-			print_fps (0);
-		}
-		buf = tmp2;
-		break;
 	    default:
-		if (buf[3] < 0xb9) {
+		if (buf[3] == demux_track) {	/* video */
+		    tmp2 = buf + 6 + (buf[4] << 8) + buf[5];
+		    if (tmp2 > end)
+			goto copy;
+		    if ((buf[6] & 0xc0) == 0x80)	/* mpeg2 */
+			tmp1 = buf + 9 + buf[8];
+		    else {	/* mpeg1 */
+			for (tmp1 = buf + 6; *tmp1 == 0xff; tmp1++)
+			    if (tmp1 == buf + 6 + 16) {
+				fprintf (stderr, "too much stuffing\n");
+				buf = tmp2;
+				break;
+			    }
+			if ((*tmp1 & 0xc0) == 0x40)
+			    tmp1 += 2;
+			tmp1 += mpeg1_skip_table [*tmp1 >> 4];
+		    }
+		    if (tmp1 < tmp2) {
+			int num_frames;
+
+			num_frames = mpeg2_decode_data (&mpeg2dec, tmp1, tmp2);
+			while (num_frames--)
+			    print_fps (0);
+		    }
+		    buf = tmp2;
+		    break;
+		} else if (buf[3] < 0xb9) {
 		    fprintf (stderr,
 			     "looks like a video stream, not system stream\n");
 		    exit (1);
@@ -319,7 +329,7 @@ int main (int argc,char *argv[])
 
     gettimeofday (&tv_beg, NULL);
 
-    if (demux_ps)
+    if (demux_track)
 	ps_loop ();
     else
 	es_loop ();

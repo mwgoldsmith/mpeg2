@@ -35,10 +35,12 @@
 #define BUFFER_SIZE 262144
 static uint8_t buffer[BUFFER_SIZE];
 static FILE * in_file;
+static int demux_track = 0xe0;
 
 static void print_usage (char * argv[])
 {
-    fprintf (stderr, "usage: %s file\n", argv[0]);
+    fprintf (stderr, "usage: %s [-s<track>] <file>\n"
+	     "\t-s\tset track number (0-15 or 0xe0-0xef)\n", argv[0]);
 
     exit (1);
 }
@@ -46,9 +48,23 @@ static void print_usage (char * argv[])
 static void handle_args (int argc, char * argv[])
 {
     int c;
+    char * s;
 
-    if ((c = getopt (argc, argv, "")) != -1)
-	print_usage (argv);
+    while ((c = getopt (argc, argv, "s:")) != -1)
+	switch (c) {
+	case 's':
+	    demux_track = strtol (optarg, &s, 16);
+	    if (demux_track < 0xe0)
+		demux_track += 0xe0;
+	    if ((demux_track < 0xe0) || (demux_track > 0xef) || (*s)) {
+		fprintf (stderr, "Invalid track number: %s\n", optarg);
+		print_usage (argv);
+	    }
+	    break;
+
+	default:
+	    print_usage (argv);
+	}
 
     if (optind < argc) {
 	in_file = fopen (argv[optind], "rb");
@@ -119,29 +135,29 @@ static void ps_loop (void)
 		    goto copy;
 		buf = tmp1;
 		break;
-	    case 0xe0:	/* video */
-		tmp2 = buf + 6 + (buf[4] << 8) + buf[5];
-		if (tmp2 > end)
-		    goto copy;
-		if ((buf[6] & 0xc0) == 0x80)	/* mpeg2 */
-		    tmp1 = buf + 9 + buf[8];
-		else {	/* mpeg1 */
-		    for (tmp1 = buf + 6; *tmp1 == 0xff; tmp1++)
-			if (tmp1 == buf + 6 + 16) {
-			    fprintf (stderr, "too much stuffing\n");
-			    buf = tmp2;
-			    break;
-			}
-		    if ((*tmp1 & 0xc0) == 0x40)
-			tmp1 += 2;
-		    tmp1 += mpeg1_skip_table [*tmp1 >> 4];
-		}
-		if (tmp1 < tmp2)
-		    fwrite (tmp1, tmp2-tmp1, 1, stdout);
-		buf = tmp2;
-		break;
 	    default:
-		if (buf[3] < 0xb9) {
+		if (buf[3] == demux_track) {	/* video */
+		    tmp2 = buf + 6 + (buf[4] << 8) + buf[5];
+		    if (tmp2 > end)
+			goto copy;
+		    if ((buf[6] & 0xc0) == 0x80)	/* mpeg2 */
+			tmp1 = buf + 9 + buf[8];
+		    else {	/* mpeg1 */
+			for (tmp1 = buf + 6; *tmp1 == 0xff; tmp1++)
+			    if (tmp1 == buf + 6 + 16) {
+				fprintf (stderr, "too much stuffing\n");
+				buf = tmp2;
+				break;
+			    }
+			if ((*tmp1 & 0xc0) == 0x40)
+			    tmp1 += 2;
+			tmp1 += mpeg1_skip_table [*tmp1 >> 4];
+		    }
+		    if (tmp1 < tmp2)
+			fwrite (tmp1, tmp2-tmp1, 1, stdout);
+		    buf = tmp2;
+		    break;
+		} else if (buf[3] < 0xb9) {
 		    fprintf (stderr,
 			     "looks like a video stream, not system stream\n");
 		    exit (1);
