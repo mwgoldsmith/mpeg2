@@ -94,7 +94,7 @@ static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
 	     (decoder->second_field)) &&
 	    (!(mpeg2dec->drop_frame))) {
 	    is_frame_done = 1;
-	    vo_draw ((decoder->picture_coding_type == B_TYPE) ?
+	    vo_draw ((decoder->coding_type == B_TYPE) ?
 		     decoder->current_frame :
 		     decoder->forward_reference_frame);
 	}
@@ -102,25 +102,24 @@ static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
 
     switch (code) {
     case 0x00:	/* picture_start_code */
-	if (mpeg2_header_picture (buffer, decoder,
-				  &(mpeg2dec->info.picture))) {
+	if (mpeg2_header_picture (buffer, &(mpeg2dec->info.picture),
+				  decoder)) {
 	    fprintf (stderr, "bad picture header\n");
 	    exit (1);
 	}
 	mpeg2dec->drop_frame =
-	    mpeg2dec->drop_flag && (decoder->picture_coding_type == B_TYPE);
+	    mpeg2dec->drop_flag && (decoder->coding_type == B_TYPE);
 	break;
 
     case 0xb3:	/* sequence_header_code */
-	if (mpeg2_header_sequence (buffer, decoder,
-				   &(mpeg2dec->info.sequence))) {
+	if (mpeg2_header_sequence (buffer, &(mpeg2dec->info.sequence),
+				   decoder)) {
 	    fprintf (stderr, "bad sequence header\n");
 	    exit (1);
 	}
 	if (mpeg2dec->is_sequence_needed) {
 	    mpeg2dec->is_sequence_needed = 0;
-	    if (vo_setup (mpeg2dec->output, decoder->coded_picture_width,
-			  decoder->coded_picture_height)) {
+	    if (vo_setup (mpeg2dec->output, decoder->width, decoder->height)) {
 		fprintf (stderr, "display setup failed\n");
 		exit (1);
 	    }
@@ -134,7 +133,7 @@ static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
 	break;
 
     case 0xb5:	/* extension_start_code */
-	if (mpeg2_header_extension (buffer, decoder, &(mpeg2dec->info))) {
+	if (mpeg2_header_extension (buffer, &(mpeg2dec->info), decoder)) {
 	    fprintf (stderr, "bad extension\n");
 	    exit (1);
 	}
@@ -153,9 +152,7 @@ static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
 	    if (decoder->second_field)
 		vo_field (decoder->current_frame, decoder->picture_structure);
 	    else {
-		vo_frame_t * frame;
-
-		if (decoder->picture_coding_type == B_TYPE)
+		if (decoder->coding_type == B_TYPE)
 		    decoder->current_frame =
 			vo_get_frame (mpeg2dec->output,
 				      decoder->picture_structure);
@@ -168,18 +165,6 @@ static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
 			decoder->backward_reference_frame;
 		    decoder->backward_reference_frame = decoder->current_frame;
 		}
-
-		/* hopefully vektor will be happy */
-		frame = decoder->current_frame;
-		frame->aspect_ratio = mpeg2dec->info.sequence.aspect_ratio;
-		frame->frame_rate_code = mpeg2dec->info.sequence.frame_rate_code;
-		frame->bitrate = mpeg2dec->info.sequence.bitrate;
-		frame->progressive_sequence = mpeg2dec->info.sequence.progressive_sequence;
-		frame->progressive_frame = mpeg2dec->info.picture.progressive_frame;
-		frame->top_field_first = mpeg2dec->info.picture.top_field_first;
-		frame->repeat_first_field = mpeg2dec->info.picture.repeat_first_field;
-		frame->picture_coding_type = mpeg2dec->info.picture.picture_coding_type;
-		frame->pts = mpeg2dec->pts;
 	    }
 	}
 

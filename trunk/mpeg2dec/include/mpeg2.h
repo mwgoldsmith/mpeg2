@@ -24,24 +24,56 @@
 #ifndef MPEG2_H
 #define MPEG2_H
 
+#define SEQ_FLAG_MPEG2 1
+#define SEQ_FLAG_CONSTRAINED_PARAMETERS 2
+#define SEQ_FLAG_PROGRESSIVE_SEQUENCE 4
+#define SEQ_FLAG_LOW_DELAY 8
+#define SEQ_FLAG_COLOUR_DESCRIPTION 16
+
+#define SEQ_MASK_VIDEO_FORMAT 0xe0
+#define SEQ_VIDEO_FORMAT_COMPONENT 0
+#define SEQ_VIDEO_FORMAT_PAL 0x20
+#define SEQ_VIDEO_FORMAT_NTSC 0x40
+#define SEQ_VIDEO_FORMAT_SECAM 0x60
+#define SEQ_VIDEO_FORMAT_MAC 0x80
+#define SEQ_VIDEO_FORMAT_UNSPECIFIED 0xa0
+
+/* this flag is private, do not rely on it */
+#define SEQ_FLAG_SQUARE_PIXEL 0x80000000
+
 typedef struct {
-    int width;
-    int height;
+    unsigned int width, height;
+    unsigned int chroma_width, chroma_height;
+    unsigned int byte_rate;
+    unsigned int vbv_buffer_size;
+    uint32_t flags;
 
-    int display_width;
-    int display_height;
+    unsigned int picture_width, picture_height;
+    unsigned int display_width, display_height;
+    unsigned int pixel_width, pixel_height;
+    unsigned int frame_period;
 
-    int aspect_ratio;
-    int frame_rate_code;
-    int bitrate;
-    int progressive_sequence;
+    uint8_t profile_level_id;
+    uint8_t colour_primaries;
+    uint8_t transfer_characteristics;
+    uint8_t matrix_coefficients;
 } sequence_t;
 
+#define PIC_MASK_CODING_TYPE 7
+#define PIC_FLAG_CODING_TYPE_I 1
+#define PIC_FLAG_CODING_TYPE_P 2
+#define PIC_FLAG_CODING_TYPE_B 3
+#define PIC_FLAG_CODING_TYPE_D 4
+
+#define PIC_FLAG_TOP_FIELD_FIRST 8
+#define PIC_FLAG_PROGRESSIVE_FRAME 16
+#define PIC_FLAG_COMPOSITE_DISPLAY 32
+#define PIC_MASK_COMPOSITE_DISPLAY 0xfffff000
+
 typedef struct {
-    int progressive_frame;
-    int top_field_first;
-    int repeat_first_field;
-    int picture_coding_type;
+    unsigned int temporal_reference;
+    unsigned int nb_fields;
+    uint32_t flags;
 } picture_t;
 
 typedef struct {
@@ -80,25 +112,24 @@ typedef struct {
     mpeg2_info_t info;
 } mpeg2dec_t ;
 
-
-
 typedef struct decoder_s decoder_t;
 
 void mpeg2_header_state_init (decoder_t * decoder);
-
-int mpeg2_header_picture (uint8_t * buffer, decoder_t * decoder,
-                          picture_t * picture);
-
-int mpeg2_header_sequence (uint8_t * buffer, decoder_t * decoder,
-                           sequence_t * sequence);
-
-int mpeg2_header_extension (uint8_t * buffer, decoder_t * decoder,
-                            mpeg2_info_t * info);
+int mpeg2_header_sequence (uint8_t * buffer, sequence_t * sequence,
+			   decoder_t * decoder);
+int mpeg2_header_sequence_ext (uint8_t * buffer, sequence_t * sequence,
+                               decoder_t * decoder);
+int mpeg2_header_sequence_display_ext (uint8_t * buffer,
+				       sequence_t * sequence);
+int mpeg2_header_picture (uint8_t * buffer, picture_t * picture,
+			  decoder_t * decoder);
+int mpeg2_header_picture_coding_ext (uint8_t * buffer, picture_t * picture, 
+				     decoder_t * decoder);
+int mpeg2_header_quant_matrix_ext (uint8_t * buffer, decoder_t * decoder);
+int mpeg2_header_extension (uint8_t * buffer, mpeg2_info_t * info,
+			    decoder_t * decoder);
 
 void mpeg2_slice (decoder_t * decoder, int code, uint8_t * buffer);
-
-
-
 
 void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
 		 vo_instance_t * output);

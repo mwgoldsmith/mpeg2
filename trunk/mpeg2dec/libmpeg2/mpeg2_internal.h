@@ -96,13 +96,13 @@ struct decoder_s {
     uint8_t non_intra_quantizer_matrix [64];
 
     /* The width and height of the picture snapped to macroblock units */
-    int coded_picture_width;
-    int coded_picture_height;
+    int width;
+    int height;
 
     /* picture header stuff */
 
     /* what type of picture this is (I, P, B, D) */
-    int picture_coding_type;
+    int coding_type;
 
     /* picture coding extension stuff */
 
@@ -134,6 +134,8 @@ struct decoder_s {
     int second_field;
 
     int mpeg1;
+
+    int progressive_sequence;	/* only for decoding picture coding ext */
 };
 
 typedef struct {

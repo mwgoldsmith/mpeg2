@@ -33,17 +33,6 @@ struct vo_frame_s {
     void (* field) (vo_frame_t * frame, int flags);
     void (* draw) (vo_frame_t * frame);
     vo_instance_t * instance;
-
-    /* ONLY for 0.2.x release - will not stay there later */
-    int aspect_ratio;
-    int frame_rate_code;
-    int bitrate;
-    int progressive_sequence;
-    int progressive_frame;
-    int top_field_first;
-    int repeat_first_field;
-    int picture_coding_type;
-    uint32_t pts;
 };
 
 typedef vo_instance_t * vo_open_t (void);
