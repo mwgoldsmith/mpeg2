@@ -1,6 +1,5 @@
 //PLUGIN_INFO(INFO_NAME, "MPEG2 video decoder");
 //PLUGIN_INFO(INFO_AUTHOR, "Aaron Holtzman <aholtzma@ess.engr.uvic.ca>");
-//PLUGIN_INFO(INFO_AUTHOR, "Thomas Mirlacher <dent@linuxvideo.org>");
 
 #include "config.h"
 
@@ -61,12 +60,12 @@ static int _mpeg2dec_ctrl (void *plugin, uint ctrl_id, ...)
 
 	va_start (arg_list, ctrl_id);
 	switch (ctrl_id) {
-		case FLAG_VIDEO_INITIALIZED: {
+		case CTRL_VIDEO_INITIALIZED: {
 			int val = va_arg (arg_list, int);
 			mpeg2_output_init (val);
 			break;
 		}
-		case FLAG_VIDEO_DROP_FRAME: {
+		case CTRL_VIDEO_DROP_FRAME: {
 			int val = va_arg (arg_list, int);
 //			fprintf (stderr, "%c", val ? '-':'+');
                 	mpeg2_drop (val);
