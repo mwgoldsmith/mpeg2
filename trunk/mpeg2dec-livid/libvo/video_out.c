@@ -42,10 +42,8 @@ extern vo_output_video_t video_out_md5;
 
 vo_output_video_t * video_out_drivers[] =
 {
-#ifdef LIBVO_XVSHM
-    &video_out_xvshm,
-#endif
 #ifdef LIBVO_XV
+    &video_out_xvshm,
     &video_out_xv,
 #endif
 #ifdef LIBVO_XSHM
