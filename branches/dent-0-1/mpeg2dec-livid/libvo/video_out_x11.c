@@ -37,7 +37,7 @@
 
 static int _x11_open		(plugin_t *plugin, void *name);
 static int _x11_close		(plugin_t *plugin);
-static int _x11_setup		(uint32_t width, uint32_t height, uint32_t fullscreen, char *title);
+static int _x11_setup		(plugin_output_video_attr_t *attr);
 static int draw_frame		(uint8_t *src[]);
 static int draw_slice		(uint8_t *src[], uint32_t slice_num);
 static void flip_page		(void);
@@ -102,7 +102,6 @@ static void InstallXErrorHandler (void);
 static void DeInstallXErrorHandler (void);
 
 static int Shmem_Flag;
-static int Quiet_Flag;
 static XShmSegmentInfo Shminfo1;
 static int gXErrorFlag;
 static int CompletionType = -1;
@@ -124,19 +123,19 @@ static void DeInstallXErrorHandler()
 
 static int _x11_open (plugin_t *plugin, void *name)
 {
-	printf("Open Called\n"); fflush(stdout);
+	LOG (LOG_DEBUG, "Open Called\n");
 	return 0;
 }
 
-/* connect to server, create and map window,
+/**
+ * connect to server, create and map window,
  * allocate colors and (shared) memory
- */
-static int
-_x11_setup(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
+ **/
+
+static int _x11_setup (plugin_output_video_attr_t *attr)
 {
 	int screen;
 	unsigned int fg, bg;
-	char *hello = title ? title : "I hate X11";
 	char *name = ":0.0";
 	XSizeHints hint;
 	XVisualInfo vinfo;
@@ -147,20 +146,19 @@ _x11_setup(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 	XSetWindowAttributes xswa;
 	unsigned long xswamask;
 
-	_x11_priv.image_height = height;
-	_x11_priv.image_width = width;
+	_x11_priv.image_width = attr->width;
+	_x11_priv.image_height = attr->height;
 
 	if (_x11_priv.X_already_started)
 		return -1;
 
-	if(getenv("DISPLAY"))
-		name = getenv("DISPLAY");
+	if (getenv ("DISPLAY"))
+		name = getenv ("DISPLAY");
 
-	_x11_priv.display = XOpenDisplay(name);
+	_x11_priv.display = XOpenDisplay (name);
 
-	if (_x11_priv.display == NULL)
-	{
-		fprintf(stderr,"Can not open display\n");
+	if (!_x11_priv.display) {
+		LOG (LOG_ERROR, "Can not open display\n");
 		return -1;
 	}
 
@@ -185,7 +183,7 @@ _x11_setup(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 	 *
 	 * depth in X11 terminology land is the number of bits used to
 	 * actually represent the colour.
-   *
+	 *
 	 * bpp in X11 land means how many bits in the frame buffer per
 	 * pixel. 
 	 *
@@ -216,26 +214,24 @@ _x11_setup(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 	xswa.colormap         = theCmap;
 	xswamask = CWBackPixel | CWBorderPixel |CWColormap;
 
-
 	_x11_priv.window = XCreateWindow(_x11_priv.display, RootWindow(_x11_priv.display,screen),
 	hint.x, hint.y, hint.width, hint.height, 4, _x11_priv.depth, CopyFromParent,vinfo.visual,xswamask,&xswa);
 
-	XSelectInput(_x11_priv.display, _x11_priv.window, StructureNotifyMask);
+	XSelectInput (_x11_priv.display, _x11_priv.window, StructureNotifyMask);
 
-	/* Tell other applications about this window */
+// Tell other applications about this window
+	if (attr->title)
+		XSetStandardProperties(_x11_priv.display, _x11_priv.window, attr->title, attr->title, None, NULL, 0, &hint);
+	else
+		XSetStandardProperties(_x11_priv.display, _x11_priv.window, "X11", "X11", None, NULL, 0, &hint);
 
-	XSetStandardProperties(_x11_priv.display, _x11_priv.window, hello, hello, None, NULL, 0, &hint);
-
-	/* Map window. */
-
+// Map window
 	XMapWindow(_x11_priv.display, _x11_priv.window);
 
-	/* Wait for map. */
-	do 
-	{
+// Wait for map
+	do {
 		XNextEvent(_x11_priv.display, &xev);
-	}
-	while (xev.type != MapNotify || xev.xmap.event != _x11_priv.window);
+	} while (xev.type != MapNotify || xev.xmap.event != _x11_priv.window);
 
 	XSelectInput(_x11_priv.display, _x11_priv.window, NoEventMask);
 
@@ -246,34 +242,28 @@ _x11_setup(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 
 #ifdef HAVE_XV
 	_x11_priv.xv_port = 0;
-	if (Success == XvQueryExtension(_x11_priv.display,&_x11_priv.ver,&_x11_priv.rel,&_x11_priv.req,&_x11_priv.ev,&_x11_priv.err)) 
-	{
+	if (Success == XvQueryExtension(_x11_priv.display,&_x11_priv.ver,&_x11_priv.rel,&_x11_priv.req,&_x11_priv.ev,&_x11_priv.err)) {
 		int i;
 
 		/* check for Xvideo support */
-		if (Success != XvQueryAdaptors(_x11_priv.display,DefaultRootWindow(_x11_priv.display), &_x11_priv.adaptors,&_x11_priv.ai)) 
-		{
-			fprintf(stderr,"Xv: XvQueryAdaptors failed");
+		if (Success != XvQueryAdaptors(_x11_priv.display,DefaultRootWindow(_x11_priv.display), &_x11_priv.adaptors,&_x11_priv.ai)) {
+			LOG (LOG_ERROR, "Xv: XvQueryAdaptors failed");
 			return -1;
 		}
 		/* check adaptors */
-		for (i = 0; i < _x11_priv.adaptors; i++) 
-		{
-			if ((_x11_priv.ai[i].type & XvInputMask) && (_x11_priv.ai[i].type & XvImageMask) && (_x11_priv.xv_port == 0)) 
+		for (i=0; i < _x11_priv.adaptors; i++) {
+			if ((_x11_priv.ai[i].type & XvInputMask) && (_x11_priv.ai[i].type & XvImageMask) && !_x11_priv.xv_port) 
 				_x11_priv.xv_port = _x11_priv.ai[i].base_id;
 		}
 		/* check image formats */
-		if (_x11_priv.xv_port != 0) 
-		{
+		if (_x11_priv.xv_port) {
 			_x11_priv.fo = XvListImageFormats(_x11_priv.display, _x11_priv.xv_port, (int*)&_x11_priv.formats);
 
-			for(i = 0; i < _x11_priv.formats; i++) 
-			{
-				fprintf(stderr, "Xvideo image format: 0x%x (%4.4s) %s\n", _x11_priv.fo[i].id, 
+			for (i=0; i < _x11_priv.formats; i++) {
+				LOG (LOG_ERROR, "Xvideo image format: 0x%x (%4.4s) %s", _x11_priv.fo[i].id, 
 						(char*)&_x11_priv.fo[i].id, (_x11_priv.fo[i].format == XvPacked) ? "packed" : "planar");
 
-				if (0x32315659 == _x11_priv.fo[i].id) 
-				{
+				if (0x32315659 == _x11_priv.fo[i].id) {
 					_x11_priv.xv_format = _x11_priv.fo[i].id;
 					break;
 				}
@@ -282,30 +272,27 @@ _x11_setup(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 				_x11_priv.xv_port = 0;
 		}
 
-		if (_x11_priv.xv_port != 0) 
-		{
-			fprintf(stderr,"using Xvideo port %d for hw scaling\n",
-			_x11_priv.xv_port);
+		if (_x11_priv.xv_port) {
+			LOG (LOG_INFO, "using Xvideo port %d for hw scaling\n", _x11_priv.xv_port);
 
-			/* allocate XvImages.  FIXME: no error checking, without
-			* mit-shm this will bomb... */
-			_x11_priv.xvimage[0] = XvShmCreateImage(_x11_priv.display, _x11_priv.xv_port, _x11_priv.xv_format, 0,
-				_x11_priv.image_width, _x11_priv.image_height,
-			&Shminfo1);
+/* allocate XvImages.  FIXME: no error checking, without mit-shm this will bomb... */
+			_x11_priv.xvimage[0] = XvShmCreateImage (_x11_priv.display, _x11_priv.xv_port, _x11_priv.xv_format, 0,
+				_x11_priv.image_width, _x11_priv.image_height, &Shminfo1);
+
 			Shminfo1.shmid    = shmget(IPC_PRIVATE, _x11_priv.xvimage[0]->data_size,
 			IPC_CREAT | 0777);
 			Shminfo1.shmaddr  = (char *) shmat(Shminfo1.shmid, 0, 0);
 			Shminfo1.readOnly = False;
 			_x11_priv.xvimage[0]->data = Shminfo1.shmaddr;
-			XShmAttach(_x11_priv.display, &Shminfo1);
-			XSync(_x11_priv.display, False);
-			shmctl(Shminfo1.shmid, IPC_RMID, 0);
+			XShmAttach (_x11_priv.display, &Shminfo1);
+			XSync (_x11_priv.display, False);
+			shmctl (Shminfo1.shmid, IPC_RMID, 0);
 
 			/* so we can do grayscale while testing... */
-			memset(_x11_priv.xvimage[0]->data,128,_x11_priv.xvimage[0]->data_size);
+			memset (_x11_priv.xvimage[0]->data, 128, _x11_priv.xvimage[0]->data_size);
 
 			/* catch window resizes */
-			XSelectInput(_x11_priv.display, _x11_priv.window, StructureNotifyMask);
+			XSelectInput (_x11_priv.display, _x11_priv.window, StructureNotifyMask);
 			_x11_priv.win_width  = _x11_priv.image_width;
 			_x11_priv.win_height = _x11_priv.image_height;
 
@@ -319,12 +306,11 @@ _x11_setup(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 #ifdef SH_MEM
 	if (XShmQueryExtension(_x11_priv.display))
 		Shmem_Flag = 1;
-	else 
-	{
+	else {
 		Shmem_Flag = 0;
-		if (!Quiet_Flag)
-			fprintf(stderr, "Shared memory not supported\nReverting to normal Xlib\n");
+		LOG (LOG_INFO, "Shared memory not supported - Reverting to normal Xlib");
 	}
+
 	if (Shmem_Flag)
 		CompletionType = XShmGetEventBase(_x11_priv.display) + ShmCompletion;
 
@@ -333,16 +319,14 @@ _x11_setup(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 	if (Shmem_Flag) 
 	{
 		_x11_priv.ximage = XShmCreateImage(_x11_priv.display, vinfo.visual, 
-		_x11_priv.depth, ZPixmap, NULL, &Shminfo1, width, _x11_priv.image_height);
+		_x11_priv.depth, ZPixmap, NULL, &Shminfo1, attr->width, _x11_priv.image_height);
 
 		/* If no go, then revert to normal Xlib calls. */
 
-		if (_x11_priv.ximage == NULL ) 
-		{
-			if (_x11_priv.ximage != NULL)
+		if (!_x11_priv.ximage) {
+			if (_x11_priv.ximage)
 				XDestroyImage(_x11_priv.ximage);
-			if (!Quiet_Flag)
-				fprintf(stderr, "Shared memory error, disabling (Ximage error)\n");
+			LOG (LOG_ERROR, "Shared memory error, disabling (Ximage error)");
 
 			goto shmemerror;
 		}
@@ -351,26 +335,19 @@ _x11_setup(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 		Shminfo1.shmid = shmget(IPC_PRIVATE, 
 		_x11_priv.ximage->bytes_per_line * _x11_priv.ximage->height ,
 		IPC_CREAT | 0777);
-		if (Shminfo1.shmid < 0 ) 
-		{
+		if (Shminfo1.shmid < 0 ) {
 			XDestroyImage(_x11_priv.ximage);
-			if (!Quiet_Flag)
-			{
-				printf("%s\n",strerror(errno));
-				perror(strerror(errno));
-				fprintf(stderr, "Shared memory error, disabling (seg id error)\n");
-			}
+
+			LOG (LOG_ERROR, "Shared memory error, disabling (seg id error: %s)", strerror (errno));
 			goto shmemerror;
 		}
 		Shminfo1.shmaddr = (char *) shmat(Shminfo1.shmid, 0, 0);
 
-		if (Shminfo1.shmaddr == ((char *) -1)) 
-		{
+		if (Shminfo1.shmaddr == ((char *) -1)) {
 			XDestroyImage(_x11_priv.ximage);
 			if (Shminfo1.shmaddr != ((char *) -1))
 				shmdt(Shminfo1.shmaddr);
-			if (!Quiet_Flag) 
-				fprintf(stderr, "Shared memory error, disabling (address error)\n");
+			LOG (LOG_ERROR, "Shared memory error, disabling (address error)");
 			goto shmemerror;
 		}
 		_x11_priv.ximage->data = Shminfo1.shmaddr;
@@ -380,33 +357,23 @@ _x11_setup(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 
 		XSync(_x11_priv.display, False);
 
-		if (gXErrorFlag) 
-		{
+		if (gXErrorFlag) {
 			/* Ultimate failure here. */
 			XDestroyImage(_x11_priv.ximage);
 			shmdt(Shminfo1.shmaddr);
-			if (!Quiet_Flag)
-				fprintf(stderr, "Shared memory error, disabling.\n");
+			LOG (LOG_ERROR, "Shared memory error, disabling.\n");
 			gXErrorFlag = 0;
 			goto shmemerror;
-		} 
-		else 
-		{
+		} else 
 			shmctl(Shminfo1.shmid, IPC_RMID, 0);
-		}
 
-		if (!Quiet_Flag) 
-		{
-			fprintf(stderr, "Sharing memory.\n");
-		}
-	} 
-	else 
-	{
+		LOG (LOG_DEBUG, "Sharing memory");
+	} else {
 		shmemerror:
 		Shmem_Flag = 0;
 #endif
 		_x11_priv.ximage = XGetImage(_x11_priv.display, _x11_priv.window, 0, 0,
-		width, _x11_priv.image_height, AllPlanes, ZPixmap);
+		attr->width, _x11_priv.image_height, AllPlanes, ZPixmap);
 		_x11_priv.ImageData = _x11_priv.ximage->data;
 #ifdef SH_MEM
 	}
@@ -424,7 +391,7 @@ _x11_setup(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 	if (_x11_priv.ximage->byte_order != LSBFirst) 
 #endif
 	{
-		fprintf( stderr, "No support fon non-native XImage byte order!\n" );
+		LOG (LOG_ERROR, "No support fon non-native XImage byte order");
 		return -1;
 	}
 
@@ -481,22 +448,19 @@ Display_Image(XImage *ximage, uint8_t *ImageData)
 }
 
 #ifdef HAVE_XV
-static inline void
-flip_page_xv(void)
+static inline void flip_page_xv (void)
 {
 	Window root;
 	XEvent event;
 	int x, y;
 	unsigned int w, h, b, d;
 
-	if (_x11_priv.xv_port != 0) 
-	{
-		if (XCheckWindowEvent(_x11_priv.display, _x11_priv.window, StructureNotifyMask, &event))
-		{
+	if (_x11_priv.xv_port) {
+		if (XCheckWindowEvent(_x11_priv.display, _x11_priv.window, StructureNotifyMask, &event)) {
 			XGetGeometry(_x11_priv.display, _x11_priv.window, &root, &x, &y, &w, &h, &b, &d);
 			_x11_priv.win_width  = w;
 			_x11_priv.win_height = h;
-			fprintf(stderr,"win resize: %dx%d\n",_x11_priv.win_width,_x11_priv.win_height);                
+			LOG (LOG_DEBUG, "win resize: %dx%d",_x11_priv.win_width,_x11_priv.win_height);                
 		}
 
 		XvShmPutImage(_x11_priv.display, _x11_priv.xv_port, _x11_priv.window, _x11_priv.gc, _x11_priv.xvimage[0],
@@ -509,18 +473,16 @@ flip_page_xv(void)
 }
 #endif
 
-static inline void
-flip_page_x11(void)
+static inline void flip_page_x11 (void)
 {
-	Display_Image(_x11_priv.ximage, _x11_priv.ImageData);
+	Display_Image (_x11_priv.ximage, _x11_priv.ImageData);
 }
 
 
-static void
-flip_page(void)
+static void flip_page(void)
 {
 #ifdef HAVE_XV
-	if (_x11_priv.xv_port != 0)
+	if (_x11_priv.xv_port)
 		return flip_page_xv();
 	else
 #endif
@@ -535,11 +497,11 @@ draw_slice_xv(uint8_t *src[], uint32_t slice_num)
 
 	dst = _x11_priv.xvimage[0]->data + _x11_priv.image_width * 16 * slice_num;
 
-	memcpy(dst,src[0],_x11_priv.image_width*16);
+	memcpy (dst,src[0],_x11_priv.image_width*16);
 	dst = _x11_priv.xvimage[0]->data + _x11_priv.image_width * _x11_priv.image_height + _x11_priv.image_width * 4 * slice_num;
-	memcpy(dst, src[2],_x11_priv.image_width*4);
+	memcpy (dst, src[2],_x11_priv.image_width*4);
 	dst = _x11_priv.xvimage[0]->data + _x11_priv.image_width * _x11_priv.image_height * 5 / 4 + _x11_priv.image_width * 4 * slice_num;
-	memcpy(dst, src[1],_x11_priv.image_width*4);
+	memcpy (dst, src[1],_x11_priv.image_width*4);
 
 	return 0;  
 }
@@ -565,7 +527,7 @@ static int
 draw_slice(uint8_t *src[], uint32_t slice_num)
 {
 #ifdef HAVE_XV
-	if (_x11_priv.xv_port != 0)
+	if (_x11_priv.xv_port)
 		return draw_slice_xv(src,slice_num);
 	else
 #endif
@@ -586,32 +548,29 @@ draw_frame_xv(uint8_t *src[])
 	exit(1);
 	//FIXME XV is borked wrt to slices
 
-	if (_x11_priv.xv_port != 0) 
-	{
-		if (XCheckWindowEvent(_x11_priv.display, _x11_priv.window, StructureNotifyMask, &event)) 
-		{
+	if (_x11_priv.xv_port) {
+		if (XCheckWindowEvent(_x11_priv.display, _x11_priv.window, StructureNotifyMask, &event)) {
 			XGetGeometry(_x11_priv.display, _x11_priv.window, &root, &x, &y, &w, &h, &b, &d);
 			_x11_priv.win_width  = w;
 			_x11_priv.win_height = h;
-			fprintf(stderr,"win resize: %dx%d\n",_x11_priv.win_width,_x11_priv.win_height);
+			LOG (LOG_DEBUG, "win resize: %dx%d",_x11_priv.win_width,_x11_priv.win_height);
 		}
-		memcpy(_x11_priv.xvimage[0]->data,src[0],_x11_priv.image_width*_x11_priv.image_height);
-		memcpy(_x11_priv.xvimage[0]->data+_x11_priv.image_width*_x11_priv.image_height,
-		src[2],_x11_priv.image_width*_x11_priv.image_height/4);
-		memcpy(_x11_priv.xvimage[0]->data+_x11_priv.image_width*_x11_priv.image_height*5/4,
-		src[1],_x11_priv.image_width*_x11_priv.image_height/4);
+		memcpy (_x11_priv.xvimage[0]->data,src[0],_x11_priv.image_width*_x11_priv.image_height);
+		memcpy (_x11_priv.xvimage[0]->data+_x11_priv.image_width*_x11_priv.image_height,
+			src[2],_x11_priv.image_width*_x11_priv.image_height/4);
+		memcpy (_x11_priv.xvimage[0]->data+_x11_priv.image_width*_x11_priv.image_height*5/4,
+			src[1],_x11_priv.image_width*_x11_priv.image_height/4);
 		XvShmPutImage(_x11_priv.display, _x11_priv.xv_port, _x11_priv.window, _x11_priv.gc, _x11_priv.xvimage[0],
-		0, 0,  _x11_priv.image_width, _x11_priv.image_height,
-		0, 0,  _x11_priv.win_width, _x11_priv.win_height,
-		False);
-		XFlush(_x11_priv.display);
+			0, 0,  _x11_priv.image_width, _x11_priv.image_height,
+			0, 0,  _x11_priv.win_width, _x11_priv.win_height,
+			False);
+		XFlush (_x11_priv.display);
 		return 0;  
 	}
 }
 #endif
 
-static inline int
-draw_frame_x11(uint8_t *src[])
+static inline int draw_frame_x11(uint8_t *src[])
 {
 	yuv2rgb(_x11_priv.ImageData, src[0], src[1], src[2],
 		_x11_priv.image_width, _x11_priv.image_height, 
@@ -621,11 +580,10 @@ draw_frame_x11(uint8_t *src[])
 	return 0; 
 }
 
-static int
-draw_frame(uint8_t *src[])
+static int draw_frame(uint8_t *src[])
 {
 #ifdef HAVE_XV
-	if (_x11_priv.xv_port != 0)
+	if (_x11_priv.xv_port)
 		return draw_frame_xv(src);
 	else
 #endif
@@ -637,8 +595,7 @@ draw_frame(uint8_t *src[])
 
 
 
-static vo_image_buffer_t* 
-allocate_image_buffer(uint32_t width, uint32_t height, uint32_t format)
+static vo_image_buffer_t* allocate_image_buffer(uint32_t width, uint32_t height, uint32_t format)
 {
         vo_image_buffer_t *image;
         uint32_t image_size;
@@ -656,11 +613,10 @@ allocate_image_buffer(uint32_t width, uint32_t height, uint32_t format)
         image_size = width * height * 3 / 2;
         image->base = malloc(image_size);
 
-        if(!image->base)
-        {
+        if(!image->base) {
                 free(image);
                 return NULL;
-}
+	}
 
         return image;
 }

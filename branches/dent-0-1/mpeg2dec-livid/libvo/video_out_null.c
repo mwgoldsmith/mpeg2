@@ -32,7 +32,7 @@
 
 static int _null_open		(plugin_t *plugin, void *name);
 static int _null_close		(plugin_t *plugin);
-static int _null_setup		(uint32_t width, uint32_t height, uint32_t fullscreen, char *title);
+static int _null_setup		(plugin_output_video_attr_t *attr);
 static int _null_draw_frame	(uint8_t *src[]);
 static int _null_draw_slice	(uint8_t *src[], uint32_t slice_num);
 static void _null_flip_page	(void);
@@ -104,7 +104,7 @@ static void _null_flip_page(void)
  *
  **/
 
-static int _null_setup (uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
+static int _null_setup (plugin_output_video_attr_t *attr)
 {
 	return 0;
 }

@@ -40,7 +40,7 @@
 
 static int _mga_open		(plugin_t *plugin, void *name);
 static int _mga_close		(plugin_t *plugin);
-static int _mga_setup		(uint32_t width, uint32_t height, uint32_t fullscreen, char *title);
+static int _mga_setup		(plugin_output_video_attr_t *attr);
 static void _mga_flip_page		(void);
 static void free_image_buffer	(vo_image_buffer_t* image);
 static vo_image_buffer_t *allocate_image_buffer (uint32_t height, uint32_t width, uint32_t format);
@@ -425,15 +425,15 @@ static int _mga_close (plugin_t *plugin)
  *
  **/
 
-static int _mga_setup (uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
+static int _mga_setup (plugin_output_video_attr_t *attr)
 {
 	char *frame_mem;
 	uint32_t frame_size;
 
-	_mga_priv.mga_vid_config.src_width	= width;
-	_mga_priv.mga_vid_config.src_height	= height;
-	_mga_priv.mga_vid_config.dest_width	= width;
-	_mga_priv.mga_vid_config.dest_height	= height;
+	_mga_priv.mga_vid_config.src_width	= attr->width;
+	_mga_priv.mga_vid_config.src_height	= attr->height;
+	_mga_priv.mga_vid_config.dest_width	= attr->width;
+	_mga_priv.mga_vid_config.dest_height	= attr->height;
 
 	//_mga_priv.mga_vid_config.dest_width	= 1280;
 	//_mga_priv.mga_vid_config.dest_height	= 1024;

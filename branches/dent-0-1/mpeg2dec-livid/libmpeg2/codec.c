@@ -255,8 +255,14 @@ static int _mpeg2dec_read (plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t
 			header_process_sequence_header (&picture); 
 			is_sequence_needed = 0;
 
-			if(!is_display_initialized) {
-				codec_mpeg2dec.output->setup (picture.coded_picture_width, picture.coded_picture_height, 0, 0);
+			if (!is_display_initialized) {
+				plugin_output_video_attr_t attr;
+				attr.width = picture.coded_picture_width;
+				attr.height = picture.coded_picture_height;
+				attr.fullscreen = 0;
+				attr.title = NULL;
+
+				codec_mpeg2dec.output->setup (&attr);
 				decode_allocate_image_buffers (&picture);
 				is_display_initialized = 1;
 			}
@@ -306,7 +312,6 @@ static int _mpeg2dec_read (plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t
 					foo[2] = picture.forward_reference_frame[2] + (chunk_buffer[0]-1) * 8 *
 						picture.coded_picture_width/2;
 					codec_mpeg2dec.output->draw_slice (foo, chunk_buffer[0]-1);
-//					codec_mpeg2dec.output->draw_frame (picture.forward_reference_frame);
 				}
 			}
 		}
