@@ -47,6 +47,7 @@ void * memalign (size_t align, size_t size);
 #define STATE_GOP 2
 #define STATE_PICTURE 3
 #define STATE_SLICE 4
+#define STATE_END 5
 
 void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
 		 vo_instance_t * output)
@@ -64,7 +65,7 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
     mpeg2dec->decoder = memalign (16, sizeof (decoder_t));
 
     mpeg2dec->shift = 0xffffff00;
-    mpeg2dec->is_sequence_needed = 1;
+    mpeg2dec->last_sequence.width = (unsigned int) -1;
     mpeg2dec->state = STATE_INVALID;
     mpeg2dec->output = output;
     mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
@@ -95,19 +96,16 @@ static inline void crap2 (mpeg2dec_t * mpeg2dec)
 {
     decoder_t * decoder = mpeg2dec->decoder;
 
-    if (mpeg2dec->is_sequence_needed) {
-	mpeg2dec->is_sequence_needed = 0;
-	if (vo_setup (mpeg2dec->output, decoder->width, decoder->height)) {
-	    fprintf (stderr, "display setup failed\n");
-	    exit (1);
-	}
-	decoder->forward_reference_frame =
-	    vo_get_frame (mpeg2dec->output,
-			  VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
-	decoder->backward_reference_frame =
-	    vo_get_frame (mpeg2dec->output,
-			  VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
+    if (vo_setup (mpeg2dec->output, decoder->width, decoder->height)) {
+	fprintf (stderr, "display setup failed\n");
+	exit (1);
     }
+    decoder->forward_reference_frame =
+	vo_get_frame (mpeg2dec->output,
+		      VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
+    decoder->backward_reference_frame =
+	vo_get_frame (mpeg2dec->output,
+		      VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
 }
 
 static inline void crap3 (mpeg2dec_t * mpeg2dec)
@@ -116,20 +114,18 @@ static inline void crap3 (mpeg2dec_t * mpeg2dec)
 
     if (decoder->second_field)
 	vo_field (decoder->current_frame, decoder->picture_structure);
+    else if (decoder->coding_type == B_TYPE)
+	decoder->current_frame =
+	    vo_get_frame (mpeg2dec->output,
+			  decoder->picture_structure);
     else {
-	if (decoder->coding_type == B_TYPE)
-	    decoder->current_frame =
-		vo_get_frame (mpeg2dec->output,
-			      decoder->picture_structure);
-	else {
-	    decoder->current_frame =
-		vo_get_frame (mpeg2dec->output,
-			      (VO_PREDICTION_FLAG |
-			       decoder->picture_structure));
-	    decoder->forward_reference_frame =
-		decoder->backward_reference_frame;
-	    decoder->backward_reference_frame = decoder->current_frame;
-	}
+	decoder->current_frame =
+	    vo_get_frame (mpeg2dec->output,
+			  (VO_PREDICTION_FLAG |
+			   decoder->picture_structure));
+	decoder->forward_reference_frame =
+	    decoder->backward_reference_frame;
+	decoder->backward_reference_frame = decoder->current_frame;
     }
 }
 
@@ -193,13 +189,18 @@ startcode:
 int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 {
     static int next_state[] = {
-	STATE_PICTURE, STATE_SEQUENCE, 0, STATE_INVALID, STATE_GOP
+	STATE_PICTURE, STATE_SEQUENCE, 0, STATE_END, STATE_GOP
     };
     int state;
     uint8_t code;
     decoder_t * decoder;
 
-    state = mpeg2dec->state;
+    if (mpeg2dec->state == STATE_END) {
+	mpeg2dec->state = STATE_INVALID;
+	mpeg2dec->last_sequence.width = (unsigned int) -1;
+	return STATE_END;
+    }
+
     while (1) {
 	code = mpeg2dec->code;
 	*current = copy_chunk (mpeg2dec, *current, end);
@@ -207,7 +208,7 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 	    return -1;
 
 	/* wait for sequence_header_code */
-	if (state == STATE_INVALID && code != 0xb3)
+	if (mpeg2dec->state == STATE_INVALID && code != 0xb3)
 	    continue;
 
 	mpeg2_stats (code, mpeg2dec->chunk_buffer);
@@ -223,7 +224,7 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 	    break;
 	case 0xb3:	/* sequence_header_code */
 	    mpeg2_header_sequence (mpeg2dec);
-	    state = STATE_SEQUENCE;
+	    mpeg2dec->state = STATE_SEQUENCE;
 	    break;
 	case 0xb5:	/* extension_start_code */
 	    mpeg2_header_extension (mpeg2dec);
@@ -238,15 +239,26 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 
 #define RECEIVED(code,state) (((state) << 8) + (code))
 
+	state = mpeg2dec->state;
 	switch (RECEIVED (mpeg2dec->code, state)) {
 
-	/* legal state transitions */
+	/* transistion from STATE_SEQUENCE to STATE_GOP or STATE_PICTURE */
 	case RECEIVED (0x00, STATE_SEQUENCE):
+	case RECEIVED (0xb8, STATE_SEQUENCE):
+	    mpeg2dec->state = mpeg2dec->code ? STATE_GOP : STATE_PICTURE;
+	    if (memcmp (&(mpeg2dec->last_sequence), &(mpeg2dec->sequence), 
+			sizeof (sequence_t))) {
+		memcpy (&(mpeg2dec->last_sequence), &(mpeg2dec->sequence),
+			sizeof (sequence_t));
+		return STATE_SEQUENCE;
+	    }
+	    break;
+
+	/* other legal state transitions */
 	case RECEIVED (0x00, STATE_GOP):
 	case RECEIVED (0x00, STATE_SLICE):
 	case RECEIVED (0xb3, STATE_SLICE):
 	case RECEIVED (0xb7, STATE_SLICE):
-	case RECEIVED (0xb8, STATE_SEQUENCE):
 	case RECEIVED (0xb8, STATE_SLICE):
 	    mpeg2dec->state = next_state[(mpeg2dec->code >> 1) & 7];
 	    return state;
@@ -293,6 +305,9 @@ int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
 	case STATE_SLICE:
 	    ret += crap1 (mpeg2dec);	/* display picture, swap buf */
 	    break;
+	case STATE_END:
+	    vo_draw (mpeg2dec->decoder->backward_reference_frame);
+	    break;
 	}
 }
 
@@ -309,9 +324,6 @@ void mpeg2_close (mpeg2dec_t * mpeg2dec)
     static uint8_t finalizer[] = {0,0,1,0xb4};
 
     mpeg2_decode_data (mpeg2dec, finalizer, finalizer+4);
-
-    if (! (mpeg2dec->is_sequence_needed))
-	vo_draw (mpeg2dec->decoder->backward_reference_frame);
 
     free (mpeg2dec->chunk_buffer);
     free (mpeg2dec->decoder);

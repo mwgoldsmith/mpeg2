@@ -86,7 +86,6 @@ typedef struct {
     int is_display_initialized;
     int state;
     uint32_t ext_state;
-    int is_sequence_needed;
 
     /* the maximum chunk size is determined by vbv_buffer_size */
     /* which is 224K for MP@ML streams. */
@@ -103,6 +102,7 @@ typedef struct {
     int num_pts;
     int bytes_since_pts;
 
+    sequence_t last_sequence;
     sequence_t sequence;
     picture_t picture;
 } mpeg2dec_t ;
