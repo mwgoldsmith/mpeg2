@@ -249,7 +249,7 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 		    while ((header-1)[len] == 0xff) {
 			len++;
 			NEEDBYTES (len);
-			if (len == 23) {
+			if (len > 23) {
 			    fprintf (stderr, "too much stuffing\n");
 			    break;
 			}
