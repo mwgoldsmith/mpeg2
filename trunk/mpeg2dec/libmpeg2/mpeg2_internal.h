@@ -68,8 +68,8 @@ struct decoder_s {
 
     uint8_t * dest[3];
     uint8_t * picture_dest[3];
-    void (* convert) (vo_frame_t * frame, uint8_t ** src);
-    vo_frame_t * frame_id;
+    void (* convert) (void * fbuf_id, uint8_t ** src);
+    void * fbuf_id;
 
     int offset;
     int stride;
@@ -166,8 +166,8 @@ struct mpeg2dec_s {
     sequence_t sequence;
     picture_t pictures[4];
     picture_t * picture;
-    vo_frame_t * fbufs[3];
-    vo_frame_t ** fbuf;
+    fbuf_t fbufs[3];
+    fbuf_t * fbuf;
 };
 
 typedef struct {

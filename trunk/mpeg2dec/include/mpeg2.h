@@ -77,14 +77,19 @@ typedef struct {
 } picture_t;
 
 typedef struct {
+    uint8_t * buf[3];
+    void * id;
+} fbuf_t;
+
+typedef struct {
     sequence_t * sequence;
     picture_t * current_picture;
     picture_t * current_picture_2nd;
-    vo_frame_t * current_fbuf;
+    fbuf_t * current_fbuf;
     picture_t * display_picture;
     picture_t * display_picture_2nd;
-    vo_frame_t * display_fbuf;
-    vo_frame_t * discard_fbuf;
+    fbuf_t * display_fbuf;
+    fbuf_t * discard_fbuf;
 } mpeg2_info_t;
 
 typedef struct mpeg2dec_s mpeg2dec_t;
@@ -108,7 +113,7 @@ int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec);
 void mpeg2_header_slice (mpeg2dec_t * mpeg2dec);
 void mpeg2_header_end (mpeg2dec_t * mpeg2dec);
 
-void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, vo_frame_t * buf);
+void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id);
 void mpeg2_init_fbuf (decoder_t * decoder, uint8_t * current_fbuf[3],
 		      uint8_t * forward_fbuf[3], uint8_t * backward_fbuf[3]);
 
