@@ -221,6 +221,11 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
 				 "MV@H-14", NULL, "MV@ML", "MV@LL" };
     static char * video_fmt[] = { "COMPONENT", "PAL", "NTSC", "SECAM", "MAC"};
     static char coding_type[] = { '0', 'I', 'P', 'B', 'D', '5', '6', '7'};
+    static char * colour[] = { NULL, "BT.709", "UNSPECIFIED", NULL,
+			       "BT.470-2/M", "BT.470-2/B,G",
+			       "SMPTE170M", "SMPTE240M", "LINEAR" };
+    static char * colour3[] = { NULL, "BT.709", "UNSPEC_COLORS", NULL, NULL,
+				"BT.470-2/B,G", "SMPTE170M", "SMPTE240M" };
     const mpeg2_sequence_t * seq = info->sequence;
     const mpeg2_gop_t * gop = info->gop;
     const mpeg2_picture_t * pic;
@@ -306,10 +311,31 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
 	    SEQ_VIDEO_FORMAT_UNSPECIFIED)
 	    fprintf (f, " %s", video_fmt[(seq->flags & SEQ_MASK_VIDEO_FORMAT) /
 					 SEQ_VIDEO_FORMAT_PAL]);
-	if (seq->flags & SEQ_FLAG_COLOUR_DESCRIPTION)
-	    fprintf (f, " COLORS (prim %d transfer %d matrix %d)",
-		     seq->colour_primaries, seq->transfer_characteristics,
-		     seq->matrix_coefficients);
+	if (seq->flags & SEQ_FLAG_COLOUR_DESCRIPTION) {
+	    if (seq->colour_primaries == seq->transfer_characteristics &&
+		seq->colour_primaries == seq->matrix_coefficients &&
+		seq->colour_primaries <= 7 && colour3[seq->colour_primaries])
+		fprintf (f, " %s", colour3[seq->colour_primaries]);
+	    else {
+		char prim[16], trans[16], matrix[16];
+		snprintf (prim, 15, "%d", seq->colour_primaries);
+		snprintf (trans, 15, "%d", seq->transfer_characteristics);
+		snprintf (matrix, 15, "%d", seq->matrix_coefficients);
+		if (seq->colour_primaries <= 7 &&
+		    colour[seq->colour_primaries])
+		    strncpy (prim, colour[seq->colour_primaries], 15);
+		if (seq->transfer_characteristics <= 8 &&
+		    colour[seq->transfer_characteristics])
+		    strncpy (trans, colour[seq->transfer_characteristics], 15);
+		if (seq->matrix_coefficients == 4)
+		    strncpy (matrix, "FCC", 15);
+		else if (seq->matrix_coefficients <= 7 &&
+			 colour[seq->matrix_coefficients])
+		    strncpy (matrix, colour[seq->matrix_coefficients], 15);
+		fprintf (f, " COLORS (prim %s trans %s matrix %s)",
+			 prim, trans, matrix);
+	    }
+	}
 	fprintf (f, " %dx%d chroma %dx%d fps %.*f maxBps %d vbv %d "
 		 "picture %dx%d display %dx%d pixel %dx%d\n",
 		 seq->width, seq->height,
