@@ -204,7 +204,7 @@ motion_comp_non_intra_frame(picture_t *picture,mb_buffer_t *mb_buffer)
 		else if(mb[i].macroblock_type & MACROBLOCK_INTRA)
 		{
 			//if(mb[i].skipped)
-				//fprintf(stderr,"(motion_comp) doing skipped block\n");
+			//	fprintf(stderr,"(motion_comp) doing skipped block\n");
 
 			//Do y component
 			dst = &picture->current_frame[0][x * 16 + y * width * 16];

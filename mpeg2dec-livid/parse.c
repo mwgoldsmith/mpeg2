@@ -731,14 +731,15 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
     {
       mb->motion_type = picture->frame_pred_frame_dct ? MC_FRAME : bitstream_get(2);
 			//FIXME remove
+#if 0
 			if(!picture->frame_pred_frame_dct)
       {
-				exit(2);
         fprintf(stderr,"frame_motion_type (");
         fprintf(stderr,"): %s\n",mb->motion_type==MC_FIELD?"Field":
                          mb->motion_type==MC_FRAME?"Frame":
                          mb->motion_type==MC_DMV?"Dual_Prime":"Invalid");
 			}
+#endif
       
     }
     else // field_motion_type 
@@ -753,8 +754,7 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
   // derive motion_vector_count, mv_format and dmv, (table 6-17, 6-18)
   if (picture_structure==FRAME_PICTURE)
   {
-    //mb->motion_vector_count = (motion_type==MC_FIELD && stwclass<2) ? 2 : 1;
-    mb->motion_vector_count = 1;
+    mb->motion_vector_count = (mb->motion_type==MC_FIELD) ? 2 : 1;
     mb->mv_format = (mb->motion_type==MC_FRAME) ? MV_FRAME : MV_FIELD;
   }
   else
