@@ -232,8 +232,6 @@ static int x11_common_setup (x11_instance_t * this, int width, int height,
 	return 1;
     }
 
-    /* FIXME set WM_DELETE_WINDOW protocol ? to avoid shm leaks */
-
     XMapWindow (this->display, this->window);
 
     this->width = width;
@@ -646,8 +644,6 @@ static int xv_common_setup (x11_instance_t * this, int width, int height,
 	fprintf (stderr, "Cannot create xvimage\n");
 	return 1;
     }
-
-    /* FIXME set WM_DELETE_WINDOW protocol ? to avoid shm leaks */
 
     XMapWindow (this->display, this->window);
 
