@@ -129,8 +129,9 @@ static void print_usage (char ** argv)
     int i;
     vo_driver_t * drivers;
 
-    fprintf (stderr, "usage: %s [-o <mode>] [-s [<track>]] [-t <pid>] [-p] "
-	     "[-c] <file>\n"
+    fprintf (stderr, "usage: %s [-h] [-o <mode>] [-s [<track>]] [-t <pid>]"
+	     " [-p] [-c] <file>\n"
+	     "\t-h\tdisplay help and available video modes\n"
 	     "\t-s\tuse program stream demultiplexer, "
 	     "track 0-15 or 0xe0-0xef\n"
 	     "\t-t\tuse transport stream demultiplexer, pid 0x10-0x1ffe\n"
@@ -153,8 +154,11 @@ static void handle_args (int argc, char ** argv)
     char * s;
 
     drivers = vo_drivers ();
-    while ((c = getopt (argc, argv, "s::t:pco:")) != -1)
+    while ((c = getopt (argc, argv, "hs::t:pco:")) != -1)
 	switch (c) {
+	case 'h':
+	    print_usage (argv);
+
 	case 'o':
 	    for (i = 0; drivers[i].name != NULL; i++)
 		if (strcmp (drivers[i].name, optarg) == 0)
