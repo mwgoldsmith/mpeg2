@@ -734,7 +734,6 @@ mpeg2_state_t mpeg2_header_end (mpeg2dec_t * mpeg2dec)
     if ((mpeg2dec->picture >= picture + 2) ^ b_type)
 	picture = mpeg2dec->pictures + 2;
 
-    mpeg2dec->state = STATE_END;
     reset_info (&(mpeg2dec->info));
     if (!(mpeg2dec->sequence.flags & SEQ_FLAG_LOW_DELAY)) {
 	mpeg2dec->info.display_picture = picture;
