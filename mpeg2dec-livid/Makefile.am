@@ -8,7 +8,6 @@ SUBDIRS = libmpeg2 tools drivers .
 
 EXTRA_DIST = Changelog autogen.sh
 
-
 bin_PROGRAMS = mpeg2dec
 
 mpeg2dec_SOURCES = mpeg2dec.c
@@ -20,10 +19,6 @@ EXTRA_mpeg2dec_SOURCES = display_gatos.c display_mga_vid.c display_x11.c\
 	yuv2rgb.c yuv2rgb_mlib.c
 
 noinst_HEADERS =  config.h  display.h  yuv2rgb.h  yuv2rgb_mlib.h
-
-
-lib_LTLIBRARIES = libmpeg2.la
-libmpeg2_la_SOURCES = mpeg2dec.c
 
 prof:
 	$(MAKE) mpeg2dec CFLAGS="-pg `echo $(CFLAGS) | sed s/-fomit-frame-pointer//`"
