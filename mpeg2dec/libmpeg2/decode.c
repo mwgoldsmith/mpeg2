@@ -131,7 +131,7 @@ static inline mpeg2_state_t seek_chunk (mpeg2dec_t * mpeg2dec)
     }
     mpeg2dec->bytes_since_tag += skipped;
     mpeg2dec->code = mpeg2dec->buf_start[-1];
-    return (mpeg2_state_t)-1;
+    return STATE_INTERNAL_NORETURN;
 }
 
 mpeg2_state_t mpeg2_seek_header (mpeg2dec_t * mpeg2dec)
@@ -156,7 +156,7 @@ mpeg2_state_t mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	mpeg2_state_t state;
 
 	state = mpeg2dec->action (mpeg2dec);
-	if ((int)state >= 0)
+	if ((int)state > (int)STATE_INTERNAL_NORETURN)
 	    return state;
     }
 
