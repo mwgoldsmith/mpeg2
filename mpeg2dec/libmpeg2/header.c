@@ -25,6 +25,8 @@
 
 #include <inttypes.h>
 
+#include "video_out.h"
+#include "mpeg2.h"
 #include "mpeg2_internal.h"
 #include "attributes.h"
 
@@ -74,7 +76,8 @@ void mpeg2_header_state_init (decoder_t * decoder)
     decoder->scan = mpeg2_scan_norm;
 }
 
-int mpeg2_header_sequence (decoder_t * decoder, uint8_t * buffer)
+int mpeg2_header_sequence (uint8_t * buffer, decoder_t * decoder,
+			   sequence_t * sequence)
 {
     int width, height;
     int i;
@@ -83,20 +86,24 @@ int mpeg2_header_sequence (decoder_t * decoder, uint8_t * buffer)
 	return 1;	/* missing marker_bit */
 
     height = (buffer[0] << 16) | (buffer[1] << 8) | buffer[2];
+    width = height >> 12;
+    height &= 0xfff;
+    sequence->display_width = width;
+    sequence->display_height = height;
 
-    width = ((height >> 12) + 15) & ~15;
-    height = ((height & 0xfff) + 15) & ~15;
+    width = (width + 15) & ~15;
+    height = (height + 15) & ~15;
 
     if ((width > 1920) || (height > 1152))
 	return 1;	/* size restrictions for MP@HL */
 
-    decoder->coded_picture_width = width;
-    decoder->coded_picture_height = height;
+    decoder->coded_picture_width = sequence->width = width;
+    decoder->coded_picture_height = sequence->height = height;
 
     /* this is not used by the decoder */
-    decoder->aspect_ratio_information = buffer[3] >> 4;
-    decoder->frame_rate_code = buffer[3] & 15;
-    decoder->bitrate = (buffer[4]<<10)|(buffer[5]<<2)|(buffer[6]>>6);
+    sequence->aspect_ratio = buffer[3] >> 4;
+    sequence->frame_rate_code = buffer[3] & 15;
+    sequence->bitrate = (buffer[4]<<10)|(buffer[5]<<2)|(buffer[6]>>6);
 
     if (buffer[7] & 2) {
 	for (i = 0; i < 64; i++)
@@ -129,7 +136,8 @@ int mpeg2_header_sequence (decoder_t * decoder, uint8_t * buffer)
     return 0;
 }
 
-static int sequence_extension (decoder_t * decoder, uint8_t * buffer)
+static int sequence_extension (uint8_t * buffer, decoder_t * decoder,
+			       sequence_t * sequence)
 {
     /* check chroma format, size extensions, marker bit */
     if (((buffer[1] & 0x07) != 0x02) || (buffer[2] & 0xe0) ||
@@ -137,9 +145,9 @@ static int sequence_extension (decoder_t * decoder, uint8_t * buffer)
 	return 1;
 
     /* this is not used by the decoder */
-    decoder->progressive_sequence = (buffer[1] >> 3) & 1;
+    sequence->progressive_sequence = (buffer[1] >> 3) & 1;
 
-    if (!(decoder->progressive_sequence))
+    if (!(sequence->progressive_sequence))
 	decoder->coded_picture_height =
 	    (decoder->coded_picture_height + 31) & ~31;
 
@@ -149,7 +157,7 @@ static int sequence_extension (decoder_t * decoder, uint8_t * buffer)
     return 0;
 }
 
-static int quant_matrix_extension (decoder_t * decoder, uint8_t * buffer)
+static int quant_matrix_extension (uint8_t * buffer, decoder_t * decoder)
 {
     int i;
 
@@ -168,7 +176,8 @@ static int quant_matrix_extension (decoder_t * decoder, uint8_t * buffer)
     return 0;
 }
 
-static int picture_coding_extension (decoder_t * decoder, uint8_t * buffer)
+static int picture_coding_extension (uint8_t * buffer, decoder_t * decoder,
+				     picture_t * picture)
 {
     /* pre subtract 1 for use later in compute_motion_vector */
     decoder->f_motion.f_code[0] = (buffer[0] & 15) - 1;
@@ -189,30 +198,32 @@ static int picture_coding_extension (decoder_t * decoder, uint8_t * buffer)
 	decoder->scan = mpeg2_scan_norm;
 
     /* these are not used by the decoder */
-    decoder->top_field_first = buffer[3] >> 7;
-    decoder->repeat_first_field = (buffer[3] >> 1) & 1;
-    decoder->progressive_frame = buffer[4] >> 7;
+    decoder->top_field_first = picture->top_field_first = buffer[3] >> 7;
+    picture->repeat_first_field = (buffer[3] >> 1) & 1;
+    picture->progressive_frame = buffer[4] >> 7;
 
     return 0;
 }
 
-int mpeg2_header_extension (decoder_t * decoder, uint8_t * buffer)
+int mpeg2_header_extension (uint8_t * buffer, decoder_t * decoder,
+			    mpeg2_info_t * info)
 {
     switch (buffer[0] & 0xf0) {
     case 0x10:	/* sequence extension */
-	return sequence_extension (decoder, buffer);
+	return sequence_extension (buffer, decoder, &(info->sequence));
 
     case 0x30:	/* quant matrix extension */
-	return quant_matrix_extension (decoder, buffer);
+	return quant_matrix_extension (buffer, decoder);
 
     case 0x80:	/* picture coding extension */
-	return picture_coding_extension (decoder, buffer);
+	return picture_coding_extension (buffer, decoder, &(info->picture));
     }
 
     return 0;
 }
 
-int mpeg2_header_picture (decoder_t * decoder, uint8_t * buffer)
+int mpeg2_header_picture (uint8_t * buffer, decoder_t * decoder,
+			  picture_t * picture)
 {
     decoder->picture_coding_type = (buffer [1] >> 3) & 7;
 

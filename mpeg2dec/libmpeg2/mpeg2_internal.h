@@ -54,7 +54,7 @@ typedef struct {
     int f_code[2];
 } motion_t;
 
-typedef struct decoder_s {
+struct decoder_s {
     /* first, state that carries information from one macroblock to the */
     /* next inside a slice, and is never used outside of mpeg2_slice() */
 
@@ -134,16 +134,7 @@ typedef struct decoder_s {
     int second_field;
 
     int mpeg1;
-
-    /* these things are not needed by the decoder */
-    /* this is a temporary interface, we will build a better one later. */
-    int aspect_ratio_information;
-    int frame_rate_code;
-    int progressive_sequence;
-    int repeat_first_field;
-    int progressive_frame;
-    int bitrate;
-} decoder_t;
+};
 
 typedef struct {
 #ifdef ARCH_PPC
@@ -154,12 +145,6 @@ typedef struct {
 
 /* cpu_state.c */
 void mpeg2_cpu_state_init (uint32_t mm_accel);
-
-/* header.c */
-void mpeg2_header_state_init (decoder_t * decoder);
-int mpeg2_header_picture (decoder_t * decoder, uint8_t * buffer);
-int mpeg2_header_sequence (decoder_t * decoder, uint8_t * buffer);
-int mpeg2_header_extension (decoder_t * decoder, uint8_t * buffer);
 
 /* idct.c */
 void mpeg2_idct_init (uint32_t mm_accel);
@@ -204,9 +189,6 @@ extern mpeg2_mc_t mpeg2_mc_mmxext;
 extern mpeg2_mc_t mpeg2_mc_3dnow;
 extern mpeg2_mc_t mpeg2_mc_altivec;
 extern mpeg2_mc_t mpeg2_mc_mlib;
-
-/* slice.c */
-void mpeg2_slice (decoder_t * decoder, int code, uint8_t * buffer);
 
 /* stats.c */
 void mpeg2_stats (int code, uint8_t * buffer);
