@@ -30,6 +30,9 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <X11/extensions/XShm.h>
+#include <string.h>	// memcmp
+#include <sys/socket.h>	// getsockname, getpeername
+#include <netinet/in.h>	// struct sockaddr_in
 
 #include "video_out.h"
 #include "video_out_internal.h"
@@ -45,60 +48,113 @@ Bool XShmQueryExtension (Display *);
 
 static struct x11_priv_s {
 /* local data */
-    unsigned char *ImageData;
-    int image_width;
-    int image_height;
+    uint8_t * imagedata;
+    int width;
+    int height;
+    int stride;
 
 /* X11 related variables */
-    Display *display;
+    Display * display;
     Window window;
     GC gc;
     XVisualInfo vinfo;
-    XImage *ximage;
-    int bpp;
+    XImage * ximage;
 
     // XSHM
-    XShmSegmentInfo Shminfo; // num_buffers
+    XShmSegmentInfo shminfo; // num_buffers
 } x11_priv;
 
-static int _xshm_create (XShmSegmentInfo *Shminfo, int size)	// xxxxxxxxxx
+static void _xshm_destroy (XShmSegmentInfo * Shminfo)	// xxxxxxxxx
 {
-    struct x11_priv_s *priv = &x11_priv;
-	
-    Shminfo->shmid = shmget (IPC_PRIVATE, size, IPC_CREAT | 0777);
-
-    if (Shminfo->shmid < 0) {
-	fprintf (stderr, "Shared memory error, disabling (seg id error: %s)\n", strerror (errno));
-	return -1;
-    }
-	
-    Shminfo->shmaddr = (char *) shmat(Shminfo->shmid, 0, 0);
-
-    if (Shminfo->shmaddr == ((char *) -1)) {
-	if (Shminfo->shmaddr != ((char *) -1))
-	    shmdt(Shminfo->shmaddr);
-	fprintf (stderr, "Shared memory error, disabling (address error)\n");
-	return -1;
-    }
-		
-    Shminfo->readOnly = False;
-    XShmAttach(priv->display, Shminfo);
-
-    return 0;
-}
-
-static void _xshm_destroy (XShmSegmentInfo *Shminfo)	// xxxxxxxxx
-{
-    struct x11_priv_s *priv = &x11_priv;
+    struct x11_priv_s * priv = &x11_priv;
 	
     XShmDetach (priv->display, Shminfo);
     shmdt (Shminfo->shmaddr);
     shmctl (Shminfo->shmid, IPC_RMID, 0);
 }
 
+static int x11_check_local (void)
+{
+    struct x11_priv_s * priv = &x11_priv;
+    int fd;
+    struct sockaddr_in me;
+    struct sockaddr_in peer;
+    int len;
+
+    fd = ConnectionNumber (priv->display);
+
+    len = sizeof (me);
+    if (getsockname (fd, &me, &len))
+	return 1;	// should not happen, assume remote display
+
+    if (me.sin_family == PF_UNIX)
+	return 0;	// display is local, using unix domain socket
+
+    if (me.sin_family != PF_INET)
+	return 1;	// unknown protocol, assume remote display
+
+    len = sizeof (peer);
+    if (getpeername (fd, &peer, &len))
+	return 1;	// should not happen, assume remote display
+
+    if (peer.sin_family != PF_INET)
+	return 1;	// should not happen, assume remote display
+
+    if (memcmp (&(me.sin_addr), &(peer.sin_addr), sizeof(me.sin_addr)))
+	return 1;	// display is remote, using tcp/ip socket
+
+    return 0;		// display is local, using tcp/ip socket
+}
+
+static int xshm_check_extension (void)
+{
+    struct x11_priv_s * priv = &x11_priv;
+    int major;
+    int minor;
+    Bool pixmaps;
+
+    if (XShmQueryVersion (priv->display, &major, &minor, &pixmaps) == 0)
+	return 1;
+
+    if ((major < 1) || ((major == 1) && (minor < 1)))
+	return 1;
+
+    return 0;
+}
+
+static int xshm_create_image (int width, int height)
+{
+    struct x11_priv_s * priv = &x11_priv;
+
+    priv->ximage = XShmCreateImage (priv->display,
+				    priv->vinfo.visual, priv->vinfo.depth,
+				    ZPixmap, NULL /* data */,
+				    &(priv->shminfo), width, height);
+    if (priv->ximage == NULL)
+	return 1;
+
+    priv->shminfo.shmid =
+	shmget (IPC_PRIVATE,
+		priv->ximage->bytes_per_line * priv->ximage->height,
+		IPC_CREAT | 0777);
+    if (priv->shminfo.shmid == -1)
+	return 1;
+
+    priv->shminfo.shmaddr = shmat (priv->shminfo.shmid, 0, 0);
+    if (priv->shminfo.shmaddr == (char *)-1)
+	return 1;
+
+    priv->shminfo.readOnly = True;
+    if (! (XShmAttach (priv->display, &(priv->shminfo))))
+	return 1;
+
+    priv->ximage->data = priv->shminfo.shmaddr;
+    return 0;
+}
+
 static int x11_get_visual_info (void)
 {
-    struct x11_priv_s *priv = &x11_priv;
+    struct x11_priv_s * priv = &x11_priv;
     XVisualInfo visualTemplate;
     XVisualInfo * XvisualInfoTable;
     XVisualInfo * XvisualInfo;
@@ -128,7 +184,7 @@ static int x11_get_visual_info (void)
 
 static void x11_create_window (int width, int height)
 {
-    struct x11_priv_s *priv = &x11_priv;
+    struct x11_priv_s * priv = &x11_priv;
     XSetWindowAttributes attr;
 
     attr.background_pixmap = None;
@@ -144,39 +200,27 @@ static void x11_create_window (int width, int height)
 
 static void x11_create_gc (void)
 {
-    struct x11_priv_s *priv = &x11_priv;
+    struct x11_priv_s * priv = &x11_priv;
     XGCValues gcValues;
 
     priv->gc = XCreateGC (priv->display, priv->window, 0, &gcValues);
 }
 
-static int x11_setup (vo_output_video_attr_t * vo_attr)
+static int x11_yuv2rgb_init (void)
 {
-    int width, height;
+    struct x11_priv_s * priv = &x11_priv;
     int mode;
-    struct x11_priv_s *priv = &x11_priv;
 
-    width = vo_attr->width;
-    height = vo_attr->height;
+    // If we have blue in the lowest bit then obviously RGB 
+    mode = ((priv->ximage->blue_mask & 0x01)) ? MODE_RGB : MODE_BGR;
 
-    priv->display = XOpenDisplay (NULL);
-    if (! (priv->display)) {
-	fprintf (stderr, "Can not open display\n");
+#ifdef WORDS_BIGENDIAN 
+    if (priv->ximage->byte_order != MSBFirst)
 	return 1;
-    }
-
-    if (x11_get_visual_info ()) {
-	fprintf (stderr, "No truecolor visual\n");
+#else
+    if (priv->ximage->byte_order != LSBFirst)
 	return 1;
-    }
-
-    x11_create_window (width, height);
-    x11_create_gc ();
-
-    // FIXME set WM_DELETE_WINDOW protocol ? to avoid shm leaks
-
-    // should move this after everything than could potentially fail
-    XMapWindow (priv->display, priv->window);
+#endif
 
     /*
      *
@@ -190,59 +234,75 @@ static int x11_setup (vo_output_video_attr_t * vo_attr)
      *     color is 24 bit depth, but can be 24 bpp or 32 bpp.
      */
 
-    if (XShmQueryExtension (priv->display)) {
-	printf ("Using MIT Shared memory extension\n");
-    } else {
-	printf ("no shm\n");
-	exit (1);
+    yuv2rgb_init (((priv->vinfo.depth == 24) ?
+		   priv->ximage->bits_per_pixel : priv->vinfo.depth), mode);
+
+    return 0;
+}
+
+static int x11_setup (vo_output_video_attr_t * vo_attr)
+{
+    struct x11_priv_s * priv = &x11_priv;
+    int width, height;
+
+    width = vo_attr->width;
+    height = vo_attr->height;
+
+    priv->display = XOpenDisplay (NULL);
+    if (! (priv->display)) {
+	fprintf (stderr, "Can not open display\n");
+	return 1;
     }
 
-    priv->image_width = width;
-    priv->image_height = height;
-
-    priv->ximage = XShmCreateImage (priv->display, priv->vinfo.visual, priv->vinfo.depth, ZPixmap, NULL, &priv->Shminfo, width, priv->image_height);
-
-    // If no go, then revert to normal Xlib calls.
-    if (!priv->ximage) {
-	fprintf (stderr, "Shared memory error\n");
-	exit (1);
+    if (x11_check_local ()) {
+	fprintf (stderr, "Can not use xshm on a remote display\n");
+	return 1;
     }
 
-    if ((_xshm_create (&priv->Shminfo, priv->ximage->bytes_per_line * priv->ximage->height))) {
-	XDestroyImage(priv->ximage);
-	printf ("shm error\n");
-	exit (1);
-    }
-	
-    priv->ximage->data = priv->Shminfo.shmaddr;
-    priv->ImageData = (unsigned char *) priv->ximage->data;
-
-    priv->bpp = priv->ximage->bits_per_pixel;
-
-    // If we have blue in the lowest bit then obviously RGB 
-    mode = ((priv->ximage->blue_mask & 0x01)) ? MODE_RGB : MODE_BGR;
-
-#ifdef WORDS_BIGENDIAN 
-    if (priv->ximage->byte_order != MSBFirst) {
-#else
-    if (priv->ximage->byte_order != LSBFirst) {
-#endif
-	fprintf (stderr, "No support fon non-native XImage byte order\n");
-	return -1;
+    if (xshm_check_extension ()) {
+	fprintf (stderr, "No xshm extension\n");
+	return 1;
     }
 
-    yuv2rgb_init ((priv->vinfo.depth == 24) ? priv->bpp : priv->vinfo.depth, mode);
+    if (x11_get_visual_info ()) {
+	fprintf (stderr, "No truecolor visual\n");
+	return 1;
+    }
+
+    x11_create_window (width, height);
+    x11_create_gc ();
+
+    if (xshm_create_image (width, height)) {
+	fprintf (stderr, "Cannot create shm image\n");
+	return 1;
+    }
+
+    if (x11_yuv2rgb_init ()) {
+	fprintf (stderr, "No support for non-native byte order\n");
+	return 1;
+    }
+
+    // FIXME set WM_DELETE_WINDOW protocol ? to avoid shm leaks
+
+    // should move this after everything than could potentially fail
+    XMapWindow (priv->display, priv->window);
+
+    priv->width = width;
+    priv->height = height;
+    priv->imagedata = (unsigned char *) priv->ximage->data;
+    priv->stride = priv->ximage->bytes_per_line;
+
     return 0;
 }
 
 static int x11_close(void *plugin) 
 {
-    struct x11_priv_s *priv = &x11_priv;
+    struct x11_priv_s * priv = &x11_priv;
 
     printf ("Closing video plugin\n");
 
-    if (priv->Shminfo.shmaddr) {
-	_xshm_destroy(&priv->Shminfo);
+    if (priv->shminfo.shmaddr) {
+	_xshm_destroy(&priv->shminfo);
     }
 
     if (priv->ximage)
@@ -257,39 +317,38 @@ static int x11_close(void *plugin)
 
 static void x11_flip_page (void)
 {
-    struct x11_priv_s *priv = &x11_priv;
+    struct x11_priv_s * priv = &x11_priv;
 
     XShmPutImage (priv->display, priv->window, priv->gc, priv->ximage, 
-		  0, 0, 0, 0, priv->ximage->width, priv->ximage->height, False); 
+		  0, 0, 0, 0, priv->ximage->width, priv->ximage->height,
+		  False);
     XFlush (priv->display);
 }
 
 static int x11_draw_slice (uint8_t *src[], int slice_num)
 {
-    struct x11_priv_s *priv = &x11_priv;
-    uint8_t *dst;
+    struct x11_priv_s * priv = &x11_priv;
 
-    dst = priv->ImageData + priv->image_width * 16 * (priv->bpp/8) * slice_num;
-
-    yuv2rgb (dst, src[0], src[1], src[2], 
-	     priv->image_width, 16, 
-	     priv->image_width*(priv->bpp/8), priv->image_width, priv->image_width/2 );
+    yuv2rgb (priv->imagedata + priv->stride * 16 * slice_num,
+	     src[0], src[1], src[2], priv->width, 16,
+	     priv->stride, priv->width, priv->width >> 1);
 
     return 0;
 }
 
 static int x11_draw_frame (frame_t *frame)
 {
-    struct x11_priv_s *priv = &x11_priv;
+    struct x11_priv_s * priv = &x11_priv;
 
-    yuv2rgb(priv->ImageData, frame->base[0], frame->base[1], frame->base[2],
-	    priv->image_width, priv->image_height, 
-	    priv->image_width*(priv->bpp/8), priv->image_width, priv->image_width/2 );
+    yuv2rgb (priv->imagedata, frame->base[0], frame->base[1], frame->base[2],
+	     priv->width, priv->height,
+	     priv->stride, priv->width, priv->width >> 1);
 
-    return 0; 
+    return 0;
 }
 
-static frame_t* x11_allocate_image_buffer (int width, int height, uint32_t format)
+static frame_t * x11_allocate_image_buffer (int width, int height,
+					    uint32_t format)
 {
     return libvo_common_alloc (width, height);
 }
