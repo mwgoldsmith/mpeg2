@@ -104,6 +104,7 @@ dnl Checks for libraries.
 dnl Checks for header files.
 INCLUDES='-I$(top_srcdir)/include -I$(top_builddir)/include'
 AC_SUBST([INCLUDES])
+AC_HEADER_TIME
 AC_CHECK_HEADERS([sys/time.h time.h sys/timeb.h io.h altivec.h])
 AC_CHECK_TYPES([struct timeval], [], [],
     [#include <sys/time.h>
