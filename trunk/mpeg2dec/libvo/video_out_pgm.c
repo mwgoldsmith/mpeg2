@@ -47,8 +47,6 @@ typedef struct pgm_instance_s {
     uint32_t md5_bytes;
 } pgm_instance_t;
 
-static uint8_t black[16384] = { 0 };
-
 static void file_writer (pgm_instance_t * instance, uint8_t * ptr, size_t size)
 {
     fwrite (ptr, size, 1, instance->file);
@@ -57,6 +55,7 @@ static void file_writer (pgm_instance_t * instance, uint8_t * ptr, size_t size)
 static void internal_draw_frame (pgm_instance_t * instance,
 				 uint8_t * const * buf)
 {
+    static uint8_t black[16384] = { 0 };
     int i;
 
     instance->writer (instance, (uint8_t *)instance->header,
