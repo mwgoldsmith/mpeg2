@@ -161,11 +161,8 @@ static void mpeg2_idct_copy_c (int16_t * block, uint8_t * dest,
 
     for (i = 0; i < 8; i++)
 	idct_row (block + 8 * i);
-
     for (i = 0; i < 8; i++)
 	idct_col (block + i);
-
-    i = 8;
     do {
 	dest[0] = CLIP (block[0]);
 	dest[1] = CLIP (block[1]);
@@ -251,10 +248,14 @@ void mpeg2_idct_init (uint32_t accel)
     } else
 #endif
 #ifdef ARCH_ALPHA
-    if (accel & MPEG2_ACCEL_ALPHA) {
+    if (accel & MPEG2_ACCEL_ALPHA_MVI) {
+	mpeg2_idct_copy = mpeg2_idct_copy_mvi;
+	mpeg2_idct_add = mpeg2_idct_add_mvi;
+	mpeg2_idct_alpha_init (0);
+    } else if (accel & MPEG2_ACCEL_ALPHA) {
 	mpeg2_idct_copy = mpeg2_idct_copy_alpha;
 	mpeg2_idct_add = mpeg2_idct_add_alpha;
-	mpeg2_idct_alpha_init ();
+	mpeg2_idct_alpha_init (1);
     } else
 #endif
 #ifdef LIBMPEG2_MLIB

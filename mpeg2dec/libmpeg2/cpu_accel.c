@@ -147,7 +147,13 @@ static inline uint32_t arch_accel (void)
 #ifdef ARCH_ALPHA
 static inline uint32_t arch_accel (void)
 {
-    return MPEG2_ACCEL_ALPHA;
+    uint64_t no_mvi;
+
+    asm volatile ("amask %1, %0"
+		  : "=r" (no_mvi)
+		  : "rI" (256));	/* AMASK_MVI */
+    return no_mvi ? MPEG2_ACCEL_ALPHA : (MPEG2_ACCEL_ALPHA |
+					 MPEG2_ACCEL_ALPHA_MVI);
 }
 #endif /* ARCH_ALPHA */
 #endif
