@@ -253,15 +253,43 @@ void mpeg2_convert (mpeg2dec_t * mpeg2dec, mpeg2_convert_init_t convert)
     mpeg2dec->yuv_buf[2][2] = mpeg2dec->yuv_buf[2][0] + 5 * size;
 }
 
+void mpeg2_set_buf_alloc (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id)
+{
+    mpeg2dec->fbuf[2] = mpeg2dec->fbuf[1];
+    mpeg2dec->fbuf[1] = mpeg2dec->fbuf[0];
+    mpeg2dec->fbuf_alloc[2] = mpeg2dec->fbuf_alloc[1];
+    mpeg2dec->fbuf_alloc[1] = mpeg2dec->fbuf_alloc[0];
+    mpeg2dec->fbuf_alloc[2].free = 1;
+
+    mpeg2dec->fbuf[0].buf[0] = buf[0];
+    mpeg2dec->fbuf[0].buf[1] = buf[1];
+    mpeg2dec->fbuf[0].buf[2] = buf[2];
+    mpeg2dec->fbuf[0].id = id;
+    mpeg2dec->fbuf_alloc[0].fbuf = mpeg2dec->fbuf[0];
+    mpeg2dec->fbuf_alloc[0].free = 0;
+}
+
 void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id)
 {
     mpeg2dec->fbuf->buf[0] = buf[0];
     mpeg2dec->fbuf->buf[1] = buf[1];
     mpeg2dec->fbuf->buf[2] = buf[2];
     mpeg2dec->fbuf->id = id;
-    if (mpeg2dec->state == STATE_SEQUENCE) {
+    switch (mpeg2dec->state) {
+    case STATE_PICTURE:
+	mpeg2dec->info.current_fbuf = mpeg2dec->fbuf;
+	if ((mpeg2dec->decoder.coding_type == B_TYPE) ||
+	    (mpeg2dec->sequence.flags & SEQ_FLAG_LOW_DELAY)) {
+	    if ((mpeg2dec->decoder.coding_type == B_TYPE) ||
+		(mpeg2dec->convert_start))
+		mpeg2dec->info.discard_fbuf = mpeg2dec->fbuf;
+	    mpeg2dec->info.display_fbuf = mpeg2dec->fbuf;
+	}
+	break;
+    case STATE_SEQUENCE:
 	mpeg2dec->fbuf[2] = mpeg2dec->fbuf[1];
 	mpeg2dec->fbuf[1] = mpeg2dec->fbuf[0];
+	break;
     }
 }
 
