@@ -98,7 +98,6 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
 {
     uint8_t * buffer = mpeg2dec->chunk_start;
     sequence_t * sequence = &(mpeg2dec->new_sequence);
-    decoder_t * decoder = &(mpeg2dec->decoder);
     static unsigned int frame_period[9] = {
 	0, 1126125, 1125000, 1080000, 900900, 900000, 540000, 450450, 450000
     };
@@ -129,35 +128,29 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
     if (buffer[7] & 4)
 	sequence->flags |= SEQ_FLAG_CONSTRAINED_PARAMETERS;
 
+    mpeg2dec->copy_matrix = 3;
     if (buffer[7] & 2) {
 	for (i = 0; i < 64; i++)
-	    decoder->intra_quantizer_matrix[mpeg2_scan_norm[i]] =
+	    mpeg2dec->intra_quantizer_matrix[mpeg2_scan_norm[i]] =
 		(buffer[i+7] << 7) | (buffer[i+8] >> 1);
 	buffer += 64;
     } else
 	for (i = 0; i < 64; i++)
-	    decoder->intra_quantizer_matrix[mpeg2_scan_norm[i]] =
+	    mpeg2dec->intra_quantizer_matrix[mpeg2_scan_norm[i]] =
 		default_intra_quantizer_matrix[i];
 
     if (buffer[7] & 1)
 	for (i = 0; i < 64; i++)
-	    decoder->non_intra_quantizer_matrix[mpeg2_scan_norm[i]] =
+	    mpeg2dec->non_intra_quantizer_matrix[mpeg2_scan_norm[i]] =
 		buffer[i+8];
     else
 	for (i = 0; i < 64; i++)
-	    decoder->non_intra_quantizer_matrix[i] = 16;
+	    mpeg2dec->non_intra_quantizer_matrix[i] = 16;
 
     sequence->profile_level_id = 0x80;
     sequence->colour_primaries = 1;
     sequence->transfer_characteristics = 1;
     sequence->matrix_coefficients = 1;
-
-    decoder->intra_dc_precision = 0;
-    decoder->frame_pred_frame_dct = 1;
-    decoder->q_scale_type = 0;
-    decoder->concealment_motion_vectors = 0;
-    decoder->scan = mpeg2_scan_norm;
-    decoder->picture_structure = FRAME_PICTURE;
 
     mpeg2dec->ext_state = SEQ_EXT;
     mpeg2dec->state = STATE_SEQUENCE;
@@ -296,6 +289,21 @@ static inline void finalize_sequence (sequence_t * sequence)
     sequence->pixel_height /= height;
 }
 
+void mpeg2_header_matrix_finalize (mpeg2dec_t * mpeg2dec)
+{
+    decoder_t * decoder = &(mpeg2dec->decoder);
+    int i;
+
+    if (mpeg2dec->copy_matrix & 1)
+	for (i = 0; i < 64; i++)
+	    decoder->intra_quantizer_matrix[i] =
+		mpeg2dec->intra_quantizer_matrix[i];
+    if (mpeg2dec->copy_matrix & 2)
+	for (i = 0; i < 64; i++)
+	    decoder->non_intra_quantizer_matrix[i] =
+		mpeg2dec->non_intra_quantizer_matrix[i];
+}
+
 void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
 {
     sequence_t * sequence = &(mpeg2dec->new_sequence);
@@ -303,6 +311,7 @@ void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
 
     finalize_sequence (sequence);
 
+    mpeg2_header_matrix_finalize (mpeg2dec);
     decoder->mpeg1 = !(sequence->flags & SEQ_FLAG_MPEG2);
     decoder->width = sequence->width;
     decoder->height = sequence->height;
@@ -476,6 +485,14 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 
     picture->nb_fields = 2;
 
+    decoder->intra_dc_precision = 0;
+    decoder->frame_pred_frame_dct = 1;
+    decoder->q_scale_type = 0;
+    decoder->concealment_motion_vectors = 0;
+    decoder->scan = mpeg2_scan_norm;
+    decoder->picture_structure = FRAME_PICTURE;
+    mpeg2dec->copy_matrix = 0;
+
     return 0;
 }
 
@@ -565,20 +582,22 @@ static int copyright_ext (mpeg2dec_t * mpeg2dec)
 static int quant_matrix_ext (mpeg2dec_t * mpeg2dec)
 {
     uint8_t * buffer = mpeg2dec->chunk_start;
-    decoder_t * decoder = &(mpeg2dec->decoder);
     int i;
 
     if (buffer[0] & 8) {
 	for (i = 0; i < 64; i++)
-	    decoder->intra_quantizer_matrix[mpeg2_scan_norm[i]] =
+	    mpeg2dec->intra_quantizer_matrix[mpeg2_scan_norm[i]] =
 		(buffer[i] << 5) | (buffer[i+1] >> 3);
+	mpeg2dec->copy_matrix |= 1;
 	buffer += 64;
     }
 
-    if (buffer[0] & 4)
+    if (buffer[0] & 4) {
 	for (i = 0; i < 64; i++)
-	    decoder->non_intra_quantizer_matrix[mpeg2_scan_norm[i]] =
+	    mpeg2dec->non_intra_quantizer_matrix[mpeg2_scan_norm[i]] =
 		(buffer[i] << 6) | (buffer[i+1] >> 2);
+	mpeg2dec->copy_matrix |= 2;
+    }
 
     return 0;
 }

@@ -270,6 +270,7 @@ int mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
 	    break;
 	case RECEIVED (0x01, STATE_PICTURE):
 	case RECEIVED (0x01, STATE_PICTURE_2ND):
+	    mpeg2_header_matrix_finalize (mpeg2dec);
 	    mpeg2dec->action = mpeg2_header_slice_start;
 	    break;
 
