@@ -318,9 +318,9 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
 		fprintf (f, " %s", colour3[seq->colour_primaries]);
 	    else {
 		char prim[16], trans[16], matrix[16];
-		snprintf (prim, 15, "%d", seq->colour_primaries);
-		snprintf (trans, 15, "%d", seq->transfer_characteristics);
-		snprintf (matrix, 15, "%d", seq->matrix_coefficients);
+		sprintf (prim, "%d", seq->colour_primaries);
+		sprintf (trans, "%d", seq->transfer_characteristics);
+		sprintf (matrix, "%d", seq->matrix_coefficients);
 		if (seq->colour_primaries <= 7 &&
 		    colour[seq->colour_primaries])
 		    strncpy (prim, colour[seq->colour_primaries], 15);
