@@ -87,11 +87,12 @@ static void inline idct_row (int16_t * const block)
     /* shortcut */
     if (likely (!(block[1] | ((int32_t *)block)[1] | ((int32_t *)block)[2] |
 		  ((int32_t *)block)[3]))) {
-	uint16_t tmp = block[0] << 3;
-	((int32_t *)block)[0] = tmp | (tmp << 16);
-	((int32_t *)block)[1] = tmp | (tmp << 16);
-	((int32_t *)block)[2] = tmp | (tmp << 16);
-	((int32_t *)block)[3] = tmp | (tmp << 16);
+	uint32_t tmp = (uint16_t) (block[0] << 3);
+	tmp |= tmp << 16;
+	((int32_t *)block)[0] = tmp;
+	((int32_t *)block)[1] = tmp;
+	((int32_t *)block)[2] = tmp;
+	((int32_t *)block)[3] = tmp;
 	return;
     }
 
