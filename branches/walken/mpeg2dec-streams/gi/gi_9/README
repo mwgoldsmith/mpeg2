@@ -1,0 +1,57 @@
+Dear Bitstream Exchange AHG members,
+
+gi_9 is an MP@ML bitstream created for the Video Conformance Testing AHG,
+for the "Prediction Bandwidth" test. 
+
+Parameters are the following:
+
+Bitstream ID       : 1.
+Description        : Frame Coded Picture, B-directional macroblock
+                     predictions in field mode, reconstructed motion vectors
+                     have 1/2 pel coordinates for Y,Cr and Cb. m=5.
+Stresses           : Prediction bandwidth.
+Justification      : Field MB predictions in frame pictures have the
+                     largest prediction bandwidth overhead.
+Parameters         : Main Level, 16 frames
+Organization       : GI.
+
+Bit rate           : 14,999,600 bits/sec 
+Sampling 
+dimensions         : 720  x 480 x 30 Hz 
+
+Bitstream file     : bit_stream
+Reconstructed 
+frames*            :  decode_data
+picture structure  :  I P B B (frame-structure)
+
+        *frame format:
+
+                4:2:0 frame ("display" order) 8 bit
+
+                       width
+                +---------------+
+                |               |
+                |      Y0       | height
+                |width/2        |
+                +-------+-------+
+                |  Cb0  | height/2
+                +-------+
+                |  Cr0  | height/2
+                +-------+-------+
+                |               |
+                |      Y1       |
+                |               |
+                +-------+-------+
+                |       |
+                  etc...
+
+Best regards,
+
+Sam Narasimhan
+
+-------------------------------------------------------------
+ Sam Narasimhan                    E-Mail : snarasimhan@gi.com
+ General Instrument                Tel : 1-619-455-1500 X3985
+ 6262, Lusk Boulevard              Fax : 1-619-535-2486
+ San Diego, CA 92121
+-------------------------------------------------------------

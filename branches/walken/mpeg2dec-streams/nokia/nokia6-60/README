@@ -1,0 +1,73 @@
+
+Nokia6_dual is an MP@ML bitstream created for Video Conformance Testing AHG,
+test item 3. 
+
+	Bitstream ID:   3.
+	Description:    All dual-prime macroblocks in frame-coded picture
+	Stresses:       prediction bandwidth
+	Justification:  prediction bandwidth is at a maximum in this mode
+	Parameters:     Main Level, 4 frames
+	Organizations:  Nokia, Toshiba
+
+
+        MOB&CAL,  720 * 576 * 25 Hz
+        15 Mbit/s
+        Frame structured pictures.
+        I P P P  (four frames)
+        Intra DC 8 bits
+        Only dual prime  prediction.
+        Frame/field IDCT (double precision).
+	VBV size 1835008 bits
+
+
+The following files are enclosed:
+bitstream file (4 frames)	nokia6_dual.bit
+decoded image file (4 frames)	nokia6_dual.decoded
+trace file (4 frames)		nokia6_dual.trace
+bitstream file (60 frames)	nokia6_dual_60.bit
+
+
+Nokia6_dual_60.bit ia a 60 frames long bitstream, which has been
+encoded using the same parameters.
+
+Nokia6_dual.trace contains data only from the topmost slice. More
+complete trace files are available upon request.
+
+
+The decoded images are in the usual format:
+
+                     720
+                +---------------+
+                |               |
+                |      Y0       | 576
+                |               |
+                |  320          |
+                +-------+-------+
+                |  Cb0  |
+                |       |288
+                +-------+
+                |  Cr0  |288
+                |       |
+                +-------+-------+
+                |               |
+                |      Y1       |
+                |               |
+                |               |
+                +-------+-------+
+                |       |
+
+
+I would appreciate it if you could try to decode this, and compare the
+results with our decoded images. Please let me know if you have problems
+with the bitstream.
+
+best regards
+
+--  Vesa
+
+------------------------------------------------------------------------
+*  Vesa Lunden                                    vlu@rctre.nokia.fi   *
+*  NOKIA RESEARCH CENTER                          tel. +358 31 3165857 *
+*  Kanslerinkatu 8, 33720 Tampere, Finland        fax. +358 31 3165853 *
+------------------------------------------------------------------------
+

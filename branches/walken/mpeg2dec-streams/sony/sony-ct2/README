@@ -1,0 +1,81 @@
+                                        Wed May 11 11:56:46 JST 1994
+                                                                SONY
+
+Dear Bitstream Exchange AHG members,
+
+This bitstream is created for the Video Conformance Testing AHG
+for the test of 
+"Alternating top/bottom, ZZ/Alternative, Intra/Non-intra 
+ tables in I pictures" .
+
+Parameters of the bitstream "sony-ct2" are the following:
+
+
+Bitstream ID:  6.
+Description:   Alternating top/bottom, ZZ/Alternative, Intra/Non-intra VLC 
+               tables in I pictures
+	       (+ Linear/Non_linear Q, 
+	          Conceal_MV on/off, 
+	          Intra_dc 8/9/10bit precision)
+Stresses:      parser
+Justification: Sloppy decoders may not handle all scenarios.
+Organizations: Sony
+Parameters:     
+
+	
+	--- sony-ct2 ---
+        Bitstream file          sony-ct2.bits
+        Reconstructed frames    sony-ct2.decoded
+        Decoding trace          sony-ct2.trace ( Picture Layer Level)
+
+	Bit rate:               15 Mbit/sec 
+	Sampling dimensions:    704 x 480  24 Hz 
+	Number of frames:	24 frames
+	IDCT:                   double precision
+
+        
+        *frame format:
+
+	4:2:0 frame ("display" order) 8 bit
+
+	              width              
+                +---------------+       
+                |               |          
+                |      Y0       | height
+                |               |
+                |  width/2      |
+                +-------+-------+
+                |  Cb0  | 
+                |       |height/2
+                +-------+
+                |  Cr0  |height/2
+                |       |
+                +-------+-------+        
+                |               |
+                |      Y1       |
+                |               |        
+                |               |        
+                +-------+-------+ 
+                |       |
+
+
+
+Please check that you can decode it.  Thank-you.
+
+        Best regards,
+
+        Motoki Kato,
+	Katsumi Tahara
+
+                        ======================================
+                        Motoki KATO (Mr.)
+                        Phone   +81-3-5448-5605
+                        Fax     +81-3-5448-5611
+                        E-mail  mkato@av.crl.sony.co.jp
+
+                        Image Processing Technology Department
+                        Corporate Research Laboratories
+                        Sony Corporation
+                        Tokyo,Japan
+                        ======================================
+

@@ -1,0 +1,26 @@
+This directory contains the files related to the conformance testing
+of MPEG2 video decoders. The conformance test is the # 11 :
+
+  Bitstream ID:   11
+  Description:    Flat distribution of VLC events (worst case for constant 
+                rate symbolic VLDs)
+  Stresses:       VLD
+  Justification:  Badly designed systems will rely on statistically low count
+                of symbols over global areas to meet real-time constraints.
+  Parameters:     Main Level, 4 frames
+  Organizations:  TCE-LEP
+             
+Included files
+--------------
+  bits_conf_lep_11.bits is the compressed video file
+  bits_conf_lep_11.file is  the file that contains the decoded pictures
+  bits_conf_lep_11.log is the log file of LEP decoder
+
+Bitstream characteristics
+-------------------------
+50 Hz seq, CCIR 601, coded at 15 Mbit/s
+sequence IPB
+P picture encoded with 1653896 bits
+all blocks are dct coded with the maximum of vlc events per blocks  
+all the coding  are frame
+all the predictions are field
