@@ -60,6 +60,7 @@ static struct x11_priv_s {
 
 #ifdef LIBVO_XSHM
     int error;
+    int shmindex;
     XShmSegmentInfo shminfo[3];
 #endif
 
@@ -313,17 +314,20 @@ static int x11_handle_error (Display * display, XErrorEvent * error)
     return 0;
 }
 
-static int xshm_create_shm (XShmSegmentInfo * shminfo, int size)
+static void * xshm_create_shm (int size)
 {
     struct x11_priv_s * priv = &x11_priv;
+    XShmSegmentInfo * shminfo;
+
+    shminfo = priv->shminfo + priv->shmindex;
 
     shminfo->shmid = shmget (IPC_PRIVATE, size, IPC_CREAT | 0777);
     if (shminfo->shmid == -1)
-	return 1;
+	return NULL;
 
     shminfo->shmaddr = shmat (shminfo->shmid, 0, 0);
     if (shminfo->shmaddr == (char *)-1)
-	return 1;
+	return NULL;
 
     /* XShmAttach fails on remote displays, so we have to catch this event */
 
@@ -333,23 +337,31 @@ static int xshm_create_shm (XShmSegmentInfo * shminfo, int size)
 
     shminfo->readOnly = True;
     if (! (XShmAttach (priv->display, shminfo)))
-	return 1;
+	return NULL;
 
     XSync (priv->display, False);
     XSetErrorHandler (NULL);
-    return priv->error;
+    if (priv->error)
+	return NULL;
+
+    shmctl (shminfo->shmid, IPC_RMID, 0);
+
+    priv->shmindex++;
+    return shminfo->shmaddr;
 }
 
-static void xshm_destroy_shm (XShmSegmentInfo * shminfo)
+static void xshm_destroy_shm (void)
 {
     struct x11_priv_s * priv = &x11_priv;
+    XShmSegmentInfo * shminfo;
+
+    priv->shmindex--;
+    shminfo = priv->shminfo + priv->shmindex;
 
     if (shminfo->shmaddr != (char *)-1) {
 	XShmDetach (priv->display, shminfo);
 	shmdt (shminfo->shmaddr);
     }
-    if (shminfo->shmid != -1)
-	shmctl (shminfo->shmid, IPC_RMID, 0);
 }
 
 static int xshm_create_image (int width, int height)
@@ -363,11 +375,11 @@ static int xshm_create_image (int width, int height)
     if (priv->ximage == NULL)
 	return 1;
 
-    if (xshm_create_shm (priv->shminfo,
-			 priv->ximage->bytes_per_line * priv->ximage->height))
+    priv->ximage->data = xshm_create_shm (priv->ximage->bytes_per_line *
+					  priv->ximage->height);
+    if (priv->ximage->data == NULL)
 	return 1;
 
-    priv->ximage->data = priv->shminfo[0].shmaddr;
     return 0;
 }
 
@@ -395,7 +407,7 @@ static int xshm_close (void)
 
     libvo_common_free_frames (libvo_common_free_frame);
     if (priv->ximage) {
-	xshm_destroy_shm (priv->shminfo);
+	xshm_destroy_shm ();
 	XDestroyImage (priv->ximage);
     }
     common_close ();
@@ -604,37 +616,29 @@ static int xvshm_alloc_frame (frame_t * frame, int width, int height)
 {
     struct x11_priv_s * priv = &x11_priv;
     XvImage * xvimage;
-    static int frame_number = 0;
 
     xvimage = XvShmCreateImage (priv->display, priv->port, FOURCC_YV12,
 				NULL /* data */, width, height,
-				priv->shminfo + frame_number);
+				priv->shminfo + priv->shmindex);
     if ((xvimage == NULL) || (xvimage->data_size == 0))
 	return 1;
 
-    if (xshm_create_shm (priv->shminfo + frame_number, xvimage->data_size))
+    xvimage->data = xshm_create_shm (xvimage->data_size);
+    if (xvimage->data == NULL)
 	return 1;
-
-    xvimage->data = priv->shminfo[frame_number].shmaddr;
 
     frame->private = xvimage;
     frame->base[0] = xvimage->data;
     frame->base[1] = xvimage->data + width * height * 5 / 4;
     frame->base[2] = xvimage->data + width * height;
 
-    frame_number++;
-
     return 0;
 }
 
 static void xvshm_free_frame (frame_t * frame)
 {
-    struct x11_priv_s * priv = &x11_priv;
-    static int frame_number = 0;
-
-    xshm_destroy_shm (priv->shminfo + frame_number);
+    xshm_destroy_shm ();
     XFree (frame->private);
-    frame_number++;
 }
 
 static int xvshm_setup (int width, int height)
