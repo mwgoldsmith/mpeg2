@@ -474,9 +474,8 @@ static unsigned int rgb_c_init (convert_rgb_c_t * id,
 }
 
 static int rgb_internal (mpeg2convert_rgb_order_t order, unsigned int bpp,
-			 mpeg2_convert_stage_t stage, void * _id,
-			 const mpeg2_sequence_t * seq, int stride,
-			 uint32_t accel, void * arg,
+			 int stage, void * _id, const mpeg2_sequence_t * seq,
+			 int stride, uint32_t accel, void * arg,
 			 mpeg2_convert_init_t * result)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
@@ -546,7 +545,7 @@ static int rgb_internal (mpeg2convert_rgb_order_t order, unsigned int bpp,
 }
 
 #define DECLARE(func,order,bpp)						\
-int func (mpeg2_convert_stage_t stage, void * id,			\
+int func (int stage, void * id,						\
 	  const mpeg2_sequence_t * sequence, int stride,		\
 	  uint32_t accel, void * arg, mpeg2_convert_init_t * result)	\
 {									\

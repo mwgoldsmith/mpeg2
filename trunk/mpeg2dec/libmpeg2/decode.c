@@ -315,7 +315,7 @@ int mpeg2_convert (mpeg2dec_t * mpeg2dec, mpeg2_convert_t convert, void * arg)
 int mpeg2_stride (mpeg2dec_t * mpeg2dec, int stride)
 {
     if (!mpeg2dec->convert) {
-	if (stride < mpeg2dec->sequence.width)
+	if (stride < (int) mpeg2dec->sequence.width)
 	    stride = mpeg2dec->sequence.width;
 	mpeg2dec->decoder.stride_frame = stride;
     } else {
