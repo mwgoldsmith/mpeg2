@@ -23,6 +23,8 @@
 
 #if defined(HAVE_SYS_TIME_H) && defined(HAVE_GETTIMEOFDAY)
 #include <sys/time.h>
+#elif defined(HAVE_TIME_H) && defined(HAVE_GETTIMEOFDAY)
+#include <time.h>
 #elif defined(HAVE_SYS_TIMEB_H) && defined(HAVE_FTIME)
 
 #define HAVE_GETTIMEOFDAY 1
