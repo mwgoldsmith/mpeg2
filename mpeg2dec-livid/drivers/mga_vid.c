@@ -206,10 +206,8 @@ static mga_vid_config_t mga_config;
 
 static void mga_vid_frame_sel(int frame)
 {
-	//Make sure internal registers don't get updated until we're done
-	writel( (readl(mga_mmio_base + VCOUNT)-1)<<16,
-			mga_mmio_base + BESGLOBCTL);
-
+	//we don't need the vcount protection as we're only hitting
+	//one register (and it doesn't seem to be double buffered)
 	regs.besctl = (regs.besctl & ~0x07000000) + (frame << 25);
 	writel( regs.besctl, mga_mmio_base + BESCTL ); 
 }
@@ -348,7 +346,7 @@ static int mga_vid_set_config(mga_vid_config_t *config)
 	//BES enabled, even start polarity, filtering enabled, chroma upsampling
 	//enabled, 420 mode enabled, dither enabled, mirror disabled, b/w
 	//disabled, blanking enabled, software field select, buffer b1 displayed
-	regs.besctl = 1 + (1<<10) + (1<<11) + (1<<16) + (1<<17) + (1<<18) + (1<<25); 
+	regs.besctl = 1 + (1<<10) + (1<<11) + (1<<16) + (1<<17) + (1<<18); 
 
 	if(is_g400)
 	{

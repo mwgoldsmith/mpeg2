@@ -181,14 +181,14 @@ display_slice(uint_8 *src[], uint_32 slice_num)
 void
 display_flip_page(void)
 {
-	//ioctl(f,MGA_VID_FSEL,&next_frame);
+	ioctl(f,MGA_VID_FSEL,&next_frame);
 
-	//next_frame = 2 - next_frame; // switch between fields A1 and B1
+	next_frame = 2 - next_frame; // switch between fields A1 and B1
 
-	//if (next_frame) 
-		//vid_data = frame1;
-	//else
-		//vid_data = frame0;
+	if (next_frame) 
+		vid_data = frame1;
+	else
+		vid_data = frame0;
 }
 
 uint_32
