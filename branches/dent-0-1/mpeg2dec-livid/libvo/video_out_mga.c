@@ -46,7 +46,7 @@ static int draw_slice_g200	(uint8_t *src[], uint32_t slice_num);
 static int draw_slice_g400	(uint8_t *src[], uint32_t slice_num);
 static void flip_page		(void);
 static void free_image_buffer	(vo_image_buffer_t* image);
-static vo_image_buffer_t* allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format);
+static vo_image_buffer_t *allocate_image_buffer (uint32_t height, uint32_t width, uint32_t format);
 
 
 static struct mga_priv_s {

@@ -21,6 +21,9 @@
  *
  */
 
+
+#include <inttypes.h>
+
 static uint32_t init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title);
 static const vo_info_t* get_info(void);
 static uint32_t draw_frame(uint8_t *src[]);

@@ -1,3 +1,6 @@
+//PLUGIN_INFO(INFO_NAME, "Simple Direct Media Library (SDL)");
+//PLUGIN_INFO(INFO_AUTHOR, "Ryan C. Gordon <icculus@lokigames.com>");
+
 /*
  *  video_out_sdl.c
  *
@@ -31,23 +34,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "config.h"
-#include "video_out.h"
-#include "video_out_internal.h"
+#include <oms/oms.h>
+#include <oms/plugin/output_video.h>
 
-LIBVO_EXTERN(sdl)
-
-#ifdef HAVE_SDL
-
-#include "SDL.h"
-
-static vo_info_t vo_info = 
-{
-	"Simple Direct Media Library (SDL)",
-	"sdl",
-	"Ryan C. Gordon <icculus@lokigames.com>",
-	""
-};
+#include <SDL/SDL.h>
 
 static SDL_Surface *surface = NULL;
 static SDL_Overlay *overlay = NULL;
@@ -59,23 +49,64 @@ static int slicePlaneY = -1;
 static int slicePlaneUV = -1;
 
 
-static inline int 
-findArrayEnd(SDL_Rect **array)
-/*
+static int _sdl_open		(plugin_t *plugin, void *name);
+static int _sdl_close		(plugin_t *plugin);
+static int _sdl_setup		(uint32_t width, uint32_t height, uint32_t fullscreen, char *title);
+static int _sdl_draw_frame	(uint8_t *src[]);
+static int _sdl_draw_slice	(uint8_t *src[], uint32_t slice_num);
+static void flip_page		(void);
+static void free_image_buffer	(vo_image_buffer_t* image);
+static vo_image_buffer_t *allocate_image_buffer (uint32_t height, uint32_t width, uint32_t format);
+
+static plugin_output_video_t video_sdl = {
+        NULL,
+        _sdl_open,
+        _sdl_close,
+        _sdl_setup,
+        _sd_draw_frame,
+        _sd_draw_slice,
+        flip_page,
+        allocate_image_buffer,
+        free_image_buffer
+};
+
+
+/**
+ *
+ **/
+
+static int _sdl_open (plugin_t *plugin, void *name)
+{
+	return 0;
+}
+
+
+/**
+ *
+ **/
+
+static int _sdl_close (plugin_t *plugin)
+{
+	return 0;
+}
+
+
+/**
  * Take a null-terminated array of pointers, and find the last element.
  *
  *    params : array == array of which we want to find the last element.
  *   returns : index of last NON-NULL element.
- */
-{
-    int i;
-    for (i = 0; array[i] != NULL; i++);  // keep loopin'...
-    return(i - 1);
-} // findArrayEnd
+ */*
 
-static uint32_t 
-init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
-/*
+static inline int findArrayEnd(SDL_Rect **array)
+{
+	int i;
+	for (i = 0; array[i] != NULL; i++);  // keep loopin'...
+	return i-1;
+}
+
+
+/**
  * Initialize an SDL surface and an SDL YUV overlay.
  *
  *    params : width  == width of video we'll be displaying.
@@ -83,55 +114,47 @@ init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
  *             fullscreen == want to be fullscreen?
  *             title == Title for window titlebar.
  *   returns : non-zero on success, zero on error.
- */
+ **/
+
+static int _sdl_setup (uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 {
-    int rc = 0;
-    int i = 0;
-    const SDL_VideoInfo *vidInfo = NULL;
-    int desiredWidth = -1;
-    int desiredHeight = -1;
-    SDL_Rect **modes = NULL;
-    Uint32 sdlflags = SDL_HWSURFACE;
-    Uint8 bpp;
+	int rc = 0;
+	int i = 0;
+	const SDL_VideoInfo *vidInfo = NULL;
+	int desiredWidth = -1;
+	int desiredHeight = -1;
+	SDL_Rect **modes = NULL;
+	Uint32 sdlflags = SDL_HWSURFACE;
+	Uint8 bpp;
 
-    if (fullscreen)
-        sdlflags |= SDL_FULLSCREEN;
+	if (fullscreen)
+		sdlflags |= SDL_FULLSCREEN;
 
-    rc = SDL_Init(SDL_INIT_VIDEO);
-    if (rc != 0)
-    {
-        printf("SDL: SDL_Init() failed! rc == (%d).\n", rc);
-        return(0);
-    } // if
+	if ((rc = SDL_Init(SDL_INIT_VIDEO))) {
+		printf("SDL: SDL_Init() failed! rc == (%d).\n", rc);
+		return 0;
+	}
 
-    atexit(SDL_Quit);
+	atexit (SDL_Quit);
 
-    vidInfo = SDL_GetVideoInfo();
+	vidInfo = SDL_GetVideoInfo();
 
-    modes = SDL_ListModes(vidInfo->vfmt, sdlflags);
-    if (modes == NULL)
-    {
-        sdlflags &= ~SDL_FULLSCREEN;
-        modes = SDL_ListModes(vidInfo->vfmt, sdlflags); // try without fullscreen.
-        if (modes == NULL)
-        {
-            sdlflags &= ~SDL_HWSURFACE;
-            modes = SDL_ListModes(vidInfo->vfmt, sdlflags);   // give me ANYTHING.
-            if (modes == NULL)
-            {
-                printf("SDL: SDL_ListModes() failed.\n");
-                return(0);
-            } // if
-        } // if
-    } // if
+	if (!(modes = SDL_ListModes(vidInfo->vfmt, sdlflags))) {
+		sdlflags &= ~SDL_FULLSCREEN;
+		if (!(modes = SDL_ListModes(vidInfo->vfmt, sdlflags))) { // try without fullscreen.
+			sdlflags &= ~SDL_HWSURFACE;
+			modes = SDL_ListModes(vidInfo->vfmt, sdlflags);   // give me ANYTHING.
+			if (modes == NULL) {
+				printf("SDL: SDL_ListModes() failed.\n");
+				return(0);
+			}
+		}
+	}
 
-    if (modes == (SDL_Rect **) -1)   // anything is fine.
-    {
-        desiredWidth = width;
-        desiredHeight = height;
-    } // if
-    else
-    {
+	if (modes == (SDL_Rect **) -1) {   // anything is fine.
+		desiredWidth = width;
+		desiredHeight = height;
+	} else {
             // we want to get the lowest resolution that'll fit the video.
             //  ...so start at the far end of the array.
         for (i = findArrayEnd(modes); ((i >= 0) && (desiredWidth == -1)); i--)
@@ -210,103 +233,138 @@ setbuf(stdout, NULL);
 } // display_init
 
 
-static const vo_info_t*
-get_info(void)
-{
-	return &vo_info;
-}
-
-
-    // !!! do we still need this API function?
-static uint32_t 
-draw_frame(uint8_t *src[])
-/*
+/**
  * Draw a frame to the SDL YUV overlay.
  *
  *   params : *src[] == the Y, U, and V planes that make up the frame.
  *  returns : non-zero on success, zero on error.
- */
+ **/
+
+static int _sdl_draw_frame (uint8_t *src[])
 {
-    char *dst;
+	char *dst;
 
-    if (SDL_LockYUVOverlay(overlay) != 0)
-    {
-        printf("ERROR: Couldn't lock SDL-based YUV overlay!\n");
-        return(0);
-    } // if
+	if (SDL_LockYUVOverlay(overlay)) {
+		printf("ERROR: Couldn't lock SDL-based YUV overlay!\n");
+		return 0;
+	}
 
-    dst = overlay->pixels;
-    memcpy(dst, src[0], framePlaneY);
-    dst += framePlaneY;
-    memcpy(dst, src[1], framePlaneUV);
-    dst += framePlaneUV;
-    memcpy(dst, src[2], framePlaneUV);
+	dst = overlay->pixels;
+	memcpy(dst, src[0], framePlaneY);
+	dst += framePlaneY;
+	memcpy(dst, src[1], framePlaneUV);
+	dst += framePlaneUV;
+	memcpy(dst, src[2], framePlaneUV);
 
-    SDL_UnlockYUVOverlay(overlay);
-    flip_page();
-    return(-1);
-} // display_frame
+	SDL_UnlockYUVOverlay(overlay);
+	flip_page();
+
+	return -1;
+}
 
 
-static uint32_t 
-draw_slice(uint8_t *src[], uint32_t slice_num)
-/*
+/**
  * Draw a slice (16 rows of image) to the SDL YUV overlay.
  *
  *   params : *src[] == the Y, U, and V planes that make up the slice.
  *  returns : non-zero on success, zero on error.
- */
+ **/
+
+static int _sdl_draw_slice (uint8_t *src[], uint32_t slice_num)
 {
-    char *dst;
+	char *dst;
 
-    if (SDL_LockYUVOverlay(overlay) != 0)
-    {
-        printf("ERROR: Couldn't lock SDL-based YUV overlay!\n");
-        return(0);
-    } // if
+	if (SDL_LockYUVOverlay(overlay)) {
+		printf("ERROR: Couldn't lock SDL-based YUV overlay!\n");
+		return 0;
+	}
 
-    dst = overlay->pixels + (slicePlaneY * slice_num);
-    memcpy(dst, src[0], slicePlaneY);
-    dst = (overlay->pixels + framePlaneY) + (slicePlaneUV * slice_num);
-    memcpy(dst, src[1], slicePlaneUV);
-    dst += framePlaneUV;
-    memcpy(dst, src[2], slicePlaneUV);
+	dst = overlay->pixels + (slicePlaneY * slice_num);
+	memcpy(dst, src[0], slicePlaneY);
+	dst = (overlay->pixels + framePlaneY) + (slicePlaneUV * slice_num);
+	memcpy(dst, src[1], slicePlaneUV);
+	dst += framePlaneUV;
+	memcpy(dst, src[2], slicePlaneUV);
 
-    SDL_UnlockYUVOverlay(overlay);
-    return(-1);
-} // display_slice
-
-
-static void 
-flip_page(void)
-{
-    SDL_PumpEvents();  // get keyboard and win resize events.
-    if ( (SDL_GetModState() & KMOD_ALT) &&
-         ((keyState[SDLK_KP_ENTER] == SDL_PRESSED) ||
-          (keyState[SDLK_RETURN] == SDL_PRESSED)) )
-    {
-        SDL_WM_ToggleFullScreen(surface);
-    } // if
-
-    SDL_DisplayYUVOverlay(overlay, &dispSize);
-} // display_flip_page
-
-static vo_image_buffer_t* 
-allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format)
-{
-	//use the generic fallback
-	return allocate_image_buffer_common(height,width,format);
+	SDL_UnlockYUVOverlay(overlay);
+	return -1;
 }
 
-static void	
-free_image_buffer(vo_image_buffer_t* image)
+
+/**
+ *
+ **/
+
+static void flip_page (void)
 {
-	//use the generic fallback
-	free_image_buffer_common(image);
+	SDL_PumpEvents();  // get keyboard and win resize events.
+
+	if ((SDL_GetModState() & KMOD_ALT) &&
+		((keyState[SDLK_KP_ENTER] == SDL_PRESSED) ||
+		(keyState[SDLK_RETURN] == SDL_PRESSED))) {
+		SDL_WM_ToggleFullScreen(surface);
+	}
+
+	SDL_DisplayYUVOverlay(overlay, &dispSize);
 }
 
-#else /* HAVE_SDL*/
 
-LIBVO_DUMMY_FUNCTIONS(sdl);
+/**
+ *
+ **/
 
-#endif
+static vo_image_buffer_t *allocate_image_buffer (uint32_t height, uint32_t width, uint32_t format)
+{
+	vo_image_buffer_t *image;
+
+	if (!(image = malloc (sizeof (vo_image_buffer_t))))
+		return NULL;
+
+	image->height   = height;
+	image->width    = width;
+	image->format   = format;
+
+	//we only know how to do 4:2:0 planar yuv right now.
+	if (!(image->base = malloc (width * height * 3 / 2))) {
+		free(image);
+		return NULL;
+	}
+
+	return image;
+}
+
+
+/**
+ *
+ **/
+
+static void free_image_buffer (vo_image_buffer_t* image)
+{
+	free (image->base);
+	free (image);
+}
+
+
+/**
+ * Initialize Plugin.
+ **/
+
+void *plugin_init (char *whoami)
+{
+	pluginRegister (whoami,
+		PLUGIN_ID_OUTPUT_VIDEO,
+		0,
+		&video_sdl);
+
+	return &video_sdl;
+}
+
+
+/**
+ * Cleanup Plugin.
+ **/
+
+void plugin_exit (void)
+{
+}
+
