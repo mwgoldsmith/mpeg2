@@ -1016,7 +1016,7 @@ static inline void slice_non_intra_DCT (picture_t * picture, uint8_t * dest,
 #define MOTION_FIELD(table,ref,motion_x,motion_y,dest_field,op,src_field)     \
     pos_x = 2 * picture->offset + motion_x;				      \
     pos_y = picture->v_offset + motion_y;				      \
-    if ((pos_x > picture->limit_x) || (pos_y > picture->limit_y_field))	      \
+    if ((pos_x > picture->limit_x) || (pos_y > picture->limit_y))	      \
 	return;								      \
     xy_half = ((pos_y & 1) << 1) | (pos_x & 1);				      \
     table[xy_half] (picture->dest[0] + dest_field * picture->stride +	      \
@@ -1437,7 +1437,7 @@ do {									\
 	    picture->dest[2] += 4 * picture->stride;			\
 	} while (0);							\
 	picture->v_offset += 16;					\
-	if (picture->v_offset > picture->limit_y_field) {		\
+	if (picture->v_offset > picture->limit_y) {			\
 	    if (mpeg2_cpu_state_restore)				\
 		mpeg2_cpu_state_restore (&cpu_state);			\
 	    return;							\
@@ -1530,7 +1530,7 @@ static inline int slice_init (picture_t * picture, int code)
     picture->limit_x = 2 * picture->coded_picture_width - 32;
     picture->limit_y_16 = 2 * height - 32;
     picture->limit_y_8 = 2 * height - 16;
-    picture->limit_y_field = height - 16;
+    picture->limit_y = height - 16;
 
     picture->dc_dct_pred[0] = picture->dc_dct_pred[1] =
 	picture->dc_dct_pred[2] = 1 << (picture->intra_dc_precision + 7);
@@ -1580,7 +1580,7 @@ static inline int slice_init (picture_t * picture, int code)
 	}
 	picture->v_offset += 16;
     }
-    if (picture->v_offset > picture->limit_y_field)
+    if (picture->v_offset > picture->limit_y)
 	return 1;
 
     return 0;
