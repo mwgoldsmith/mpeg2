@@ -50,7 +50,8 @@ AC_DEFUN([AC_TRY_CFLAGS],
 dnl AC_CHECK_GENERATE_INTTYPES_H (INCLUDE-DIRECTORY)
 dnl generate a default inttypes.h if the header file does not exist already
 AC_DEFUN([AC_CHECK_GENERATE_INTTYPES],
-    [AC_CHECK_HEADER([inttypes.h],[],
+    [rm -f $1/inttypes.h
+    AC_CHECK_HEADER([inttypes.h],[],
 	[AC_CHECK_SIZEOF([char])
 	AC_CHECK_SIZEOF([short])
 	AC_CHECK_SIZEOF([int])
