@@ -429,45 +429,74 @@ static inline void idct (int16_t * block)
 }
 
 
+#define COPY_MMX(offset,r0,r1,r2)	\
+do {					\
+    movq_m2r (*(block+offset), r0);	\
+    dest += stride;			\
+    movq_m2r (*(block+offset+4), r1);	\
+    movq_r2m (r2, *dest);		\
+    packuswb_r2r (r1, r0);		\
+} while (0)
+
 void idct_block_copy_mmx (int16_t * block, uint8_t * dest, int stride)
 {
-    int i;
-
     idct (block);
 
-    i = 8;
-    do {
-	movq_m2r (*block, mm1);
-	movq_m2r (*(block+4), mm2);
-	packuswb_r2r (mm2, mm1);
-	movq_r2m (mm1, *dest);
-
-	block += 8;
-	dest += stride;
-    } while (--i);
+    movq_m2r (*(block+0*8), mm0);
+    movq_m2r (*(block+0*8+4), mm1);
+    movq_m2r (*(block+1*8), mm2);
+    packuswb_r2r (mm1, mm0);
+    movq_m2r (*(block+1*8+4), mm3);
+    movq_r2m (mm0, *dest);
+    packuswb_r2r (mm3, mm2);
+    COPY_MMX (2*8, mm0, mm1, mm2);
+    COPY_MMX (3*8, mm2, mm3, mm0);
+    COPY_MMX (4*8, mm0, mm1, mm2);
+    COPY_MMX (5*8, mm2, mm3, mm0);
+    COPY_MMX (6*8, mm0, mm1, mm2);
+    COPY_MMX (7*8, mm2, mm3, mm0);
+    movq_r2m (mm2, *(dest+stride));
 }
+
+
+#define ADD_MMX(offset,r1,r2,r3,r4)	\
+do {					\
+    movq_m2r (*(dest+2*stride), r1);	\
+    packuswb_r2r (r4, r3);		\
+    movq_r2r (r1, r2);			\
+    dest += stride;			\
+    movq_r2m (r3, *dest);		\
+    punpcklbw_r2r (mm0, r1);		\
+    paddsw_m2r (*(block+offset), r1);	\
+    punpckhbw_r2r (mm0, r2);		\
+    paddsw_m2r (*(block+offset+4), r2);	\
+} while (0)
 
 void idct_block_add_mmx (int16_t * block, uint8_t * dest, int stride)
 {
-    int i;
-
     idct (block);
 
+    movq_m2r (*dest, mm1);
     pxor_r2r (mm0, mm0);
-    i = 8;
-    do {
-	movq_m2r (*dest, mm1);
-	movq_r2r (mm1, mm2);
-	punpcklbw_r2r (mm0, mm1);
-	punpckhbw_r2r (mm0, mm2);
-	movq_m2r (*block, mm3);
-	paddsw_r2r (mm3, mm1);
-	movq_m2r (*(block+4), mm4);
-	paddsw_r2r (mm4, mm2);
-	packuswb_r2r (mm2, mm1);
-	movq_r2m (mm1, *dest);
-
-	block += 8;
-	dest += stride;
-    } while (--i);
+    movq_m2r (*(dest+stride), mm3);
+    movq_r2r (mm1, mm2);
+    punpcklbw_r2r (mm0, mm1);
+    movq_r2r (mm3, mm4);
+    paddsw_m2r (*(block+0*8), mm1);
+    punpckhbw_r2r (mm0, mm2);
+    paddsw_m2r (*(block+0*8+4), mm2);
+    punpcklbw_r2r (mm0, mm3);
+    paddsw_m2r (*(block+1*8), mm3);
+    packuswb_r2r (mm2, mm1);
+    punpckhbw_r2r (mm0, mm4);
+    movq_r2m (mm1, *dest);
+    paddsw_m2r (*(block+1*8+4), mm4);
+    ADD_MMX (2*8, mm1, mm2, mm3, mm4);
+    ADD_MMX (3*8, mm3, mm4, mm1, mm2);
+    ADD_MMX (4*8, mm1, mm2, mm3, mm4);
+    ADD_MMX (5*8, mm3, mm4, mm1, mm2);
+    ADD_MMX (6*8, mm1, mm2, mm3, mm4);
+    ADD_MMX (7*8, mm3, mm4, mm1, mm2);
+    packuswb_r2r (mm4, mm3);
+    movq_r2m (mm3, *(dest+stride));
 }
