@@ -31,6 +31,7 @@
 #include <string.h>
 #include <inttypes.h>
 
+#include "mpeg2.h"
 #include "video_out.h"
 #include "convert.h"
 
