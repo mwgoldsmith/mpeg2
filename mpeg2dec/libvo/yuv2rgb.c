@@ -150,8 +150,8 @@ static void func (void * _id, uint8_t * const * src,			\
 	DITHER(const uint8_t * const pd = dither + 2 * dithpos;)	\
 									\
 	dst_2 = (type *)((char *)dst_1 + id->rgb_stride);		\
-	py_2 = py_1 + (id->uv_stride << 1);				\
-	j = id->width >> 3;						\
+	py_2 = py_1 + id->y_stride;					\
+	j = id->width;							\
 	do {								\
 	    RGB (type, 0)						\
 	    DST (py_1, dst_1, 0, 0)					\
@@ -184,11 +184,10 @@ static void func (void * _id, uint8_t * const * src,			\
 	    dst_1 += 8 * num;						\
 	    dst_2 += 8 * num;						\
 	} while (--j);							\
-	py_1 += (id->uv_stride << 2) - id->width;			\
-	pu += id->uv_stride - (id->width >> 1);				\
-	pv += id->uv_stride - (id->width >> 1);				\
-	dst_1 = ((type *)((char *)dst_1 + 2 * id->rgb_stride) -		\
-		 num * id->width);					\
+	py_1 += id->y_increm;						\
+	pu += id->uv_increm;						\
+	pv += id->uv_increm;						\
+	dst_1 = (type *)((char *)dst_1 + id->rgb_increm);		\
 	DITHER(dithpos += id->dither_stride;)				\
     } while (--i);							\
 }
@@ -199,54 +198,54 @@ DECLARE_420 (yuv2rgb_c_24_bgr_420, uint8_t, 3, DSTBGR, SKIP)
 DECLARE_420 (yuv2rgb_c_16_420, uint16_t, 1, DST, SKIP)
 DECLARE_420 (yuv2rgb_c_8_420, uint8_t, 1, DSTDITHER, DO)
 
-#define DECLARE_422(func,type,num,DST,DITHER)				   \
-static void func (void * _id, uint8_t * const * src,			   \
-		  unsigned int v_offset)				   \
-{									   \
-    const convert_rgb_t * const id = (convert_rgb_t *) _id;		   \
-    type * dst;								   \
-    const uint8_t * py, * pu, * pv;					   \
-    int i;								   \
-    DITHER(uint8_t dithpos = id->dither_offset;)			   \
-									   \
-    dst = (type *)(id->rgb_ptr + id->rgb_stride * v_offset);		   \
-    py = src[0];	pu = src[1];	pv = src[2];			   \
-									   \
-    i = 16;								   \
-    do {								   \
-	int j, U, V, Y;							   \
-	const type * r, * g, * b;					   \
-	DITHER(const uint8_t * const pd = dither + 2 * dithpos;)	   \
-									   \
-	j = id->width >> 3;						   \
-	do {								   \
-	    RGB (type, 0)						   \
-	    DST (py, dst, 0, 0)						   \
-	    DST (py, dst, 1, 0)						   \
-									   \
-	    RGB (type, 1)						   \
-	    DST (py, dst, 2, 0)						   \
-	    DST (py, dst, 3, 0)						   \
-									   \
-	    RGB (type, 2)						   \
-	    DST (py, dst, 4, 0)						   \
-	    DST (py, dst, 5, 0)						   \
-									   \
-	    RGB (type, 3)						   \
-	    DST (py, dst, 6, 0)						   \
-	    DST (py, dst, 7, 0)						   \
-									   \
-	    pu += 4;							   \
-	    pv += 4;							   \
-	    py += 8;							   \
-	    dst += 8 * num;						   \
-	} while (--j);							   \
-	py += (id->uv_stride << 1) - id->width;				   \
-	pu += id->uv_stride - (id->width >> 1);				   \
-	pv += id->uv_stride - (id->width >> 1);				   \
-	dst = ((type *)((char *)dst + id->rgb_stride) -	 num * id->width); \
-	DITHER(dithpos += id->dither_stride >> 1;)			   \
-    } while (--i);							   \
+#define DECLARE_422(func,type,num,DST,DITHER)				\
+static void func (void * _id, uint8_t * const * src,			\
+		  unsigned int v_offset)				\
+{									\
+    const convert_rgb_t * const id = (convert_rgb_t *) _id;		\
+    type * dst;								\
+    const uint8_t * py, * pu, * pv;					\
+    int i;								\
+    DITHER(uint8_t dithpos = id->dither_offset;)			\
+									\
+    dst = (type *)(id->rgb_ptr + id->rgb_stride * v_offset);		\
+    py = src[0];	pu = src[1];	pv = src[2];			\
+									\
+    i = 16;								\
+    do {								\
+	int j, U, V, Y;							\
+	const type * r, * g, * b;					\
+	DITHER(const uint8_t * const pd = dither + 2 * dithpos;)	\
+									\
+	j = id->width;							\
+	do {								\
+	    RGB (type, 0)						\
+	    DST (py, dst, 0, 0)						\
+	    DST (py, dst, 1, 0)						\
+									\
+	    RGB (type, 1)						\
+	    DST (py, dst, 2, 0)						\
+	    DST (py, dst, 3, 0)						\
+									\
+	    RGB (type, 2)						\
+	    DST (py, dst, 4, 0)						\
+	    DST (py, dst, 5, 0)						\
+									\
+	    RGB (type, 3)						\
+	    DST (py, dst, 6, 0)						\
+	    DST (py, dst, 7, 0)						\
+									\
+	    pu += 4;							\
+	    pv += 4;							\
+	    py += 8;							\
+	    dst += 8 * num;						\
+	} while (--j);							\
+	py += id->y_increm;						\
+	pu += id->uv_increm;						\
+	pv += id->uv_increm;						\
+	dst = (type *)((char *)dst + id->rgb_increm);			\
+	DITHER(dithpos += id->dither_stride;)				\
+    } while (--i);							\
 }
 
 DECLARE_422 (yuv2rgb_c_32_422, uint32_t, 1, DST, SKIP)
@@ -255,55 +254,55 @@ DECLARE_422 (yuv2rgb_c_24_bgr_422, uint8_t, 3, DSTBGR, SKIP)
 DECLARE_422 (yuv2rgb_c_16_422, uint16_t, 1, DST, SKIP)
 DECLARE_422 (yuv2rgb_c_8_422, uint8_t, 1, DSTDITHER, DO)
 
-#define DECLARE_444(func,type,num,DST,DITHER)				   \
-static void func (void * _id, uint8_t * const * src,			   \
-		  unsigned int v_offset)				   \
-{									   \
-    const convert_rgb_t * const id = (convert_rgb_t *) _id;		   \
-    type * dst;								   \
-    const uint8_t * py, * pu, * pv;					   \
-    int i;								   \
-    DITHER(uint8_t dithpos = id->dither_offset;)			   \
-									   \
-    dst = (type *)(id->rgb_ptr + id->rgb_stride * v_offset);		   \
-    py = src[0];	pu = src[1];	pv = src[2];			   \
-									   \
-    i = 16;								   \
-    do {								   \
-	int j, U, V, Y;							   \
-	const type * r, * g, * b;					   \
-	DITHER(const uint8_t * const pd = dither + 2 * dithpos;)	   \
-									   \
-	j = id->width >> 3;						   \
-	do {								   \
-	    RGB (type, 0)						   \
-	    DST (py, dst, 0, 0)						   \
-	    RGB (type, 1)						   \
-	    DST (py, dst, 1, 0)						   \
-	    RGB (type, 2)						   \
-	    DST (py, dst, 2, 0)						   \
-	    RGB (type, 3)						   \
-	    DST (py, dst, 3, 0)						   \
-	    RGB (type, 4)						   \
-	    DST (py, dst, 4, 0)						   \
-	    RGB (type, 5)						   \
-	    DST (py, dst, 5, 0)						   \
-	    RGB (type, 6)						   \
-	    DST (py, dst, 6, 0)						   \
-	    RGB (type, 7)						   \
-	    DST (py, dst, 7, 0)						   \
-									   \
-	    pu += 8;							   \
-	    pv += 8;							   \
-	    py += 8;							   \
-	    dst += 8 * num;						   \
-	} while (--j);							   \
-	py += (id->uv_stride << 1) - id->width;				   \
-	pu += id->uv_stride - id->width;				   \
-	pv += id->uv_stride - id->width;				   \
-	dst = ((type *)((char *)dst + id->rgb_stride) -	 num * id->width); \
-	DITHER(dithpos += id->dither_stride >> 1;)			   \
-    } while (--i);							   \
+#define DECLARE_444(func,type,num,DST,DITHER)				\
+static void func (void * _id, uint8_t * const * src,			\
+		  unsigned int v_offset)				\
+{									\
+    const convert_rgb_t * const id = (convert_rgb_t *) _id;		\
+    type * dst;								\
+    const uint8_t * py, * pu, * pv;					\
+    int i;								\
+    DITHER(uint8_t dithpos = id->dither_offset;)			\
+									\
+    dst = (type *)(id->rgb_ptr + id->rgb_stride * v_offset);		\
+    py = src[0];	pu = src[1];	pv = src[2];			\
+									\
+    i = 16;								\
+    do {								\
+	int j, U, V, Y;							\
+	const type * r, * g, * b;					\
+	DITHER(const uint8_t * const pd = dither + 2 * dithpos;)	\
+									\
+	j = id->width;							\
+	do {								\
+	    RGB (type, 0)						\
+	    DST (py, dst, 0, 0)						\
+	    RGB (type, 1)						\
+	    DST (py, dst, 1, 0)						\
+	    RGB (type, 2)						\
+	    DST (py, dst, 2, 0)						\
+	    RGB (type, 3)						\
+	    DST (py, dst, 3, 0)						\
+	    RGB (type, 4)						\
+	    DST (py, dst, 4, 0)						\
+	    RGB (type, 5)						\
+	    DST (py, dst, 5, 0)						\
+	    RGB (type, 6)						\
+	    DST (py, dst, 6, 0)						\
+	    RGB (type, 7)						\
+	    DST (py, dst, 7, 0)						\
+									\
+	    pu += 8;							\
+	    pv += 8;							\
+	    py += 8;							\
+	    dst += 8 * num;						\
+	} while (--j);							\
+	py += id->y_increm;				   		\
+	pu += id->y_increm;				   		\
+	pv += id->y_increm;				   		\
+	dst = (type *)((char *)dst + id->rgb_increm);			\
+	DITHER(dithpos += id->dither_stride;)				\
+    } while (--i);							\
 }
 
 DECLARE_444 (yuv2rgb_c_32_444, uint32_t, 1, DST, SKIP)
@@ -317,22 +316,27 @@ static void convert_start (void * _id, const mpeg2_fbuf_t * fbuf,
 			   const mpeg2_gop_t * gop)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
+    int uv_stride = id->uv_stride_frame;
+    id->y_stride = id->y_stride_frame;
     id->rgb_ptr = fbuf->buf[0];
+    id->rgb_stride = id->rgb_stride_frame;
+    id->dither_stride = 32;
     id->dither_offset = dither_temporal[picture->temporal_reference & 63];
     if (picture->nb_fields == 1) {
-	id->uv_stride = id->uv_stride_frame << 1;
-	id->rgb_stride = id->rgb_stride_frame << 1;
+	uv_stride <<= 1;
+	id->y_stride <<= 1;
+	id->rgb_stride <<= 1;
+	id->dither_stride <<= 1;
 	id->dither_offset += 16;
-	id->dither_stride = 128;
 	if (!(picture->flags & PIC_FLAG_TOP_FIELD_FIRST)) {
 	    id->rgb_ptr += id->rgb_stride_frame;
 	    id->dither_offset += 32;
 	}
-    } else {
-	id->uv_stride = id->uv_stride_frame;
-	id->rgb_stride = id->rgb_stride_frame;
-	id->dither_stride = 64;
     }
+    id->y_increm = (id->y_stride << id->convert420) - id->y_stride_frame;
+    id->uv_increm = uv_stride - id->uv_stride_frame;
+    id->rgb_increm = (id->rgb_stride << id->convert420) - id->rgb_stride_frame;
+    id->dither_stride <<= id->convert420;
 }
 
 static inline int div_round (int dividend, int divisor)
@@ -472,10 +476,11 @@ static void convert_internal (int order, int bpp, const mpeg2_sequence_t * seq,
     if (!id)
 	result->id_size = sizeof (convert_rgb_t);
     else {
-	id->width = seq->width;
-	id->uv_stride_frame = seq->width >> 1;
+	id->width = seq->width >> 3;
+	id->y_stride_frame = seq->width;
+	id->uv_stride_frame = seq->chroma_width;
 	id->rgb_stride_frame = ((bpp + 7) >> 3) * seq->width;
-	id->chroma420 = (seq->chroma_height < seq->height);
+	id->chroma420 = id->convert420 = (seq->chroma_height < seq->height);
 
 	result->buf_size[0] = id->rgb_stride_frame * seq->height;
 	result->buf_size[1] = result->buf_size[2] = 0;
@@ -483,10 +488,14 @@ static void convert_internal (int order, int bpp, const mpeg2_sequence_t * seq,
 
 	result->copy = NULL;
 #ifdef ARCH_X86
-	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_X86_MMXEXT))
+	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_X86_MMXEXT)) {
+	    id->convert420 = 0;
 	    result->copy = yuv2rgb_init_mmxext (order, bpp, seq);
-	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_X86_MMX))
+	}
+	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_X86_MMX)) {
+	    id->convert420 = 0;
 	    result->copy = yuv2rgb_init_mmx (order, bpp, seq);
+	}
 #endif
 #ifdef ARCH_SPARC
 	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_SPARC_VIS))

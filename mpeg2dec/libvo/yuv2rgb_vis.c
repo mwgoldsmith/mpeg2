@@ -354,7 +354,7 @@ static void vis_argb32(void *_id, uint8_t * const *src,
 	vis_init_consts();
 	vis_yuv420_argb32(id->rgb_ptr + id->rgb_stride * v_offset,
 			  src[0], src[1], src[2], id->width, 16,
-			  id->rgb_stride, id->uv_stride << 1, id->uv_stride);
+			  id->rgb_stride, id->y_stride, id->y_stride >> 1);
 }
 
 static void vis_abgr32(void *_id, uint8_t * const *src,
@@ -365,7 +365,7 @@ static void vis_abgr32(void *_id, uint8_t * const *src,
 	vis_init_consts();
 	vis_yuv420_abgr32(id->rgb_ptr + id->rgb_stride * v_offset,
 			  src[0], src[1], src[2], id->width, 16,
-			  id->rgb_stride, id->uv_stride << 1, id->uv_stride);
+			  id->rgb_stride, id->y_stride, id->y_stride >> 1);
 }
 
 yuv2rgb_copy *yuv2rgb_init_vis(int order, int bpp,
