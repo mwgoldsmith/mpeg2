@@ -488,6 +488,7 @@ static int xv_alloc_frames (x11_instance_t * instance)
 	instance->frame[i].vo.base[1] = alloc + 5 * size;
 	instance->frame[i].vo.base[2] = alloc + 4 * size;
 	instance->frame[i].vo.copy = NULL;
+	instance->frame[i].vo.field = NULL;
 	instance->frame[i].vo.draw = xv_draw_frame;
 	instance->frame[i].vo.instance = (vo_instance_t *) instance;
 	instance->frame[i].wait_completion = 0;
