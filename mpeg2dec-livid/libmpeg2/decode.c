@@ -307,8 +307,12 @@ void mpeg2_close (plugin_output_video_t * output)
 void mpeg2_close (vo_functions_t * output)
 #endif
 {
-    if (is_display_initialized)
-	output->draw_frame (picture.backward_reference_frame);
+	if (is_display_initialized)
+		output->draw_frame (picture.backward_reference_frame);
+
+	output->free_image_buffer (picture.backward_reference_frame);
+	output->free_image_buffer (picture.forward_reference_frame);
+	output->free_image_buffer (picture.throwaway_frame);
 }
 
 void mpeg2_drop (int flag)
