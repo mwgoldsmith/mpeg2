@@ -1,0 +1,3 @@
+Test stream for very wide pictures
+
+In particular, this makes sure horizontal_size_extension is parsed
