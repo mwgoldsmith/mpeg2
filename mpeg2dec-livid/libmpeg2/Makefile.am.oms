@@ -12,6 +12,7 @@ libdir = $(PLUGIN_DIR)
 lib_LTLIBRARIES = dec_mpeg2.la
 
 include_HEADERS = mpeg2.h 
+noinst_HEADERS = mpeg2_internal.h vlc.h
 
 dec_mpeg2_la_LIBADD = @LIBMPEG2_LIBS@
 dec_mpeg2_la_LDFLAGS = -avoid-version -module Wl,-soname,dec_mpeg2 -L$(top_builddir)/src/oms/.libs -loms

@@ -19,13 +19,13 @@
 static int _mpeg2dec_open	(void *plugin, void *foo);
 static int _mpeg2dec_close	(void *plugin);
 static int _mpeg2dec_read	(void *plugin, buf_t *buf, buf_entry_t *buf_entry);
-static int _mpeg2dec_set_flag	(void *plugin, uint flag, uint val);
+static int _mpeg2dec_ctrl	(void *plugin, uint flag, uint val);
 
 static plugin_codec_t codec_mpeg2dec = {
         open:		_mpeg2dec_open,
         close:		_mpeg2dec_close,
         read:		_mpeg2dec_read,
-	set_flag:	_mpeg2dec_set_flag,
+	ctrl:		_mpeg2dec_ctrl,
 };
 
 
@@ -54,7 +54,7 @@ static int _mpeg2dec_read (void *plugin, buf_t *buf, buf_entry_t *buf_entry)
 }
 
 
-static int _mpeg2dec_set_flag (void *plugin, uint flag, uint val)
+static int _mpeg2dec_ctrl (void *plugin, uint flag, uint val)
 {
 	switch (flag) {
 	case FLAG_VIDEO_INITIALIZED:
