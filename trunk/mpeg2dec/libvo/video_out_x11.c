@@ -64,9 +64,9 @@ static void uyvy_start (void * _id, const mpeg2_fbuf_t * fbuf,
     instance->out = fbuf->buf[0];
     instance->stride = instance->width;
     if (picture->nb_fields == 1) {
-	instance->stride <<= 1;
 	if (! (picture->flags & PIC_FLAG_TOP_FIELD_FIRST))
-	    instance->out += 2 * instance->width;
+	    instance->out += 2 * instance->stride;
+	instance->stride <<= 1;
     }
 }
 
