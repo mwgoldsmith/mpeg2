@@ -93,6 +93,10 @@ SOURCE=..\src\getopt.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\src\gettimeofday.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\src\mpeg2dec.c
 # End Source File
 # End Group

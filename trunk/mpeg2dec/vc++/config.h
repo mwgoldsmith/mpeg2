@@ -18,6 +18,9 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 /* #undef HAVE_DLFCN_H */
 
+/* Define to 1 if you have the `ftime' function. */
+#define HAVE_FTIME 1
+
 /* Define to 1 if you have the `gettimeofday' function. */
 /* #undef HAVE_GETTIMEOFDAY */
 
@@ -47,6 +50,9 @@
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #define HAVE_SYS_STAT_H 1
+
+/* Define to 1 if you have the <sys/timeb.h> header file. */
+#define HAVE_SYS_TIMEB_H 1
 
 /* Define to 1 if you have the <sys/time.h> header file. */
 /* #undef HAVE_SYS_TIME_H */
@@ -94,7 +100,7 @@
 #define PACKAGE_VERSION ""
 
 /* Define as the return type of signal handlers (`int' or `void'). */
-/* #undef RETSIGTYPE */
+#define RETSIGTYPE void
 
 /* The size of a `char', as computed by sizeof. */
 #define SIZEOF_CHAR 1
