@@ -37,7 +37,7 @@ mpeg2_convert_t mpeg2convert_bgr8;
 
 typedef enum {
     MPEG2CONVERT_RGB = 0,
-    MPEG2CONVERT_BGR  = 1
+    MPEG2CONVERT_BGR = 1
 } mpeg2convert_rgb_order_t;
 
 mpeg2_convert_t * mpeg2convert_rgb (mpeg2convert_rgb_order_t order,

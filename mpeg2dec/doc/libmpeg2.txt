@@ -1,3 +1,74 @@
+The documentation is currently a mess. Sorry about that, hope to write
+something better for the 0.4.1 release.
+
+
+For people migrating code from 0.3.x to 0.4.0, the biggest thing to
+note is that mpeg2_parse now returns a new state STATE_BUFFER when it
+needs more data. Version 0.3.x used to return a -1 constant for this -
+please update your code to replace that -1 with STATE_BUFFER. Otherwise
+0.3.x code should mostly work with 0.4.0, hopefully.
+
+
+For people new to libmpeg2, it's best to start by looking at
+doc/sample1 and doc/sample2, which decode an mpeg2 elementary stream
+and output their individual pictures as yuv frames (sample1) or rgb
+frames (sample2). The main loop calls mpeg2_parse() which does some
+work and then returns a state indicating what it just did -
+STATE_BUFFER if it reached the end of the buffer and it needs a new
+one, STATE_SEQUENCE if it just parsed a sequence header, STATE_PICTURE
+if it just parsed a picture header, STATE_SLICE if it just decoded the
+slice information associated with a picture (now is a good time to
+save that decoded picture), etc...
+
+
+To make more complex buffer management (basically allocate your own
+buffers instead of letting the lib do it for you), look at
+sample3/sample4 (giving your buffers to the lib at init time but
+letting the lib chose a buffer for each picture) or sample5/sample6
+(giving a new buffer to the lib for each picture).
+
+
+Color conversion has been moved to a new helper library, libmpeg2convert.
+The details of the mpeg2_convert_t type might change in the future,
+but what won't change is that you should just take one of the
+mpeg2_convert_t symbols exported from libmpeg2convert, and pass it to
+the mpeg2_convert() function, and voila, you now get your output
+buffers in the desired format. For example if you want rgb 32-bit
+samples, you just call mpeg2_convert (mpeg2dec, mpeg2convert_rgb32, NULL)
+and that's it.
+
+
+There is a new mpeg2_stride function too. By default libmpeg2 choses
+the smallest stride that will work for a given picture size, if you
+want a larger stride you can set it (after the sequence header has
+been decoded) by calling mpeg2_stride.
+
+
+There is also a new function mpeg2_reset which should hopefully do the
+right thing after skipping to a new position in the mpeg2 stream. If
+full_reset is zero the lib starts decoding at the next picture, if
+it's one the lib starts looking for the next sequence header.
+
+
+The mpeg2_pts function is gone, because people complained about not
+being to pass a 33-bit PTS thru it. So instead it's been replaced with
+mpeg2_tag_picture(), which is identical except that it allows you to
+pass two 32-bit values. You can use them to form a combined 64-bit
+time stamp, or two 32-bit PTS/DTS stamps, or whatever you please -
+libmpeg2 never uses these values, it just passes them around, hence
+the name "tag". The semantics are what you want for a PTS function
+though, i.e. the tags get associated to the next picture that starts
+after the tag was set, where the start of a picture is defined as the
+first byte of its picture start code.
+
+
+That's all I can think of - sorry for the lack of proper
+documentation, I'll try to help this before the 0.4.1 release.
+
+
+
+
+
 
 I - simplest example
 
