@@ -22,7 +22,6 @@
 /* Structure for the mpeg2dec decoder */
 
 typedef struct mpeg2dec_s {
-    vo_setup_t * output_setup;
     vo_instance_t * output;
 
     /* this is where we keep the state of the decoder */
@@ -54,13 +53,11 @@ typedef struct mpeg2dec_s {
 
 
 /* initialize mpegdec with a opaque user pointer */
-/* if not needed in the output use NULL here */
 void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
-		 vo_setup_t * output_setup);
+		 vo_instance_t * output);
 
 /* destroy everything which was allocated, shutdown the output */
 void mpeg2_close (mpeg2dec_t * mpeg2dec);
-
 
 int mpeg2_decode_data (mpeg2dec_t * mpeg2dec,
 		       uint8_t * data_start, uint8_t * data_end);

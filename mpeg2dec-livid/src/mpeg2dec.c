@@ -47,9 +47,9 @@ static struct timeval tv_beg, tv_end, tv_start;
 static uint32_t elapsed;
 static uint32_t total_elapsed;
 static uint32_t last_count = 0;
-static uint32_t demux_dvd = 0;
+static uint32_t demux_ps = 0;
 static mpeg2dec_t mpeg2dec;
-static vo_setup_t * output_setup = NULL;
+static vo_open_t * output_open = NULL;
 
 static void print_fps (int final) 
 {
@@ -131,18 +131,17 @@ static void handle_args (int argc, char * argv[])
     while ((c = getopt (argc,argv,"so:")) != -1) {
 	switch (c) {
 	case 'o':
-	    for (i=0; drivers[i].name != NULL; i++) {
+	    for (i=0; drivers[i].name != NULL; i++)
 		if (strcmp (drivers[i].name, optarg) == 0)
-		    output_setup = drivers[i].setup;
-	    }
-	    if (output_setup == NULL) {
+		    output_open = drivers[i].open;
+	    if (output_open == NULL) {
 		fprintf (stderr, "Invalid video driver: %s\n", optarg);
 		print_usage (argv);
 	    }
 	    break;
 
 	case 's':
-	    demux_dvd = 1;
+	    demux_ps = 1;
 	    break;
 
 	default:
@@ -151,8 +150,8 @@ static void handle_args (int argc, char * argv[])
     }
 
     /* -o not specified, use a default driver */
-    if (output_setup == NULL)
-	output_setup = drivers[0].setup;
+    if (output_open == NULL)
+	output_open = drivers[0].open;
 
     if (optind < argc) {
 	in_file = fopen (argv[optind], "rb");
@@ -163,8 +162,6 @@ static void handle_args (int argc, char * argv[])
 	}
     } else
 	in_file = stdin;
-
-    mpeg2_init (&mpeg2dec, mm_accel () | MM_ACCEL_MLIB, output_setup);
 }
 
 static void ps_loop (void)
@@ -294,21 +291,31 @@ static void es_loop (void)
 
 int main (int argc,char *argv[])
 {
+    vo_instance_t * output;
+
     fprintf (stderr, PACKAGE"-"VERSION
 	     " (C) 2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>\n");
 
     handle_args (argc, argv);
 
+    output = vo_open (output_open);
+    if (output == NULL) {
+	fprintf (stderr, "Can not open output\n");
+	return 1;
+    }
+    mpeg2_init (&mpeg2dec, mm_accel () | MM_ACCEL_MLIB, output);
+
     signal (SIGINT, signal_handler);
 
     gettimeofday (&tv_beg, NULL);
 
-    if (demux_dvd)
+    if (demux_ps)
 	ps_loop ();
     else
 	es_loop ();
 
     mpeg2_close (&mpeg2dec);
+    vo_close (output);
     print_fps (1);
     return 0;
 }

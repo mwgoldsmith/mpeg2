@@ -36,7 +36,7 @@
 mpeg2_config_t config;
 
 void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
-		 vo_setup_t * output_setup)
+		 vo_instance_t * output)
 {
     static int do_init = 1;
 
@@ -54,8 +54,7 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
     mpeg2dec->drop_flag = 0;
     mpeg2dec->drop_frame = 0;
     mpeg2dec->in_slice = 0;
-    mpeg2dec->output_setup = output_setup;
-    mpeg2dec->output = NULL;
+    mpeg2dec->output = output;
     mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
     mpeg2dec->code = 0xff;
 
@@ -110,7 +109,20 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 	    fprintf (stderr, "bad sequence header\n");
 	    exit (1);
 	}
-	mpeg2dec->is_sequence_needed = 0;
+	if (mpeg2dec->is_sequence_needed) {
+	    mpeg2dec->is_sequence_needed = 0;
+	    if (vo_setup (mpeg2dec->output, picture->coded_picture_width,
+			  picture->coded_picture_height)) {
+		fprintf (stderr, "display setup failed\n");
+		exit (1);
+	    }
+	    picture->forward_reference_frame =
+		vo_get_frame (mpeg2dec->output,
+			      VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
+	    picture->backward_reference_frame =
+		vo_get_frame (mpeg2dec->output,
+			      VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
+	}
 	mpeg2dec->frame_rate_code = picture->frame_rate_code;	/* FIXME */
 	break;
 
@@ -131,21 +143,6 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 	if (!(mpeg2dec->in_slice)) {
 	    mpeg2dec->in_slice = 1;
 
-	    if (!(mpeg2dec->output)) {
-		mpeg2dec->output = vo_setup (mpeg2dec->output_setup,
-					     picture->coded_picture_width,
-					     picture->coded_picture_height);
-		if (mpeg2dec->output == NULL) {
-		    fprintf (stderr, "display setup failed\n");
-		    exit (1);
-		}
-		picture->forward_reference_frame =
-		    vo_get_frame (mpeg2dec->output,
-				  VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
-		picture->backward_reference_frame =
-		    vo_get_frame (mpeg2dec->output,
-				  VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
-	    }
 	    if (picture->second_field)
 		vo_field (picture->current_frame, picture->picture_structure);
 	    else {
@@ -224,10 +221,8 @@ void mpeg2_close (mpeg2dec_t * mpeg2dec)
 
     mpeg2_decode_data (mpeg2dec, finalizer, finalizer+4);
 
-    if (mpeg2dec->output) {
+    if (mpeg2dec->output)
 	vo_draw (mpeg2dec->picture->backward_reference_frame);
-	vo_close (mpeg2dec->output);
-    }
 }
 
 void mpeg2_drop (mpeg2dec_t * mpeg2dec, int flag)
