@@ -53,7 +53,6 @@ static void print_fps(uint_32 final)
 	int fps, tfps;
 	frame_counter++;
 	
-	elapsed = 0;
 	gettimeofday(&tv_end, NULL);
 	elapsed = (tv_end.tv_sec - tv_beg.tv_sec) * 1000000+ 
 		  (tv_end.tv_usec - tv_beg.tv_usec);        
@@ -65,6 +64,8 @@ static void print_fps(uint_32 final)
 	fprintf(stderr, "%8d %8d.%03d %8d %8d.%02d\r", frame_counter,
 		fps, (1000000000/(elapsed+1)) - (fps * 1000), total_elapsed,
 		tfps, frame_counter * 10000/(total_elapsed+1) - (tfps * 100));
+	if (final)
+		putchar('\n');
 }
  
 static void 
