@@ -41,7 +41,7 @@ static Display *mydisplay;
 static Window mywindow;
 static GC mygc;
 static XImage *myximage;
-static int bpp, mode;
+static int depth, bpp, mode;
 static XWindowAttributes attribs;
 static int X_already_started = 0;
 
@@ -146,19 +146,32 @@ display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 	/* Make the window */
 
 	XGetWindowAttributes(mydisplay, DefaultRootWindow(mydisplay), &attribs);
-	bpp = attribs.depth;
 
-	if (bpp != 15 && bpp != 16 && bpp != 24 && bpp != 32) 
+	/*
+	 *
+	 * depth in X11 terminology land is the number of bits used to
+	 * actually represent the colour.
+   *
+	 * bpp in X11 land means how many bits in the frame buffer per
+	 * pixel. 
+	 *
+	 * ex. 15 bit color is 15 bit depth and 16 bpp. Also 24 bit
+	 *     color is 24 bit depth, but can be 24 bpp or 32 bpp.
+	 */
+
+	depth = attribs.depth;
+
+	if (depth != 15 && depth != 16 && depth != 24 && depth != 32) 
 	{
-		fprintf(stderr,"Only 15,16,24, and 32bpp supported. Trying 24bpp!\n");
-		bpp = 24;
+		fprintf(stderr,"Only 15,16,24, and 32 bit depth supported.  Trying 24 bit depth!\n");
+		depth = 24;
 	}
 	//BEGIN HACK
 	//mywindow = XCreateSimpleWindow(mydisplay, DefaultRootWindow(mydisplay),
 	//hint.x, hint.y, hint.width, hint.height, 4, fg, bg);
 	//
-	XMatchVisualInfo(mydisplay,screen,bpp,TrueColor,&vinfo);
-	printf("visual id is  %lx\n",vinfo.visualid);
+	XMatchVisualInfo(mydisplay, screen, depth, TrueColor, &vinfo);
+	printf("visual id is  %lx\n", vinfo.visualid);
 
 	theCmap   = XCreateColormap(mydisplay, RootWindow(mydisplay,screen), 
 	vinfo.visual, AllocNone);
@@ -170,7 +183,7 @@ display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 
 
 	mywindow = XCreateWindow(mydisplay, RootWindow(mydisplay,screen),
-	hint.x, hint.y, hint.width, hint.height, 4, bpp,CopyFromParent,vinfo.visual,xswamask,&xswa);
+	hint.x, hint.y, hint.width, hint.height, 4, depth,CopyFromParent,vinfo.visual,xswamask,&xswa);
 
 	XSelectInput(mydisplay, mywindow, StructureNotifyMask);
 
@@ -282,9 +295,8 @@ display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 
 	if (Shmem_Flag) 
 	{
-		myximage = XShmCreateImage(mydisplay, vinfo.visual, bpp, 
-		ZPixmap, NULL, &Shminfo1, width, 
-		image_height);
+		myximage = XShmCreateImage(mydisplay, vinfo.visual, 
+		depth, ZPixmap, NULL, &Shminfo1, width, image_height);
 
 		/* If no go, then revert to normal Xlib calls. */
 
@@ -365,8 +377,6 @@ display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 	DeInstallXErrorHandler();
 #endif
 
-	//XXX why the heck was this here?
-	//revert this for now -ah 5/1/00
 	bpp = myximage->bits_per_pixel;
 
 	// If we have blue in the lowest bit then obviously RGB 
@@ -380,7 +390,16 @@ display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 	fprintf( stderr, "No support fon non-native XImage byte order!\n" );
 	return 0;
 	}
-	yuv2rgb_init(bpp, mode);
+
+	/* 
+	 * If depth is 24 then it may either be a 3 or 4 byte per pixel
+	 * format. We can't use bpp because then we would lose the 
+	 * distinction between 15/16bit depth (2 byte formate assumed).
+	 *
+	 * FIXME - change yuv2rgb_init to take both depth and bpp
+	 * parameters
+	 */
+	yuv2rgb_init((depth == 24) ? bpp : depth, mode);
 
 	X_already_started++;
 	return(-1);  // non-zero == success.
@@ -433,7 +452,7 @@ display_slice(uint_8 *src[], uint_32 slice_num)
 {
 	uint_8 *dst;
 
-	dst = ImageData + image_width * 16 * (bpp>>3) * slice_num;
+	dst = ImageData + image_width * 16 * (bpp/8) * slice_num;
 
 	yuv2rgb(dst , src[0], src[1], src[2], 
 			image_width, 16, 
@@ -451,6 +470,11 @@ display_frame(uint_8 *src[])
 	int x, y;
 	unsigned int w, h, b, d;
     
+	//FIXME XV is borked wrt to slices
+	printf("Xv support is broken\nFeel free to fix it -ah\n");
+	exit(1);
+	//FIXME XV is borked wrt to slices
+
 	if (xv_port != 0) 
 	{
 		if (XCheckWindowEvent(mydisplay, mywindow, StructureNotifyMask, &event)) 
@@ -474,24 +498,9 @@ display_frame(uint_8 *src[])
 	}
 #endif
 
-  if (bpp==32) 
-	{
-		yuv2rgb(ImageData, src[0], src[1], src[2],
+	yuv2rgb(ImageData, src[0], src[1], src[2],
 		image_width, image_height, 
-		image_width*4, image_width, image_width/2 );
-	} 
-	else if (bpp == 24) 
-	{
-		yuv2rgb(ImageData, src[0], src[1], src[2],
-		image_width, image_height, 
-		image_width*3, image_width, image_width/2 );
-	} 
-	else if (bpp == 15 || bpp == 16) 
-	{
-		yuv2rgb(ImageData, src[0], src[1], src[2],
-		image_width, image_height, 
-		image_width*2, image_width, image_width/2 );
-	}
+		image_width*(bpp/8), image_width, image_width/2 );
 
 	Display_Image(myximage, ImageData);
 	return(-1);  // non-zero == success.
