@@ -67,80 +67,80 @@ MODULE_AUTHOR("Aaron Holtzman <aholtzma@engr.uvic.ca>");
 typedef struct bes_registers_s
 {
 	//BES Control
-	uint_32 besctl;
+	uint32_t besctl;
 	//BES Global control
-	uint_32 besglobctl;
+	uint32_t besglobctl;
 	//Luma control (brightness and contrast)
-	uint_32 beslumactl;
+	uint32_t beslumactl;
 	//Line pitch
-	uint_32 bespitch;
+	uint32_t bespitch;
 
 	//Buffer A-1 Chroma 3 plane org
-	uint_32 besa1c3org;
+	uint32_t besa1c3org;
 	//Buffer A-1 Chroma org
-	uint_32 besa1corg;
+	uint32_t besa1corg;
 	//Buffer A-1 Luma org
-	uint_32 besa1org;
+	uint32_t besa1org;
 
 	//Buffer A-2 Chroma 3 plane org
-	uint_32 besa2c3org;
+	uint32_t besa2c3org;
 	//Buffer A-2 Chroma org
-	uint_32 besa2corg;
+	uint32_t besa2corg;
 	//Buffer A-2 Luma org
-	uint_32 besa2org;
+	uint32_t besa2org;
 
 	//Buffer B-1 Chroma 3 plane org
-	uint_32 besb1c3org;
+	uint32_t besb1c3org;
 	//Buffer B-1 Chroma org
-	uint_32 besb1corg;
+	uint32_t besb1corg;
 	//Buffer B-1 Luma org
-	uint_32 besb1org;
+	uint32_t besb1org;
 
 	//Buffer B-2 Chroma 3 plane org
-	uint_32 besb2c3org;
+	uint32_t besb2c3org;
 	//Buffer B-2 Chroma org
-	uint_32 besb2corg;
+	uint32_t besb2corg;
 	//Buffer B-2 Luma org
-	uint_32 besb2org;
+	uint32_t besb2org;
 
 	//BES Horizontal coord
-	uint_32 beshcoord;
+	uint32_t beshcoord;
 	//BES Horizontal inverse scaling [5.14]
-	uint_32 beshiscal;
+	uint32_t beshiscal;
 	//BES Horizontal source start [10.14] (for scaling)
-	uint_32 beshsrcst;
+	uint32_t beshsrcst;
 	//BES Horizontal source ending [10.14] (for scaling) 
-	uint_32 beshsrcend;
+	uint32_t beshsrcend;
 	//BES Horizontal source last 
-	uint_32 beshsrclst;
+	uint32_t beshsrclst;
 
 	
 	//BES Vertical coord
-	uint_32 besvcoord;
+	uint32_t besvcoord;
 	//BES Vertical inverse scaling [5.14]
-	uint_32 besviscal;
+	uint32_t besviscal;
 	//BES Field 1 vertical source last position
-	uint_32 besv1srclst;
+	uint32_t besv1srclst;
 	//BES Field 1 weight start
-	uint_32 besv1wght;
+	uint32_t besv1wght;
 	//BES Field 2 vertical source last position
-	uint_32 besv2srclst;
+	uint32_t besv2srclst;
 	//BES Field 2 weight start
-	uint_32 besv2wght;
+	uint32_t besv2wght;
 
 } bes_registers_t;
 
 static bes_registers_t regs;
-static uint_32 mga_vid_in_use = 0;
-static uint_32 is_g400 = 0;
-static uint_32 vid_src_ready = 0;
-static uint_32 vid_overlay_on = 0;
+static uint32_t mga_vid_in_use = 0;
+static uint32_t is_g400 = 0;
+static uint32_t vid_src_ready = 0;
+static uint32_t vid_overlay_on = 0;
 
-static uint_8 *mga_mmio_base = 0;
-static uint_32 mga_mem_base = 0; 
-static uint_32 mga_src_base = 0;
+static uint8_t *mga_mmio_base = 0;
+static uint32_t mga_mem_base = 0; 
+static uint32_t mga_src_base = 0;
 
-static uint_32 mga_ram_size = 0;
+static uint32_t mga_ram_size = 0;
 
 static struct pci_dev *pci_dev;
 
@@ -224,7 +224,7 @@ static void mga_vid_write_regs(void)
 	writeb( mga_config.colkey_on, mga_mmio_base + X_DATAREG);
 	if ( mga_config.colkey_on ) 
 	{
-		uint_32 r=0, g=0, b=0;
+		uint32_t r=0, g=0, b=0;
 
 		writeb( XMULCTRL, mga_mmio_base + PALWTADD);
 		switch (readb (mga_mmio_base + X_DATAREG)) 
@@ -393,16 +393,16 @@ static int mga_vid_set_config(mga_vid_config_t *config)
 
 	baseadrofs = ((ofstop*regs.besviscal)>>16)*regs.bespitch;
 	frame_size = ((sw + 31) & ~31) * sh + (((sw + 31) & ~31) * sh) / 2;
-	regs.besa1org = (uint_32) mga_src_base + baseadrofs;
-	regs.besb1org = (uint_32) mga_src_base + baseadrofs + frame_size;
+	regs.besa1org = (uint32_t) mga_src_base + baseadrofs;
+	regs.besb1org = (uint32_t) mga_src_base + baseadrofs + frame_size;
 
 	if (is_g400) 
 		baseadrofs = (((ofstop*regs.besviscal)/4)>>16)*regs.bespitch;
 	else 
 		baseadrofs = (((ofstop*regs.besviscal)/2)>>16)*regs.bespitch;
 
-	regs.besa1corg = (uint_32) mga_src_base + baseadrofs + regs.bespitch * sh ;
-	regs.besb1corg = (uint_32) mga_src_base + baseadrofs + frame_size + regs.bespitch * sh;
+	regs.besa1corg = (uint32_t) mga_src_base + baseadrofs + regs.bespitch * sh ;
+	regs.besb1corg = (uint32_t) mga_src_base + baseadrofs + frame_size + regs.bespitch * sh;
 	regs.besa1c3org = regs.besa1corg + ((regs.bespitch * sh) / 4);
 	regs.besb1c3org = regs.besb1corg + ((regs.bespitch * sh) / 4);
 

@@ -37,18 +37,18 @@
 
 
 #define BUFFER_SIZE 2048
-static uint_8 buffer[BUFFER_SIZE];
+static uint8_t buffer[BUFFER_SIZE];
 static FILE *in_file;
-static uint_32 frame_counter = 0;
+static uint32_t frame_counter = 0;
 
 static struct timeval tv_beg, tv_end, tv_start;
-static uint_32 elapsed;
-static uint_32 total_elapsed;
-static uint_32 last_count = 0;
-static uint_32 demux_dvd = 0;
+static uint32_t elapsed;
+static uint32_t total_elapsed;
+static uint32_t last_count = 0;
+static uint32_t demux_dvd = 0;
 static vo_functions_t *video_out;
 
-static void print_fps(uint_32 final) 
+static void print_fps(uint32_t final) 
 {
 	int fps, tfps, frames;
 	
@@ -93,9 +93,9 @@ static void print_fps(uint_32 final)
 }
  
 static void 
-fill_buffer(uint_32 num_bytes)
+fill_buffer(uint32_t num_bytes)
 {
-	uint_32 bytes_read;
+	uint32_t bytes_read;
 
 	bytes_read = fread(buffer,1,num_bytes,in_file);
 
@@ -107,9 +107,9 @@ fill_buffer(uint_32 num_bytes)
 }
 
 void
-do_dvd_demux (uint_8 **buf_start, uint_8 **buf_end)
+do_dvd_demux (uint8_t **buf_start, uint8_t **buf_end)
 {
-	uint_8 *start,*end;
+	uint8_t *start,*end;
 
 	while(1)
 	{
@@ -156,7 +156,7 @@ static void signal_handler(int sig)
 void
 print_usage(char *argv[])
 {
-	uint_32 i = 0;
+	uint32_t i = 0;
 
 	fprintf(stderr,"usage: %s [-o mode] [-s] file\n"
 	               "\t-s\tsystem stream (.vob file)\n"
@@ -178,7 +178,7 @@ static void
 handle_args (int argc, char *argv[])
 {
 	int c;
-	uint_32 i;
+	uint32_t i;
 
 	while((c = getopt(argc,argv,"so:")) != -1)
 	{
@@ -244,9 +244,9 @@ int main(int argc,char *argv[])
 
 	while(1)
 	{
-		uint_32 num_frames;
-		uint_8 *buf_start = buffer;
-		uint_8 *buf_end = buffer + BUFFER_SIZE;
+		uint32_t num_frames;
+		uint8_t *buf_start = buffer;
+		uint8_t *buf_end = buffer + BUFFER_SIZE;
 		
 		if(demux_dvd)
 			do_dvd_demux(&buf_start,&buf_end);

@@ -24,4 +24,7 @@
 	* optimize DCT for very sparse input matrixes ?
 	* optimize startcode search loop ?
 
+* cleanups
+	* clean up header file usage
+
 * synchronization stuff 

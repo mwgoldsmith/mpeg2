@@ -19,22 +19,22 @@
 #include "mga_vid.h"
 
 mga_vid_config_t config;
-uint_8 *mga_vid_base;
-uint_32 is_g400;
+uint8_t *mga_vid_base;
+uint32_t is_g400;
 
 #define SRC_IMAGE_WIDTH 256
 #define SRC_IMAGE_HEIGHT 256
 
-uint_8 y_image[SRC_IMAGE_WIDTH * SRC_IMAGE_HEIGHT];
-uint_8 cr_image[SRC_IMAGE_WIDTH * SRC_IMAGE_HEIGHT];
-uint_8 cb_image[SRC_IMAGE_WIDTH * SRC_IMAGE_HEIGHT];
+uint8_t y_image[SRC_IMAGE_WIDTH * SRC_IMAGE_HEIGHT];
+uint8_t cr_image[SRC_IMAGE_WIDTH * SRC_IMAGE_HEIGHT];
+uint8_t cb_image[SRC_IMAGE_WIDTH * SRC_IMAGE_HEIGHT];
 
 
 void
-write_frame_g200(uint_8 *y,uint_8 *cr, uint_8 *cb)
+write_frame_g200(uint8_t *y,uint8_t *cr, uint8_t *cb)
 {
-	uint_8 *dest;
-	uint_32 bespitch,h,w;
+	uint8_t *dest;
+	uint32_t bespitch,h,w;
 
 	dest = mga_vid_base;
 	bespitch = (config.src_width + 31) & ~31;
@@ -58,10 +58,10 @@ write_frame_g200(uint_8 *y,uint_8 *cr, uint_8 *cb)
 }
 
 void
-write_frame_g400(uint_8 *y,uint_8 *cr, uint_8 *cb)
+write_frame_g400(uint8_t *y,uint8_t *cr, uint8_t *cb)
 {
-	uint_8 *dest;
-	uint_32 bespitch,h;
+	uint8_t *dest;
+	uint32_t bespitch,h;
 
 	dest = mga_vid_base;
 	bespitch = (config.src_width + 31) & ~31;
@@ -88,7 +88,7 @@ write_frame_g400(uint_8 *y,uint_8 *cr, uint_8 *cb)
 	}
 }
 
-void write_frame(uint_8 *y,uint_8 *cr, uint_8 *cb)
+void write_frame(uint8_t *y,uint8_t *cr, uint8_t *cb)
 {
 	if(is_g400)
 		write_frame_g400(y,cr,cb);
@@ -189,7 +189,7 @@ main(int argc, char *argv[])
 	}
 	
 	ioctl(f,MGA_VID_ON,0);
-	mga_vid_base = (uint_8*)mmap(0,256 * 4096,PROT_WRITE,MAP_SHARED,f,0);
+	mga_vid_base = (uint8_t*)mmap(0,256 * 4096,PROT_WRITE,MAP_SHARED,f,0);
 	printf("mga_vid_base = %8p\n",mga_vid_base);
 
 

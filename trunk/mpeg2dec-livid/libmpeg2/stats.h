@@ -23,4 +23,4 @@
  *
  */
  
-void stats_header (uint_8 code, uint_8 * buffer);
+void stats_header (uint8_t code, uint8_t * buffer);

@@ -36,7 +36,7 @@
 #include <mlib_video.h>
 
 void
-motion_comp_put_16x16_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 height)
+motion_comp_put_16x16_mlib (uint8_t *dst, uint8_t *block, int32_t stride, int32_t height)
 {
   if (height == 16) 
     mlib_VideoCopyRef_U8_U8_16x16 (dst, block, stride);
@@ -45,7 +45,7 @@ motion_comp_put_16x16_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 
 }
 
 void
-motion_comp_put_x_16x16_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 height)
+motion_comp_put_x_16x16_mlib (uint8_t *dst, uint8_t *block, int32_t stride, int32_t height)
 {
   if (height == 16) 
     mlib_VideoInterpX_U8_U8_16x16 (dst, block, stride, stride);
@@ -54,7 +54,7 @@ motion_comp_put_x_16x16_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_3
 }
 
 void
-motion_comp_put_y_16x16_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 height)
+motion_comp_put_y_16x16_mlib (uint8_t *dst, uint8_t *block, int32_t stride, int32_t height)
 {
   if (height == 16) 
     mlib_VideoInterpY_U8_U8_16x16 (dst, block, stride, stride);
@@ -63,7 +63,7 @@ motion_comp_put_y_16x16_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_3
 }
 
 void
-motion_comp_put_xy_16x16_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 height)
+motion_comp_put_xy_16x16_mlib (uint8_t *dst, uint8_t *block, int32_t stride, int32_t height)
 {
   if (height == 16) 
     mlib_VideoInterpXY_U8_U8_16x16 (dst, block, stride, stride);
@@ -72,7 +72,7 @@ motion_comp_put_xy_16x16_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_
 }
 
 void
-motion_comp_put_8x8_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 height)
+motion_comp_put_8x8_mlib (uint8_t *dst, uint8_t *block, int32_t stride, int32_t height)
 {
   if (height == 8) 
     mlib_VideoCopyRef_U8_U8_8x8 (dst, block, stride);
@@ -81,7 +81,7 @@ motion_comp_put_8x8_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 he
 }
 
 void
-motion_comp_put_x_8x8_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 height)
+motion_comp_put_x_8x8_mlib (uint8_t *dst, uint8_t *block, int32_t stride, int32_t height)
 {
   if (height == 8) 
     mlib_VideoInterpX_U8_U8_8x8 (dst, block, stride, stride);
@@ -90,7 +90,7 @@ motion_comp_put_x_8x8_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 
 }
 
 void
-motion_comp_put_y_8x8_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 height)
+motion_comp_put_y_8x8_mlib (uint8_t *dst, uint8_t *block, int32_t stride, int32_t height)
 {
   if (height == 8) 
     mlib_VideoInterpY_U8_U8_8x8 (dst, block, stride, stride);
@@ -99,7 +99,7 @@ motion_comp_put_y_8x8_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 
 }
 
 void
-motion_comp_put_xy_8x8_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 height)
+motion_comp_put_xy_8x8_mlib (uint8_t *dst, uint8_t *block, int32_t stride, int32_t height)
 {
   if (height == 8) 
     mlib_VideoInterpXY_U8_U8_8x8 (dst, block, stride, stride);
@@ -108,7 +108,7 @@ motion_comp_put_xy_8x8_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32
 }
 
 void
-motion_comp_avg_16x16_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 height)
+motion_comp_avg_16x16_mlib (uint8_t *dst, uint8_t *block, int32_t stride, int32_t height)
 {
   if (height == 16) 
     mlib_VideoCopyRefAve_U8_U8_16x16 (dst, block, stride);
@@ -117,7 +117,7 @@ motion_comp_avg_16x16_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 
 }
 
 void
-motion_comp_avg_x_16x16_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 height)
+motion_comp_avg_x_16x16_mlib (uint8_t *dst, uint8_t *block, int32_t stride, int32_t height)
 {
   if (height == 16) 
     mlib_VideoInterpAveX_U8_U8_16x16 (dst, block, stride, stride);
@@ -126,7 +126,7 @@ motion_comp_avg_x_16x16_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_3
 }
 
 void
-motion_comp_avg_y_16x16_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 height)
+motion_comp_avg_y_16x16_mlib (uint8_t *dst, uint8_t *block, int32_t stride, int32_t height)
 {
   if (height == 16) 
     mlib_VideoInterpAveY_U8_U8_16x16 (dst, block, stride, stride);
@@ -135,7 +135,7 @@ motion_comp_avg_y_16x16_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_3
 }
 
 void
-motion_comp_avg_xy_16x16_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 height)
+motion_comp_avg_xy_16x16_mlib (uint8_t *dst, uint8_t *block, int32_t stride, int32_t height)
 {
   if (height == 16) 
     mlib_VideoInterpAveXY_U8_U8_16x16 (dst, block, stride, stride);
@@ -144,7 +144,7 @@ motion_comp_avg_xy_16x16_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_
 }
 
 void
-motion_comp_avg_8x8_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 height)
+motion_comp_avg_8x8_mlib (uint8_t *dst, uint8_t *block, int32_t stride, int32_t height)
 {
   if (height == 8) 
     mlib_VideoCopyRefAve_U8_U8_8x8 (dst, block, stride);
@@ -153,7 +153,7 @@ motion_comp_avg_8x8_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 he
 }
 
 void
-motion_comp_avg_x_8x8_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 height)
+motion_comp_avg_x_8x8_mlib (uint8_t *dst, uint8_t *block, int32_t stride, int32_t height)
 {
   if (height == 8) 
     mlib_VideoInterpAveX_U8_U8_8x8 (dst, block, stride, stride);
@@ -162,7 +162,7 @@ motion_comp_avg_x_8x8_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 
 }
 
 void
-motion_comp_avg_y_8x8_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 height)
+motion_comp_avg_y_8x8_mlib (uint8_t *dst, uint8_t *block, int32_t stride, int32_t height)
 {
   if (height == 8) 
     mlib_VideoInterpAveY_U8_U8_8x8 (dst, block, stride, stride);
@@ -171,7 +171,7 @@ motion_comp_avg_y_8x8_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 
 }
 
 void
-motion_comp_avg_xy_8x8_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 height)
+motion_comp_avg_xy_8x8_mlib (uint8_t *dst, uint8_t *block, int32_t stride, int32_t height)
 {
   if (height == 8) 
     mlib_VideoInterpAveXY_U8_U8_8x8 (dst, block, stride, stride);

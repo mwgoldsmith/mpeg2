@@ -35,7 +35,7 @@
 
 #include "header.h"
 
-static uint_8 default_intra_quantization_matrix[64] ALIGN_16_BYTE = 
+static uint8_t default_intra_quantization_matrix[64] ALIGN_16_BYTE = 
 {
 	 8, 16, 19, 22, 26, 27, 29, 34,
 	16, 16, 22, 24, 27, 29, 34, 37,
@@ -47,7 +47,7 @@ static uint_8 default_intra_quantization_matrix[64] ALIGN_16_BYTE =
 	27, 29, 35, 38, 46, 56, 69, 83
 };
 
-static uint_8 default_non_intra_quantization_matrix[64] ALIGN_16_BYTE = 
+static uint8_t default_non_intra_quantization_matrix[64] ALIGN_16_BYTE = 
 {
 	16, 16, 16, 16, 16, 16, 16, 16, 
 	16, 16, 16, 16, 16, 16, 16, 16, 
@@ -60,7 +60,7 @@ static uint_8 default_non_intra_quantization_matrix[64] ALIGN_16_BYTE =
 };
 
 #ifdef __i386__
-static const uint_8 scan_norm_mmx[64] ALIGN_16_BYTE  =
+static const uint8_t scan_norm_mmx[64] ALIGN_16_BYTE  =
 { 
 	// MMX Zig-Zag scan pattern (transposed)  
 	0,  8, 1,  2, 9,16,24,17,
@@ -73,7 +73,7 @@ static const uint_8 scan_norm_mmx[64] ALIGN_16_BYTE  =
 	46,39,47,54,61,62,55,63
 };
 
-static const uint_8 scan_alt_mmx[64] ALIGN_16_BYTE = 
+static const uint8_t scan_alt_mmx[64] ALIGN_16_BYTE = 
 { 
 	// Alternate scan pattern (transposed)
 	0, 1, 2, 3, 8, 9,16,17,
@@ -87,7 +87,7 @@ static const uint_8 scan_alt_mmx[64] ALIGN_16_BYTE =
 };
 #endif
 
-static const uint_8 scan_norm[64] ALIGN_16_BYTE =
+static const uint8_t scan_norm[64] ALIGN_16_BYTE =
 { 
 	// Zig-Zag scan pattern
 	 0, 1, 8,16, 9, 2, 3,10,
@@ -100,7 +100,7 @@ static const uint_8 scan_norm[64] ALIGN_16_BYTE =
 	53,60,61,54,47,55,62,63
 };
 
-static const uint_8 scan_alt[64] ALIGN_16_BYTE =
+static const uint8_t scan_alt[64] ALIGN_16_BYTE =
 { 
 	// Alternate scan pattern 
 	0,8,16,24,1,9,2,10,17,25,32,40,48,56,57,49,
@@ -126,7 +126,7 @@ header_state_init(picture_t *picture)
 
 }
 
-void header_process_sequence_header (picture_t * picture, uint_8 * buffer)
+void header_process_sequence_header (picture_t * picture, uint8_t * buffer)
 {
 	unsigned int h_size;
 	unsigned int v_size;
@@ -175,7 +175,7 @@ void header_process_sequence_header (picture_t * picture, uint_8 * buffer)
 	//return 0;
 }
 
-static int header_process_sequence_extension (picture_t * picture, uint_8 * buffer)
+static int header_process_sequence_extension (picture_t * picture, uint8_t * buffer)
 {
 	if (((buffer[1] & 0x07) != 0x02) || (buffer[2] & 0xe0) || ((buffer[4] & 0x40) != 0x40))
 		return 1;	// not 4:2:0 chroma format, or size extensions not zero, or marker bit not set
@@ -186,7 +186,7 @@ static int header_process_sequence_extension (picture_t * picture, uint_8 * buff
 	return 0;
 }
 
-static int header_process_picture_coding_extension (picture_t * picture, uint_8 * buffer)
+static int header_process_picture_coding_extension (picture_t * picture, uint8_t * buffer)
 {
 	if ((buffer[2] & 3) != 3)
 		return 1;	// not a frame picture
@@ -230,7 +230,7 @@ static int header_process_picture_coding_extension (picture_t * picture, uint_8 
 	return 0;
 }
 
-void header_process_extension (picture_t * picture, uint_8 * buffer)
+void header_process_extension (picture_t * picture, uint8_t * buffer)
 {
 	switch (buffer[0] & 0xf0)
 	{
@@ -244,7 +244,7 @@ void header_process_extension (picture_t * picture, uint_8 * buffer)
 	}
 }
 
-void header_process_picture_header (picture_t *picture, uint_8 * buffer)
+void header_process_picture_header (picture_t *picture, uint8_t * buffer)
 {
 	picture->picture_coding_type = (buffer [1] >> 3) & 7;
 

@@ -34,38 +34,38 @@
 #include <mlib_sys.h>
 #include <mlib_video.h>
 
-static void mlib_YUV2ARGB420_32(uint_8* image, const uint_8* py, 
-			 const uint_8* pu, const uint_8* pv, 
-			 const uint_32 h_size, const uint_32 v_size, 
-			 const uint_32 rgb_stride, const uint_32 y_stride, 
-			 const uint_32 uv_stride)
+static void mlib_YUV2ARGB420_32(uint8_t* image, const uint8_t* py, 
+			 const uint8_t* pu, const uint8_t* pv, 
+			 const uint32_t h_size, const uint32_t v_size, 
+			 const uint32_t rgb_stride, const uint32_t y_stride, 
+			 const uint32_t uv_stride)
 {
   mlib_VideoColorYUV2ARGB420(image, py, pu, pv, h_size,
 			     v_size, rgb_stride, y_stride, uv_stride);
 }
 
-static void mlib_YUV2ABGR420_32(uint_8* image, const uint_8* py, 
-			 const uint_8* pu, const uint_8* pv, 
-			 const uint_32 h_size, const uint_32 v_size, 
-			 const uint_32 rgb_stride, const uint_32 y_stride, 
-			 const uint_32 uv_stride)
+static void mlib_YUV2ABGR420_32(uint8_t* image, const uint8_t* py, 
+			 const uint8_t* pu, const uint8_t* pv, 
+			 const uint32_t h_size, const uint32_t v_size, 
+			 const uint32_t rgb_stride, const uint32_t y_stride, 
+			 const uint32_t uv_stride)
 {
 	mlib_VideoColorYUV2ABGR420(image, py, pu, pv, h_size,
 			     v_size, rgb_stride, y_stride, uv_stride);
 }
 
-static void mlib_YUV2RGB420_24(uint_8* image, const uint_8* py, 
-			 const uint_8* pu, const uint_8* pv, 
-			 const uint_32 h_size, const uint_32 v_size, 
-			 const uint_32 rgb_stride, const uint_32 y_stride, 
-			 const uint_32 uv_stride)
+static void mlib_YUV2RGB420_24(uint8_t* image, const uint8_t* py, 
+			 const uint8_t* pu, const uint8_t* pv, 
+			 const uint32_t h_size, const uint32_t v_size, 
+			 const uint32_t rgb_stride, const uint32_t y_stride, 
+			 const uint32_t uv_stride)
 {
 	mlib_VideoColorYUV2RGB420(image, py, pu, pv, h_size,
 			    v_size, rgb_stride, y_stride, uv_stride);
 }
 
 
-yuv2rgb_fun yuv2rgb_init_mlib(uint_32 bpp, uint_32 mode) 
+yuv2rgb_fun yuv2rgb_init_mlib(uint32_t bpp, uint32_t mode) 
 {  
 
 	if( bpp == 24 ) 

@@ -56,69 +56,69 @@
 typedef struct picture_s
 {
 	//-- sequence header stuff --
-	uint_8 *intra_quantizer_matrix;
-	uint_8 *non_intra_quantizer_matrix;
+	uint8_t *intra_quantizer_matrix;
+	uint8_t *non_intra_quantizer_matrix;
 
-	uint_8 custom_intra_quantization_matrix[64];
-	uint_8 custom_non_intra_quantization_matrix[64];
+	uint8_t custom_intra_quantization_matrix[64];
+	uint8_t custom_non_intra_quantization_matrix[64];
 
 	//The width and height of the picture snapped to macroblock units
-	uint_32 coded_picture_width;
-	uint_32 coded_picture_height;
+	uint32_t coded_picture_width;
+	uint32_t coded_picture_height;
 
 	//-- picture header stuff --
 
 	//what type of picture this is (I,P,or B) D from MPEG-1 isn't supported
-	uint_32 picture_coding_type;
+	uint32_t picture_coding_type;
 	
 	//-- picture coding extension stuff --
 	
 	//quantization factor for motion vectors
-	uint_8 f_code[2][2];
+	uint8_t f_code[2][2];
 	//quantization factor for intra dc coefficients
-	uint_16 intra_dc_precision;
+	uint16_t intra_dc_precision;
 	//bool to indicate all predictions are frame based
-	uint_16 frame_pred_frame_dct;
+	uint16_t frame_pred_frame_dct;
 	//bool to indicate whether intra blocks have motion vectors 
 	//(for concealment)
-	uint_16 concealment_motion_vectors;
+	uint16_t concealment_motion_vectors;
 	//bit to indicate which quantization table to use
-	uint_16 q_scale_type;
+	uint16_t q_scale_type;
 	//bool to use different vlc tables
-	uint_16 intra_vlc_format;
+	uint16_t intra_vlc_format;
 
 	//last macroblock in the picture
-	uint_32 last_mba;
+	uint32_t last_mba;
 	//width of picture in macroblocks
-	uint_32 mb_width;
+	uint32_t mb_width;
 
 	//stuff derived from bitstream
 
 	//pointer to the zigzag scan we're supposed to be using
-	const uint_8 *scan;
+	const uint8_t *scan;
 
 	//Pointer to the current planar frame buffer (Y,Cr,CB)
-	uint_8 *current_frame[3];
+	uint8_t *current_frame[3];
 	//storage for reference frames plus a b-frame
-	uint_8 *forward_reference_frame[3];
-	uint_8 *backward_reference_frame[3];
-	uint_8 *throwaway_frame[3];
+	uint8_t *forward_reference_frame[3];
+	uint8_t *backward_reference_frame[3];
+	uint8_t *throwaway_frame[3];
 
 	//these things are not needed by the decoder
 	//NOTICE : this is a temporary interface, we will build a better one later.
-	uint_16 aspect_ratio_information;
-	uint_16 frame_rate_code;
-	uint_16 progressive_sequence;
-	uint_16 top_field_first;
-	uint_16 repeat_first_field;
-	uint_16 progressive_frame;
+	uint16_t aspect_ratio_information;
+	uint16_t frame_rate_code;
+	uint16_t progressive_sequence;
+	uint16_t top_field_first;
+	uint16_t repeat_first_field;
+	uint16_t progressive_frame;
 } picture_t;
 
 typedef struct motion_s
 {
-	uint_8 * ref_frame[3];
-	sint_16 pmv[2][2];
-	uint_8 f_code[2];
+	uint8_t * ref_frame[3];
+	int16_t pmv[2][2];
+	uint8_t f_code[2];
 } motion_t;
 
 // state that is carried from one macroblock to the next inside of a same slice
@@ -131,9 +131,9 @@ typedef struct slice_s
 	motion_t f_motion;
 
 	// predictor for DC coefficients in intra blocks
-	sint_16 dc_dct_pred[3];
+	int16_t dc_dct_pred[3];
 
-	uint_16 quantizer_scale;	// remove
+	uint16_t quantizer_scale;	// remove
 } slice_t;
 
 //The only global variable,

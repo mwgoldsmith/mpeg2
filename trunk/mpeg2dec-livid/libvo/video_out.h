@@ -25,16 +25,7 @@
 extern "C" {
 #endif
 
-#ifndef AARONS_TYPES
-#define AARONS_TYPES
-//typedef to appropriate type for your architecture
-typedef unsigned char uint_8;
-typedef unsigned short uint_16;
-typedef unsigned int uint_32;
-typedef signed int sint_32;
-typedef signed short sint_16;
-typedef signed char sint_8;
-#endif
+#include <inttypes.h>
 
 typedef struct vo_info_s
 {
@@ -50,10 +41,10 @@ typedef struct vo_info_s
 
 typedef struct vo_image_buffer_s
 {
-	uint_32 height;
-	uint_32 width;
-	uint_32 format;
-	uint_8 *base;
+	uint32_t height;
+	uint32_t width;
+	uint32_t format;
+	uint8_t *base;
 	void *private;
 } vo_image_buffer_t;
 
@@ -78,7 +69,7 @@ typedef struct vo_functions_s
 	 *              by terminating.
 	 */
 
-	uint_32 (*init)(uint_32 width, uint_32 height, uint_32 fullscreen, char *title);
+	uint32_t (*init)(uint32_t width, uint32_t height, uint32_t fullscreen, char *title);
 
 	/*
 	 * Return driver information.
@@ -110,7 +101,7 @@ typedef struct vo_functions_s
 	 *              by terminating.
 	 */
 
-	uint_32 (*draw_frame)(uint_8 *src[]);
+	uint32_t (*draw_frame)(uint8_t *src[]);
 
 	/*
 	 * Update a section of the offscreen buffer. A "slice" is an area of the
@@ -136,7 +127,7 @@ typedef struct vo_functions_s
 	 *              by terminating.
 	 */
 
-	uint_32 (*draw_slice)(uint_8 *src[], uint_32 slice_num);
+	uint32_t (*draw_slice)(uint8_t *src[], uint32_t slice_num);
 
 	/*
 	 * Draw the current image buffer to the screen. There may be several
@@ -165,7 +156,7 @@ typedef struct vo_functions_s
 	 *   returns : NULL if unable to allocate, ptr to new surface
 	 */
 
-	vo_image_buffer_t* (*allocate_image_buffer)(uint_32 height, uint_32 width, uint_32 format);
+	vo_image_buffer_t* (*allocate_image_buffer)(uint32_t height, uint32_t width, uint32_t format);
 
 	/*
 	 * Free an image buffer allocated with allocate_image_buffer.

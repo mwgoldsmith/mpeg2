@@ -65,14 +65,14 @@ motion_comp_init (void)
 	}
 }
 
-void motion_block (void (** table) (uint_8 *, uint_8 *, sint_32, sint_32), 
+void motion_block (void (** table) (uint8_t *, uint8_t *, int32_t, int32_t), 
 				   int x_pred, int y_pred,
-				   uint_8 * dest[3], int dest_offset,
-				   uint_8 * src[3], int src_offset,
+				   uint8_t * dest[3], int dest_offset,
+				   uint8_t * src[3], int src_offset,
 				   int stride, int height)
 {
-	uint_32 xy_half;
-	uint_8 *src1, *src2;
+	uint32_t xy_half;
+	uint8_t *src1, *src2;
 
 	xy_half = ((y_pred & 1) << 1) | (x_pred & 1);
 
