@@ -196,22 +196,18 @@ mpeg2_state_t mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	    return STATE_BUFFER;
     }
 
+    mpeg2dec->action = mpeg2_seek_header;
     switch (mpeg2dec->code) {
     case 0x00:
-	mpeg2dec->action = mpeg2_parse_header;
 	return mpeg2dec->state;
-    case 0xb7:
-	mpeg2dec->action = mpeg2_header_end;
-	break;
     case 0xb3:
+    case 0xb7:
     case 0xb8:
-	mpeg2dec->action = mpeg2_parse_header;
-	break;
+	return (mpeg2dec->state == STATE_SLICE) ? STATE_SLICE : STATE_INVALID;
     default:
 	mpeg2dec->action = seek_chunk;
 	return STATE_INVALID;
     }
-    return (mpeg2dec->state == STATE_SLICE) ? STATE_SLICE : STATE_INVALID;
 }
 
 mpeg2_state_t mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
