@@ -17,14 +17,14 @@ V - app that does its own buffer management
 
 Quick-and-dirty documentation for libmpeg2 0.3.1
 Kees Cook <mpeg2@outflux.net>
-2003-04-08
+2003-04-25
 
 
 
 Basic Usage Pseudocode
 ----------------------
 
-        if (no acceleration autodetection)
+        if (you need a certain acceleration)
                 mpeg2_accel(desired_acceleration);
         handle=mpeg2_init();
         info=mpeg2_info(handle);
@@ -80,7 +80,7 @@ mpeg2dec_t * mpeg2_init()
 
 uint32_t mpeg2_accel(uint32_t accel)
         Sets the CPU acceleration type to be used for all decoders for the
-        life of the program.
+        life of the program.  YOU CAN SAFELY IGNORE THIS FUNCTION.
        
         By default, a call to mpeg2_accel is not needed, since the best
         available acceleration will be auto-detected.  To override the
@@ -89,19 +89,19 @@ uint32_t mpeg2_accel(uint32_t accel)
         (prefix "MPEG2_ACCEL_...").
         
         After a call to mpeg2_init, mpeg2_accel can be called to find out
-        what the selected acceleration is.  Once an acceleration has been
-        selected (through explicitly requesting one, or through
+        what the selected acceleration list is.  Once the accelerations have
+        been selected (through explicitly requesting one, or through
         auto-detection) the "accel" parameter will be ignored.
 
-        Returns selected acceleration method.  If the requested acceleration
+        Returns selected acceleration list.  If the requested acceleration
         is not available, the function will auto-detect the best available
-        and return that instead.
+        accelerations and return that instead.
         
                 - Cannot be undone!  This should maybe be a part of
                   the mpeg2 structure somehow?
 
 
-mpeg2_info_t * mpeg2_info(mpeg2dec_t * handle)
+const mpeg2_info_t * mpeg2_info(mpeg2dec_t * handle)
         Gets structure for the mpeg2 decoder's "mpeg2_info_t" structure.
         This will let you do something (like display!) the decoded pictures
         with the mpeg2_info_t structure members:
@@ -111,7 +111,7 @@ mpeg2_info_t * mpeg2_info(mpeg2dec_t * handle)
                 If this is NULL, no frame is available.
 
         display_fbuf->buf:
-                RGB pixel data for the picture.
+                YUV coded pixel data for the picture.
 
         display_picture:
                 data structure describing the current picture.
