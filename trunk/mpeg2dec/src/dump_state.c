@@ -163,7 +163,9 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
 		 pic_code (info->display_picture),
 		 pic_code (info->display_picture_2nd),
 		 buf_code (info->discard_fbuf));
-	if (state == STATE_SLICE) {
+	if (state == STATE_SLICE || state == STATE_END) {
+	    if (state == STATE_END)
+		buf_code_del (info->display_fbuf);
 	    buf_code_del (info->discard_fbuf);
 	    pic_code_del (info->display_picture);
 	    pic_code_del (info->display_picture_2nd);
