@@ -1,4 +1,4 @@
-AM_CFLAGS = @LIBVO_CFLAGS@
+AM_CFLAGS = $(OPT_CFLAGS) $(LIBVO_CFLAGS)
 
 bin_PROGRAMS = mpeg2dec extract_mpeg2
 mpeg2dec_SOURCES = mpeg2dec.c getopt.c gettimeofday.c
