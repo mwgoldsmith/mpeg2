@@ -33,7 +33,9 @@
 #include "mpeg2_internal.h"
 #include "mm_accel.h"
 #include "attributes.h"
+#ifdef ARCH_X86
 #include "mmx.h"
+#endif
 
 #ifdef HAVE_MEMALIGN
 /* some systems have memalign() but no declaration for it */
