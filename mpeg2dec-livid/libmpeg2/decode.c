@@ -257,7 +257,7 @@ mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end)
 		}
 
 		//FIXME blah
-#ifdef __i386__
+#if 0 //#ifdef __i386__
 		if (config.flags & MPEG2_MMX_ENABLE)
 			emms();
 #endif
