@@ -306,7 +306,7 @@ void mpeg2_convert (mpeg2dec_t * mpeg2dec,
 				      struct convert_init_s *), void * arg)
 {
     convert_init_t convert_init;
-    int size;
+    int size, size_chroma;
 
     convert_init.id = NULL;
     convert (mpeg2dec->decoder.width, mpeg2dec->decoder.height,
@@ -323,17 +323,31 @@ void mpeg2_convert (mpeg2dec_t * mpeg2dec,
     mpeg2dec->convert_start = convert_init.start;
     mpeg2dec->convert_copy = convert_init.copy;
 
-    size = mpeg2dec->decoder.width * mpeg2dec->decoder.height >> 2;
-    mpeg2dec->yuv_buf[0][0] = (uint8_t *) mpeg2_malloc (6 * size, ALLOC_YUV);
-    mpeg2dec->yuv_buf[0][1] = mpeg2dec->yuv_buf[0][0] + 4 * size;
-    mpeg2dec->yuv_buf[0][2] = mpeg2dec->yuv_buf[0][0] + 5 * size;
-    mpeg2dec->yuv_buf[1][0] = (uint8_t *) mpeg2_malloc (6 * size, ALLOC_YUV);
-    mpeg2dec->yuv_buf[1][1] = mpeg2dec->yuv_buf[1][0] + 4 * size;
-    mpeg2dec->yuv_buf[1][2] = mpeg2dec->yuv_buf[1][0] + 5 * size;
-    size = mpeg2dec->decoder.width * 8;
-    mpeg2dec->yuv_buf[2][0] = (uint8_t *) mpeg2_malloc (6 * size, ALLOC_YUV);
-    mpeg2dec->yuv_buf[2][1] = mpeg2dec->yuv_buf[2][0] + 4 * size;
-    mpeg2dec->yuv_buf[2][2] = mpeg2dec->yuv_buf[2][0] + 5 * size;
+    size = mpeg2dec->decoder.width * mpeg2dec->decoder.height;
+	if (mpeg2dec->decoder.chroma_format == CHROMA_FORMAT_420)
+		size_chroma = size >> 2;
+	else if (mpeg2dec->decoder.chroma_format == CHROMA_FORMAT_422)
+		size_chroma = size >> 1;
+	else
+		size_chroma = size;
+
+    mpeg2dec->yuv_buf[0][0] = (uint8_t *) mpeg2_malloc (size + 2*size_chroma, ALLOC_YUV);
+    mpeg2dec->yuv_buf[0][1] = mpeg2dec->yuv_buf[0][0] + size;
+    mpeg2dec->yuv_buf[0][2] = mpeg2dec->yuv_buf[0][0] + size + size_chroma;
+    mpeg2dec->yuv_buf[1][0] = (uint8_t *) mpeg2_malloc (size + 2*size_chroma, ALLOC_YUV);
+    mpeg2dec->yuv_buf[1][1] = mpeg2dec->yuv_buf[1][0] + size;
+    mpeg2dec->yuv_buf[1][2] = mpeg2dec->yuv_buf[1][0] + size + size_chroma;
+
+    size = mpeg2dec->decoder.width * 16 * 2;
+	if (mpeg2dec->decoder.chroma_format == CHROMA_FORMAT_420)
+		size_chroma = size >> 2;
+	else if (mpeg2dec->decoder.chroma_format == CHROMA_FORMAT_422)
+		size_chroma = size >> 1;
+	else
+		size_chroma = size;
+    mpeg2dec->yuv_buf[2][0] = (uint8_t *) mpeg2_malloc (size + 2*size_chroma, ALLOC_YUV);
+    mpeg2dec->yuv_buf[2][1] = mpeg2dec->yuv_buf[2][0] + size;
+    mpeg2dec->yuv_buf[2][2] = mpeg2dec->yuv_buf[2][0] + size + size_chroma;
 }
 
 void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id)
@@ -376,10 +390,10 @@ void mpeg2_slice_region (mpeg2dec_t * mpeg2dec, int start, int end)
     mpeg2dec->nb_decode_slices = end - start;
 }
 
-void mpeg2_pts (mpeg2dec_t * mpeg2dec, uint32_t pts)
+void mpeg2_pts (mpeg2dec_t * mpeg2dec, mpeg2_pts_t * pts)
 {
     mpeg2dec->pts_previous = mpeg2dec->pts_current;
-    mpeg2dec->pts_current = pts;
+    mpeg2dec->pts_current = *pts;
     mpeg2dec->num_pts++;
     mpeg2dec->bytes_since_pts = 0;
 }
