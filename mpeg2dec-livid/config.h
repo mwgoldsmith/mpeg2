@@ -5,7 +5,7 @@
 #define PACKAGE "mpeg2dec"
 
 /* Version number of package */
-#define VERSION "0.1.4"
+#define VERSION "0.1.5"
 
 /* Architecture defines */
 #define __i386__ 1

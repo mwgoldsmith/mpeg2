@@ -2,6 +2,13 @@ mpeg2dec - a free MPEG-2 video stream decoder
 
 Written by Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
 
+Contributions by:
+	Real Ouellet <realo@sympatico.ca> - g200 fixes
+	Brion Vibber <brion@gizmo.usc.edu> - x11 fixes
+	Franck SICARD <Franck.Sicard@miniruth.solsoft.fr> - x11 fixes
+	Didier Gautheron <dgautheron@magic.fr> - bug fixes
+	(let me know if I've forgotten anyone)
+
 First of all, this is very early code. If you're not interested
 in hacking video codecs then there isn't much point in downloading
 it. Normally I wouldn't release something this early, but it seems
@@ -27,11 +34,17 @@ decode.c
 
 For each frame, decode.c uses parse.c to stuff macroblocks into the
 macroblock buffer (mb_buffer.c). When this buffer is full or the frame
-is done, the main decoding pipeline (inv_quantization, idct, motion_comp) 
+is done, the main decoding pipeline (idct, motion_comp) 
 is run over the contents of the buffer.
 
+Modules with optimized code for a particular architecture have an
+_foo suffix (like idct_mmx.c). The appropriate code is selected
+at runtime in the case of instructions that aren't always available
+supported (like 3dnow or SSE). The philosophy is "one binary->one
+architecture".
+
 Stuff that works
-- I-type Frame pictures (well almost)
+- I-type Frame pictures 
 
 Stuff that is broken
 - field based pictures
@@ -55,8 +68,8 @@ and set the appropriate function pointers.
 
 Documentation
 
-If you need the mpeg-2 video spec, you can get it on www.wotzit.org
-(mpeg2-2.doc).
+If you need the mpeg-2 video spec, you can get it on www.wotsit.org
+(mpeg2-2.doc). 
 
 Aaron Holtzman,
 December 1999

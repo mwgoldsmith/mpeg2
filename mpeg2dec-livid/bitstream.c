@@ -23,7 +23,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include "mpeg2.h"
 #include "mpeg2_internal.h"
+
 #include "bitstream.h"
 
 uint_32 bits_left;
@@ -47,6 +49,8 @@ uint_32 mask[33] =
 	0x1fffffff, 0x3fffffff, 0x7fffffff, 0xffffffff, 
 };
 
+uint_32 fast_count=0;
+uint_32 slow_count=0;
 
 inline uint_32 
 bitstream_show(uint_32 num_bits)
@@ -56,8 +60,15 @@ bitstream_show(uint_32 num_bits)
 
 	//fast path
 	if(num_bits < bits_left)
+	{
+		//fast_count++;
+		//printf("fast_count = %d slow_count = %d total = %d\n",fast_count,slow_count, fast_count + slow_count);
 		return (current_word  >> (bits_left - num_bits)) & mask[num_bits];
+	}
 
+	//slow_count++;
+	//printf("fast_count = %d slow_count = %d total = %d\n",fast_count,slow_count, fast_count + slow_count);
+	//
 	if(num_bits == bits_left)
 		result = current_word & mask[num_bits];
 	else

@@ -23,7 +23,9 @@
  
 #include <stdlib.h>
 #include <stdio.h>
+#include "mpeg2.h"
 #include "mpeg2_internal.h"
+
 #include "mb_buffer.h"
 #include "inv_quantize.h"
 

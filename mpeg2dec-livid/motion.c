@@ -51,13 +51,9 @@ int s, motion_vector_count, mv_format, h_r_size, v_r_size, dmv, mvscale;
     {
       fprintf(stderr,"field based mv\n");
       motion_vertical_field_select[1][s] = motion_vertical_field_select[0][s] = Get_Bits(1);
-#ifdef TRACE
-      if (Trace_Flag)
-      {
-        printf("motion_vertical_field_select[][%d] (%d): %d\n",s,
-          motion_vertical_field_select[0][s],motion_vertical_field_select[0][s]);
-      }
-#endif /* TRACE */
+			//FIXME remove
+			printf("motion_vertical_field_select[][%d] (%d): %d\n",s,
+				motion_vertical_field_select[0][s],motion_vertical_field_select[0][s]);
     }
 
     motion_vector(PMV[0][s],dmvector,h_r_size,v_r_size,dmv,mvscale,0);

@@ -30,12 +30,14 @@
 #include <sys/mman.h>
 
 #include "debug.h"
+#include "mpeg2.h"
 #include "mpeg2_internal.h"
+
 #include "drivers/mga_vid.h"
 #include "display.h"
 
 
-mga_vid_config_t config;
+mga_vid_config_t mga_vid_config;
 uint_8 *vid_data;
 
 void 
@@ -48,26 +50,26 @@ display_frame(uint_8 *src[])
 	cb = src[1];
 	cr = src[2];
 	dest = vid_data;
-	bespitch = (config.src_width + 31) & ~31;
+	bespitch = (mga_vid_config.src_width + 31) & ~31;
 
-	for(h=0; h < config.src_height; h++) 
+	for(h=0; h < mga_vid_config.src_height; h++) 
 	{
-		memcpy(dest, y, config.src_width);
-		y += config.src_width;
+		memcpy(dest, y, mga_vid_config.src_width);
+		y += mga_vid_config.src_width;
 		dest += bespitch;
 	}
 
-	for(h=0; h < config.src_height/2; h++) 
+	for(h=0; h < mga_vid_config.src_height/2; h++) 
 	{
-		memcpy(dest, cb, config.src_width/2);
-		cb += config.src_width/2;
+		memcpy(dest, cb, mga_vid_config.src_width/2);
+		cb += mga_vid_config.src_width/2;
 		dest += bespitch/2;
 	}
 
-	for(h=0; h < config.src_height/2; h++) 
+	for(h=0; h < mga_vid_config.src_height/2; h++) 
 	{
-		memcpy(dest, cr, config.src_width/2);
-		cr += config.src_width/2;
+		memcpy(dest, cr, mga_vid_config.src_width/2);
+		cr += mga_vid_config.src_width/2;
 		dest += bespitch/2;
 	}
 }
@@ -87,16 +89,16 @@ display_init(uint_32 width, uint_32 height)
 		exit(1);
 	}
 
-	config.src_width = width;
-	config.src_height= height;
-	config.dest_width = width;
-	config.dest_height= height;
-	config.x_org= 10;
-	config.y_org= 10;
+	mga_vid_config.src_width = width;
+	mga_vid_config.src_height= height;
+	mga_vid_config.dest_width = width;
+	mga_vid_config.dest_height= height;
+	mga_vid_config.x_org= 10;
+	mga_vid_config.y_org= 10;
 
-	if (ioctl(f,MGA_VID_CONFIG,&config))
+	if (ioctl(f,MGA_VID_CONFIG,&mga_vid_config))
 	{
-		perror("Error in config ioctl");
+		perror("Error in mga_vid_config ioctl");
 	}
 	ioctl(f,MGA_VID_ON,0);
 

@@ -26,16 +26,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "mpeg2.h"
 #include "mpeg2_internal.h"
+
 #include "mb_buffer.h"
 
 
 
 //FIXME dynamically set this
-#define MACROBLOCK_BUFFER_SIZE 3000
+#define MACROBLOCK_BUFFER_SIZE 100
 
 macroblock_t *macroblocks;
-uint_32 num_blocks;
+uint_32 num_blocks = 0;
 
 macroblock_t*
 mb_buffer_init(uint_32 chroma_format)
@@ -69,14 +71,12 @@ mb_buffer_init(uint_32 chroma_format)
 macroblock_t*
 mb_buffer_increment()
 {
-	if (num_blocks < MACROBLOCK_BUFFER_SIZE)
-	{
-		num_blocks++;
-		return &macroblocks[num_blocks];
-	}
-	//FIXME remove
-	fprintf(stderr,"mb_buffer full! %d\n",num_blocks);
-	return 0;
+	num_blocks++;
+
+	if (num_blocks == MACROBLOCK_BUFFER_SIZE)
+		return 0;
+
+	return &macroblocks[num_blocks];
 }
 
 

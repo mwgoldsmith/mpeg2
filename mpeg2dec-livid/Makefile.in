@@ -63,8 +63,10 @@ POST_UNINSTALL = :
 host_alias = @host_alias@
 host_triplet = @host@
 CC = @CC@
+CONFIG_OBJS = @CONFIG_OBJS@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
+MOD_CFLAGS = @MOD_CFLAGS@
 PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
 VERSION = @VERSION@
@@ -76,15 +78,20 @@ CFLAGS = -Wall -O3 -g
 bin_PROGRAMS = mpeg2dec
 
 mpeg2dec_LIBS = 
-mpeg2dec_LDADD = -L/usr/X11R6/lib -lXext -lX11 -lm
+mpeg2dec_LDADD = @CONFIG_OBJS@ -L/usr/X11R6/lib -lXext -lX11 -lm
 
-mpeg2dec_SOURCES = display.c getvlc.c  mb_buffer.c motion.c 	parse.c stats.c idct.c motion_comp.c inv_quantize.c decode.c 	bitstream.c debug.c
-
-
-noinst_HEADERS = config.h getvlc.h stats.h parse.h slice.h mb_buffer.h 	motion_comp.h inv_quantize.h mpeg2.h mpeg2_internal.h display.h idct.h 	old_config.h global.h old_crap.h mpeg2dec.h debug.h bitstream.h
+mpeg2dec_SOURCES = getvlc.c  mb_buffer.c motion.c parse.c stats.c 	idct.c motion_comp.c inv_quantize.c decode.c bitstream.c debug.c 
 
 
-EXTRA_DIST = README Changelog display_mga_vid.c display_x11.c
+mpeg2dec_DEPENDENCIES = @CONFIG_OBJS@
+
+EXTRA_mpeg2dec_SOURCES = display_mga_vid.c display_x11.c idct_mmx.c 	idct_block_mmx.S motion_comp_mmx.c
+
+
+noinst_HEADERS = config.h getvlc.h stats.h parse.h slice.h mb_buffer.h 	motion_comp.h inv_quantize.h mpeg2.h mpeg2_internal.h display.h idct.h 	old_config.h global.h old_crap.h mpeg2dec.h debug.h bitstream.h 	idct_mmx.h motion_comp_mmx.h
+
+
+EXTRA_DIST = README Changelog 
 
 SUBDIRS = tools drivers .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -98,10 +105,8 @@ DEFS = @DEFS@ -I. -I$(srcdir) -I.
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
-mpeg2dec_OBJECTS =  display.o getvlc.o mb_buffer.o motion.o parse.o \
-stats.o idct.o motion_comp.o inv_quantize.o decode.o bitstream.o \
-debug.o
-mpeg2dec_DEPENDENCIES = 
+mpeg2dec_OBJECTS =  getvlc.o mb_buffer.o motion.o parse.o stats.o idct.o \
+motion_comp.o inv_quantize.o decode.o bitstream.o debug.o
 mpeg2dec_LDFLAGS = 
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
@@ -117,7 +122,7 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = gtar
 GZIP_ENV = --best
-SOURCES = $(mpeg2dec_SOURCES)
+SOURCES = $(mpeg2dec_SOURCES) $(EXTRA_mpeg2dec_SOURCES)
 OBJECTS = $(mpeg2dec_OBJECTS)
 
 all: all-redirect
@@ -361,24 +366,6 @@ distdir: $(DISTFILES)
 	      || exit 1; \
 	  fi; \
 	done
-bitstream.o: bitstream.c mpeg2_internal.h bitstream.h
-debug.o: debug.c debug.h
-decode.o: decode.c config.h old_crap.h mpeg2_internal.h mb_buffer.h \
-	motion_comp.h bitstream.h idct.h parse.h display.h \
-	inv_quantize.h
-display.o: display.c debug.h mpeg2_internal.h drivers/mga_vid.h \
-	display.h
-getbits.o: getbits.c old_config.h global.h mpeg2dec.h
-getvlc.o: getvlc.c global.h mpeg2dec.h old_config.h bitstream.h getvlc.h
-idct.o: idct.c mpeg2_internal.h mb_buffer.h idct.h
-inv_quantize.o: inv_quantize.c mpeg2_internal.h mb_buffer.h \
-	inv_quantize.h
-mb_buffer.o: mb_buffer.c mpeg2_internal.h mb_buffer.h
-motion.o: motion.c old_config.h global.h mpeg2dec.h bitstream.h
-motion_comp.o: motion_comp.c mpeg2_internal.h mb_buffer.h motion_comp.h
-parse.o: parse.c mpeg2_internal.h bitstream.h stats.h parse.h old_crap.h
-stats.o: stats.c mpeg2_internal.h debug.h stats.h
-systems.o: systems.c old_config.h global.h mpeg2dec.h
 
 info-am:
 info: info-recursive
@@ -465,7 +452,10 @@ maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 
 
 prof:
-	$(MAKE) mpeg2dec CFLAGS="-g $(CFLAGS)"
+	$(MAKE) mpeg2dec CFLAGS="-pg $(CFLAGS)"
+
+x11:
+	$(MAKE) -e mpeg2dec mpeg2dec_LDADD="display_x11.o idct_block_mmx.S motion_comp_mmx.c idct_mmx.c"
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
