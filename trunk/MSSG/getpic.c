@@ -819,7 +819,7 @@ int dct_type;
     if (Reference_IDCT_Flag)
       Reference_IDCT(ld->block[comp]);
     else
-      Fast_IDCT(ld->block[comp]);
+      Fast_IDCT(ld->block[comp], comp);
     
     /* ISO/IEC 13818-2 section 7.6.8: Adding prediction and coefficient data */
     Add_Block(comp,bx,by,dct_type,(macroblock_type & MACROBLOCK_INTRA)==0);
