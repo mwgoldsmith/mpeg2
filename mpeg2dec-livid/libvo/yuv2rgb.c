@@ -21,14 +21,14 @@
 
 #include "config.h"
 
-#ifdef LIBVO_X11
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
 
 #include "yuv2rgb.h"
 #include "mm_accel.h"
+#include "video_out.h"
+#include "video_out_internal.h"
 
 uint32_t matrix_coefficients = 6;
 
@@ -72,14 +72,14 @@ void yuv2rgb_init (int bpp, int mode)
 {
     yuv2rgb = NULL;
 #ifdef ARCH_X86
-    if (yuv2rgb == NULL && (mm_accel () & MM_ACCEL_X86_MMX)) {
+    if (yuv2rgb == NULL && (vo_mm_accel & MM_ACCEL_X86_MMX)) {
 	yuv2rgb = yuv2rgb_init_mmx (bpp, mode);
 	if (yuv2rgb != NULL)
 	    fprintf (stderr, "Using MMX for colorspace transform\n");
     }
 #endif
 #ifdef LIBVO_MLIB
-    if (yuv2rgb == NULL /*&& (config.flags & MM_ACCEL_MLIB)*/) {
+    if (yuv2rgb == NULL && (vo_mm_accel & MM_ACCEL_MLIB)) {
 	yuv2rgb = yuv2rgb_init_mlib (bpp, mode);
 	if (yuv2rgb != NULL)
 	    fprintf (stderr, "Using mlib for colorspace transform\n");
@@ -407,5 +407,3 @@ static void yuv2rgb_c_init (int bpp, int mode)
 		       entry_size * div_round (cbu * (i-128), 76309));
     }
 }
-
-#endif
