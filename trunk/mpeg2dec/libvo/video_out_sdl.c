@@ -56,6 +56,10 @@ static void sdl_setup_fbuf (vo_instance_t * _instance,
     buf[0] = overlay->pixels[0];
     buf[1] = overlay->pixels[2];
     buf[2] = overlay->pixels[1];
+    if (((long)buf[0] & 15) || ((long)buf[1] & 15) || ((long)buf[2] & 15)) {
+	fprintf (stderr, "Unaligned buffers. Anyone know how to fix this ?\n");
+	exit (1);
+    }
 }
 
 static void sdl_start_fbuf (vo_instance_t * instance,
