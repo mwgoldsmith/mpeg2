@@ -1450,20 +1450,28 @@ do {									\
 		  mc_functions.avg : mc_functions.put));		\
 } while (0)
 
-#define CHECK_DISPLAY					\
-do {							\
-    if (offset == width) {				\
-	slice.f_motion.ref[0][0] += 16 * offset;	\
-	slice.f_motion.ref[0][1] += 4 * offset;		\
-	slice.f_motion.ref[0][2] += 4 * offset;		\
-	slice.b_motion.ref[0][0] += 16 * offset;	\
-	slice.b_motion.ref[0][1] += 4 * offset;		\
-	slice.b_motion.ref[0][2] += 4 * offset;		\
-	dest[0] += 16 * offset;				\
-	dest[1] += 4 * offset;				\
-	dest[2] += 4 * offset;				\
-	offset = 0;					\
-    }							\
+#define CHECK_DISPLAY							\
+do {									\
+    if (offset == width) {						\
+	slice.f_motion.ref[0][0] += 16 * offset;			\
+	slice.f_motion.ref[0][1] += 4 * offset;				\
+	slice.f_motion.ref[0][2] += 4 * offset;				\
+	slice.b_motion.ref[0][0] += 16 * offset;			\
+	slice.b_motion.ref[0][1] += 4 * offset;				\
+	slice.b_motion.ref[0][2] += 4 * offset;				\
+	do { /* just so we can use the break statement */		\
+	    if (picture->current_frame->copy) {				\
+		picture->current_frame->copy (picture->current_frame,	\
+					      dest);			\
+		if (picture->picture_coding_type == B_TYPE)		\
+		    break;						\
+	    }								\
+	    dest[0] += 16 * offset;					\
+	    dest[1] += 4 * offset;					\
+	    dest[2] += 4 * offset;					\
+	} while (0);							\
+	offset = 0;							\
+    }									\
 } while (0)
 
 int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
@@ -1519,7 +1527,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     slice.b_motion.pmv[0][0] = slice.b_motion.pmv[0][1] = 0;
     slice.b_motion.pmv[1][0] = slice.b_motion.pmv[1][1] = 0;
 
-    if ((! HACK_MODE) && (!picture->mpeg1) &&
+    if ((picture->current_frame->copy) &&
 	(picture->picture_coding_type == B_TYPE))
 	offset = 0;
 

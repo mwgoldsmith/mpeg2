@@ -534,6 +534,7 @@ static int xv_alloc_frames (x11_instance_t * this, int width, int height)
 	this->frame[i].vo.base[0] = alloc;
 	this->frame[i].vo.base[1] = alloc + 5 * size;
 	this->frame[i].vo.base[2] = alloc + 4 * size;
+	this->frame[i].vo.copy = NULL;
 	this->frame[i].vo.draw = xv_draw_frame;
 	this->frame[i].vo.this = (vo_instance_t *)this;
 	this->frame[i].xvimage = XvCreateImage (this->display, this->port,
@@ -693,6 +694,7 @@ static int xvshm_alloc_frames (x11_instance_t * this, int width, int height)
 	this->frame[i].vo.base[0] = alloc;
 	this->frame[i].vo.base[1] = alloc + 5 * size;
 	this->frame[i].vo.base[2] = alloc + 4 * size;
+	this->frame[i].vo.copy = NULL;
 	this->frame[i].vo.draw = xvshm_draw_frame;
 	this->frame[i].vo.this = (vo_instance_t *)this;
 	this->frame[i].xvimage =
