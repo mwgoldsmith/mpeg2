@@ -1,3 +1,7 @@
+-integrated CPU detection code
+-alpha IDCT/MC optimizations
+-C IDCT optimizations
+
 mpeg2dec-0.3.0 Wed Nov 27 23:23:23 PST 2002
 -first release using the new libmpeg2 API
 -improved error handling - does not seek to the next sequence header anymore

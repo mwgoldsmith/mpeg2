@@ -62,21 +62,26 @@ void (* mpeg2_idct_add) (int last, int16_t * block,
 static uint8_t clip_lut[1024];
 #define CLIP(i) ((clip_lut+384)[(i)])
 
-/* row (horizontal) IDCT
- *
- * 7 pi 1
- * dst[k] = sum c[l] * src[l] * cos ( -- * ( k + - ) * l )
- * l=0 8 2
- *
- * where: c[0] = 128
- * c[1..7] = 128*sqrt (2)
- */
+#if 1
+#define BUTTERFLY(t0,t1,W0,W1,d0,d1)	\
+do {					\
+    t0 = W0*d0 + W1*d1;			\
+    t1 = W0*d1 - W1*d0;			\
+} while (0)
+#else
+#define BUTTERFLY(t0,t1,W0,W1,d0,d1)	\
+do {					\
+    int tmp = W0 * (d0 + d1);		\
+    t0 = tmp + (W1 - W0) * d1;		\
+    t1 = tmp - (W1 + W0) * d0;		\
+} while (0)
+#endif
 
 static void inline idct_row (int16_t * const block)
 {
     int d0, d1, d2, d3, d4, d5, d6, d7;
     int a0, a1, a2, a3, b0, b1, b2, b3;
-    int tmp, t0, t1, t2, t3;
+    int t0, t1, t2, t3;
 
     d0 = block[0];
     d1 = block[1];
@@ -88,7 +93,7 @@ static void inline idct_row (int16_t * const block)
     d7 = block[7];
 
     /* shortcut */
-    if (! (d4 | d6 | d2 | d1 | d7 | d5 | d3 )) {
+    if (! (d1 | d2 | d3 | d4 | d5 | d6 | d7 )) {
 	block[0] = block[1] = block[2] = block[3] = block[4] =
 	    block[5] = block[6] = block[7] = d0 << 3;
 	return;
@@ -98,24 +103,14 @@ static void inline idct_row (int16_t * const block)
     d4 <<= 11;
     t0 = d0 + d4;
     t1 = d0 - d4;
+    BUTTERFLY (t2, t3, W6, W2, d6, d2);
+    a0 = t0 + t2;
+    a1 = t1 + t3;
+    a2 = t1 - t3;
+    a3 = t0 - t2;
 
-    tmp = W6 * (d2 + d6);
-    t2 = tmp - (W2 + W6) * d6;
-    t3 = tmp + (W2 - W6) * d2;
-
-    a0 = t0 + t3;
-    a1 = t1 + t2;
-    a2 = t1 - t2;
-    a3 = t0 - t3;
-
-    tmp = W7 * (d1 + d7);
-    t0 = tmp + (W1 - W7) * d1;
-    t1 = tmp - (W1 + W7) * d7;
-
-    tmp = W3 * (d5 + d3);
-    t2 = tmp - (W3 - W5) * d5;
-    t3 = tmp - (W3 + W5) * d3;
-
+    BUTTERFLY (t0, t1, W7, W1, d7, d1);
+    BUTTERFLY (t2, t3, W3, W5, d3, d5);
     b0 = t0 + t2;
     b3 = t1 + t3;
     t0 -= t2;
@@ -133,21 +128,11 @@ static void inline idct_row (int16_t * const block)
     block[7] = (a0 - b0) >> 8;
 }
 
-/* column (vertical) IDCT
- *
- * 7 pi 1
- * dst[8*k] = sum c[l] * src[8*l] * cos ( -- * ( k + - ) * l )
- * l=0 8 2
- *
- * where: c[0] = 1/1024
- * c[1..7] = (1/1024)*sqrt (2)
- */
-
 static void inline idct_col (int16_t * const block)
 {
     int d0, d1, d2, d3, d4, d5, d6, d7;
     int a0, a1, a2, a3, b0, b1, b2, b3;
-    int tmp, t0, t1, t2, t3;
+    int t0, t1, t2, t3;
 
     d0 = block[8*0];
     d1 = block[8*1];
@@ -158,37 +143,18 @@ static void inline idct_col (int16_t * const block)
     d6 = block[8*6];
     d7 = block[8*7];
 
-#if 0
-    /* shortcut */
-    if (! (d4 | d6 | d2 | d1 | d7 | d5 | d3 )) {
-	block[0] = block[1] = block[2] = block[3] = block[4] =
-	    block[5] = block[6] = block[7] = d0 << 3;
-	return;
-    }
-#endif
-
     d0 = (d0 << 11) + 65536;
     d4 <<= 11;
     t0 = d0 + d4;
     t1 = d0 - d4;
+    BUTTERFLY (t2, t3, W6, W2, d6, d2);
+    a0 = t0 + t2;
+    a1 = t1 + t3;
+    a2 = t1 - t3;
+    a3 = t0 - t2;
 
-    tmp = W6 * (d2 + d6);
-    t2 = tmp - (W2 + W6) * d6;
-    t3 = tmp + (W2 - W6) * d2;
-
-    a0 = t0 + t3;
-    a1 = t1 + t2;
-    a2 = t1 - t2;
-    a3 = t0 - t3;
-
-    tmp = W7 * (d1 + d7);
-    t0 = tmp + (W1 - W7) * d1;
-    t1 = tmp - (W1 + W7) * d7;
-
-    tmp = W3 * (d5 + d3);
-    t2 = tmp - (W3 - W5) * d5;
-    t3 = tmp - (W3 + W5) * d3;
-
+    BUTTERFLY (t0, t1, W7, W1, d7, d1);
+    BUTTERFLY (t2, t3, W3, W5, d3, d5);
     b0 = t0 + t2;
     b3 = t1 + t3;
     t0 = (t0 - t2) >> 3;
