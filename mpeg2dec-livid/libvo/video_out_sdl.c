@@ -71,15 +71,16 @@
 
 #include "config.h"
 
+#ifdef LIBVO_SDL
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
+#include <SDL/SDL.h>
 
 #include "video_out.h"
 #include "video_out_internal.h"
-
-#include <SDL/SDL.h>
 
 /** Private SDL Data structure **/
 
@@ -343,3 +344,4 @@ vo_instance_t sdlaa_vo_instance = {
     vo_sdlaa_setup, sdl_close, libvo_common_get_frame, sdl_draw_frame
 };
 
+#endif
