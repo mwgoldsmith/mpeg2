@@ -50,7 +50,7 @@ int s, motion_vector_count, mv_format, h_r_size, v_r_size, dmv, mvscale;
     if (mv_format==MV_FIELD && !dmv)
     {
       fprintf(stderr,"field based mv\n");
-      motion_vertical_field_select[1][s] = motion_vertical_field_select[0][s] = Get_Bits(1);
+      motion_vertical_field_select[1][s] = motion_vertical_field_select[0][s] = bitstream_get(1);
 			//FIXME remove
 			printf("motion_vertical_field_select[][%d] (%d): %d\n",s,
 				motion_vertical_field_select[0][s],motion_vertical_field_select[0][s]);
@@ -64,7 +64,7 @@ int s, motion_vector_count, mv_format, h_r_size, v_r_size, dmv, mvscale;
   }
   else
   {
-    motion_vertical_field_select[0][s] = Get_Bits(1);
+    motion_vertical_field_select[0][s] = bitstream_get(1);
 #ifdef TRACE
     if (Trace_Flag)
     {
@@ -74,7 +74,7 @@ int s, motion_vector_count, mv_format, h_r_size, v_r_size, dmv, mvscale;
 #endif /* TRACE */
     motion_vector(PMV[0][s],dmvector,h_r_size,v_r_size,dmv,mvscale,0);
 
-    motion_vertical_field_select[1][s] = Get_Bits(1);
+    motion_vertical_field_select[1][s] = bitstream_get(1);
 #ifdef TRACE
     if (Trace_Flag)
     {
@@ -104,7 +104,7 @@ int full_pel_vector; /* MPEG-1 only */
   /* ISO/IEC 13818-2 Table B-10 */
   motion_code = Get_motion_code();
 
-  motion_residual = (h_r_size!=0 && motion_code!=0) ? Get_Bits(h_r_size) : 0;
+  motion_residual = (h_r_size!=0 && motion_code!=0) ? bitstream_get(h_r_size) : 0;
 
 #ifdef TRACE
   if (Trace_Flag)
@@ -127,7 +127,7 @@ int full_pel_vector; /* MPEG-1 only */
 
   /* vertical component */
   motion_code     = Get_motion_code();
-  motion_residual = (v_r_size!=0 && motion_code!=0) ? Get_Bits(v_r_size) : 0;
+  motion_residual = (v_r_size!=0 && motion_code!=0) ? bitstream_get(v_r_size) : 0;
 
 #ifdef TRACE
   if (Trace_Flag)

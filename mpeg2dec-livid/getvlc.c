@@ -30,6 +30,7 @@
 #include <stdio.h>
 
 #include "global.h"
+#include "config.h"
 #include "bitstream.h"
 #include "getvlc.h"
 
@@ -42,12 +43,6 @@ static int Get_I_macroblock_type _ANSI_ARGS_((void));
 static int Get_P_macroblock_type _ANSI_ARGS_((void));
 static int Get_B_macroblock_type _ANSI_ARGS_((void));
 static int Get_D_macroblock_type _ANSI_ARGS_((void));
-
-/* spatial picture macroblock type processing functions */
-static int Get_I_Spatial_macroblock_type _ANSI_ARGS_((void));
-static int Get_P_Spatial_macroblock_type _ANSI_ARGS_((void));
-static int Get_B_Spatial_macroblock_type _ANSI_ARGS_((void));
-static int Get_SNR_macroblock_type _ANSI_ARGS_((void));
 
 int Get_macroblock_type(int picture_coding_type)
 {
@@ -82,7 +77,7 @@ static int Get_I_macroblock_type()
     printf("macroblock_type(I) ");
 #endif /* TRACE */
 
-  if (Get_Bits1())
+  if (bitstream_get(1))
   {
 #ifdef TRACE
     if (Trace_Flag)
@@ -91,7 +86,7 @@ static int Get_I_macroblock_type()
     return 1;
   }
 
-  if (!Get_Bits1())
+  if (!bitstream_get(1))
   {
     if (!Quiet_Flag)
       printf("Invalid macroblock_type code\n");
@@ -128,10 +123,10 @@ static int Get_P_macroblock_type()
     printf("macroblock_type(P) (");
 #endif /* TRACE */
 
-  if ((code = Show_Bits(6))>=8)
+  if ((code = bitstream_show(6))>=8)
   {
     code >>= 3;
-    Flush_Buffer(PMBtab0[code].len);
+    bitstream_flush(PMBtab0[code].len);
 #ifdef TRACE
     if (Trace_Flag)
     {
@@ -150,7 +145,7 @@ static int Get_P_macroblock_type()
     return 0;
   }
 
-  Flush_Buffer(PMBtab1[code].len);
+  bitstream_flush(PMBtab1[code].len);
 
 #ifdef TRACE
   if (Trace_Flag)
@@ -172,10 +167,10 @@ static int Get_B_macroblock_type()
     printf("macroblock_type(B) (");
 #endif /* TRACE */
 
-  if ((code = Show_Bits(6))>=8)
+  if ((code = bitstream_show(6))>=8)
   {
     code >>= 2;
-    Flush_Buffer(BMBtab0[code].len);
+    bitstream_flush(BMBtab0[code].len);
 
 #ifdef TRACE
     if (Trace_Flag)
@@ -196,7 +191,7 @@ static int Get_B_macroblock_type()
     return 0;
   }
 
-  Flush_Buffer(BMBtab1[code].len);
+  bitstream_flush(BMBtab1[code].len);
 
 #ifdef TRACE
   if (Trace_Flag)
@@ -211,7 +206,7 @@ static int Get_B_macroblock_type()
 
 static int Get_D_macroblock_type()
 {
-  if (!Get_Bits1())
+  if (!bitstream_get(1))
   {
     if (!Quiet_Flag)
       printf("Invalid macroblock_type code\n");
@@ -221,157 +216,7 @@ static int Get_D_macroblock_type()
   return 1;
 }
 
-/* macroblock_type for pictures with spatial scalability */
-static int Get_I_Spatial_macroblock_type()
-{
-  int code;
 
-#ifdef TRACE
-  if (Trace_Flag)
-    printf("macroblock_type(I,spat) (");
-#endif /* TRACE */
-
-  code = Show_Bits(4);
-
-  if (code==0)
-  {
-    if (!Quiet_Flag)
-      printf("Invalid macroblock_type code\n");
-    Fault_Flag = 1;
-    return 0;
-  }
-
-#ifdef TRACE
-  if (Trace_Flag)
-  {
-    Print_Bits(code,4,spIMBtab[code].len);
-    printf("): %02x\n",spIMBtab[code].val);
-  }
-#endif /* TRACE */
-
-  Flush_Buffer(spIMBtab[code].len);
-  return spIMBtab[code].val;
-}
-
-static int Get_P_Spatial_macroblock_type()
-{
-  int code;
-
-#ifdef TRACE
-  if (Trace_Flag)
-    printf("macroblock_type(P,spat) (");
-#endif /* TRACE */
-
-  code = Show_Bits(7);
-
-  if (code<2)
-  {
-    if (!Quiet_Flag)
-      printf("Invalid macroblock_type code\n");
-    Fault_Flag = 1;
-    return 0;
-  }
-
-  if (code>=16)
-  {
-    code >>= 3;
-    Flush_Buffer(spPMBtab0[code].len);
-
-#ifdef TRACE
-    if (Trace_Flag)
-    {
-      Print_Bits(code,4,spPMBtab0[code].len);
-      printf("): %02x\n",spPMBtab0[code].val);
-    }
-#endif /* TRACE */
-
-    return spPMBtab0[code].val;
-  }
-
-  Flush_Buffer(spPMBtab1[code].len);
-
-#ifdef TRACE
-  if (Trace_Flag)
-  {
-    Print_Bits(code,7,spPMBtab1[code].len);
-    printf("): %02x\n",spPMBtab1[code].val);
-  }
-#endif /* TRACE */
-
-  return spPMBtab1[code].val;
-}
-
-static int Get_B_Spatial_macroblock_type()
-{
-  int code;
-  VLCtab *p;
-
-#ifdef TRACE
-  if (Trace_Flag)
-    printf("macroblock_type(B,spat) (");
-#endif /* TRACE */
-
-  code = Show_Bits(9);
-
-  if (code>=64)
-    p = &spBMBtab0[(code>>5)-2];
-  else if (code>=16)
-    p = &spBMBtab1[(code>>2)-4];
-  else if (code>=8)
-    p = &spBMBtab2[code-8];
-  else
-  {
-    if (!Quiet_Flag)
-      printf("Invalid macroblock_type code\n");
-    Fault_Flag = 1;
-    return 0;
-  }
-
-  Flush_Buffer(p->len);
-
-#ifdef TRACE
-  if (Trace_Flag)
-  {
-    Print_Bits(code,9,p->len);
-    printf("): %02x\n",p->val);
-  }
-#endif /* TRACE */
-
-  return p->val;
-}
-
-static int Get_SNR_macroblock_type()
-{
-  int code;
-
-#ifdef TRACE			/* *CH* */
-  if (Trace_Flag)
-    printf("macroblock_type(SNR) (");
-#endif TRACE
-
-  code = Show_Bits(3);
-
-  if (code==0)
-  {
-    if (!Quiet_Flag)
-      printf("Invalid macroblock_type code\n");
-    Fault_Flag = 1;
-    return 0;
-  }
-
-  Flush_Buffer(SNRMBtab[code].len);
-
-#ifdef TRACE			/* *CH* */
-  if (Trace_Flag)
-  {
-    Print_Bits(code,3,SNRMBtab[code].len);
-    printf("): %s (%d)\n",MBdescr[(int)SNRMBtab[code].val],SNRMBtab[code].val);
-  }
-#endif TRACE
-
-
-  return SNRMBtab[code].val;
-}
 
 int Get_motion_code()
 {
@@ -382,7 +227,7 @@ int Get_motion_code()
     printf("motion_code (");
 #endif /* TRACE */
 
-  if (Get_Bits1())
+  if (bitstream_get(1))
   {
 #ifdef TRACE
     if (Trace_Flag)
@@ -391,38 +236,38 @@ int Get_motion_code()
     return 0;
   }
 
-  if ((code = Show_Bits(9))>=64)
+  if ((code = bitstream_show(9))>=64)
   {
     code >>= 6;
-    Flush_Buffer(MVtab0[code].len);
+    bitstream_flush(MVtab0[code].len);
 
 #ifdef TRACE
     if (Trace_Flag)
     {
       Print_Bits(code,3,MVtab0[code].len);
       printf("%d): %d\n",
-        Show_Bits(1),Show_Bits(1)?-MVtab0[code].val:MVtab0[code].val);
+        bitstream_show(1),bitstream_show(1)?-MVtab0[code].val:MVtab0[code].val);
     }
 #endif /* TRACE */
 
-    return Get_Bits1()?-MVtab0[code].val:MVtab0[code].val;
+    return bitstream_get(1)?-MVtab0[code].val:MVtab0[code].val;
   }
 
   if (code>=24)
   {
     code >>= 3;
-    Flush_Buffer(MVtab1[code].len);
+    bitstream_flush(MVtab1[code].len);
 
 #ifdef TRACE
     if (Trace_Flag)
     {
       Print_Bits(code,6,MVtab1[code].len);
       printf("%d): %d\n",
-        Show_Bits(1),Show_Bits(1)?-MVtab1[code].val:MVtab1[code].val);
+        bitstream_show(1),bitstream_show(1)?-MVtab1[code].val:MVtab1[code].val);
     }
 #endif /* TRACE */
 
-    return Get_Bits1()?-MVtab1[code].val:MVtab1[code].val;
+    return bitstream_get(1)?-MVtab1[code].val:MVtab1[code].val;
   }
 
   if ((code-=12)<0)
@@ -431,18 +276,18 @@ int Get_motion_code()
     return 0;
   }
 
-  Flush_Buffer(MVtab2[code].len);
+  bitstream_flush(MVtab2[code].len);
 
 #ifdef TRACE
   if (Trace_Flag)
   {
     Print_Bits(code+12,9,MVtab2[code].len);
     printf("%d): %d\n",
-      Show_Bits(1),Show_Bits(1)?-MVtab2[code].val:MVtab2[code].val);
+      bitstream_show(1),bitstream_show(1)?-MVtab2[code].val:MVtab2[code].val);
   }
 #endif /* TRACE */
 
-  return Get_Bits1() ? -MVtab2[code].val : MVtab2[code].val;
+  return bitstream_get(1) ? -MVtab2[code].val : MVtab2[code].val;
 }
 
 /* get differential motion vector (for dual prime prediction) */
@@ -453,13 +298,13 @@ int Get_dmvector()
     printf("dmvector (");
 #endif /* TRACE */
 
-  if (Get_Bits(1))
+  if (bitstream_get(1))
   {
 #ifdef TRACE
     if (Trace_Flag)
-      printf(Show_Bits(1) ? "11): -1\n" : "10): 1\n");
+      printf(bitstream_show(1) ? "11): -1\n" : "10): 1\n");
 #endif /* TRACE */
-    return Get_Bits(1) ? -1 : 1;
+    return bitstream_get(1) ? -1 : 1;
   }
   else
   {
@@ -480,10 +325,10 @@ int Get_coded_block_pattern()
     printf("coded_block_pattern_420 (");
 #endif /* TRACE */
 
-  if ((code = Show_Bits(9))>=128)
+  if ((code = bitstream_show(9))>=128)
   {
     code >>= 4;
-    Flush_Buffer(CBPtab0[code].len);
+    bitstream_flush(CBPtab0[code].len);
 
 #ifdef TRACE
     if (Trace_Flag)
@@ -501,7 +346,7 @@ int Get_coded_block_pattern()
   if (code>=8)
   {
     code >>= 1;
-    Flush_Buffer(CBPtab1[code].len);
+    bitstream_flush(CBPtab1[code].len);
 
 #ifdef TRACE
     if (Trace_Flag)
@@ -524,7 +369,7 @@ int Get_coded_block_pattern()
     return 0;
   }
 
-  Flush_Buffer(CBPtab2[code].len);
+  bitstream_flush(CBPtab2[code].len);
 
 #ifdef TRACE
   if (Trace_Flag)
@@ -550,7 +395,7 @@ int Get_macroblock_address_increment()
 
   val = 0;
 
-  while ((code = Show_Bits(11))<24)
+  while ((code = bitstream_show(11))<24)
   {
     if (code!=15) /* if not macroblock_stuffing */
     {
@@ -580,14 +425,14 @@ int Get_macroblock_address_increment()
 #endif /* TRACE */
     }
 
-    Flush_Buffer(11);
+    bitstream_flush(11);
   }
 
   /* macroblock_address_increment == 1 */
   /* ('1' is in the MSB position of the lookahead) */
   if (code>=1024)
   {
-    Flush_Buffer(1);
+    bitstream_flush(1);
 #ifdef TRACE
     if (Trace_Flag)
       printf("1): %d\n",val+1);
@@ -600,7 +445,7 @@ int Get_macroblock_address_increment()
   {
     /* remove leading zeros */
     code >>= 6;
-    Flush_Buffer(MBAtab1[code].len);
+    bitstream_flush(MBAtab1[code].len);
 
 #ifdef TRACE
     if (Trace_Flag)
@@ -616,7 +461,7 @@ int Get_macroblock_address_increment()
   
   /* codes 00000011000 ... 0000111xxxx */
   code-= 24; /* remove common base */
-  Flush_Buffer(MBAtab2[code].len);
+  bitstream_flush(MBAtab2[code].len);
 
 #ifdef TRACE
   if (Trace_Flag)
@@ -651,12 +496,12 @@ int Get_Luma_DC_dct_diff()
 #endif /* TRACE */
 
   /* decode length */
-  code = Show_Bits(5);
+  code = bitstream_show(5);
 
   if (code<31)
   {
     size = DClumtab0[code].val;
-    Flush_Buffer(DClumtab0[code].len);
+    bitstream_flush(DClumtab0[code].len);
 #ifdef TRACE
 /*
     if (Trace_Flag)
@@ -669,9 +514,9 @@ int Get_Luma_DC_dct_diff()
   }
   else
   {
-    code = Show_Bits(9) - 0x1f0;
+    code = bitstream_show(9) - 0x1f0;
     size = DClumtab1[code].val;
-    Flush_Buffer(DClumtab1[code].len);
+    bitstream_flush(DClumtab1[code].len);
 
 #ifdef TRACE
 /*
@@ -695,7 +540,7 @@ int Get_Luma_DC_dct_diff()
     dct_diff = 0;
   else
   {
-    dct_diff = Get_Bits(size);
+    dct_diff = bitstream_get(size);
 #ifdef TRACE
 /*
     if (Trace_Flag)
@@ -729,12 +574,12 @@ int Get_Chroma_DC_dct_diff()
 #endif /* TRACE */
 
   /* decode length */
-  code = Show_Bits(5);
+  code = bitstream_show(5);
 
   if (code<31)
   {
     size = DCchromtab0[code].val;
-    Flush_Buffer(DCchromtab0[code].len);
+    bitstream_flush(DCchromtab0[code].len);
 
 #ifdef TRACE
 /*
@@ -748,9 +593,9 @@ int Get_Chroma_DC_dct_diff()
   }
   else
   {
-    code = Show_Bits(10) - 0x3e0;
+    code = bitstream_show(10) - 0x3e0;
     size = DCchromtab1[code].val;
-    Flush_Buffer(DCchromtab1[code].len);
+    bitstream_flush(DCchromtab1[code].len);
 
 #ifdef TRACE
 /*
@@ -774,7 +619,7 @@ int Get_Chroma_DC_dct_diff()
     dct_diff = 0;
   else
   {
-    dct_diff = Get_Bits(size);
+    dct_diff = bitstream_get(size);
 #ifdef TRACE
 /*
     if (Trace_Flag)

@@ -71,21 +71,12 @@ typedef signed char sint_8;
 void Substitute_Frame_Buffer _ANSI_ARGS_ ((int bitstream_framenum, 
   int sequence_framenum));
 
-/* Get_Bits.c */
-void Initialize_Buffer _ANSI_ARGS_((void));
-void Fill_Buffer _ANSI_ARGS_((void));
-unsigned int Show_Bits _ANSI_ARGS_((int n));
-unsigned int Get_Bits1 _ANSI_ARGS_((void));
-void Flush_Buffer _ANSI_ARGS_((int n));
-unsigned int Get_Bits _ANSI_ARGS_((int n));
-int Get_Byte _ANSI_ARGS_((void));
-int Get_Word _ANSI_ARGS_((void));
 
 /* systems.c */
 void Next_Packet _ANSI_ARGS_((void));
 int Get_Long _ANSI_ARGS_((void));
-void Flush_Buffer32 _ANSI_ARGS_((void));
-unsigned int Get_Bits32 _ANSI_ARGS_((void));
+void bitstream_flush32 _ANSI_ARGS_((void));
+unsigned int bitstream_get32 _ANSI_ARGS_((void));
 
 
 /* getblk.c */

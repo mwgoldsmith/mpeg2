@@ -44,18 +44,45 @@
 
 #endif
 
+extern uint_32 bits_left;
+extern uint_32 current_word;
+extern uint_32 next_word;
 
-
-inline uint_32 bitstream_show(uint_32 num_bits);
-inline uint_32 bitstream_get(uint_32 num_bits);
-inline void bitstream_flush(uint_32 num_bits);
 void bitstream_init(void(*fill_function)(uint_32**,uint_32**));
 void bitstream_byte_align(void);
+inline uint_32 bitstream_show_bh(uint_32 num_bits);
+inline uint_32 bitstream_get_bh(uint_32 num_bits);
+inline void bitstream_flush_bh(uint_32 num_bits);
 
+static inline uint_32 
+bitstream_show(uint_32 num_bits)
+{
+	if(num_bits <= bits_left)
+		return (current_word << (32 - bits_left)) >> (32 - num_bits);
+	
+	return bitstream_show_bh(num_bits);
+}
 
-#define Get_Bits(x) bitstream_get((x))
-#define Get_Bits1() bitstream_get(1)
-#define Get_Bits32() bitstream_get(32)
-#define Show_Bits(x) bitstream_show((x))
-#define Flush_Buffer(x) bitstream_flush((x))
-#define Flush_Buffer32() bitstream_flush(32)
+static inline uint_32 
+bitstream_get(uint_32 num_bits)
+{
+	uint_32 result;
+
+	if(num_bits < bits_left)
+	{
+		result = (current_word << (32 - bits_left)) >> (32 - num_bits);
+		bits_left -= num_bits;
+		return result;
+	}
+
+	return bitstream_get_bh(num_bits);
+}
+
+static inline void 
+bitstream_flush(uint_32 num_bits)
+{
+	if(num_bits < bits_left)
+		bits_left -= num_bits;
+	else
+		bitstream_flush_bh(num_bits);
+}

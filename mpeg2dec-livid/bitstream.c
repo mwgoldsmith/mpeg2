@@ -36,50 +36,6 @@ uint_32 *buffer_end;
 
 void (*bitstream_fill_buffer)(uint_32**,uint_32**);
 
-uint_32 mask[33] = 
-{
-	0x0,
-	0x00000001, 0x00000003, 0x00000007, 0x0000000f, 
-	0x0000001f, 0x0000003f, 0x0000007f, 0x000000ff, 
-	0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff, 
-	0x00001fff, 0x00003fff, 0x00007fff, 0x0000ffff, 
-	0x0001ffff, 0x0003ffff, 0x0007ffff, 0x000fffff, 
-	0x00ffffff, 0x003fffff, 0x007fffff, 0x00ffffff, 
-	0x01ffffff, 0x03ffffff, 0x07ffffff, 0x0fffffff, 
-	0x1fffffff, 0x3fffffff, 0x7fffffff, 0xffffffff, 
-};
-
-uint_32 fast_count=0;
-uint_32 slow_count=0;
-
-inline uint_32 
-bitstream_show(uint_32 num_bits)
-{
-	uint_32 result;
-	//fprintf(stderr,"(show) buffer_start %p, buffer_end %p, current_word 0x%08x, next_word 0x%08x, num_bits %d, bits_left %d\n",buffer_start,buffer_end,current_word,next_word,num_bits,bits_left);
-
-	//fast path
-	if(num_bits < bits_left)
-	{
-		//fast_count++;
-		//printf("fast_count = %d slow_count = %d total = %d\n",fast_count,slow_count, fast_count + slow_count);
-		return (current_word  >> (bits_left - num_bits)) & mask[num_bits];
-	}
-
-	//slow_count++;
-	//printf("fast_count = %d slow_count = %d total = %d\n",fast_count,slow_count, fast_count + slow_count);
-	//
-	if(num_bits == bits_left)
-		result = current_word & mask[num_bits];
-	else
-	{
-		result = (current_word  << (num_bits - bits_left)) & mask[num_bits];
-		result |= (next_word  >> (bits_left - num_bits)) & mask[num_bits];
-	}
-	return result;
-}
-
-
 static inline void
 bitstream_fill_next()
 {
@@ -89,66 +45,56 @@ bitstream_fill_next()
 	next_word = swab32(next_word);
 
 	if(buffer_start == buffer_end)
-	{
 		bitstream_fill_buffer(&buffer_start,&buffer_end);
-	}
 }
 
-// Fetches 1-32 bits bitstream buffer
 //
-// Minimized the number of writes by using a bitmask. 
-inline uint_32
-bitstream_get(uint_32 num_bits)
+// The fast paths for _show _flush and _get are in the
+// bitstream.h header file so they can be inlined.
+//
+// The "bottom half" of these routine are suffixed _bh
+//
+// -ah
+//
+
+uint_32 
+bitstream_show_bh(uint_32 num_bits)
 {
 	uint_32 result;
 
-	//fprintf(stderr,"(get) buffer_start %p, buffer_end %p, current_word 0x%08x, next_word 0x%08x, num_bits %d,bits_left %d\n",buffer_start,buffer_end,current_word,next_word,num_bits,bits_left);
-	//fast path
-	if(num_bits < bits_left)
-		return (current_word  >> (bits_left -= num_bits)) & mask[num_bits];
+	result = (current_word << (32 - bits_left)) >> (32 - bits_left);
+	num_bits -= bits_left;
+	result = (result << num_bits) | (next_word >> (32 - num_bits));
 
-	if(num_bits == bits_left)
-	{
-		result = current_word & mask[num_bits];
-		current_word = next_word;
-		bits_left = 32;
-		bitstream_fill_next();
-	}
-	else
-	{
-		result = (current_word  << (num_bits - bits_left)) & mask[num_bits];
-		current_word = next_word;
-		result |= (next_word  >> (32 - num_bits + bits_left)) & mask[num_bits];
-		bits_left = 32 - num_bits + bits_left;
-		bitstream_fill_next();
-	}
+	return result;
+}
+
+uint_32
+bitstream_get_bh(uint_32 num_bits)
+{
+	uint_32 result;
+
+	num_bits -= bits_left;
+	result = (current_word << (32 - bits_left)) >> (32 - bits_left);
+
+	if(num_bits != 0)
+		result = (result << num_bits) | (next_word >> (32 - num_bits));
+	
+	current_word = next_word;
+	bits_left = 32 - num_bits;
+	bitstream_fill_next();
 
 	return result;
 }
 
 inline void 
-bitstream_flush(uint_32 num_bits)
+bitstream_flush_bh(uint_32 num_bits)
 {
-	//fprintf(stderr,"(flush) buffer_start %p, buffer_end %p, current_word 0x%08x, next_word 0x%08x, num_bits %d,bits_left %d\n",buffer_start,buffer_end,current_word,next_word,num_bits,bits_left);
-	//fast path
-	if(num_bits < bits_left)
-	{
-		bits_left -= num_bits;
-		return;
-	}
-
-	if(num_bits == bits_left)
-	{
-		current_word = next_word;
-		bits_left = 32;
-		bitstream_fill_next();
-	}
-	else
-	{
-		current_word = next_word;
-		bits_left = 32 - num_bits + bits_left;
-		bitstream_fill_next();
-	}
+	//fprintf(stderr,"(flush) current_word 0x%08x, next_word 0x%08x, bits_left %d, num_bits %d\n",current_word,next_word,bits_left,num_bits);
+	
+	current_word = next_word;
+	bits_left = (32 + bits_left) - num_bits; 
+	bitstream_fill_next();
 }
 
 void 
