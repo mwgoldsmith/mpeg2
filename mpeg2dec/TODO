@@ -1,13 +1,7 @@
-* fix 'make check' on G4 (just have to update md5sums)
-* update mpeg2dec-stream.tar.gz on sourceforge
-
 * fix altivec IDCT (memset block to 0), optimize mmx idct memset too.
 
-* decode.c:
-	* do not ignore parsing errors in headers
-	* error for "stream non demultiplexed"
-
 * things we dont implement yet
+	* more verbose error reporting
 	* decoding of 4:2:2 streams
 	* export MC information (for XvMC or for error resilience)
 	* export quantizer information (for postprocessing filters)
@@ -18,6 +12,7 @@
 	* synchronization stuff
 	* IDCT precision with sparse matrixes
 	* sparc IDCT/MC optimizations; get rid of mlib code
+	* support for still pictures (decode before receiving next startcode !)
 
 * structural optimizations
 	* integrate idct_add and idct_copy into the main idct routine
