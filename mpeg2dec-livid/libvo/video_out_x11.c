@@ -328,7 +328,11 @@ static void * xshm_create_shm (int size)
     shminfo->shmaddr = shmat (shminfo->shmid, 0, 0);
     if (shminfo->shmaddr == (char *)-1)
 	return NULL;
-    shmctl (shminfo->shmid, IPC_RMID, 0);
+
+    /* on linux the IPC_RMID only kicks off once everyone detaches the shm */
+    /* doing this early avoids shm leaks when we are interrupted. */
+    /* this would break the solaris port though :-/ */
+    /* shmctl (shminfo->shmid, IPC_RMID, 0); */
 
     /* XShmAttach fails on remote displays, so we have to catch this event */
 
@@ -361,6 +365,8 @@ static void xshm_destroy_shm (void)
 	XShmDetach (priv->display, shminfo);
 	shmdt (shminfo->shmaddr);
     }
+    if (shminfo->shmid != -1)
+	shmctl (shminfo->shmid, IPC_RMID, 0);
 }
 
 static int xshm_create_image (int width, int height)
