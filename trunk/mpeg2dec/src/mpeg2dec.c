@@ -49,9 +49,6 @@ static vo_open_t * output_open = NULL;
 
 #ifdef HAVE_SYS_TIME_H
 
-#include <sys/time.h>
-#include <signal.h>
-
 static void print_fps (int final);
 
 static RETSIGTYPE signal_handler (int sig)
