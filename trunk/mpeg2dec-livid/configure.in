@@ -63,11 +63,11 @@ if test "x$DISPLAY_DRIVER" = x -a x$enable_mga = xyes; then
   if test -c "/dev/mga_vid"; then
     AC_MSG_RESULT(found)
     DISPLAY_DRIVER=display_mga_vid.o
-		AM_CONDITIONAL(BUILD_MGA_DRIVER, test 1)
   else
     AC_MSG_RESULT(not found)
   fi
 fi
+AM_CONDITIONAL(BUILD_MGA_DRIVER, test "$DISPLAY_DRIVER" = "display_mga_vid.o")
 
 
 AC_ARG_ENABLE(gatos, 
@@ -105,6 +105,15 @@ fi
 if test "x$DISPLAY_DRIVER" = x; then
   AC_MSG_WARN(no accelerated display driver found -> using X11)
   DISPLAY_DRIVER="display_x11.o yuv2rgb.o"
+
+	dnl Checks for libraries. (X11)
+	AC_PATH_XTRA
+	AC_CHECK_LIB(Xv, XvShmCreateImage, 
+		X_LIBS="$X_LIBS -lXv"
+		ROOT_CFLAGS="$ROOT_CFLAGS -DHAVE_XV",,
+		$X_LIBS $X_PRE_LIBS -lXext -lX11 $X_EXTRA_LIBS)
+	AM_CONDITIONAL(HAVE_X, test "x$no_x" != "xyes")
+
 fi
 
 dnl
@@ -137,14 +146,6 @@ else
 	AC_MSG_RESULT(no)
 fi
 
-
-dnl Checks for libraries. (X11)
-AC_PATH_XTRA
-AC_CHECK_LIB(Xv, XvShmCreateImage,
- 	X_LIBS="$X_LIBS -lXv"
- 	ROOT_CFLAGS="$ROOT_CFLAGS -DHAVE_XV",,
- 	$X_LIBS $X_PRE_LIBS -lXext -lX11 $X_EXTRA_LIBS)
-AM_CONDITIONAL(HAVE_X, test "x$no_x" != "xyes")
 
 dnl Figure out which OS we're on and what to do about it
 case "$host" in

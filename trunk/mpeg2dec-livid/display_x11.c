@@ -31,6 +31,9 @@
 /* private prototypes */
 static void Display_Image (XImage * myximage, unsigned char *ImageData);
 
+/* since it doesn't seem to be defined on some platforms */
+int XShmGetEventBase(Display*);
+
 /* local data */
 static unsigned char *ImageData;
 
@@ -125,7 +128,7 @@ uint_32 display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *ti
    image_width = width;
 
    if (X_already_started)
-      return;
+      return 0;
 
    if(getenv("DISPLAY"))
       name = getenv("DISPLAY");
@@ -276,7 +279,6 @@ uint_32 display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *ti
       if (!Quiet_Flag)
          fprintf(stderr, "Shared memory not supported\nReverting to normal Xlib\n");
    }
-
    if (Shmem_Flag)
       CompletionType = XShmGetEventBase(mydisplay) + ShmCompletion;
 
