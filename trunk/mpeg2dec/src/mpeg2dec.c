@@ -210,63 +210,53 @@ static void handle_args (int argc, char ** argv)
 	in_file = stdin;
 }
 
-int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
+static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 {
-    int state, ret, flags;
+    int state, flags;
 
-    ret = 0;
     while (1) {
-	state = mpeg2_buffer (mpeg2dec, &current, end);
+	state = mpeg2_buffer (&mpeg2dec, &current, end);
 	switch (state) {
 	case -1:
-	    return ret;
+	    return;
 	case STATE_SEQUENCE:
-	    if (vo_setup (output, mpeg2dec->sequence.width,
-			  mpeg2dec->sequence.height)) {
+	    if (vo_setup (output, mpeg2dec.sequence.width,
+			  mpeg2dec.sequence.height)) {
 		fprintf (stderr, "display setup failed\n");
 		exit (1);
 	    }
 	    flags = VO_PREDICTION_FLAG | VO_BOTH_FIELDS;
-	    mpeg2_set_buf (mpeg2dec, vo_get_frame (output, flags));
-	    mpeg2_set_buf (mpeg2dec, vo_get_frame (output, flags));
+	    mpeg2_set_buf (&mpeg2dec, vo_get_frame (output, flags));
+	    mpeg2_set_buf (&mpeg2dec, vo_get_frame (output, flags));
 	    break;
 	case STATE_PICTURE:
-	    flags = ((mpeg2dec->picture.nb_fields > 1) ? VO_BOTH_FIELDS :
-		     ((mpeg2dec->picture.flags & PIC_FLAG_TOP_FIELD_FIRST) ?
+	    flags = ((mpeg2dec.picture.nb_fields > 1) ? VO_BOTH_FIELDS :
+		     ((mpeg2dec.picture.flags & PIC_FLAG_TOP_FIELD_FIRST) ?
 		      VO_TOP_FIELD : VO_BOTTOM_FIELD));
-	    if ((mpeg2dec->picture.flags & PIC_MASK_CODING_TYPE) !=
+	    if ((mpeg2dec.picture.flags & PIC_MASK_CODING_TYPE) !=
 		PIC_FLAG_CODING_TYPE_B)
 		flags |= VO_PREDICTION_FLAG;
-	    mpeg2_set_buf (mpeg2dec, vo_get_frame (output, flags));
+	    mpeg2_set_buf (&mpeg2dec, vo_get_frame (output, flags));
 	    break;
 	case STATE_PICTURE_2ND:
-	    flags = ((mpeg2dec->picture.nb_fields > 1) ? VO_BOTH_FIELDS :
-		     ((mpeg2dec->picture.flags & PIC_FLAG_TOP_FIELD_FIRST) ?
+	    flags = ((mpeg2dec.picture.nb_fields > 1) ? VO_BOTH_FIELDS :
+		     ((mpeg2dec.picture.flags & PIC_FLAG_TOP_FIELD_FIRST) ?
 		      VO_TOP_FIELD : VO_BOTTOM_FIELD));
-	    vo_field (mpeg2dec->current_frame, flags);
+	    vo_field (mpeg2dec.current_frame, flags);
 	    break;
 	case STATE_SLICE:
 	case STATE_END:
-	    vo_draw (((mpeg2dec->picture.flags & PIC_MASK_CODING_TYPE) ==
-		      PIC_FLAG_CODING_TYPE_B) ? mpeg2dec->current_frame :
-		     mpeg2dec->forward_reference_frame);
-	    ret++;
+	    vo_draw (((mpeg2dec.picture.flags & PIC_MASK_CODING_TYPE) ==
+		      PIC_FLAG_CODING_TYPE_B) ? mpeg2dec.current_frame :
+		     mpeg2dec.forward_reference_frame);
+	    print_fps (0);
 	    if (state == STATE_END) {
-		vo_draw (mpeg2dec->backward_reference_frame);
-		ret++;
+		vo_draw (mpeg2dec.backward_reference_frame);
+		print_fps (0);
 	    }
 	    break;
 	}
     }
-}
-
-static void decode_mpeg2 (uint8_t * buf, uint8_t * end)
-{
-    int num_frames;
-
-    num_frames = mpeg2_decode_data (&mpeg2dec, buf, end);
-    while (num_frames--)
-	print_fps (0);
 }
 
 #define DEMUX_PAYLOAD_START 1
