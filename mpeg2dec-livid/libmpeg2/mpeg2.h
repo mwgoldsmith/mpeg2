@@ -25,7 +25,6 @@
 
 typedef struct mpeg2dec_s {
     vo_output_video_t * output;
-    vo_output_video_attr_t attr;
     void * user_data;
 
     // here we store the allocated images, which we get from

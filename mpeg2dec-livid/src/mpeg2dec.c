@@ -165,7 +165,7 @@ static void handle_args (int argc, char * argv[])
     // Now we have the output plugin, we need to initialize it
     // 
     video_out->open (&video_out, "What Name?");
-    mpeg2_init_ng (&mpeg2dec, video_out, NULL);
+    mpeg2_init (&mpeg2dec, video_out, NULL);
 }
 
 static void ps_loop (void)
@@ -231,7 +231,7 @@ static void ps_loop (void)
 		    tmp1 += mpeg1_skip_table [*tmp1 >> 4];
 		}
 		if (tmp1 < tmp2) {
-		    num_frames = mpeg2_decode_data_ng (&mpeg2dec, tmp1, tmp2);
+		    num_frames = mpeg2_decode_data (&mpeg2dec, tmp1, tmp2);
 		    while (num_frames--)
 			print_fps (0);
 		}
@@ -270,7 +270,7 @@ static void es_loop (void)
 	end = buffer + fread (buffer, 1, BUFFER_SIZE, in_file);
 
 	num_frames =
-	    mpeg2_decode_data_ng (&mpeg2dec, buffer, end);
+	    mpeg2_decode_data (&mpeg2dec, buffer, end);
 
 	while (num_frames--)
 	    print_fps (0);
@@ -293,7 +293,7 @@ int main (int argc,char *argv[])
     else
 	es_loop ();
 
-    mpeg2_close_ng (&mpeg2dec);
+    mpeg2_close (&mpeg2dec);
     print_fps (1);
     return 0;
 }
