@@ -9,6 +9,9 @@
 /* ppc architecture */
 /* #undef ARCH_PPC */
 
+/* alpha architecture */
+/* #undef ARCH_ALPHA */
+
 /* x86 architecture */
 #define ARCH_X86
 
