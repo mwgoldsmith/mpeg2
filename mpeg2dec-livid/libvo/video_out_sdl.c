@@ -129,8 +129,6 @@ static void check_events (void)
 	if (event.type == SDL_VIDEORESIZE)
 	    this->surface = SDL_SetVideoMode (event.resize.w, event.resize.h,
 					      this->bpp, this->sdlflags);
-	if (event.type == SDL_KEYDOWN)
-	    SDL_Delay (4000);
     }
 }
 
@@ -274,6 +272,7 @@ static vo_instance_t * sdl_setup (vo_instance_t * _this, int width, int height)
 	
     /* We dont want those in our event queue */
     SDL_EventState(SDL_ACTIVEEVENT, SDL_IGNORE);
+    SDL_EventState(SDL_KEYDOWN, SDL_IGNORE);
     SDL_EventState(SDL_KEYUP, SDL_IGNORE);
     SDL_EventState(SDL_MOUSEMOTION, SDL_IGNORE);
     SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_IGNORE);
