@@ -412,6 +412,8 @@ mpeg2dec_t * mpeg2_init (void)
 	return NULL;
 
     memset (mpeg2dec->decoder.DCTblock, 0, 64 * sizeof (int16_t));
+    memset (mpeg2dec->intra_quantizer_matrix, 0, 64 * sizeof (uint8_t));
+    memset (mpeg2dec->non_intra_quantizer_matrix, 0, 64 * sizeof (uint8_t));
     mpeg2dec->buf_start = mpeg2dec->buf_end = NULL;
     mpeg2dec->num_pts = 0;
 

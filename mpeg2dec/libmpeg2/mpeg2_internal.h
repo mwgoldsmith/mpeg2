@@ -96,15 +96,16 @@ struct mpeg2_decoder_s {
 		      unsigned int v_offset);
     void * fbuf_id;
 
-    int quantizer_scale;	/* remove */
-    int dmv_offset;		/* remove */
-    unsigned int v_offset;	/* remove */
+    int dmv_offset;
+    unsigned int v_offset;
 
     /* now non-slice-specific information */
 
     /* sequence header stuff */
-    uint8_t intra_quantizer_matrix [64];
-    uint8_t non_intra_quantizer_matrix [64];
+    uint16_t * intra_quantizer_matrix;
+    uint16_t * non_intra_quantizer_matrix;
+    uint16_t intra_quantizer_prescale [32][64];
+    uint16_t non_intra_quantizer_prescale [32][64];
 
     /* The width and height of the picture snapped to macroblock units */
     int width;
@@ -127,8 +128,6 @@ struct mpeg2_decoder_s {
     /* bool to indicate whether intra blocks have motion vectors */
     /* (for concealment) */
     int concealment_motion_vectors;
-    /* bit to indicate which quantization table to use */
-    int q_scale_type;
     /* bool to use different vlc tables */
     int intra_vlc_format;
     /* used for DMV MC */
@@ -206,8 +205,11 @@ struct mpeg2dec_s {
     int16_t display_offset_x, display_offset_y;
 
     int copy_matrix;
+    int8_t q_scale_type, intra_scaled, non_intra_scaled;
     uint8_t intra_quantizer_matrix [64];
     uint8_t non_intra_quantizer_matrix [64];
+    uint8_t new_intra_quantizer_matrix [64];
+    uint8_t new_non_intra_quantizer_matrix [64];
 };
 
 typedef struct {

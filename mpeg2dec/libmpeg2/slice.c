@@ -38,13 +38,6 @@ extern void (* mpeg2_cpu_state_restore) (cpu_state_t * state);
 
 #include "vlc.h"
 
-static int non_linear_quantizer_scale [] = {
-     0,  1,  2,  3,  4,  5,   6,   7,
-     8, 10, 12, 14, 16, 18,  20,  22,
-    24, 28, 32, 36, 40, 44,  48,  52,
-    56, 64, 72, 80, 88, 96, 104, 112
-};
-
 static inline int get_macroblock_modes (mpeg2_decoder_t * const decoder)
 {
 #define bit_buf (decoder->bitstream_buf)
@@ -138,7 +131,7 @@ static inline int get_macroblock_modes (mpeg2_decoder_t * const decoder)
 #undef bit_ptr
 }
 
-static inline int get_quantizer_scale (mpeg2_decoder_t * const decoder)
+static inline void get_quantizer_scale (mpeg2_decoder_t * const decoder)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -149,10 +142,10 @@ static inline int get_quantizer_scale (mpeg2_decoder_t * const decoder)
     quantizer_scale_code = UBITS (bit_buf, 5);
     DUMPBITS (bit_buf, bits, 5);
 
-    if (decoder->q_scale_type)
-	return non_linear_quantizer_scale [quantizer_scale_code];
-    else
-	return quantizer_scale_code << 1;
+    decoder->intra_quantizer_matrix =
+	decoder->intra_quantizer_prescale [quantizer_scale_code];
+    decoder->non_intra_quantizer_matrix =
+	decoder->non_intra_quantizer_prescale [quantizer_scale_code];
 #undef bit_buf
 #undef bits
 #undef bit_ptr
@@ -348,8 +341,7 @@ static void get_intra_block_B14 (mpeg2_decoder_t * const decoder)
     int j;
     int val;
     const uint8_t * scan = decoder->scan;
-    const uint8_t * quant_matrix = decoder->intra_quantizer_matrix;
-    int quantizer_scale = decoder->quantizer_scale;
+    const uint16_t * quant_matrix = decoder->intra_quantizer_matrix;
     int mismatch;
     const DCTtab * tab;
     uint32_t bit_buf;
@@ -380,7 +372,7 @@ static void get_intra_block_B14 (mpeg2_decoder_t * const decoder)
 	    j = scan[i];
 	    bit_buf <<= tab->len;
 	    bits += tab->len + 1;
-	    val = (tab->level * quantizer_scale * quant_matrix[j]) >> 4;
+	    val = (tab->level * quant_matrix[j]) >> 4;
 
 	    /* if (bitstream_get (1)) val = -val; */
 	    val = (val ^ SBITS (bit_buf, 1)) - SBITS (bit_buf, 1);
@@ -412,8 +404,7 @@ static void get_intra_block_B14 (mpeg2_decoder_t * const decoder)
 
 	    DUMPBITS (bit_buf, bits, 12);
 	    NEEDBITS (bit_buf, bits, bit_ptr);
-	    val = (SBITS (bit_buf, 12) *
-		   quantizer_scale * quant_matrix[j]) / 16;
+	    val = (SBITS (bit_buf, 12) * quant_matrix[j]) / 16;
 
 	    SATURATE (val);
 	    dest[j] = val;
@@ -462,8 +453,7 @@ static void get_intra_block_B15 (mpeg2_decoder_t * const decoder)
     int j;
     int val;
     const uint8_t * scan = decoder->scan;
-    const uint8_t * quant_matrix = decoder->intra_quantizer_matrix;
-    int quantizer_scale = decoder->quantizer_scale;
+    const uint16_t * quant_matrix = decoder->intra_quantizer_matrix;
     int mismatch;
     const DCTtab * tab;
     uint32_t bit_buf;
@@ -493,7 +483,7 @@ static void get_intra_block_B15 (mpeg2_decoder_t * const decoder)
 		j = scan[i];
 		bit_buf <<= tab->len;
 		bits += tab->len + 1;
-		val = (tab->level * quantizer_scale * quant_matrix[j]) >> 4;
+		val = (tab->level * quant_matrix[j]) >> 4;
 
 		/* if (bitstream_get (1)) val = -val; */
 		val = (val ^ SBITS (bit_buf, 1)) - SBITS (bit_buf, 1);
@@ -524,8 +514,7 @@ static void get_intra_block_B15 (mpeg2_decoder_t * const decoder)
 
 		DUMPBITS (bit_buf, bits, 12);
 		NEEDBITS (bit_buf, bits, bit_ptr);
-		val = (SBITS (bit_buf, 12) *
-		       quantizer_scale * quant_matrix[j]) / 16;
+		val = (SBITS (bit_buf, 12) * quant_matrix[j]) / 16;
 
 		SATURATE (val);
 		dest[j] = val;
@@ -575,8 +564,7 @@ static int get_non_intra_block (mpeg2_decoder_t * const decoder)
     int j;
     int val;
     const uint8_t * scan = decoder->scan;
-    const uint8_t * quant_matrix = decoder->non_intra_quantizer_matrix;
-    int quantizer_scale = decoder->quantizer_scale;
+    const uint16_t * quant_matrix = decoder->non_intra_quantizer_matrix;
     int mismatch;
     const DCTtab * tab;
     uint32_t bit_buf;
@@ -613,7 +601,7 @@ static int get_non_intra_block (mpeg2_decoder_t * const decoder)
 	    j = scan[i];
 	    bit_buf <<= tab->len;
 	    bits += tab->len + 1;
-	    val = ((2*tab->level+1) * quantizer_scale * quant_matrix[j]) >> 5;
+	    val = ((2 * tab->level + 1) * quant_matrix[j]) >> 5;
 
 	    /* if (bitstream_get (1)) val = -val; */
 	    val = (val ^ SBITS (bit_buf, 1)) - SBITS (bit_buf, 1);
@@ -649,7 +637,7 @@ static int get_non_intra_block (mpeg2_decoder_t * const decoder)
 	    DUMPBITS (bit_buf, bits, 12);
 	    NEEDBITS (bit_buf, bits, bit_ptr);
 	    val = 2 * (SBITS (bit_buf, 12) + SBITS (bit_buf, 1)) + 1;
-	    val = (val * quantizer_scale * quant_matrix[j]) / 32;
+	    val = (val * quant_matrix[j]) / 32;
 
 	    SATURATE (val);
 	    dest[j] = val;
@@ -699,8 +687,7 @@ static void get_mpeg1_intra_block (mpeg2_decoder_t * const decoder)
     int j;
     int val;
     const uint8_t * scan = decoder->scan;
-    const uint8_t * quant_matrix = decoder->intra_quantizer_matrix;
-    int quantizer_scale = decoder->quantizer_scale;
+    const uint16_t * quant_matrix = decoder->intra_quantizer_matrix;
     const DCTtab * tab;
     uint32_t bit_buf;
     int bits;
@@ -729,7 +716,7 @@ static void get_mpeg1_intra_block (mpeg2_decoder_t * const decoder)
 	    j = scan[i];
 	    bit_buf <<= tab->len;
 	    bits += tab->len + 1;
-	    val = (tab->level * quantizer_scale * quant_matrix[j]) >> 4;
+	    val = (tab->level * quant_matrix[j]) >> 4;
 
 	    /* oddification */
 	    val = (val - 1) | 1;
@@ -768,7 +755,7 @@ static void get_mpeg1_intra_block (mpeg2_decoder_t * const decoder)
 		DUMPBITS (bit_buf, bits, 8);
 		val = UBITS (bit_buf, 8) + 2 * val;
 	    }
-	    val = (val * quantizer_scale * quant_matrix[j]) / 16;
+	    val = (val * quant_matrix[j]) / 16;
 
 	    /* oddification */
 	    val = (val + ~SBITS (val, 1)) | 1;
@@ -818,8 +805,7 @@ static int get_mpeg1_non_intra_block (mpeg2_decoder_t * const decoder)
     int j;
     int val;
     const uint8_t * scan = decoder->scan;
-    const uint8_t * quant_matrix = decoder->non_intra_quantizer_matrix;
-    int quantizer_scale = decoder->quantizer_scale;
+    const uint16_t * quant_matrix = decoder->non_intra_quantizer_matrix;
     const DCTtab * tab;
     uint32_t bit_buf;
     int bits;
@@ -854,7 +840,7 @@ static int get_mpeg1_non_intra_block (mpeg2_decoder_t * const decoder)
 	    j = scan[i];
 	    bit_buf <<= tab->len;
 	    bits += tab->len + 1;
-	    val = ((2*tab->level+1) * quantizer_scale * quant_matrix[j]) >> 5;
+	    val = ((2 * tab->level + 1) * quant_matrix[j]) >> 5;
 
 	    /* oddification */
 	    val = (val - 1) | 1;
@@ -897,7 +883,7 @@ static int get_mpeg1_non_intra_block (mpeg2_decoder_t * const decoder)
 		val = UBITS (bit_buf, 8) + 2 * val;
 	    }
 	    val = 2 * (val + SBITS (val, 1)) + 1;
-	    val = (val * quantizer_scale * quant_matrix[j]) / 32;
+	    val = (val * quant_matrix[j]) / 32;
 
 	    /* oddification */
 	    val = (val + ~SBITS (val, 1)) | 1;
@@ -1554,7 +1540,7 @@ static inline int slice_init (mpeg2_decoder_t * const decoder, int code)
     decoder->dest[1] = decoder->picture_dest[1] + offset;
     decoder->dest[2] = decoder->picture_dest[2] + offset;
 
-    decoder->quantizer_scale = get_quantizer_scale (decoder);
+    get_quantizer_scale (decoder);
 
     /* ignore intra_slice and all the extra data */
     while (bit_buf & 0x80000000) {
@@ -1634,7 +1620,7 @@ void mpeg2_slice (mpeg2_decoder_t * const decoder, const int code,
 
 	/* maybe integrate MACROBLOCK_QUANT test into get_macroblock_modes ? */
 	if (macroblock_modes & MACROBLOCK_QUANT)
-	    decoder->quantizer_scale = get_quantizer_scale (decoder);
+	    get_quantizer_scale (decoder);
 
 	if (macroblock_modes & MACROBLOCK_INTRA) {
 
