@@ -29,8 +29,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+
 #include <oms/oms.h>
-#include <oms/plugin/output_video.h>
+#include <oms/plugin/codec_video.h>
 
 #include "config.h"
 #include "mpeg2.h"
@@ -77,7 +78,7 @@ static plugin_codec_video_t codec_mpeg2dec = {
         _mpeg2dec_open,		// open
         _mpeg2dec_close,	// close
         _mpeg2dec_read,		// read
-        NULL,			// display (will be inserted automagically)
+        NULL,			// output (will be inserted automagically)
 	NULL,
 	NULL
 };
@@ -120,7 +121,7 @@ static int _mpeg2dec_open (void *foo)
  *
  **/
 
-int _mpeg2dec_close (plugin_t *plugin)
+static int _mpeg2dec_close (plugin_t *plugin)
 {
 	return 0;
 }

@@ -35,13 +35,15 @@
 
 #include <oms/oms.h>
 #include <oms/plugin/output_video.h>
-#include "drivers/mga_vid.h"
+#include "mga_vid.h"
 
 static int _mga_open		(void *name);
 static int _mga_close		(plugin_t *plugin);
 static u_int32_t _mga_setup	(u_int32_t width, u_int32_t height, u_int32_t fullscreen, char *title);
-static u_int32_t draw_frame	(u_int8_t *src[]);
-u_int32_t draw_slice		(u_int8_t *src[], u_int32_t slice_num);
+static u_int32_t draw_frame_g200	(u_int8_t *src[]);
+static u_int32_t draw_frame_g400	(u_int8_t *src[]);
+static u_int32_t draw_slice_g200	(u_int8_t *src[], u_int32_t slice_num);
+static u_int32_t draw_slice_g400	(u_int8_t *src[], u_int32_t slice_num);
 static void flip_page		(void);
 static void free_image_buffer	(vo_image_buffer_t* image);
 static vo_image_buffer_t* allocate_image_buffer(u_int32_t height, u_int32_t width, u_int32_t format);
@@ -65,8 +67,8 @@ static plugin_output_video_t video_mga = {
 	_mga_open,
 	_mga_close,
 	_mga_setup,
-	draw_frame,
-	draw_slice,
+	NULL,		// will be inserted when opened (see below)
+	NULL,		// will be inserted when opened (see below)
 	flip_page,
 	allocate_image_buffer,
 	free_image_buffer
@@ -77,17 +79,7 @@ static plugin_output_video_t video_mga = {
  *
  **/
 
-static int _mga_close (plugin_t *plugin)
-{
-	return 0;
-}
-
-
-/**
- *
- **/
-
-static void write_frame_g200(u_int8_t *y,u_int8_t *cr, u_int8_t *cb)
+static inline void write_frame_g200 (u_int8_t *y, u_int8_t *cr, u_int8_t *cb)
 {
 	u_int8_t *dest;
 	u_int32_t bespitch,h,w;
@@ -115,7 +107,7 @@ static void write_frame_g200(u_int8_t *y,u_int8_t *cr, u_int8_t *cb)
  *
  **/
 
-static void write_frame_g400(u_int8_t *y,u_int8_t *cr, u_int8_t *cb)
+static inline void write_frame_g400 (u_int8_t *y,u_int8_t *cr, u_int8_t *cb)
 {
 	u_int8_t *dest;
 	u_int32_t bespitch,h;
@@ -147,7 +139,7 @@ static void write_frame_g400(u_int8_t *y,u_int8_t *cr, u_int8_t *cb)
  *
  **/
 
-static void write_slice_g200(u_int8_t *y,u_int8_t *cr, u_int8_t *cb,u_int32_t slice_num)
+static inline void write_slice_g200 (u_int8_t *y,u_int8_t *cr, u_int8_t *cb,u_int32_t slice_num)
 {
 	u_int8_t *dest;
 	u_int32_t bespitch,h,w;
@@ -178,10 +170,11 @@ static void write_slice_g200(u_int8_t *y,u_int8_t *cr, u_int8_t *cb,u_int32_t sl
  *
  **/
 
-static void write_slice_g400(u_int8_t *y,u_int8_t *cr, u_int8_t *cb,u_int32_t slice_num)
+static inline void write_slice_g400 (u_int8_t *y,u_int8_t *cr, u_int8_t *cb,u_int32_t slice_num)
 {
 	u_int8_t *dest;
-	u_int32_t bespitch,h;
+	u_int32_t bespitch;
+	u_int32_t h;
 
 	bespitch = (_mga_priv.mga_vid_config.src_width + 31) & ~31;
 	dest = _mga_priv.vid_data + bespitch * 16 * slice_num;
@@ -196,7 +189,7 @@ static void write_slice_g400(u_int8_t *y,u_int8_t *cr, u_int8_t *cb,u_int32_t sl
 		bespitch/2 * 8 * slice_num;
 
 	for(h=0; h < 8; h++) {
-		memcpy(dest, cb, _mga_priv.mga_vid_config.src_width/2);
+		memcpy (dest, cb, _mga_priv.mga_vid_config.src_width/2);
 		cb += _mga_priv.mga_vid_config.src_width/2;
 		dest += bespitch/2;
 	}
@@ -204,7 +197,7 @@ static void write_slice_g400(u_int8_t *y,u_int8_t *cr, u_int8_t *cb,u_int32_t sl
 	dest = _mga_priv.vid_data +  bespitch * _mga_priv.mga_vid_config.src_height + bespitch * _mga_priv.mga_vid_config.src_height / 4 + bespitch/2 * 8 * slice_num;
 
 	for(h=0; h < 8; h++) {
-		memcpy(dest, cr, _mga_priv.mga_vid_config.src_width/2);
+		memcpy (dest, cr, _mga_priv.mga_vid_config.src_width/2);
 		cr += _mga_priv.mga_vid_config.src_width/2;
 		dest += bespitch/2;
 	}
@@ -215,12 +208,9 @@ static void write_slice_g400(u_int8_t *y,u_int8_t *cr, u_int8_t *cb,u_int32_t sl
  *
  **/
 
-u_int32_t draw_slice(u_int8_t *src[], u_int32_t slice_num)
+static u_int32_t draw_slice_g200 (u_int8_t *src[], u_int32_t slice_num)
 {
-	if (_mga_priv.mga_vid_config.card_type == MGA_G200)
-		write_slice_g200(src[0],src[2],src[1],slice_num);
-	else
-		write_slice_g400(src[0],src[2],src[1],slice_num);
+	write_slice_g200(src[0],src[2],src[1],slice_num);
 
 	return 0;
 }
@@ -230,7 +220,19 @@ u_int32_t draw_slice(u_int8_t *src[], u_int32_t slice_num)
  *
  **/
 
-static void flip_page(void)
+static u_int32_t draw_slice_g400 (u_int8_t *src[], u_int32_t slice_num)
+{
+	write_slice_g400(src[0],src[2],src[1],slice_num);
+
+	return 0;
+}
+
+
+/**
+ *
+ **/
+
+static void flip_page (void)
 {
 	ioctl (_mga_priv.fd, MGA_VID_FSEL, &_mga_priv.next_frame);
 
@@ -247,14 +249,24 @@ static void flip_page(void)
  *
  **/
 
-static u_int32_t draw_frame(u_int8_t *src[])
+static u_int32_t draw_frame_g200 (u_int8_t *src[])
 {
-	if (_mga_priv.mga_vid_config.card_type == MGA_G200)
-		write_frame_g200(src[0], src[2], src[1]);
-	else
-		write_frame_g400(src[0], src[2], src[1]);
-
+	write_frame_g200(src[0], src[2], src[1]);
 	flip_page();
+
+	return 0;
+}
+
+
+/**
+ *
+ **/
+
+static u_int32_t draw_frame_g400 (u_int8_t *src[])
+{
+	write_frame_g400 (src[0], src[2], src[1]);
+	flip_page();
+
 	return 0;
 }
 
@@ -265,17 +277,37 @@ static u_int32_t draw_frame(u_int8_t *src[])
 
 static int _mga_open (void *name)
 {
-fprintf (stderr, "++++++++++++++++++++MGA Open\n");
+	int toast;
 
 	_mga_priv.x_org = 10;
 	_mga_priv.y_org = 10;
 
-	_mga_priv.fd = open ((char *) name, O_RDWR);
-
-	if (_mga_priv.fd == -1) {
+	if ((_mga_priv.fd = open ((char *) name, O_RDWR)) < 0) {
 		fprintf (stderr, "Can't open %s\n", (char *) name); 
 		return -1;
 	}
+
+
+	if (_mga_priv.mga_vid_config.card_type == MGA_G200) {
+		video_mga.draw_frame = draw_frame_g200;
+		video_mga.draw_slice = draw_slice_g200;
+	} else {
+		video_mga.draw_frame = draw_frame_g400;
+		video_mga.draw_slice = draw_slice_g400;
+	}
+
+	return 0;
+}
+
+
+/**
+ *
+ **/
+
+static int _mga_close (plugin_t *plugin)
+{
+	close (_mga_priv.fd);
+	_mga_priv.fd = -1;
 
 	return 0;
 }
@@ -290,8 +322,6 @@ static u_int32_t _mga_setup (u_int32_t width, u_int32_t height, u_int32_t fullsc
 	char *frame_mem;
 	u_int32_t frame_size;
 
-fprintf (stderr, "++++++++++++++++++++MGA setup\n");
-fprintf (stderr, " ===== %x %x ===\n", width, height);
 	_mga_priv.width = width;
 	_mga_priv.height = height;
 
@@ -314,15 +344,12 @@ fprintf (stderr, " ===== %x %x ===\n", width, height);
 	frame_size	= ((_mga_priv.width + 31) & ~31) * _mga_priv.height + (((_mga_priv.width + 31) & ~31) * _mga_priv.height) / 2;
 	frame_mem	= (char*)mmap(0,frame_size*2,PROT_WRITE,MAP_SHARED,_mga_priv.fd,0);
 	_mga_priv.frame0	= frame_mem;
-fprintf (stderr, "+++size++++++++++++ %x\n", frame_size);
-fprintf (stderr, "+++++++++++++++ %p\n", frame_mem);
 	_mga_priv.frame1	= frame_mem + frame_size;
-	_mga_priv.vid_data	= _mga_priv.frame0;
-fprintf (stderr, "+++++++++++++++ %p\n", _mga_priv.vid_data);
+	_mga_priv.vid_data	= frame_mem;
 	_mga_priv.next_frame	= 0;
 
 	//clear the buffer
-	memset (frame_mem,0x80,frame_size*2);
+	memset (frame_mem, 0x80, frame_size*2);
 
 	return 0;
 }
@@ -334,25 +361,19 @@ fprintf (stderr, "+++++++++++++++ %p\n", _mga_priv.vid_data);
 
 //FIXME this should allocate AGP memory via agpgart and then we
 //can use AGP transfers to the framebuffer
-static vo_image_buffer_t* allocate_image_buffer(u_int32_t height, u_int32_t width, u_int32_t format)
+static vo_image_buffer_t* allocate_image_buffer (u_int32_t height, u_int32_t width, u_int32_t format)
 {
 	vo_image_buffer_t *image;
-	uint_32 image_size;
 
-	image = malloc(sizeof(vo_image_buffer_t));
-
-	if(!image)
+	if (!(image = malloc (sizeof (vo_image_buffer_t))))
 		return NULL;
 
-	image->height = height;
-	image->width = width;
-	image->format = format;
+	image->height	= height;
+	image->width	= width;
+	image->format	= format;
 
         //we only know how to do 4:2:0 planar yuv right now.
-	image_size = width * height * 3 / 2;
-	image->base = malloc(image_size);
-
-	if(!image->base) {
+	if (!(image->base = malloc (width * height * 3 / 2))) {
 		free(image);
 		return NULL;
 	}
@@ -367,8 +388,8 @@ static vo_image_buffer_t* allocate_image_buffer(u_int32_t height, u_int32_t widt
 
 static void free_image_buffer(vo_image_buffer_t* image)
 {
-	free(image->base);
-	free(image);
+	free (image->base);
+	free (image);
 }
 
 

@@ -51,7 +51,7 @@ display_sdl_la_SOURCES = video_out_sdl.c
 display_sdl_la_LDFLAGS = -avoid-version -module -Wl,-soname,display_sdl
 
 
-noinst_HEADERS = video_out.h video_out_internal.h mmx.h
+noinst_HEADERS = video_out_internal.h mmx.h
 
 
 mostlyclean-generic:
