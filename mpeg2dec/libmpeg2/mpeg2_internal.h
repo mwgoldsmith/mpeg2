@@ -133,8 +133,6 @@ struct decoder_s {
     int second_field;
 
     int mpeg1;
-
-    int progressive_sequence;	/* only for decoding picture coding ext */
 };
 
 typedef struct {

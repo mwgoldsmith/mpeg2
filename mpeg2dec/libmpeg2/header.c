@@ -155,7 +155,6 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
     decoder->scan = mpeg2_scan_norm;
     decoder->picture_structure = FRAME_PICTURE;
     decoder->second_field = 0;
-    decoder->progressive_sequence = 1;
 
     mpeg2dec->ext_state = SEQ_EXT | USER_DATA;
     mpeg2dec->state = STATE_SEQUENCE;
@@ -184,8 +183,7 @@ static int sequence_ext (mpeg2dec_t * mpeg2dec)
     height = sequence->display_height = sequence->picture_height +=
 	(buffer[2] << 7) & 0x3000;
     flags = sequence->flags | SEQ_FLAG_MPEG2;
-    decoder->progressive_sequence = buffer[1] >> 3;
-    if (!(decoder->progressive_sequence)) {
+    if (!(buffer[1] & 8)) {
 	flags &= ~SEQ_FLAG_PROGRESSIVE_SEQUENCE;
 	height = (height + 31) & ~31;
     }
@@ -451,7 +449,7 @@ static int picture_coding_ext (mpeg2dec_t * mpeg2dec)
 	picture->nb_fields = 1;
 	break;
     case FRAME_PICTURE:
-	if (!(decoder->progressive_sequence)) {
+	if (!(mpeg2dec->sequence.flags & SEQ_FLAG_PROGRESSIVE_SEQUENCE)) {
 	    picture->nb_fields = (buffer[3] & 2) ? 3 : 2;
 	    flags |= (buffer[3] & 128) ? PIC_FLAG_TOP_FIELD_FIRST : 0;
 	} else
@@ -547,8 +545,9 @@ void mpeg2_header_slice (mpeg2dec_t * mpeg2dec)
 	case TOP_FIELD:		flags = CONVERT_TOP_FIELD;	break;
 	case BOTTOM_FIELD:	flags = CONVERT_BOTTOM_FIELD;	break;
 	default:
-	    flags = ((mpeg2dec->decoder.progressive_sequence) ?
-		     CONVERT_FRAME : CONVERT_BOTH_FIELDS);
+	    flags =
+		((mpeg2dec->sequence.flags & SEQ_FLAG_PROGRESSIVE_SEQUENCE) ?
+		 CONVERT_FRAME : CONVERT_BOTH_FIELDS);
 	}
 	mpeg2dec->convert_start (mpeg2dec->convert_id, mpeg2dec->fbuf->buf,
 				 flags);
