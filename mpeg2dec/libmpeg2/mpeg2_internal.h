@@ -214,6 +214,7 @@ int mpeg2_header_gop (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_picture (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_extension (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec);
+void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec);
 void mpeg2_header_slice (mpeg2dec_t * mpeg2dec);
 void mpeg2_header_end (mpeg2dec_t * mpeg2dec);
 

@@ -38,9 +38,6 @@
 #define SEQ_VIDEO_FORMAT_MAC 0x80
 #define SEQ_VIDEO_FORMAT_UNSPECIFIED 0xa0
 
-/* this flag is private, do not rely on it */
-#define SEQ_FLAG_SQUARE_PIXEL 0x80000000
-
 typedef struct {
     unsigned int width, height;
     unsigned int chroma_width, chroma_height;

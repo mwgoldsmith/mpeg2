@@ -219,6 +219,7 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	/* state transition after a sequence header */
 	case RECEIVED (0x00, STATE_SEQUENCE):
 	case RECEIVED (0xb8, STATE_SEQUENCE):
+	    mpeg2_header_sequence_finalize (mpeg2dec);
 	    if (!repeated_sequence(&(mpeg2dec->last_sequence),
 				   &(mpeg2dec->sequence))) {
 		mpeg2dec->last_sequence = mpeg2dec->sequence;
