@@ -92,27 +92,28 @@ static void decode_allocate_image_buffers (vo_functions_t * output, picture_t * 
 
     frame_size = picture->coded_picture_width * picture->coded_picture_height;
 
+    // allocate images in YV12 format
     tmp = output->allocate_image_buffer (picture->coded_picture_height,
-					    picture->coded_picture_width, 0);
+					    picture->coded_picture_width, 0x32315659);
     picture->throwaway_frame[0] = tmp->base;
-    picture->throwaway_frame[1] = picture->throwaway_frame[0] + frame_size;
-    picture->throwaway_frame[2] = picture->throwaway_frame[1] + frame_size/4;
+    picture->throwaway_frame[2] = picture->throwaway_frame[0] + frame_size;
+    picture->throwaway_frame[1] = picture->throwaway_frame[2] + frame_size/4;
 
     tmp = output->allocate_image_buffer (picture->coded_picture_height,
-					    picture->coded_picture_width, 0);
+					    picture->coded_picture_width, 0x32315659);
     picture->backward_reference_frame[0] = tmp->base;
-    picture->backward_reference_frame[1] =
-	picture->backward_reference_frame[0] + frame_size;
     picture->backward_reference_frame[2] =
-	picture->backward_reference_frame[1] + frame_size/4;
+	picture->backward_reference_frame[0] + frame_size;
+    picture->backward_reference_frame[1] =
+	picture->backward_reference_frame[2] + frame_size/4;
 
     tmp = output->allocate_image_buffer (picture->coded_picture_height,
-					    picture->coded_picture_width, 0);
+					    picture->coded_picture_width, 0x32315659);
     picture->forward_reference_frame[0] = tmp->base;
-    picture->forward_reference_frame[1] =
-	picture->forward_reference_frame[0] + frame_size;
     picture->forward_reference_frame[2] =
-	picture->forward_reference_frame[1] + frame_size/4;
+	picture->forward_reference_frame[0] + frame_size;
+    picture->forward_reference_frame[1] =
+	picture->forward_reference_frame[2] + frame_size/4;
 }
 
 
