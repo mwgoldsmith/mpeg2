@@ -41,6 +41,7 @@
 
 #include <stdio.h>
 #include <inttypes.h>
+#include <mm_accel.h>
 
 #include "mpeg2_internal.h"
 #include "mm_accel.h"
