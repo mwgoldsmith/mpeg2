@@ -32,7 +32,7 @@ static inline void bitstream_init (slice_t * slice, uint8_t * start)
     slice->bitstream_bits = 0;
 }
 
-// make sure that there are at least 16 valid bits in bit_buf
+/* make sure that there are at least 16 valid bits in bit_buf */
 #define NEEDBITS(bit_buf,bits,bit_ptr)		\
 do {						\
     if (bits > 0) {				\
@@ -41,17 +41,17 @@ do {						\
     }						\
 } while (0)
 
-// remove num valid bits from bit_buf
+/* remove num valid bits from bit_buf */
 #define DUMPBITS(bit_buf,bits,num)	\
 do {					\
     bit_buf <<= (num);			\
     bits += (num);			\
 } while (0)
 
-// take num bits from the high part of bit_buf and zero extend them
+/* take num bits from the high part of bit_buf and zero extend them */
 #define UBITS(bit_buf,num) (((uint32_t)(bit_buf)) >> (32 - (num)))
 
-// take num bits from the high part of bit_buf and sign extend them
+/* take num bits from the high part of bit_buf and sign extend them */
 #define SBITS(bit_buf,num) (((int32_t)(bit_buf)) >> (32 - (num)))
 
 typedef struct {

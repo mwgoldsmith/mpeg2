@@ -53,7 +53,7 @@
 #define W7 565  /* 2048*sqrt (2)*cos (7*pi/16) */
 
 
-// idct main entry point 
+/* idct main entry point  */
 void (*idct_block_copy) (int16_t * block, uint8_t * dest, int stride);
 void (*idct_block_add) (int16_t * block, uint8_t * dest, int stride);
 

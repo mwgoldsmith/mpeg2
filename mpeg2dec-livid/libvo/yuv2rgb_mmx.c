@@ -37,8 +37,11 @@
 #include "yuv2rgb.h"
 #include "yuv2rgb_mmx.h"
 
-#define movntq "movq" // for MMX-only processors
-//#define movntq "movntq" // use this for processors that have SSE or 3Dnow
+#if 1
+#define movntq "movq"	/* for MMX-only processors */
+#else
+#define movntq "movntq"	/* use this for processors that have SSE or 3Dnow */
+#endif
 
 static void yuv420_rgb16_mmx (uint8_t *image,
 			      uint8_t *py, uint8_t *pu, uint8_t *pv,
@@ -50,8 +53,8 @@ static void yuv420_rgb16_mmx (uint8_t *image,
 
 	while (y < v_size) {
 		while (x < h_size) {
-			// this code deals with SINGLE scan line at a time,
-			// it converts 8 pixels in each iteration
+		    /* this code deals with SINGLE scan line at a time, */
+		    /* it converts 8 pixels in each iteration */
 			__asm__ (".align 8\n\t"
 				MMX_INIT
 				: : "r" (py), "r" (pu), "r" (pv), "r" (image));
@@ -82,7 +85,7 @@ static void yuv420_rgb16_mmx (uint8_t *image,
 		even = (!even);
 	};
 
-	//__asm__ ("emms\n\t");
+	/* __asm__ ("emms\n\t"); */
 }
 
 
@@ -95,8 +98,11 @@ static void yuv420_argb32_mmx (uint8_t * image, uint8_t * py,
 	int x = 0, y = 0;
 
 	while (y < v_size)  {
-		while (x < h_size)  { // this mmx assembly code deals with SINGLE scan line at a time, it convert 8 pixels in each iteration
-			// load data for start of next scan line
+	    while (x < h_size)  {
+		/* this mmx assembly code deals with SINGLE scan line at */
+		/* a time, it convert 8 pixels in each iteration */
+
+		/* load data for start of next scan line */
 			__asm__ (MMX_INIT
 				: : "r" (py), "r" (pu), "r" (pv), "r" (image));
 
@@ -129,21 +135,19 @@ static void yuv420_argb32_mmx (uint8_t * image, uint8_t * py,
 		even = (!even);
 	}
 
-	//__asm__ ("emms\n\t");
+	/* __asm__ ("emms\n\t"); */
 }
 
 
 yuv2rgb_fun yuv2rgb_init_mmx (int bpp, int mode)
 {
-//FIXME: video_out_x11 doesn't set the mode BEFORE calling init ... so just
-//	make a wild guess here ...
-
+    /* FIXME this code is broken */
 	if (bpp == 15 || bpp == 16) {
 		if (mode == MODE_RGB)
 			return yuv420_rgb16_mmx;
 		if (mode == MODE_BGR)
 			return yuv420_rgb16_mmx;
-			//return NULL;
+		/* return NULL; */
 		return yuv420_rgb16_mmx;
 	}
 
@@ -161,7 +165,7 @@ yuv2rgb_fun yuv2rgb_init_mmx (int bpp, int mode)
 			return NULL;
 	}
 
-	return NULL; // Fallback to C.
+	return NULL; /* Fallback to C */
 }
 
 #endif

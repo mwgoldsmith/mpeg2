@@ -11,7 +11,7 @@
  */
 
 typedef struct frame_s {
-    uint8_t * base[3];	// pointer to 3 planes
+    uint8_t * base[3];	/* pointer to 3 planes */
     void * private;
 } frame_t;
 
@@ -23,5 +23,5 @@ typedef struct vo_output_video_s {
     void (* draw_frame) (frame_t * frame);
 } vo_output_video_t;
 
-// NULL terminated array of all drivers
+/* NULL terminated array of all drivers */
 extern vo_output_video_t * video_out_drivers[];

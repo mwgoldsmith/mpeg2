@@ -22,7 +22,7 @@
 #include "config.h"
 
 #include <stdio.h>
-#include <string.h>	// memcpy/memset, try to remove
+#include <string.h>	/* memcpy/memset, try to remove */
 #include <stdlib.h>
 #include <inttypes.h>
 
@@ -60,7 +60,7 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output)
 
     memset (mpeg2dec->picture, 0, sizeof (picture_t));
 
-    // initialize supstructures
+    /* initialize supstructures */
     header_state_init (mpeg2dec->picture);
 }
 

@@ -19,10 +19,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// generic accelerations
+/* generic accelerations */
 #define MM_ACCEL_MLIB		0x00000001
 
-// x86 accelerations
+/* x86 accelerations */
 #define MM_ACCEL_X86_MMX	0x80000000
 #define MM_ACCEL_X86_3DNOW	0x40000000
 #define MM_ACCEL_X86_MMXEXT	0x20000000

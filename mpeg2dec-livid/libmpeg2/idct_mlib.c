@@ -38,8 +38,8 @@ void idct_block_copy_mlib (int16_t * block, uint8_t * dest, int stride)
 
 void idct_block_add_mlib (int16_t * block, uint8_t * dest, int stride)
 {
-    // Should we use mlib_VideoIDCT_IEEE_S16_S16 here ??
-    // it's ~30% slower.
+    /* Should we use mlib_VideoIDCT_IEEE_S16_S16 here ?? */
+    /* it's ~30% slower. */
     mlib_VideoIDCT8x8_S16_S16 (block, block);
     mlib_VideoAddBlock_U8_S16 (dest, block, stride);
 }

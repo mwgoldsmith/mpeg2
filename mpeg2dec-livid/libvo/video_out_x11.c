@@ -1,4 +1,4 @@
-// make sure shm is not reused while the server uses it
+/* make sure shm is not reused while the server uses it */
 
 /* 
  * video_out_x11.c, X11 interface
@@ -21,7 +21,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>	// memcmp, strcmp
+#include <string.h>	/* memcmp, strcmp */
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <inttypes.h>
@@ -76,7 +76,7 @@ static int x11_get_visual_info (void)
     int number;
     int i;
 
-    // list truecolor visuals for the default screen
+    /* list truecolor visuals for the default screen */
     visualTemplate.class = TrueColor;
     visualTemplate.screen = DefaultScreen (priv->display);
     XvisualInfoTable = XGetVisualInfo (priv->display,
@@ -85,7 +85,7 @@ static int x11_get_visual_info (void)
     if (XvisualInfoTable == NULL)
 	return 1;
 
-    // find the visual with the highest depth
+    /* find the visual with the highest depth */
     XvisualInfo = XvisualInfoTable;
     for (i = 1; i < number; i++)
 	if (XvisualInfoTable[i].depth > XvisualInfo->depth)
@@ -144,8 +144,8 @@ static int x11_yuv2rgb_init (void)
     struct x11_priv_s * priv = &x11_priv;
     int mode;
 
-    // If we have blue in the lowest bit then "obviously" RGB
-    // (walken : the guy who wrote this convention never heard of endianness ?)
+    /* If we have blue in the lowest bit then "obviously" RGB */
+    /* (the guy who wrote this convention never heard of endianness ?) */
     mode = ((priv->ximage->blue_mask & 0x01)) ? MODE_RGB : MODE_BGR;
 
 #ifdef WORDS_BIGENDIAN 
@@ -202,7 +202,7 @@ static int x11_common_setup (int width, int height,
 	return 1;
     }
 
-    // FIXME set WM_DELETE_WINDOW protocol ? to avoid shm leaks
+    /* FIXME set WM_DELETE_WINDOW protocol ? to avoid shm leaks */
 
     XMapWindow (priv->display, priv->window);
 
@@ -518,7 +518,7 @@ static int xv_common_setup (int width, int height,
 	return 1;
     }
 
-    // FIXME set WM_DELETE_WINDOW protocol ? to avoid shm leaks
+    /* FIXME set WM_DELETE_WINDOW protocol ? to avoid shm leaks */
 
     XMapWindow (priv->display, priv->window);
 

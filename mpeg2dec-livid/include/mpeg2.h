@@ -19,14 +19,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-//
-// Structure for the mpeg2dec decoder.
-//
+/* Structure for the mpeg2dec decoder */
 
 typedef struct mpeg2dec_s {
     vo_output_video_t * output;
 
-    // this is where we keep the state of the decoder
+    /* this is where we keep the state of the decoder */
     struct picture_s * picture;
     
     uint32_t shift;
@@ -36,16 +34,14 @@ typedef struct mpeg2dec_s {
     int drop_frame;
     int in_slice;
 
-    // the maximum chunk size is determined by vbv_buffer_size 
-    // which is 224K for
-    // MP@ML streams. 
-    // (we make no pretenses of decoding anything more than that)
-    // allocated in init gcc has problems allocating
-    // such big structures
+    /* the maximum chunk size is determined by vbv_buffer_size */
+    /* which is 224K for MP@ML streams. */
+    /* (we make no pretenses of decoding anything more than that) */
+    /* allocated in init - gcc has problems allocating such big structures */
     uint8_t * chunk_buffer;
-    // pointer to current position in chunk_buffer
+    /* pointer to current position in chunk_buffer */
     uint8_t * chunk_ptr;
-    // last start code ?
+    /* last start code ? */
     uint8_t code;
 } mpeg2dec_t ;
 
@@ -53,11 +49,11 @@ typedef struct mpeg2dec_s {
 
 
 
-// initialize mpegdec with a opaque user pointer
-// if not needed in the output use NULL here
+/* initialize mpegdec with a opaque user pointer */
+/* if not needed in the output use NULL here */
 void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output);
 
-// destroy everything which was allocated, shutdown the output
+/* destroy everything which was allocated, shutdown the output */
 void mpeg2_close (mpeg2dec_t * mpeg2dec);
 
 

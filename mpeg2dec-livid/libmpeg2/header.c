@@ -26,7 +26,7 @@
 #include "mpeg2_internal.h"
 #include "attributes.h"
 
-// default intra quant matrix, in zig-zag order
+/* default intra quant matrix, in zig-zag order */
 static uint8_t default_intra_quantizer_matrix[64] ATTR_ALIGN(16) = {
     8,
     16, 16,
@@ -47,7 +47,7 @@ static uint8_t default_intra_quantizer_matrix[64] ATTR_ALIGN(16) = {
 
 uint8_t scan_norm[64] ATTR_ALIGN(16) =
 {
-    // Zig-Zag scan pattern
+    /* Zig-Zag scan pattern */
      0, 1, 8,16, 9, 2, 3,10,
     17,24,32,25,18,11, 4, 5,
     12,19,26,33,40,48,41,34,
@@ -60,7 +60,7 @@ uint8_t scan_norm[64] ATTR_ALIGN(16) =
 
 uint8_t scan_alt[64] ATTR_ALIGN(16) =
 {
-    // Alternate scan pattern
+    /* Alternate scan pattern */
     0,8,16,24,1,9,2,10,17,25,32,40,48,56,57,49,
     41,33,26,18,3,11,4,12,19,27,34,42,50,58,35,43,
     51,59,20,28,5,13,6,14,21,29,36,44,52,60,37,45,
@@ -69,9 +69,6 @@ uint8_t scan_alt[64] ATTR_ALIGN(16) =
 
 void header_state_init (picture_t * picture)
 {
-    //FIXME we should set pointers to the real scan matrices here (mmx vs
-    //normal) instead of the ifdefs in header_process_picture_coding_extension
-
     picture->scan = scan_norm;
 }
 
@@ -82,7 +79,7 @@ int header_process_sequence_header (picture_t * picture, uint8_t * buffer)
     int i;
 
     if ((buffer[6] & 0x20) != 0x20)
-	return 1;	// missing marker_bit
+	return 1;	/* missing marker_bit */
 
     v_size = (buffer[0] << 16) | (buffer[1] << 8) | buffer[2];
 
@@ -90,14 +87,14 @@ int header_process_sequence_header (picture_t * picture, uint8_t * buffer)
     v_size = ((v_size & 0xfff) + 15) & ~15;
 
     if ((h_size > 768) || (v_size > 576))
-	return 1;	// size restrictions for MP@ML or MPEG1
+	return 1;	/* size restrictions for MP@ML or MPEG1 */
 
-    //XXX this needs field fixups
+    /* XXX this needs field fixups */
     picture->coded_picture_width = h_size;
     picture->coded_picture_height = v_size;
     picture->last_mba = ((h_size * v_size) >> 8) - 1;
 
-    // this is not used by the decoder
+    /* this is not used by the decoder */
     picture->aspect_ratio_information = buffer[3] >> 4;
     picture->frame_rate_code = buffer[3] & 15;
 
@@ -121,15 +118,15 @@ int header_process_sequence_header (picture_t * picture, uint8_t * buffer)
 	    picture->non_intra_quantizer_matrix[i] = 16;
     }
 
-    // MPEG1 - for testing only
+    /* MPEG1 - for testing only */
     picture->mpeg1 = 1;
     picture->intra_dc_precision = 0;
     picture->frame_pred_frame_dct = 1;
     picture->q_scale_type = 0;
     picture->concealment_motion_vectors = 0;
-    //picture->alternate_scan = 0;
+    /* picture->alternate_scan = 0; */
     picture->picture_structure = FRAME_PICTURE;
-    //picture->second_field = 0;
+    /* picture->second_field = 0; */
 
     return 0;
 }
@@ -137,19 +134,19 @@ int header_process_sequence_header (picture_t * picture, uint8_t * buffer)
 static int header_process_sequence_extension (picture_t * picture,
 					      uint8_t * buffer)
 {
-    // check chroma format, size extensions, marker bit
+    /* check chroma format, size extensions, marker bit */
     if (((buffer[1] & 0x07) != 0x02) || (buffer[2] & 0xe0) ||
 	((buffer[3] & 0x01) != 0x01))
 	return 1;
 
-    // this is not used by the decoder
+    /* this is not used by the decoder */
     picture->progressive_sequence = (buffer[1] >> 3) & 1;
 
     if (picture->progressive_sequence)
 	picture->coded_picture_height =
 	    (picture->coded_picture_height + 31) & ~31;
 
-    // MPEG1 - for testing only
+    /* MPEG1 - for testing only */
     picture->mpeg1 = 0;
 
     return 0;
@@ -178,7 +175,7 @@ static int header_process_quant_matrix_extension (picture_t * picture,
 
 static int header_process_picture_coding_extension (picture_t * picture, uint8_t * buffer)
 {
-    //pre subtract 1 for use later in compute_motion_vector
+    /* pre subtract 1 for use later in compute_motion_vector */
     picture->f_code[0][0] = (buffer[0] & 15) - 1;
     picture->f_code[0][1] = (buffer[1] >> 4) - 1;
     picture->f_code[1][0] = (buffer[1] & 15) - 1;
@@ -191,12 +188,12 @@ static int header_process_picture_coding_extension (picture_t * picture, uint8_t
     picture->q_scale_type = (buffer[3] >> 4) & 1;
     picture->intra_vlc_format = (buffer[3] >> 3) & 1;
 
-    if (buffer[3] & 4)	// alternate_scan
+    if (buffer[3] & 4)	/* alternate_scan */
 	picture->scan = scan_alt;
     else
 	picture->scan = scan_norm;
 
-    // these are not used by the decoder
+    /* these are not used by the decoder */
     picture->top_field_first = buffer[3] >> 7;
     picture->repeat_first_field = (buffer[3] >> 1) & 1;
     picture->progressive_frame = buffer[4] >> 7;
@@ -207,13 +204,13 @@ static int header_process_picture_coding_extension (picture_t * picture, uint8_t
 int header_process_extension (picture_t * picture, uint8_t * buffer)
 {
     switch (buffer[0] & 0xf0) {
-    case 0x10:	// sequence extension
+    case 0x10:	/* sequence extension */
 	return header_process_sequence_extension (picture, buffer);
 
-    case 0x30:	// quant matrix extension
+    case 0x30:	/* quant matrix extension */
 	return header_process_quant_matrix_extension (picture, buffer);
 
-    case 0x80:	// picture coding extension
+    case 0x80:	/* picture coding extension */
 	return header_process_picture_coding_extension (picture, buffer);
     }
 
@@ -224,14 +221,14 @@ int header_process_picture_header (picture_t *picture, uint8_t * buffer)
 {
     picture->picture_coding_type = (buffer [1] >> 3) & 7;
 
-    // forward_f_code and backward_f_code - used in mpeg1 only
+    /* forward_f_code and backward_f_code - used in mpeg1 only */
     picture->f_code[0][1] = (buffer[3] >> 2) & 1;
     picture->f_code[0][0] =
 	(((buffer[3] << 1) | (buffer[4] >> 7)) & 7) - 1;
     picture->f_code[1][1] = (buffer[4] >> 6) & 1;
     picture->f_code[1][0] = ((buffer[4] >> 3) & 7) - 1;
 
-    // move in header_process_picture_header
+    /* move in header_process_picture_header */
         picture->second_field =
             (picture->picture_structure != FRAME_PICTURE) &&
             !(picture->second_field);

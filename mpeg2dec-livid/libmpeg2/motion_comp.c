@@ -67,7 +67,7 @@ void motion_comp_init (void)
 #define put(predictor,i) dest[i] = predictor (i)
 #define avg(predictor,i) dest[i] = avg2 (predictor (i), dest[i])
 
-// mc function template
+/* mc function template */
 
 #define MC_FUNC(op,xy)						\
 static void MC_##op##_##xy##16_c (uint8_t * dest, uint8_t * ref,\
@@ -111,7 +111,7 @@ static void MC_##op##_##xy##8_c (uint8_t * dest, uint8_t * ref,	\
     } while (--height);						\
 }
 
-// definitions of the actual mc functions
+/* definitions of the actual mc functions */
 
 MC_FUNC (put,)
 MC_FUNC (avg,)

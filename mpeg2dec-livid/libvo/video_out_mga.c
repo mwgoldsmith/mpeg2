@@ -134,12 +134,12 @@ static int mga_setup (int width, int height)
     if (priv->fd < 0) {
 	priv->fd = open ("/dev/mga_vid", O_RDWR);
 	if (priv->fd < 0) {
-	    //LOG (LOG_DEBUG, "Can't open /dev_mga_vid"); 
+	    /* LOG (LOG_DEBUG, "Can't open /dev_mga_vid"); */
 	    return -1;
 	}
 
 	if (ioctl (priv->fd, MGA_VID_ON, 0)) {
-	    //LOG (LOG_DEBUG, "Can't ioctl /dev_mga_vid"); 
+	    /* LOG (LOG_DEBUG, "Can't ioctl /dev_mga_vid"); */
 	    close (priv->fd);
 	    return -1;
 	}
@@ -151,7 +151,7 @@ static int mga_setup (int width, int height)
     priv->mga_vid_config.dest_height = height;
     priv->mga_vid_config.x_org = 10;
     priv->mga_vid_config.y_org = 10;
-    priv->mga_vid_config.colkey_on = 0; // 1;
+    priv->mga_vid_config.colkey_on = 0; /* 1; */
 
     if (ioctl (priv->fd, MGA_VID_CONFIG, &priv->mga_vid_config))
 	perror ("Error in priv->mga_vid_config ioctl");
@@ -193,15 +193,15 @@ static void mga_draw_frame (frame_t * frame)
 
     ioctl (priv->fd, MGA_VID_FSEL, &priv->next_frame);
 
-    priv->next_frame ^= 2; // switch between fields A1 and B1
+    priv->next_frame ^= 2; /* switch between fields A1 and B1 */
     if (priv->next_frame) 
 	priv->vid_data = priv->frame1;
     else
 	priv->vid_data = priv->frame0;
 }
 
-//FIXME this should allocate AGP memory via agpgart and then we
-//can use AGP transfers to the framebuffer
+/* FIXME this should allocate AGP memory via agpgart and then we */
+/* can use AGP transfers to the framebuffer */
 
 vo_output_video_t video_out_mga = {
     "mga",

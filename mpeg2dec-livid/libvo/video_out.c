@@ -27,9 +27,8 @@
 #include "video_out.h"
 #include "video_out_internal.h"
 
-//
-// Externally visible list of all vo drivers
-//
+
+/* Externally visible list of all vo drivers */
 
 extern vo_output_video_t video_out_xvshm;
 extern vo_output_video_t video_out_xv;
