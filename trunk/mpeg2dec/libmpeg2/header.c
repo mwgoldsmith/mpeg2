@@ -127,8 +127,12 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
 {
     uint8_t * buffer = mpeg2dec->chunk_start;
     mpeg2_sequence_t * sequence = &(mpeg2dec->new_sequence);
-    static unsigned int frame_period[9] = {
-	0, 1126125, 1125000, 1080000, 900900, 900000, 540000, 450450, 450000
+    static unsigned int frame_period[16] = {
+	0, 1126125, 1125000, 1080000, 900900, 900000, 540000, 450450, 450000,
+	/* unofficial: xing 15 fps */
+	1800000,
+	/* unofficial: libmpeg3 "Unofficial economy rates" 5/10/12/15 fps */
+	5400000, 2700000, 2250000, 1800000, 0, 0
     };
     int i;
 
@@ -149,9 +153,7 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
 		       SEQ_VIDEO_FORMAT_UNSPECIFIED);
 
     sequence->pixel_width = buffer[3] >> 4;	/* aspect ratio */
-    sequence->frame_period = 0;
-    if ((buffer[3] & 15) < 9)
-	sequence->frame_period = frame_period[buffer[3] & 15];
+    sequence->frame_period = frame_period[buffer[3] & 15];
 
     sequence->byte_rate = (buffer[4]<<10) | (buffer[5]<<2) | (buffer[6]>>6);
 
