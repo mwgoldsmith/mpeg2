@@ -188,7 +188,7 @@ static void inline idct_col (int16_t *block)
 
 #if 0
     if (! (x1 | x2 | x3 | x4 | x5 | x6 | x7 )) {
-	block[8*0] = block[8*1] = block[8*2] = block[8*3] = blk[8*4] =
+	block[8*0] = block[8*1] = block[8*2] = block[8*3] = block[8*4] =
 	    block[8*5] = block[8*6] = block[8*7] = (block[8*0] + 32) >> 6;
 	return;
     }
