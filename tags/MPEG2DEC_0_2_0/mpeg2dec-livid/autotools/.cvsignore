@@ -1,0 +1,17 @@
+.*.sw[po]
+*~
+*.diff
+*.patch
+*.lo
+*.o
+Makefile
+Makefile.in
+.deps
+.libs
+config.guess
+config.sub
+ltconfig
+ltmain.sh
+install-sh
+mkinstalldirs
+missing
