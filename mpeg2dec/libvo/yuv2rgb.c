@@ -329,7 +329,7 @@ static yuv2rgb_c_internal * yuv2rgb_c_init (int order, int bpp)
 	for (i = -232; i < 256+232; i++) {
 	    int j = table_Y[i+384] >> 3;
 
-	    if (order == CONVERT_RGB)
+	    if (order == CONVERT_BGR)
 		j <<= ((bpp==16) ? 11 : 10);
 
 	    ((uint16_t *)table_b)[i] = j;
