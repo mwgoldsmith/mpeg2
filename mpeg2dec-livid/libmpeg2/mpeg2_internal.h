@@ -88,7 +88,7 @@ typedef struct picture_s {
 
     /* picture header stuff */
 
-    /*what type of picture this is (I,P,or B) D from MPEG-1 isn't supported */
+    /* what type of picture this is (I, P, B, D) */
     int picture_coding_type;
 	
     /* picture coding extension stuff */
@@ -108,6 +108,8 @@ typedef struct picture_s {
     int q_scale_type;
     /* bool to use different vlc tables */
     int intra_vlc_format;
+    /* used for DMV MC */
+    int top_field_first;
 
     /* stuff derived from bitstream */
 
@@ -120,15 +122,13 @@ typedef struct picture_s {
 
     int second_field;
 
-    /* MPEG1 - testing */
-    uint8_t mpeg1;
+    int mpeg1;
 
     /* these things are not needed by the decoder */
     /* this is a temporary interface, we will build a better one later. */
     int aspect_ratio_information;
     int frame_rate_code;
     int progressive_sequence;
-    int top_field_first; /* this one is actually used for DMV MC */
     int repeat_first_field;
     int progressive_frame;
     int bitrate;
