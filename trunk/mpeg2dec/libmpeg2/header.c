@@ -790,6 +790,13 @@ mpeg2_state_t mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec)
     return (mpeg2_state_t)-1;
 }
 
+static mpeg2_state_t seek_sequence (mpeg2dec_t * mpeg2dec)
+{
+    mpeg2_header_state_init (mpeg2dec);
+    mpeg2dec->action = mpeg2_seek_header;
+    return mpeg2_seek_header (mpeg2dec);
+}
+
 mpeg2_state_t mpeg2_header_end (mpeg2dec_t * mpeg2dec)
 {
     mpeg2_picture_t * picture;
@@ -810,6 +817,6 @@ mpeg2_state_t mpeg2_header_end (mpeg2dec_t * mpeg2dec)
 	    mpeg2dec->info.discard_fbuf = mpeg2dec->fbuf[b_type + 1];
     } else if (!mpeg2dec->convert_start)
 	mpeg2dec->info.discard_fbuf = mpeg2dec->fbuf[b_type];
-    mpeg2dec->action = mpeg2_seek_sequence;
+    mpeg2dec->action = seek_sequence;
     return STATE_END;
 }

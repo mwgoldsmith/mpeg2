@@ -156,6 +156,7 @@ void mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t * start, uint8_t * end);
 int mpeg2_getpos (mpeg2dec_t * mpeg2dec);
 mpeg2_state_t mpeg2_parse (mpeg2dec_t * mpeg2dec);
 
+void mpeg2_reset (mpeg2dec_t * mpeg2dec, int full_reset);
 void mpeg2_skip (mpeg2dec_t * mpeg2dec, int skip);
 void mpeg2_slice_region (mpeg2dec_t * mpeg2dec, int start, int end);
 

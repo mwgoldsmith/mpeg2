@@ -147,13 +147,6 @@ mpeg2_state_t mpeg2_seek_header (mpeg2dec_t * mpeg2dec)
 	    mpeg2_header_picture_start (mpeg2dec));
 }
 
-mpeg2_state_t mpeg2_seek_sequence (mpeg2dec_t * mpeg2dec)
-{
-    mpeg2_header_state_init (mpeg2dec);
-    mpeg2dec->action = mpeg2_seek_header;
-    return mpeg2_seek_header (mpeg2dec);
-}
-
 #define RECEIVED(code,state) (((state) << 8) + (code))
 
 mpeg2_state_t mpeg2_parse (mpeg2dec_t * mpeg2dec)
@@ -408,6 +401,25 @@ uint32_t mpeg2_accel (uint32_t accel)
     return mpeg2_accels & ~MPEG2_ACCEL_DETECT;
 }
 
+void mpeg2_reset (mpeg2dec_t * mpeg2dec, int full_reset)
+{
+    mpeg2dec->buf_start = mpeg2dec->buf_end = NULL;
+    mpeg2dec->num_pts = 0;
+    mpeg2dec->shift = 0xffffff00;
+    mpeg2dec->code = 0xb4;
+    mpeg2dec->action = mpeg2_seek_header;
+    mpeg2dec->state = STATE_INVALID;
+    mpeg2dec->first = 1;
+
+    mpeg2_reset_info(&(mpeg2dec->info));
+    mpeg2dec->info.gop = NULL;
+    if (full_reset) {
+	mpeg2dec->info.sequence = NULL;
+	mpeg2_header_state_init (mpeg2dec);
+    }
+
+}
+
 mpeg2dec_t * mpeg2_init (void)
 {
     mpeg2dec_t * mpeg2dec;
@@ -422,20 +434,12 @@ mpeg2dec_t * mpeg2_init (void)
     memset (mpeg2dec->decoder.DCTblock, 0, 64 * sizeof (int16_t));
     memset (mpeg2dec->intra_quantizer_matrix, 0, 64 * sizeof (uint8_t));
     memset (mpeg2dec->non_intra_quantizer_matrix, 0, 64 * sizeof (uint8_t));
-    mpeg2dec->buf_start = mpeg2dec->buf_end = NULL;
-    mpeg2dec->num_pts = 0;
 
     mpeg2dec->chunk_buffer = (uint8_t *) mpeg2_malloc (BUFFER_SIZE + 4,
 						       MPEG2_ALLOC_CHUNK);
 
-    mpeg2dec->shift = 0xffffff00;
-    mpeg2dec->code = 0xb4;
-    mpeg2dec->action = mpeg2_seek_sequence;
     mpeg2dec->sequence.width = (unsigned)-1;
-
-    mpeg2_reset_info(&(mpeg2dec->info));
-    mpeg2dec->info.sequence = NULL;
-    mpeg2dec->info.gop = NULL;
+    mpeg2_reset (mpeg2dec, 1);
 
     return mpeg2dec;
 }
