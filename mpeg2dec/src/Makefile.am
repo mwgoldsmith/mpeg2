@@ -1,5 +1,3 @@
-AM_CFLAGS = @MPEG2DEC_CFLAGS@
-
 bin_PROGRAMS = mpeg2dec extract_mpeg2
 mpeg2dec_SOURCES = mpeg2dec.c getopt.c gettimeofday.c
 mpeg2dec_LDADD = $(top_builddir)/libmpeg2/libmpeg2.la \
