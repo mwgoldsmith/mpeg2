@@ -77,45 +77,45 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output,
 
 static void decode_allocate_image_buffers (mpeg2dec_t * mpeg2dec)
 {
-    picture_t * picture;
+    int width;
+    int height;
     frame_t * (* allocate) (int, int, uint32_t);
 
-    picture = mpeg2dec->picture;
+    width = mpeg2dec->picture->coded_picture_width;
+    height = mpeg2dec->picture->coded_picture_height;
     allocate = mpeg2dec->output->allocate_image_buffer;
 
     // allocate images in YV12 format
-    picture->throwaway_frame  = allocate (picture->coded_picture_width,
-				 picture->coded_picture_height,
-				 0x32315659);
-
-    picture->backward_reference_frame  = allocate (picture->coded_picture_width,
-				 picture->coded_picture_height,
-				 0x32315659);
-
-    picture->forward_reference_frame  = allocate (picture->coded_picture_width,
-				 picture->coded_picture_height,
-			 	0x32315659);
+    mpeg2dec->throwaway_frame = allocate (width, height, 0x32315659);
+    mpeg2dec->backward_reference_frame = allocate (width, height, 0x32315659);
+    mpeg2dec->forward_reference_frame = allocate (width, height, 0x32315659);
 }
 
 
 static void decode_reorder_frames (mpeg2dec_t * mpeg2dec)
 {
     picture_t * picture;
+    frame_t * current_frame;
+    int i;
 
     picture = mpeg2dec->picture;
 
-    if (picture->picture_coding_type != B_TYPE)
-    {
+    if (picture->picture_coding_type != B_TYPE) {
 	//reuse the soon to be outdated forward reference frame
-	picture->current_frame = picture->forward_reference_frame;
+	current_frame = mpeg2dec->forward_reference_frame;
 
 	//make the backward reference frame the new forward reference frame
-	picture->forward_reference_frame = picture->backward_reference_frame;
-	picture->backward_reference_frame = picture->current_frame;
-    }
-    else
-    {
-	picture->current_frame = picture->throwaway_frame;
+	mpeg2dec->forward_reference_frame = mpeg2dec->backward_reference_frame;
+	mpeg2dec->backward_reference_frame = current_frame;
+    } else
+	current_frame = mpeg2dec->throwaway_frame;
+
+    for (i = 0; i < 3; i++) {
+	picture->current_frame[i] = current_frame->base[i];
+	picture->forward_reference_frame[i] =
+	    mpeg2dec->forward_reference_frame->base[i];
+	picture->backward_reference_frame[i] =
+	    mpeg2dec->backward_reference_frame->base[i];
     }
 }
 
@@ -142,9 +142,9 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 		((picture->picture_structure == FRAME_PICTURE) ||
 		 (picture->second_field))) {
 		if (picture->picture_coding_type == B_TYPE)
-		    mpeg2dec->output->draw_frame (picture->throwaway_frame);
+		    mpeg2dec->output->draw_frame (mpeg2dec->throwaway_frame);
 		else
-		    mpeg2dec->output->draw_frame (picture->forward_reference_frame);
+		    mpeg2dec->output->draw_frame (mpeg2dec->forward_reference_frame);
 	    }
 	    mpeg2dec->output->flip_page ();
 #ifdef ARCH_X86
@@ -218,9 +218,9 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 		int offset;
 
 		if (picture->picture_coding_type == B_TYPE)
-		    bar = picture->throwaway_frame;
+		    bar = mpeg2dec->throwaway_frame;
 		else
-		    bar = picture->forward_reference_frame;
+		    bar = mpeg2dec->forward_reference_frame;
 
 		offset = (code-1) * 4 * picture->coded_picture_width;
 		if ((! HACK_MODE) && (picture->picture_coding_type == B_TYPE))
@@ -269,6 +269,7 @@ int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
 	}
 
 	/* found start_code following chunk */
+
 	ret += parse_chunk (mpeg2dec, mpeg2dec->code, mpeg2dec->chunk_buffer);
 
 	/* done with header or slice, prepare for next one */
@@ -289,11 +290,11 @@ void mpeg2_close (mpeg2dec_t * mpeg2dec)
     mpeg2_decode_data (mpeg2dec, finalizer, finalizer+4);
 
     if (mpeg2dec->is_display_initialized)
-	mpeg2dec->output->draw_frame (mpeg2dec->picture->backward_reference_frame);
+	mpeg2dec->output->draw_frame (mpeg2dec->backward_reference_frame);
 
-    mpeg2dec->output->free_image_buffer (mpeg2dec->picture->backward_reference_frame);
-    mpeg2dec->output->free_image_buffer (mpeg2dec->picture->forward_reference_frame);
-    mpeg2dec->output->free_image_buffer (mpeg2dec->picture->throwaway_frame);
+    mpeg2dec->output->free_image_buffer (mpeg2dec->backward_reference_frame);
+    mpeg2dec->output->free_image_buffer (mpeg2dec->forward_reference_frame);
+    mpeg2dec->output->free_image_buffer (mpeg2dec->throwaway_frame);
 }
 
 void mpeg2_drop (mpeg2dec_t * mpeg2dec, int flag)

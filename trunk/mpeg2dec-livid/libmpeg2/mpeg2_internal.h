@@ -19,8 +19,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "output_video.h"
-
 // hack mode - temporary
 // 0 = decode B pictures in a small slice buffer, display slice per slice
 // 1 = decode in a frame buffer, display slice per slice
@@ -99,12 +97,11 @@ typedef struct picture_s {
     uint8_t * scan;
 
     //Pointer to the current planar frame buffer (Y,Cr,CB)
-    frame_t *current_frame;
-    
+    uint8_t * current_frame[3];    
     //storage for reference frames plus a b-frame
-    frame_t *forward_reference_frame;
-    frame_t *backward_reference_frame;
-    frame_t *throwaway_frame;
+    uint8_t * forward_reference_frame[3];
+    uint8_t * backward_reference_frame[3];
+    //uint8_t * throwaway_frame;
 
     int second_field;
 
