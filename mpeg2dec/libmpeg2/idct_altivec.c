@@ -75,7 +75,7 @@ static const vector_s16_t constants_4 ATTR_ALIGN(16) =
 
 #define IDCT_HALF					\
     /* 1st stage */					\
-    t1 = vec_mradds (a1, vx7, vx1 );			\
+    t1 = vec_mradds (a1, vx7, vx1);			\
     t8 = vec_mradds (a1, vx1, vec_subs (zero, vx7));	\
     t7 = vec_mradds (a2, vx5, vx3);			\
     t3 = vec_mradds (ma2, vx3, vx5);			\
