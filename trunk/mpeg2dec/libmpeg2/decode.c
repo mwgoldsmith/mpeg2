@@ -340,12 +340,12 @@ void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id)
     mpeg2_fbuf_t * fbuf;
 
     if (mpeg2dec->custom_fbuf) {
-	mpeg2_set_fbuf (mpeg2dec, mpeg2dec->decoder.coding_type);
-	fbuf = mpeg2dec->fbuf[0];
 	if (mpeg2dec->state == STATE_SEQUENCE) {
 	    mpeg2dec->fbuf[2] = mpeg2dec->fbuf[1];
 	    mpeg2dec->fbuf[1] = mpeg2dec->fbuf[0];
 	}
+	mpeg2_set_fbuf (mpeg2dec, mpeg2dec->decoder.coding_type);
+	fbuf = mpeg2dec->fbuf[0];
     } else {
 	fbuf = &(mpeg2dec->fbuf_alloc[mpeg2dec->alloc_index].fbuf);
 	mpeg2dec->alloc_index_user = ++mpeg2dec->alloc_index;
