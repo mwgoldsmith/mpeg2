@@ -11,6 +11,9 @@
  */
 
 
-void libvo_common_alloc_frames (int width, int height);
-void libvo_common_free_frames (void);
+int libvo_common_alloc_frame (frame_t * frame, int width, int height);
+int libvo_common_alloc_frames (int (* alloc) (frame_t *, int, int),
+			       int width, int height);
+void libvo_common_free_frame (frame_t * frame);
+void libvo_common_free_frames (void (* free_frame) (frame_t *));
 frame_t * libvo_common_get_frame (int prediction);

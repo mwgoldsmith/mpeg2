@@ -1,6 +1,5 @@
 * before 0.2.0 :
 	* fix xshm completion events in libvo
-	* get rid of memcpy in xv/xvshm
 	* put back slice handling
 	* interlaced slices
 	* clean up frame_t declaration and usage (libvo/libmpeg2)

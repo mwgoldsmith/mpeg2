@@ -40,14 +40,14 @@ static int pgm_setup (int width, int height)
     image_height = height;
 
     sprintf (header, "P5\n\n%d %d\n255\n", width, height * 3 / 2);
-    libvo_common_alloc_frames (width, height);
+    return libvo_common_alloc_frames (libvo_common_alloc_frame, width, height);
 
     return 0;
 }
 
 static int pgm_close (void)
 {
-    libvo_common_free_frames ();
+    libvo_common_free_frames (libvo_common_free_frame);
     return 0;
 }
 

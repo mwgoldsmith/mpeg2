@@ -28,13 +28,12 @@
 
 static int null_setup (int width, int height)
 {
-    libvo_common_alloc_frames (width, height);
-    return 0;
+    return libvo_common_alloc_frames (libvo_common_alloc_frame, width, height);
 }
 
 static int null_close (void)
 {
-    libvo_common_free_frames ();
+    libvo_common_free_frames (libvo_common_free_frame);
     return 0;
 }
 
