@@ -42,7 +42,7 @@ static int non_linear_quantizer_scale [] = {
     56, 64, 72, 80, 88, 96, 104, 112
 };
 
-static inline int get_macroblock_modes (slice_t * slice,
+static inline int get_macroblock_modes (slice_t * slice, int picture_structure,
 					int picture_coding_type,
 					int frame_pred_frame_dct)
 {
@@ -59,7 +59,7 @@ static inline int get_macroblock_modes (slice_t * slice,
 	DUMPBITS (bit_buf, bits, tab->len);
 	macroblock_modes = tab->modes;
 
-	if (! frame_pred_frame_dct) {
+	if ((! frame_pred_frame_dct) && (picture_structure == FRAME_PICTURE)) {
 	    macroblock_modes |= UBITS (bit_buf, 1) * DCT_TYPE_INTERLACED;
 	    DUMPBITS (bit_buf, bits, 1);
 	}
@@ -1191,6 +1191,8 @@ static void motion_zero (slice_t * slice, motion_t * motion,
 		  motion->ref[0], offset, width, 16);
 }
 
+static int field_picture_flag = 0;
+
 // like motion_frame, but parsing without actual motion compensation
 static void motion_conceal (slice_t * slice, motion_t * motion)
 {
@@ -1198,6 +1200,11 @@ static void motion_conceal (slice_t * slice, motion_t * motion)
 #define bits (slice->bitstream_bits)
 #define bit_ptr (slice->bitstream_ptr)
     int tmp;
+
+    if (field_picture_flag) {
+	NEEDBITS (bit_buf, bits, bit_ptr);
+	DUMPBITS (bit_buf, bits, 1); // vertical_field_select
+    }
 
     NEEDBITS (bit_buf, bits, bit_ptr);
     tmp = motion->pmv[0][0] + get_motion_delta (slice, motion->f_code[0]);
@@ -1294,6 +1301,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	// follow thru
     case TOP_FIELD:
 	width <<= 1;
+	field_picture_flag = 1;
 	if (picture->picture_coding_type != I_TYPE) {
 	    // we do not support P or B field pictures, clear them
 	    int i;
@@ -1306,6 +1314,9 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	    }
 	    return 0;
 	}
+	break;
+    default:
+	field_picture_flag = 0;
     }
 
     //reset intra dc predictor
@@ -1324,13 +1335,15 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     }
     DUMPBITS (bit_buf, bits, 1);
 
+    NEEDBITS (bit_buf, bits, bit_ptr);
     offset = get_macroblock_address_increment (&slice) << 4;
 
     while (1) {
 	NEEDBITS (bit_buf, bits, bit_ptr);
 
 	macroblock_modes =
-	    get_macroblock_modes (&slice, picture->picture_coding_type,
+	    get_macroblock_modes (&slice, picture->picture_structure,
+				  picture->picture_coding_type,
 				  picture->frame_pred_frame_dct);
 
 	// maybe integrate MACROBLOCK_QUANT test into get_macroblock_modes ?
