@@ -12,7 +12,6 @@
 
 * structural optimizations
 	* integrate idct_add and idct_copy into the main idct routine
-	* DCT coefficient parsing
 	* get rid of slice structure, put it into picture
 	* do yuv per sub-slice (probably big speed boost)
 	* try different memory arrangements for pictures (yuyv, pitch, ...)
@@ -20,7 +19,6 @@
 * local optimizations
 	* review the use of static inline functions
 	* improve MMX motion comp inner routines
-	* work on bit parsing (needbits only when necessary)
 	* optimize vlc parsing routines
 	* optimize DCT for very sparse input matrixes ?
 	* optimize startcode search loop ?

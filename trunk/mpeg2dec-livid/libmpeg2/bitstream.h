@@ -82,8 +82,8 @@ static inline void bitstream_flush (int num_bits)
 #define NEEDBITS(bit_buf,bits)		\
 do {					\
     if (bits > 0) {			\
-        bit_buf |= getword () << bits;	\
-        bits -= 16;			\
+	bit_buf |= getword () << bits;	\
+	bits -= 16;			\
     }					\
 } while (0)
 
