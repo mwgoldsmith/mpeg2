@@ -225,15 +225,16 @@ int header_process_picture_header (picture_t *picture, uint8_t * buffer)
     picture->picture_coding_type = (buffer [1] >> 3) & 7;
 
     // forward_f_code and backward_f_code - used in mpeg1 only
-    picture->f_code[0][0] = picture->f_code[0][1] =
+    picture->f_code[0][1] = (buffer[3] >> 2) & 1;
+    picture->f_code[0][0] =
 	(((buffer[3] << 1) | (buffer[4] >> 7)) & 7) - 1;
-    picture->f_code[1][0] = picture->f_code[1][1] =
-	((buffer[4] >> 3) & 7) - 1;
+    picture->f_code[1][1] = (buffer[4] >> 6) & 1;
+    picture->f_code[1][0] = ((buffer[4] >> 3) & 7) - 1;
 
-    // move in header_process_picture_header 
-        picture->second_field = 
-            (picture->picture_structure != FRAME_PICTURE) && 
-            !(picture->second_field); 
+    // move in header_process_picture_header
+        picture->second_field =
+            (picture->picture_structure != FRAME_PICTURE) &&
+            !(picture->second_field);
 
     return 0;
 }
