@@ -59,7 +59,7 @@ twilight_zone/walken/very_wide			# OK - very wide picture
 twilight_zone/anonymous/anonymous		# OK
 twilight_zone/chromatic/chroma_dct_type-1	# OK
 twilight_zone/tcela/tcela-12			# OK - IDCT drift - see 7.4.4
-#twilight_zone/mei/MEI.stream17.long		# FAIL - different img sizes
-#twilight_zone/mei/MEI2.stream17		# FAIL - different img sizes
+twilight_zone/mei/MEI.stream17.long		# OK - different img sizes
+twilight_zone/mei/MEI2.stream17			# OK - different img sizes
 #twilight_zone/tcela/tcela-11v2			# FAIL - IDCT overflow
 #	we're actually doing better than the reference decoder on tcela-11v2
