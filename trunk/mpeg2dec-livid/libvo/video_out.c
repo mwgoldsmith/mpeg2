@@ -35,6 +35,8 @@ extern vo_setup_t vo_xv_setup;
 extern vo_setup_t vo_xshm_setup;
 extern vo_setup_t vo_x11_setup;
 extern vo_setup_t vo_sdl_setup;
+extern vo_setup_t vo_sdlsw_setup;
+extern vo_setup_t vo_sdlaa_setup;
 extern vo_setup_t vo_mga_setup;
 extern vo_setup_t vo_null_setup;
 extern vo_setup_t vo_pgm_setup;
@@ -58,6 +60,8 @@ vo_driver_t video_out_drivers[] =
 #endif
 #ifdef LIBVO_SDL
     {"sdl", vo_sdl_setup},
+    {"sdlsw", vo_sdlsw_setup},
+    {"sdlaa", vo_sdlaa_setup},
 #endif
     {"null", vo_null_setup},
     {"pgm", vo_pgm_setup},
