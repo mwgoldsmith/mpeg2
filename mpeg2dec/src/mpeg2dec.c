@@ -227,8 +227,6 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 	case STATE_SEQUENCE:
 	    /* might set nb fbuf, convert format, stride */
 	    /* might set fbufs */
-	    printf ("STATE_SEQUENCE %d %d\n",
-		    info->sequence->width, info->sequence->height);
 	    if (output->setup (output, info->sequence->width,
 			       info->sequence->height, &setup_result)) {
 		fprintf (stderr, "display setup failed\n");
