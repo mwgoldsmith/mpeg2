@@ -79,7 +79,6 @@ inline static uint64_t WORD_VEC(uint64_t x)
 #define sextw(x) ((int16_t) (x))
 
 #ifdef __GNUC__
-#define ASM_ACCEPT_MVI asm (".arch pca56")
 struct unaligned_long { uint64_t l; } __attribute__((packed));
 #define ldq_u(p)     (*(const uint64_t *) (((uint64_t) (p)) & ~7ul))
 #define uldq(a)	     (((const struct unaligned_long *) (a))->l)
@@ -152,7 +151,6 @@ struct unaligned_long { uint64_t l; } __attribute__((packed));
 #elif defined(__DECC)		/* Digital/Compaq/hp "ccc" compiler */
 
 #include <c_asm.h>
-#define ASM_ACCEPT_MVI
 #define ldq_u(a)     asm ("ldq_u   %v0,0(%a0)", a)
 #define uldq(a)	     (*(const __unaligned uint64_t *) (a))
 #define cmpbge(a, b) asm ("cmpbge  %a0,%a1,%v0", a, b)
