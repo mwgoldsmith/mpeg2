@@ -184,8 +184,7 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 
 	/* wait for sequence_header_code */
 	if (mpeg2dec->state == STATE_INVALID && code != 0xb3) {
-	    mpeg2dec->chunk_start = mpeg2dec->chunk_ptr =
-		mpeg2dec->chunk_buffer;
+	    mpeg2dec->chunk_ptr = mpeg2dec->chunk_start;
 	    continue;
 	}
 
@@ -226,12 +225,11 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	    mpeg2_header_sequence_finalize (mpeg2dec);
 	    mpeg2dec->chunk_start = mpeg2dec->chunk_ptr =
 		mpeg2dec->chunk_buffer;
-	    if (!repeated_sequence(&(mpeg2dec->last_sequence),
-				   &(mpeg2dec->sequence))) {
-		mpeg2dec->last_sequence = mpeg2dec->sequence;
-		return STATE_SEQUENCE;
-	    }
-	    break;
+	    if (repeated_sequence (&(mpeg2dec->last_sequence),
+				   &(mpeg2dec->sequence)))
+		break;
+	    mpeg2dec->last_sequence = mpeg2dec->sequence;
+	    return STATE_SEQUENCE;
 
 	/* end of sequence */
 	case RECEIVED (0xb7, STATE_SLICE):
