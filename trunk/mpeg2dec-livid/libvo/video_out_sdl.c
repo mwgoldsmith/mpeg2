@@ -38,6 +38,8 @@
  *    Dominik Schnitzer <dominik@schnitzer.at> - November 11, 2000.
  *    - Cleanup code, more comments
  *    - Better error handling
+ *    Bruno Barreyra <barreyra@ufl.edu> - December 10, 2000.
+ *    - Eliminated memcpy's for entire frames
  */
 
 #include "config.h"
@@ -62,6 +64,7 @@ static struct sdl_priv_s {
 	/* SDL YUV surface & overlay */
 	SDL_Surface *surface;
 	SDL_Overlay *overlay;
+	SDL_Overlay *current_frame;
 
 	/* available fullscreen modes */
 	SDL_Rect **fullmodes;
@@ -294,21 +297,9 @@ static int sdl_setup (vo_output_video_attr_t *attr)
 static int sdl_draw_frame (frame_t *frame)
 {
 	struct sdl_priv_s *priv = &sdl_priv;
-	uint8_t *dst;
 
-	if (SDL_LockYUVOverlay (priv->overlay)) {
-		LOG (LOG_ERROR, "SDL video out: Couldn't lock SDL-based YUV overlay");
-		return -1;
-	}
-
-	dst = (uint8_t *) *(priv->overlay->pixels);
-	memcpy (dst, frame->base[0], priv->framePlaneY);
-	dst += priv->framePlaneY;
-	memcpy (dst, frame->base[1], priv->framePlaneUV);
-	dst += priv->framePlaneUV;
-	memcpy (dst, frame->base[2], priv->framePlaneUV);
-
-	SDL_UnlockYUVOverlay (priv->overlay);
+	priv->current_frame = (SDL_Overlay*) frame->private;
+	SDL_UnlockYUVOverlay (priv->current_frame);
 
 	return 0;
 }
@@ -326,6 +317,8 @@ static int sdl_draw_slice (uint8_t *src[], int slice_num)
 	struct sdl_priv_s *priv = &sdl_priv;
 	uint8_t *dst;
 
+	priv->current_frame = priv->overlay;
+	
 	if (SDL_LockYUVOverlay (priv->overlay)) {
 		LOG (LOG_ERROR, "SDL video out: Couldn't lock SDL-based YUV overlay");
 		return -1;
@@ -445,34 +438,53 @@ static void check_events (void)
 static void sdl_flip_page (void)
 {
 	struct sdl_priv_s *priv = &sdl_priv;
-	
+
 	/* check and react on keypresses and window resizes */
 	check_events();
 
 	/* blit to the YUV overlay */
-	SDL_DisplayYUVOverlay (priv->overlay, &priv->surface->clip_rect);
+	SDL_DisplayYUVOverlay (priv->current_frame, &priv->surface->clip_rect);
 
 	/* check if we have a double buffered surface and flip() if we do. */
-   if ( priv->surface->flags & SDL_DOUBLEBUF ) {
-        SDL_Flip(priv->surface);
-   }
-
+	if ( priv->surface->flags & SDL_DOUBLEBUF )
+        	SDL_Flip(priv->surface);
+	
+	SDL_LockYUVOverlay (priv->current_frame);
 }
 
 static int sdl_overlay (overlay_buf_t *overlay_buf, int id) 
 {
-  return 0;
+	return 0;
 }
 
 
 static frame_t* sdl_allocate_image_buffer(int width, int height, uint32_t format)
 {
-    return libvo_common_alloc (width, height);
+	struct sdl_priv_s *priv = &sdl_priv;
+	frame_t	*frame;
+
+	if (!(frame = malloc (sizeof (frame_t))))
+		return NULL;
+
+	if (!(frame->private = (void*) SDL_CreateYUVOverlay (width, height, 
+			SDL_IYUV_OVERLAY, priv->surface)))
+	{
+		LOG (LOG_ERROR, "SDL video out: Couldn't create an SDL-based YUV overlay");
+		return NULL;
+	}
+	
+	frame->base[0] = (uint8_t*) ((SDL_Overlay*) (frame->private))->pixels[0];
+	frame->base[1] = (uint8_t*) ((SDL_Overlay*) (frame->private))->pixels[1];
+	frame->base[2] = (uint8_t*) ((SDL_Overlay*) (frame->private))->pixels[2];
+	
+	SDL_LockYUVOverlay ((SDL_Overlay*) frame->private);
+	return frame;
 }
 
-static void sdl_free_image_buffer(frame_t* image)
+static void sdl_free_image_buffer(frame_t* frame)
 {
-    libvo_common_free (image);
+	SDL_FreeYUVOverlay((SDL_Overlay*) frame->private);
+	free(frame);
 }
 
 
