@@ -54,7 +54,7 @@ static inline int get_macroblock_modes (decoder_t * decoder)
     int macroblock_modes;
     MBtab * tab;
 
-    switch (decoder->picture_coding_type) {
+    switch (decoder->coding_type) {
     case I_TYPE:
 
 	tab = MB_I + UBITS (bit_buf, 1);
@@ -970,7 +970,7 @@ static inline void slice_intra_DCT (decoder_t * decoder, int cc,
     memset (decoder->DCTblock + 1, 0, 63 * sizeof (int16_t));
 
     if (decoder->mpeg1) {
-	if (decoder->picture_coding_type != D_TYPE)
+	if (decoder->coding_type != D_TYPE)
 	    get_mpeg1_intra_block (decoder);
     } else if (decoder->intra_vlc_format)
 	get_intra_block_B15 (decoder);
@@ -1414,12 +1414,12 @@ do {								\
 #define NEXT_MACROBLOCK							\
 do {									\
     decoder->offset += 16;						\
-    if (decoder->offset == decoder->coded_picture_width) {		\
+    if (decoder->offset == decoder->width) {				\
 	do { /* just so we can use the break statement */		\
 	    if (decoder->current_frame->copy) {				\
 		decoder->current_frame->copy (decoder->current_frame,	\
 					      decoder->dest);		\
-		if (decoder->picture_coding_type == B_TYPE)		\
+		if (decoder->coding_type == B_TYPE)			\
 		    break;						\
 	    }								\
 	    decoder->dest[0] += 16 * decoder->stride;			\
@@ -1444,7 +1444,7 @@ static inline int slice_init (decoder_t * decoder, int code)
     int offset, stride, height;
     MBAtab * mba;
 
-    stride = decoder->coded_picture_width;
+    stride = decoder->width;
     offset = decoder->picture_structure == BOTTOM_FIELD ? stride : 0;
 
     decoder->f_motion.ref[0][0] =
@@ -1474,7 +1474,7 @@ static inline int slice_init (decoder_t * decoder, int code)
 	offset = bottom_field ? 0 : stride;
 
 	forward_ref = decoder->forward_reference_frame->base;
-	if (decoder->second_field && (decoder->picture_coding_type != B_TYPE))
+	if (decoder->second_field && (decoder->coding_type != B_TYPE))
 	    forward_ref = decoder->current_frame->base;
 
 	decoder->f_motion.ref[1][0] = forward_ref[0] + offset;
@@ -1497,14 +1497,14 @@ static inline int slice_init (decoder_t * decoder, int code)
     decoder->v_offset = (code - 1) * 16;
     offset = (code - 1) * stride;
     offset <<= decoder->picture_structure == FRAME_PICTURE ? 2 : 3;
-    if (decoder->current_frame->copy && decoder->picture_coding_type == B_TYPE)
+    if (decoder->current_frame->copy && decoder->coding_type == B_TYPE)
 	offset = 0;
 
     decoder->dest[0] = decoder->current_frame->base[0] + offset * 4;
     decoder->dest[1] = decoder->current_frame->base[1] + offset;
     decoder->dest[2] = decoder->current_frame->base[2] + offset;
 
-    height = decoder->coded_picture_height;
+    height = decoder->height;
     switch (decoder->picture_structure) {
     case BOTTOM_FIELD:
 	decoder->dest[0] += stride;
@@ -1517,7 +1517,7 @@ static inline int slice_init (decoder_t * decoder, int code)
     }
     decoder->stride = stride;
     decoder->uv_stride = stride >> 1;
-    decoder->limit_x = 2 * decoder->coded_picture_width - 32;
+    decoder->limit_x = 2 * decoder->width - 32;
     decoder->limit_y_16 = 2 * height - 32;
     decoder->limit_y_8 = 2 * height - 16;
     decoder->limit_y = height - 16;
@@ -1560,10 +1560,10 @@ static inline int slice_init (decoder_t * decoder, int code)
     DUMPBITS (bit_buf, bits, mba->len + 1);
     decoder->offset = (offset + mba->mba) << 4;
 
-    while (decoder->offset - decoder->coded_picture_width >= 0) {
-	decoder->offset -= decoder->coded_picture_width;
+    while (decoder->offset - decoder->width >= 0) {
+	decoder->offset -= decoder->width;
 	if ((decoder->current_frame->copy == NULL) ||
-	    (decoder->picture_coding_type != B_TYPE)) {
+	    (decoder->coding_type != B_TYPE)) {
 	    decoder->dest[0] += 16 * stride;
 	    decoder->dest[1] += 4 * stride;
 	    decoder->dest[2] += 4 * stride;
@@ -1644,7 +1644,7 @@ void mpeg2_slice (decoder_t * decoder, int code, uint8_t * buffer)
 	    slice_intra_DCT (decoder, 2, decoder->dest[2] + (offset >> 1),
 			     decoder->uv_stride);
 
-	    if (decoder->picture_coding_type == D_TYPE) {
+	    if (decoder->coding_type == D_TYPE) {
 		NEEDBITS (bit_buf, bits, bit_ptr);
 		DUMPBITS (bit_buf, bits, 1);
 	    }
@@ -1774,7 +1774,7 @@ void mpeg2_slice (decoder_t * decoder, int code, uint8_t * buffer)
 	    decoder->dc_dct_pred[0] = decoder->dc_dct_pred[1] =
 		decoder->dc_dct_pred[2] = 128 << decoder->intra_dc_precision;
 
-	    if (decoder->picture_coding_type == P_TYPE) {
+	    if (decoder->coding_type == P_TYPE) {
 		decoder->f_motion.pmv[0][0] = decoder->f_motion.pmv[0][1] = 0;
 		decoder->f_motion.pmv[1][0] = decoder->f_motion.pmv[1][1] = 0;
 
