@@ -45,7 +45,6 @@ static inline int skip_chunk (mpeg2dec_t * mpeg2dec, int bytes)
 {
     uint8_t * current;
     uint32_t shift;
-    uint8_t * chunk_ptr;
     uint8_t * limit;
     uint8_t byte;
 
@@ -54,7 +53,6 @@ static inline int skip_chunk (mpeg2dec_t * mpeg2dec, int bytes)
 
     current = mpeg2dec->buf_start;
     shift = mpeg2dec->shift;
-    chunk_ptr = mpeg2dec->chunk_ptr;
     limit = current + bytes;
 
     do {
@@ -342,11 +340,14 @@ void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id)
     mpeg2_fbuf_t * fbuf;
 
     if (mpeg2dec->custom_fbuf) {
+	int b_type;
 	if (mpeg2dec->state == STATE_SEQUENCE) {
 	    mpeg2dec->fbuf[2] = mpeg2dec->fbuf[1];
 	    mpeg2dec->fbuf[1] = mpeg2dec->fbuf[0];
-	}
-	mpeg2_set_fbuf (mpeg2dec, mpeg2dec->decoder.coding_type);
+	    b_type = 0;
+	} else
+	    b_type = (mpeg2dec->decoder.coding_type == PIC_FLAG_CODING_TYPE_B);
+	mpeg2_set_fbuf (mpeg2dec, b_type);
 	fbuf = mpeg2dec->fbuf[0];
     } else {
 	fbuf = &(mpeg2dec->fbuf_alloc[mpeg2dec->alloc_index].fbuf);
@@ -409,7 +410,9 @@ mpeg2dec_t * mpeg2_init (void)
     if (mpeg2dec == NULL)
 	return NULL;
 
-    memset (mpeg2dec, 0, sizeof (mpeg2dec_t));
+    memset (mpeg2dec->decoder.DCTblock, 0, 64 * sizeof (int16_t));
+    mpeg2dec->buf_start = mpeg2dec->buf_end = NULL;
+    mpeg2dec->num_pts = 0;
 
     mpeg2dec->chunk_buffer = (uint8_t *) mpeg2_malloc (BUFFER_SIZE + 4,
 						       ALLOC_CHUNK);
