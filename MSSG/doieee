@@ -1,9 +1,8 @@
 #! /bin/sh
 
 # perform IEEE 1180 test series
-# Typical usage:
-#    doieee  progname  >outfile
-# where progname is ieeetest or a variant
+
+ieeetest 0 0 0 0
 
 ieeetest -256 255 1 10000
 ieeetest -5 5     1 10000

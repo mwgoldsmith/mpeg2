@@ -57,7 +57,7 @@ main(int argc, char **argv)
   minpix = atoi(argv[1]);
   maxpix = atoi(argv[2]);
   sign   = atoi(argv[3]);
-  niters = atol(argv[4]);
+  niters = sign ? atol(argv[4]) : 128;
 
   dct_init();
 
@@ -65,13 +65,22 @@ main(int argc, char **argv)
 
   for (curiter = 0; curiter < niters; curiter++) {
 
-    /* generate a pseudo-random block of data */
-    for (i = 0; i < DCTSIZE2; i++)
-      block[i] = (DCTELEM) (ieeerand(-minpix,maxpix) * sign);
+    if (sign) {
+      /* generate a pseudo-random block of data */
+      for (i = 0; i < DCTSIZE2; i++)
+        block[i] = (DCTELEM) (ieeerand(-minpix,maxpix) * sign);
 
-    /* perform reference FDCT */
-    memcpy(refcoefs, block, sizeof(DCTELEM)*DCTSIZE2);
-    ref_fdct((void *)refcoefs);
+      /* perform reference FDCT */
+      memcpy(refcoefs, block, sizeof(DCTELEM)*DCTSIZE2);
+      ref_fdct((void *)refcoefs);
+    } else
+      for (i = 0; i < DCTSIZE2; i++) {
+        j = -ccm1[curiter>>1][i];
+	if (curiter & 1) j = -j;
+	if (j == 5) j = -5;
+        refcoefs[i] = j;
+      }
+
     /* clip */
     for (i = 0; i < DCTSIZE2; i++) {
       if (refcoefs[i] < -2048) refcoefs[i] = -2048;
@@ -124,6 +133,8 @@ main(int argc, char **argv)
   }
   printf("Worst peak error = %d  (%s spec limit 1)\n\n", j,
 	 meets((double) j, 1.0));
+
+  if (!sign) return 0;
 
   printf("Mean square errors:\n");
   max = total = 0.0;
