@@ -29,7 +29,7 @@
 #ifdef __OMS__
 #include "../../output/video/output_video.h"
 #else
-#include "../libvo/output_video.h"
+#include "../video/output_video.h"
 #endif
 
 //
