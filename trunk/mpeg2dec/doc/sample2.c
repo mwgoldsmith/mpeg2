@@ -69,9 +69,6 @@ static void sample2 (FILE * file)
 	    break;
 	case STATE_SEQUENCE:
 	    mpeg2_convert (mpeg2dec, convert_rgb24, NULL);
-	    mpeg2_set_buf_alloc_XXX (mpeg2dec);
-	    mpeg2_set_buf_alloc_XXX (mpeg2dec);
-	    mpeg2_set_buf_alloc_XXX (mpeg2dec);
 	    break;
 	case STATE_SLICE:
 	case STATE_END:

@@ -244,15 +244,11 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 		void * id;
 
 		output->setup_fbuf (output, buf, &id);
-		mpeg2_set_buf_alloc (mpeg2dec, buf, id);
+		mpeg2_set_buf (mpeg2dec, buf, id);
 		output->setup_fbuf (output, buf, &id);
-		mpeg2_set_buf_alloc (mpeg2dec, buf, id);
+		mpeg2_set_buf (mpeg2dec, buf, id);
 		output->setup_fbuf (output, buf, &id);
-		mpeg2_set_buf_alloc (mpeg2dec, buf, id);
-	    } else {
-		mpeg2_set_buf_alloc_XXX (mpeg2dec);
-		mpeg2_set_buf_alloc_XXX (mpeg2dec);
-		mpeg2_set_buf_alloc_XXX (mpeg2dec);
+		mpeg2_set_buf (mpeg2dec, buf, id);
 	    }
 	    break;
 	case STATE_PICTURE:

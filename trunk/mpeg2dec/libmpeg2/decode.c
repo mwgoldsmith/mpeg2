@@ -302,46 +302,23 @@ void mpeg2_convert (mpeg2dec_t * mpeg2dec,
     mpeg2dec->yuv_buf[2][2] = mpeg2dec->yuv_buf[2][0] + 5 * size;
 }
 
-void mpeg2_set_buf_alloc (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id)
-{
-    mpeg2dec->fbuf_alloc[2] = mpeg2dec->fbuf_alloc[1];
-    mpeg2dec->fbuf_alloc[1] = mpeg2dec->fbuf_alloc[0];
-    mpeg2dec->fbuf_alloc[0].fbuf.buf[0] = buf[0];
-    mpeg2dec->fbuf_alloc[0].fbuf.buf[1] = buf[1];
-    mpeg2dec->fbuf_alloc[0].fbuf.buf[2] = buf[2];
-    mpeg2dec->fbuf_alloc[0].fbuf.id = id;
-}
-
-void mpeg2_set_buf_alloc_XXX (mpeg2dec_t * mpeg2dec)
-{
-    uint8_t * buf[3];
-
-    if (mpeg2dec->convert_start) {
-	buf[0] = mpeg2_malloc (mpeg2dec->convert_size[0], ALLOC_CONVERTED);
-	buf[1] = buf[0] + mpeg2dec->convert_size[1];
-	buf[2] = buf[0] + mpeg2dec->convert_size[2];
-    } else {
-	int size;
-
-	size = mpeg2dec->decoder.width * mpeg2dec->decoder.height >> 2;
-	buf[0] = mpeg2_malloc (6 * size, ALLOC_YUV);
-	buf[1] = buf[0] + 4 * size;
-	buf[2] = buf[0] + 5 * size;
-    }
-    mpeg2_set_buf_alloc (mpeg2dec, buf, NULL);
-}
-
 void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id)
 {
-    mpeg2_set_fbuf (mpeg2dec, mpeg2dec->decoder.coding_type);
-    mpeg2dec->fbuf[0]->buf[0] = buf[0];
-    mpeg2dec->fbuf[0]->buf[1] = buf[1];
-    mpeg2dec->fbuf[0]->buf[2] = buf[2];
-    mpeg2dec->fbuf[0]->id = id;
-    if (mpeg2dec->state == STATE_SEQUENCE) {
-	mpeg2dec->fbuf[2] = mpeg2dec->fbuf[1];
-	mpeg2dec->fbuf[1] = mpeg2dec->fbuf[0];
-    }
+    fbuf_t * fbuf;
+
+    if (mpeg2dec->custom_fbuf) {
+	mpeg2_set_fbuf (mpeg2dec, mpeg2dec->decoder.coding_type);
+	fbuf = mpeg2dec->fbuf[0];
+	if (mpeg2dec->state == STATE_SEQUENCE) {
+	    mpeg2dec->fbuf[2] = mpeg2dec->fbuf[1];
+	    mpeg2dec->fbuf[1] = mpeg2dec->fbuf[0];
+	}
+    } else
+	fbuf = &(mpeg2dec->fbuf_alloc[mpeg2dec->alloc_index++].fbuf);
+    fbuf->buf[0] = buf[0];
+    fbuf->buf[1] = buf[1];
+    fbuf->buf[2] = buf[2];
+    fbuf->id = id;
 }
 
 void mpeg2_custom_fbuf (mpeg2dec_t * mpeg2dec, int custom_fbuf)

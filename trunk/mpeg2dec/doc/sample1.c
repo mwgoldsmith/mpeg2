@@ -73,11 +73,6 @@ static void sample1 (FILE * file)
 	    size = fread (buffer, 1, BUFFER_SIZE, file);
 	    mpeg2_buffer (mpeg2dec, buffer, buffer + size);
 	    break;
-	case STATE_SEQUENCE:
-	    mpeg2_set_buf_alloc_XXX (mpeg2dec);
-	    mpeg2_set_buf_alloc_XXX (mpeg2dec);
-	    mpeg2_set_buf_alloc_XXX (mpeg2dec);
-	    break;
 	case STATE_SLICE:
 	case STATE_END:
 	    if (info->display_fbuf)
