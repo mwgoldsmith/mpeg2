@@ -48,10 +48,17 @@ mpeg2dec="../../src/mpeg2dec"; if [ ! -x $mpeg2dec ]; then
 fi
 
 for dir in $dirs; do
-    echo $dir
-    $mpeg2dec $accel -o md5 $basedir/$dir/stream >/dev/null 2>&1 >md5
-    diff -wu md5 $basedir/$dir/$md5 || error=1
-    rm -f md5 core
+    if [ -f $basedir/$dir/stream ]; then
+	echo $dir
+	$mpeg2dec -vv $accel -o md5 $basedir/$dir/stream >dump 2>&1 >md5
+	if [ -f $basedir/$dir/$md5 ]; then
+	    diff -wu md5 $basedir/$dir/$md5 || error=1
+	fi
+	if [ -f $basedir/$dir/dump ]; then
+	    sed '1d' dump | diff -wu - $basedir/$dir/dump || error=1
+	fi
+	rm -f md5 dump core
+    fi
 done
 
 cd ..
