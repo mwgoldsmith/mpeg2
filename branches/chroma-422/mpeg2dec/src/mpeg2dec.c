@@ -28,7 +28,7 @@
 #include <string.h>
 #include <errno.h>
 #include <signal.h>
-#include <getopt.h>
+#include "getopt.h"
 #ifdef HAVE_IO_H
 #include <fcntl.h>
 #include <io.h>
@@ -307,6 +307,22 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
     }
 }
 
+static int get_clock(uint8_t * header, mpeg2_pts_t * pts)
+{
+	if (((header[0] & 0xe0) == 0x20) &&
+		((header[2] & 0x01) == 0x01) &&
+		((header[4] & 0x01) == 0x01)) {
+
+		pts->high = (header[0] & 0x08) >> 3;
+		pts->low = (((header[0] >> 1) << 30) |
+		   (header[1] << 22) | ((header[2] >> 1) << 15) |
+		   (header[3] << 7) | (header[4] >> 1));
+
+		return 1;
+	}
+	return 0;
+}
+
 #define DEMUX_PAYLOAD_START 1
 static int demux (uint8_t * buf, uint8_t * end, int flags)
 {
@@ -463,12 +479,14 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 		    NEEDBYTES (len);
 		    /* header points to the mpeg2 pes header */
 		    if (header[7] & 0x80) {
-			uint32_t pts;
 
-			pts = (((header[9] >> 1) << 30) |
-			       (header[10] << 22) | ((header[11] >> 1) << 15) |
-			       (header[12] << 7) | (header[13] >> 1));
-			mpeg2_pts (mpeg2dec, pts);
+				mpeg2_pts_t pts;
+				if (get_clock(header+9, &pts)){
+				mpeg2_pts (mpeg2dec, &pts);
+				}
+				else {
+				fprintf (stderr, "invalid pts\n");
+				}
 		    }
 		} else {	/* mpeg1 */
 		    int len_skip;
@@ -493,12 +511,22 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 		    /* header points to the mpeg1 pes header */
 		    ptsbuf = header + len_skip;
 		    if (ptsbuf[-1] & 0x20) {
+
+				mpeg2_pts_t pts;
+				if (get_clock(header+len_skip-1, &pts)) {
+				mpeg2_pts (mpeg2dec, &pts);
+				}
+				else {
+				fprintf (stderr, "invalid pts\n");
+				}
+/*
 			uint32_t pts;
 
 			pts = (((ptsbuf[-1] >> 1) << 30) |
 			       (ptsbuf[0] << 22) | ((ptsbuf[1] >> 1) << 15) |
 			       (ptsbuf[2] << 7) | (ptsbuf[3] >> 1));
 			mpeg2_pts (mpeg2dec, pts);
+*/
 		    }
 		}
 		DONEBYTES (len);
@@ -606,12 +634,18 @@ static int pva_demux (uint8_t * buf, uint8_t * end)
 	    buf += bytes; 
 	} else {
 	    len = 8;
-	    if (header[5] & 0x10) {
+	    if (header[5] & 0x10) {		/* has pts? */
 		len = 12 + (header[5] & 3);
 		NEEDBYTES (len);
 		decode_mpeg2 (header + 12, header + len);
-		mpeg2_pts (mpeg2dec, ((header[8] << 24) | (header[9] << 16) |
-				      (header[10] << 8) | header[11]));
+
+		{
+		mpeg2_pts_t pts;
+		pts.high = 0;
+		pts.low = ((header[8] << 24) | (header[9] << 16) |
+				      (header[10] << 8) | header[11]);
+		mpeg2_pts (mpeg2dec, &pts);
+		}
 	    }
 	    DONEBYTES (len);
 	    bytes = (header[6] << 8) + header[7] + 8 - len;
