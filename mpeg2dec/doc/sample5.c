@@ -128,12 +128,13 @@ static void sample5 (FILE * mpgfile)
 	    break;
 	case STATE_SLICE:
 	case STATE_END:
+	case STATE_INVALID_END:
 	    if (info->display_fbuf)
 		save_pgm (info->sequence->width, info->sequence->height,
 			  info->display_fbuf->buf, framenum++);
 	    if (info->discard_fbuf)
                 ((struct fbuf_s *)info->discard_fbuf->id)->used = 0;
-	    if (state == STATE_END)
+	    if (state != STATE_SLICE)
 		for (i = 0; i < 3; i++)
 		    for (j = 0; j < 3; j++)
 			free (fbuf[i].yuv[j]);

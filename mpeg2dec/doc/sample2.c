@@ -82,6 +82,7 @@ static void sample2 (FILE * mpgfile)
 	    break;
 	case STATE_SLICE:
 	case STATE_END:
+	case STATE_INVALID_END:
 	    if (info->display_fbuf)
 		save_ppm (info->sequence->width, info->sequence->height,
 			  info->display_fbuf->buf[0], framenum++);
