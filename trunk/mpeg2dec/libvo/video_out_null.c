@@ -72,8 +72,7 @@ vo_instance_t * vo_null_open (void)
 
 static void nullslice_start (void * id, const mpeg2_fbuf_t * fbuf,
 			     const mpeg2_picture_t * picture,
-			     const mpeg2_gop_t * gop,
-			     const mpeg2_sequence_t * sequence)
+			     const mpeg2_gop_t * gop)
 {
 }
 
@@ -82,7 +81,7 @@ static void nullslice_copy (void * id, uint8_t * const * src,
 {
 }
 
-static void nullslice_convert (int width, int height, uint32_t accel,
+static void nullslice_convert (const mpeg2_sequence_t * seq, uint32_t accel,
 			       void * arg, convert_init_t * result)
 {
     result->id_size = 0;

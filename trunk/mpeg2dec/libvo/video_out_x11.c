@@ -55,21 +55,19 @@ typedef struct {
 
 static void uyvy_start (void * _id, const mpeg2_fbuf_t * fbuf,
 			const mpeg2_picture_t * picture,
-			const mpeg2_gop_t * gop,
-			const mpeg2_sequence_t * sequence)
+			const mpeg2_gop_t * gop)
 {
     convert_uyvy_t * instance = (convert_uyvy_t *) _id;
 
     instance->out = fbuf->buf[0];
 }
 
-static void uyvy_copy (void * _id, uint8_t * const * src,
-		       unsigned int v_offset)
+static void uyvy_copy (void * id, uint8_t * const * src, unsigned int v_offset)
 {
     const uint8_t * y;
     const uint8_t * u;
     const uint8_t * v;
-    const convert_uyvy_t * instance = (convert_uyvy_t *) _id;
+    const convert_uyvy_t * instance = (convert_uyvy_t *) id;
     uint32_t * out;
     int width, height;
 
@@ -101,14 +99,14 @@ static void uyvy_copy (void * _id, uint8_t * const * src,
     } while (height);
 }
 
-void convert_uyvy (int width, int height, uint32_t accel, void * arg,
+void convert_uyvy (const mpeg2_sequence_t * seq, uint32_t accel, void * arg,
 		   convert_init_t * result)
 {
     convert_uyvy_t * instance = (convert_uyvy_t *) result->id;
 
     if (instance) {
-	instance->width = width;
-	result->buf_size[0] = width * height * 2;
+	instance->width = seq->width;
+	result->buf_size[0] = seq->width * seq->height * 2;
 	result->buf_size[1] = result->buf_size[2] = 0;
 	result->start = uyvy_start;
 	result->copy = uyvy_copy;

@@ -194,8 +194,7 @@ struct mpeg2dec_s {
     unsigned int convert_size[3];
     void (* convert_start) (void * id, const mpeg2_fbuf_t * fbuf,
 			    const mpeg2_picture_t * picture,
-			    const mpeg2_gop_t * gop,
-			    const mpeg2_sequence_t * sequence);
+			    const mpeg2_gop_t * gop);
     void (* convert_copy) (void * id, uint8_t * const * src,
 			   unsigned int v_offset);
 

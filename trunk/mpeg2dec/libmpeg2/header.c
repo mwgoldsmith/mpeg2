@@ -758,8 +758,7 @@ mpeg2_state_t mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec)
 	mpeg2dec->picture->flags |= PIC_FLAG_SKIP;
     else if (mpeg2dec->convert_start) {
 	mpeg2dec->convert_start (mpeg2dec->convert_id, mpeg2dec->fbuf[0],
-				 mpeg2dec->picture, mpeg2dec->info.gop,
-				 &(mpeg2dec->sequence));
+				 mpeg2dec->picture, mpeg2dec->info.gop);
 
 	mpeg2dec->decoder.convert = mpeg2dec->convert_copy;
 	mpeg2dec->decoder.fbuf_id = mpeg2dec->convert_id;
