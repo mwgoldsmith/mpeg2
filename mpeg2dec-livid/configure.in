@@ -31,6 +31,7 @@ if test "x$DISPLAY_DRIVER" = x -a x$enable_3dfx = xyes; then
   if test -c "/dev/3dfx"; then
     AC_MSG_RESULT(found)
     DISPLAY_DRIVER=display_3dfx.o
+		X_LIBS="$X_LIBS -lXxf86dga"
   else
     AC_MSG_RESULT(not found)
   fi

@@ -16,6 +16,8 @@ Contributions by (in no particular order):
 	Ryan C. Gordon <icculus@lokigames.com> - SDL support
 	Stephen Crowley <stephenc@dns2.digitalpassage.com> - build fixes
 	Bruno Barreyra <barreyra@ufl.edu> - build fixes
+	Rick Niles <niles@scyld.com> - build fixes
+
 	(let me know if I've forgotten anyone)
 
 First of all, this is very early code. If you're not interested
