@@ -95,17 +95,20 @@ static const uint8_t dither_temporal[64] = {
     0x46, 0x66, 0x67, 0x47, 0x06, 0x26, 0x27, 0x07
 };
 
-static void * table_rV[256];
-static void * table_gU[256];
-static int table_gV[256];
-static void * table_bU[256];
+typedef struct {
+    convert_rgb_t base;
+    void * table_rV[256];
+    void * table_gU[256];
+    int table_gV[256];
+    void * table_bU[256];
+} convert_rgb_c_t;
 
-#define RGB(type,i)						\
-    U = pu[i];							\
-    V = pv[i];							\
-    r = (type *) table_rV[V];					\
-    g = (type *) (((uint8_t *)table_gU[U]) + table_gV[V]);	\
-    b = (type *) table_bU[U];
+#define RGB(type,i)							\
+    U = pu[i];								\
+    V = pv[i];								\
+    r = (type *) id->table_rV[V];					\
+    g = (type *) (((uint8_t *)id->table_gU[U]) + id->table_gV[V]);	\
+    b = (type *) id->table_bU[U];
 
 #define DST(py,dst,i,j)			\
     Y = py[i];				\
@@ -130,13 +133,13 @@ static void * table_bU[256];
 static void func (void * _id, uint8_t * const * src,			\
 		  unsigned int v_offset)				\
 {									\
-    const convert_rgb_t * const id = (convert_rgb_t *) _id;		\
+    const convert_rgb_c_t * const id = (convert_rgb_c_t *) _id;		\
     type * dst_1;							\
     const uint8_t * py_1, * pu, * pv;					\
     int i;								\
-    DITHER(uint8_t dithpos = id->dither_offset;)			\
+    DITHER(uint8_t dithpos = id->base.dither_offset;)			\
 									\
-    dst_1 = (type *)(id->rgb_ptr + id->rgb_stride * v_offset);		\
+    dst_1 = (type *)(id->base.rgb_ptr + id->base.rgb_stride * v_offset);\
     py_1 = src[0];	pu = src[1];	pv = src[2];			\
 									\
     i = 8;								\
@@ -147,9 +150,9 @@ static void func (void * _id, uint8_t * const * src,			\
 	type * dst_2;							\
 	DITHER(const uint8_t * const pd = dither + 2 * dithpos;)	\
 									\
-	dst_2 = (type *)((char *)dst_1 + id->rgb_stride);		\
-	py_2 = py_1 + id->y_stride;					\
-	j = id->width;							\
+	dst_2 = (type *)((char *)dst_1 + id->base.rgb_stride);		\
+	py_2 = py_1 + id->base.y_stride;				\
+	j = id->base.width;						\
 	do {								\
 	    RGB (type, 0)						\
 	    DST (py_1, dst_1, 0, 0)					\
@@ -182,11 +185,11 @@ static void func (void * _id, uint8_t * const * src,			\
 	    dst_1 += 8 * num;						\
 	    dst_2 += 8 * num;						\
 	} while (--j);							\
-	py_1 += id->y_increm;						\
-	pu += id->uv_increm;						\
-	pv += id->uv_increm;						\
-	dst_1 = (type *)((char *)dst_1 + id->rgb_increm);		\
-	DITHER(dithpos += id->dither_stride;)				\
+	py_1 += id->base.y_increm;					\
+	pu += id->base.uv_increm;					\
+	pv += id->base.uv_increm;					\
+	dst_1 = (type *)((char *)dst_1 + id->base.rgb_increm);		\
+	DITHER(dithpos += id->base.dither_stride;)			\
     } while (--i);							\
 }
 
@@ -200,13 +203,13 @@ DECLARE_420 (rgb_c_8_420, uint8_t, 1, DSTDITHER, DO)
 static void func (void * _id, uint8_t * const * src,			\
 		  unsigned int v_offset)				\
 {									\
-    const convert_rgb_t * const id = (convert_rgb_t *) _id;		\
+    const convert_rgb_c_t * const id = (convert_rgb_c_t *) _id;		\
     type * dst;								\
     const uint8_t * py, * pu, * pv;					\
     int i;								\
-    DITHER(uint8_t dithpos = id->dither_offset;)			\
+    DITHER(uint8_t dithpos = id->base.dither_offset;)			\
 									\
-    dst = (type *)(id->rgb_ptr + id->rgb_stride * v_offset);		\
+    dst = (type *)(id->base.rgb_ptr + id->base.rgb_stride * v_offset);	\
     py = src[0];	pu = src[1];	pv = src[2];			\
 									\
     i = 16;								\
@@ -215,7 +218,7 @@ static void func (void * _id, uint8_t * const * src,			\
 	const type * r, * g, * b;					\
 	DITHER(const uint8_t * const pd = dither + 2 * dithpos;)	\
 									\
-	j = id->width;							\
+	j = id->base.width;						\
 	do {								\
 	    RGB (type, 0)						\
 	    DST (py, dst, 0, 0)						\
@@ -238,11 +241,11 @@ static void func (void * _id, uint8_t * const * src,			\
 	    py += 8;							\
 	    dst += 8 * num;						\
 	} while (--j);							\
-	py += id->y_increm;						\
-	pu += id->uv_increm;						\
-	pv += id->uv_increm;						\
-	dst = (type *)((char *)dst + id->rgb_increm);			\
-	DITHER(dithpos += id->dither_stride;)				\
+	py += id->base.y_increm;					\
+	pu += id->base.uv_increm;					\
+	pv += id->base.uv_increm;					\
+	dst = (type *)((char *)dst + id->base.rgb_increm);		\
+	DITHER(dithpos += id->base.dither_stride;)			\
     } while (--i);							\
 }
 
@@ -256,13 +259,13 @@ DECLARE_422 (rgb_c_8_422, uint8_t, 1, DSTDITHER, DO)
 static void func (void * _id, uint8_t * const * src,			\
 		  unsigned int v_offset)				\
 {									\
-    const convert_rgb_t * const id = (convert_rgb_t *) _id;		\
+    const convert_rgb_c_t * const id = (convert_rgb_c_t *) _id;		\
     type * dst;								\
     const uint8_t * py, * pu, * pv;					\
     int i;								\
-    DITHER(uint8_t dithpos = id->dither_offset;)			\
+    DITHER(uint8_t dithpos = id->base.dither_offset;)			\
 									\
-    dst = (type *)(id->rgb_ptr + id->rgb_stride * v_offset);		\
+    dst = (type *)(id->base.rgb_ptr + id->base.rgb_stride * v_offset);	\
     py = src[0];	pu = src[1];	pv = src[2];			\
 									\
     i = 16;								\
@@ -271,7 +274,7 @@ static void func (void * _id, uint8_t * const * src,			\
 	const type * r, * g, * b;					\
 	DITHER(const uint8_t * const pd = dither + 2 * dithpos;)	\
 									\
-	j = id->width;							\
+	j = id->base.width;						\
 	do {								\
 	    RGB (type, 0)						\
 	    DST (py, dst, 0, 0)						\
@@ -295,11 +298,11 @@ static void func (void * _id, uint8_t * const * src,			\
 	    py += 8;							\
 	    dst += 8 * num;						\
 	} while (--j);							\
-	py += id->y_increm;				   		\
-	pu += id->y_increm;				   		\
-	pv += id->y_increm;				   		\
-	dst = (type *)((char *)dst + id->rgb_increm);			\
-	DITHER(dithpos += id->dither_stride;)				\
+	py += id->base.y_increm;				   	\
+	pu += id->base.y_increm;				   	\
+	pv += id->base.y_increm;				   	\
+	dst = (type *)((char *)dst + id->base.rgb_increm);		\
+	DITHER(dithpos += id->base.dither_stride;)			\
     } while (--i);							\
 }
 
@@ -345,7 +348,7 @@ static inline int div_round (int dividend, int divisor)
 	return -((-dividend + (divisor>>1)) / divisor);
 }
 
-static unsigned int rgb_c_init (convert_rgb_t * id,
+static unsigned int rgb_c_init (convert_rgb_c_t * id,
 				mpeg2convert_rgb_order_t order,
 				unsigned int bpp)
 {
@@ -458,13 +461,13 @@ static unsigned int rgb_c_init (convert_rgb_t * id,
     }
 
     for (i = 0; i < 256; i++) {
-	table_rV[i] = (((uint8_t *)table_r) +
-		       entry_size * div_round (crv * (i-128), 76309));
-	table_gU[i] = (((uint8_t *)table_g) +
-		       entry_size * div_round (cgu * (i-128), 76309));
-	table_gV[i] = entry_size * div_round (cgv * (i-128), 76309);
-	table_bU[i] = (((uint8_t *)table_b) +
-		       entry_size * div_round (cbu * (i-128), 76309));
+	id->table_rV[i] = (((uint8_t *)table_r) +
+			   entry_size * div_round (crv * (i-128), 76309));
+	id->table_gU[i] = (((uint8_t *)table_g) +
+			   entry_size * div_round (cgu * (i-128), 76309));
+	id->table_gV[i] = entry_size * div_round (cgv * (i-128), 76309);
+	id->table_bU[i] = (((uint8_t *)table_b) +
+			   entry_size * div_round (cbu * (i-128), 76309));
     }
 
     return 0;
@@ -480,7 +483,7 @@ static void rgb_internal (mpeg2convert_rgb_order_t order, unsigned int bpp,
     int chroma420 = (seq->chroma_height < seq->height);
     int convert420 = 0;
 
-#ifdef ARCH_X86
+#ifdef ARCH_X86_
     if (!copy && (accel & MPEG2_ACCEL_X86_MMXEXT)) {
 	convert420 = 0;
 	copy = mpeg2convert_rgb_mmxext (order, bpp, seq);
@@ -508,7 +511,8 @@ static void rgb_internal (mpeg2convert_rgb_order_t order, unsigned int bpp,
 	      rgb_c_24_rgb_444, rgb_c_32_444}};
 
 	convert420 = chroma420;
-	id_size += rgb_c_init (id, order, bpp);
+	id_size = (sizeof (convert_rgb_c_t) +
+		   rgb_c_init ((convert_rgb_c_t *) id, order, bpp));
 	src = ((seq->chroma_width == seq->width) +
 	       (seq->chroma_height == seq->height));
 	dest = ((bpp == 24 && order == MPEG2CONVERT_BGR) ? 0 : (bpp + 7) >> 3);
