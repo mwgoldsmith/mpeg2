@@ -115,7 +115,7 @@ void mpeg2_header_state_init (mpeg2dec_t * mpeg2dec)
     mpeg2dec->intra_scaled = mpeg2dec->non_intra_scaled = -1;
 }
 
-static void reset_info (mpeg2_info_t * info)
+void mpeg2_reset_info (mpeg2_info_t * info)
 {
     info->current_picture = info->current_picture_2nd = NULL;
     info->display_picture = info->display_picture_2nd = NULL;
@@ -188,7 +188,7 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
     mpeg2dec->state = STATE_SEQUENCE;
     mpeg2dec->display_offset_x = mpeg2dec->display_offset_y = 0;
 
-    reset_info (&(mpeg2dec->info));
+    mpeg2_reset_info (&(mpeg2dec->info));
     mpeg2dec->info.gop = NULL;
     return 0;
 }
@@ -343,7 +343,7 @@ void mpeg2_header_matrix_finalize (mpeg2dec_t * mpeg2dec)
 static mpeg2_state_t invalid_end_action (mpeg2dec_t * mpeg2dec)
 {
     mpeg2_header_state_init (mpeg2dec);
-    reset_info (&(mpeg2dec->info));
+    mpeg2_reset_info (&(mpeg2dec->info));
     mpeg2dec->sequence = mpeg2dec->new_sequence;
     mpeg2dec->action = mpeg2_seek_header;
     mpeg2dec->state = STATE_SEQUENCE;
@@ -398,7 +398,7 @@ int mpeg2_header_gop (mpeg2dec_t * mpeg2dec)
     uint8_t * buffer = mpeg2dec->chunk_start;
     mpeg2_gop_t * gop = &(mpeg2dec->gop);
 
-    reset_info (&(mpeg2dec->info));
+    mpeg2_reset_info (&(mpeg2dec->info));
     if (! (buffer[1] & 8))
 	return 1;
     mpeg2dec->info.gop = gop;
@@ -488,7 +488,7 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 	    mpeg2dec->fbuf[1] = mpeg2dec->fbuf[0];
 	}
 	mpeg2dec->fbuf[0] = NULL;
-	reset_info (&(mpeg2dec->info));
+	mpeg2_reset_info (&(mpeg2dec->info));
 	mpeg2dec->info.current_picture = picture;
 	mpeg2dec->info.display_picture = picture;
 	if (type != PIC_FLAG_CODING_TYPE_B) {
@@ -798,7 +798,7 @@ mpeg2_state_t mpeg2_header_end (mpeg2dec_t * mpeg2dec)
     if ((mpeg2dec->picture >= picture + 2) ^ b_type)
 	picture = mpeg2dec->pictures + 2;
 
-    reset_info (&(mpeg2dec->info));
+    mpeg2_reset_info (&(mpeg2dec->info));
     if (!(mpeg2dec->sequence.flags & SEQ_FLAG_LOW_DELAY)) {
 	mpeg2dec->info.display_picture = picture;
 	if (picture->nb_fields == 1)
