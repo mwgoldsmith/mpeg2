@@ -9,3 +9,6 @@ as being the vertical position of the first macroblock in that
 slice. However most decoders, who use the notion of macroblock address
 internally, will not notice the weird construct and just decode it
 fine.
+
+Additionally this stream also uses the general slice structure, see
+mpeg1_slice/README for comments (this is also definitely illegal).
