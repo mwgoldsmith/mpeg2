@@ -30,9 +30,7 @@
 
 /* Externally visible list of all vo drivers */
 
-extern vo_setup_t vo_xvshm_setup;
 extern vo_setup_t vo_xv_setup;
-extern vo_setup_t vo_xshm_setup;
 extern vo_setup_t vo_x11_setup;
 extern vo_setup_t vo_sdl_setup;
 extern vo_setup_t vo_sdlsw_setup;
@@ -47,11 +45,7 @@ extern vo_setup_t vo_md5_setup;
 static vo_driver_t video_out_drivers[] =
 {
 #ifdef LIBVO_XV
-    {"xvshm", vo_xvshm_setup},
     {"xv", vo_xv_setup},
-#endif
-#ifdef LIBVO_XSHM
-    {"xshm", vo_xshm_setup},
 #endif
 #ifdef LIBVO_X11
     {"x11", vo_x11_setup},
@@ -83,55 +77,57 @@ typedef struct common_instance_s {
     vo_frame_t * frame_ptr[3];
 } common_instance_t;
 
-int libvo_common_alloc_frames (vo_instance_t * _this, int width, int height,
-			       int frame_size,
-			       void (* draw) (vo_frame_t * frame))
+int libvo_common_alloc_frames (vo_instance_t * _instance,
+			       int width, int height, int frame_size,
+			       void (* copy) (vo_frame_t *, uint8_t **),
+			       void (* field) (vo_frame_t *, int),
+			       void (* draw) (vo_frame_t *))
 {
-    common_instance_t * this;
+    common_instance_t * instance;
     int size;
     uint8_t * alloc;
     int i;
 
-    this = (common_instance_t *)_this;
-    this->prediction_index = 1;
+    instance = (common_instance_t *) _instance;
+    instance->prediction_index = 1;
     size = width * height / 4;
     alloc = malloc (18 * size);
     if (alloc == NULL)
 	return 1;
 
     for (i = 0; i < 3; i++) {
-	this->frame_ptr[i] =
-	    (vo_frame_t *)(((char *)this) + sizeof (common_instance_t) +
-			   i * frame_size);
-	this->frame_ptr[i]->base[0] = alloc;
-	this->frame_ptr[i]->base[1] = alloc + 4 * size;
-	this->frame_ptr[i]->base[2] = alloc + 5 * size;
-	this->frame_ptr[i]->copy = NULL;
-	this->frame_ptr[i]->field = NULL;
-	this->frame_ptr[i]->draw = draw;
-	this->frame_ptr[i]->this = (vo_instance_t *)this;
+	instance->frame_ptr[i] =
+	    (vo_frame_t *) (((char *) instance) + sizeof (common_instance_t) +
+			    i * frame_size);
+	instance->frame_ptr[i]->base[0] = alloc;
+	instance->frame_ptr[i]->base[1] = alloc + 4 * size;
+	instance->frame_ptr[i]->base[2] = alloc + 5 * size;
+	instance->frame_ptr[i]->copy = copy;
+	instance->frame_ptr[i]->field = field;
+	instance->frame_ptr[i]->draw = draw;
+	instance->frame_ptr[i]->instance = (vo_instance_t *) instance;
 	alloc += 6 * size;
     }
 
     return 0;
 }
 
-void libvo_common_free_frames (vo_instance_t * _this)
+void libvo_common_free_frames (vo_instance_t * _instance)
 {
-    common_instance_t * this;
+    common_instance_t * instance;
 
-    this = (common_instance_t *)_this;
-    free (this->frame_ptr[0]->base[0]);
+    instance = (common_instance_t *) _instance;
+    free (instance->frame_ptr[0]->base[0]);
 }
 
-vo_frame_t * libvo_common_get_frame (vo_instance_t * _this, int flags)
+vo_frame_t * libvo_common_get_frame (vo_instance_t * _instance, int flags)
 {
-    common_instance_t * this;
+    common_instance_t * instance;
 
-    this = (common_instance_t *)_this;
+    instance = (common_instance_t *)_instance;
     if (flags & VO_PREDICTION_FLAG) {
-	this->prediction_index ^= 1;
-	return this->frame_ptr[this->prediction_index];
+	instance->prediction_index ^= 1;
+	return instance->frame_ptr[instance->prediction_index];
     } else
-	return this->frame_ptr[2];
+	return instance->frame_ptr[2];
 }

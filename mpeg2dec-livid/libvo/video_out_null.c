@@ -40,45 +40,47 @@ static void null_draw_frame (vo_frame_t * frame)
 {
 }
 
-vo_instance_t * vo_null_setup (vo_instance_t * _this, int width, int height)
+vo_instance_t * vo_null_setup (vo_instance_t * _instance,
+			       int width, int height)
 {
-    null_instance_t * this;
+    null_instance_t * instance;
 
-    this = (null_instance_t *)_this;
-    if (this == NULL) {
-	this = malloc (sizeof (null_instance_t));
-	if (this == NULL)
+    instance = (null_instance_t *) _instance;
+    if (instance == NULL) {
+	instance = malloc (sizeof (null_instance_t));
+	if (instance == NULL)
 	    return NULL;
     }
 
-    if (libvo_common_alloc_frames ((vo_instance_t *)this, width, height,
-				   sizeof (vo_frame_t), null_draw_frame))
+    if (libvo_common_alloc_frames ((vo_instance_t *) instance, width, height,
+				   sizeof (vo_frame_t),
+				   NULL, NULL, null_draw_frame))
 	return NULL;
 
-    this->vo.reinit = vo_null_setup;
-    this->vo.close = libvo_common_free_frames;
-    this->vo.get_frame = libvo_common_get_frame;
+    instance->vo.reinit = vo_null_setup;
+    instance->vo.close = libvo_common_free_frames;
+    instance->vo.get_frame = libvo_common_get_frame;
 
-    return (vo_instance_t *)this;
+    return (vo_instance_t *) instance;
 }
 
 static void null_copy_slice (vo_frame_t * frame, uint8_t ** src)
 {
 }
 
-vo_instance_t * vo_nullslice_setup (vo_instance_t * _this,
+vo_instance_t * vo_nullslice_setup (vo_instance_t * _instance,
 				    int width, int height)
 {
-    null_instance_t * this;
+    null_instance_t * instance;
     int i;
 
-    this = (null_instance_t *)vo_null_setup (_this, width, height);
-    if (this == NULL)
+    instance = (null_instance_t *) vo_null_setup (_instance, width, height);
+    if (instance == NULL)
 	return NULL;
 
-    this->vo.reinit = vo_nullslice_setup;
+    instance->vo.reinit = vo_nullslice_setup;
     for (i = 0; i < 3; i++)
-	this->frame[i].copy = null_copy_slice;
+	instance->frame[i].copy = null_copy_slice;
 
-    return (vo_instance_t *)this;
+    return (vo_instance_t *) instance;
 }

@@ -41,101 +41,103 @@ typedef struct pgm_instance_s {
     char filename[128];
 } pgm_instance_t;
 
-extern vo_instance_t pgm_vo_instance;
+vo_instance_t * vo_pgm_setup (vo_instance_t * instance, int width, int height);
 
-static vo_instance_t * internal_setup (vo_instance_t * _this,
+static vo_instance_t * internal_setup (vo_instance_t * _instance,
 				       int width, int height,
 				       void (* draw_frame) (vo_frame_t *))
 {
-    pgm_instance_t * this;
+    pgm_instance_t * instance;
 
-    this = (pgm_instance_t *)_this;
-    if (this == NULL) {
-	this = malloc (sizeof (pgm_instance_t));
-	if (this == NULL)
+    instance = (pgm_instance_t *) _instance;
+    if (instance == NULL) {
+	instance = malloc (sizeof (pgm_instance_t));
+	if (instance == NULL)
 	    return NULL;
     }
 
-    if (libvo_common_alloc_frames ((vo_instance_t *)this, width, height,
-				   sizeof (vo_frame_t), draw_frame))
+    if (libvo_common_alloc_frames ((vo_instance_t *) instance, width, height,
+				   sizeof (vo_frame_t),
+				   NULL, NULL, draw_frame))
 	return NULL;
 
-    this->vo = pgm_vo_instance;
-    this->width = width;
-    this->height = height;
-    this->framenum = -2;
-    sprintf (this->header, "P5\n\n%d %d\n255\n", width, height * 3 / 2);
+    instance->vo.reinit = vo_pgm_setup;
+    instance->vo.close = libvo_common_free_frames;
+    instance->vo.get_frame = libvo_common_get_frame;
+    instance->width = width;
+    instance->height = height;
+    instance->framenum = -2;
+    sprintf (instance->header, "P5\n\n%d %d\n255\n", width, height * 3 / 2);
     
-    return (vo_instance_t *)this;
+    return (vo_instance_t *) instance;
 }
 
-static void internal_draw_frame (pgm_instance_t * this, FILE * file,
+static void internal_draw_frame (pgm_instance_t * instance, FILE * file,
 				 vo_frame_t * frame)
 {
     int i;
 
-    fwrite (this->header, strlen (this->header), 1, file);
-    fwrite (frame->base[0], this->width, this->height, file);
-    for (i = 0; i < this->height >> 1; i++) {
-	fwrite (frame->base[1]+i*this->width/2, this->width/2, 1, file);
-	fwrite (frame->base[2]+i*this->width/2, this->width/2, 1, file);
+    fwrite (instance->header, strlen (instance->header), 1, file);
+    fwrite (frame->base[0], instance->width, instance->height, file);
+    for (i = 0; i < instance->height >> 1; i++) {
+	fwrite (frame->base[1]+i*instance->width/2, instance->width/2, 1,
+		file);
+	fwrite (frame->base[2]+i*instance->width/2, instance->width/2, 1,
+		file);
     }
 }
 
 static void pgm_draw_frame (vo_frame_t * frame)
 {
-    pgm_instance_t * this;
+    pgm_instance_t * instance;
     FILE * file;
 
-    this = (pgm_instance_t *) frame->this;
-    if (++(this->framenum) < 0)
+    instance = (pgm_instance_t *) frame->instance;
+    if (++(instance->framenum) < 0)
 	return;
-    sprintf (this->filename, "%d.pgm", this->framenum);
-    file = fopen (this->filename, "wb");
+    sprintf (instance->filename, "%d.pgm", instance->framenum);
+    file = fopen (instance->filename, "wb");
     if (!file)
 	return;
-    internal_draw_frame (this, file, frame);
+    internal_draw_frame (instance, file, frame);
     fclose (file);
 }
 
-vo_instance_t * vo_pgm_setup (vo_instance_t * this, int width, int height)
+vo_instance_t * vo_pgm_setup (vo_instance_t * instance, int width, int height)
 {
-    return internal_setup (this, width, height, pgm_draw_frame);
+    return internal_setup (instance, width, height, pgm_draw_frame);
 }
-
-static vo_instance_t pgm_vo_instance = {
-    vo_pgm_setup, libvo_common_free_frames, libvo_common_get_frame
-};
 
 static void pgmpipe_draw_frame (vo_frame_t * frame)
 {
-    pgm_instance_t * this;
+    pgm_instance_t * instance;
 
-    this = (pgm_instance_t *)frame->this;
-    if (++(this->framenum) >= 0)
-	internal_draw_frame (this, stdout, frame);
+    instance = (pgm_instance_t *)frame->instance;
+    if (++(instance->framenum) >= 0)
+	internal_draw_frame (instance, stdout, frame);
 }
 
-vo_instance_t * vo_pgmpipe_setup (vo_instance_t * this, int width, int height)
+vo_instance_t * vo_pgmpipe_setup (vo_instance_t * instance,
+				  int width, int height)
 {
-    return internal_setup (this, width, height, pgmpipe_draw_frame);
+    return internal_setup (instance, width, height, pgmpipe_draw_frame);
 }
 
 static void md5_draw_frame (vo_frame_t * frame)
 {
-    pgm_instance_t * this;
+    pgm_instance_t * instance;
     char buf[100];
 
-    this = (pgm_instance_t *)frame->this;
+    instance = (pgm_instance_t *) frame->instance;
     pgm_draw_frame (frame);
-    if (this->framenum < 0)
+    if (instance->framenum < 0)
 	return;
-    sprintf (buf, "md5sum -b %s", this->filename);
+    sprintf (buf, "md5sum -b %s", instance->filename);
     system (buf);
-    remove (this->filename);
+    remove (instance->filename);
 }
 
-vo_instance_t * vo_md5_setup (vo_instance_t * this, int width, int height)
+vo_instance_t * vo_md5_setup (vo_instance_t * instance, int width, int height)
 {
-    return internal_setup (this, width, height, md5_draw_frame);
+    return internal_setup (instance, width, height, md5_draw_frame);
 }

@@ -11,8 +11,10 @@
  */
 
 
-int libvo_common_alloc_frames (vo_instance_t * this, int width, int height,
+int libvo_common_alloc_frames (vo_instance_t * instance, int width, int height,
 			       int frame_size,
-			       void (* draw) (vo_frame_t * frame));
-void libvo_common_free_frames (vo_instance_t * this);
-vo_frame_t * libvo_common_get_frame (vo_instance_t * this, int prediction);
+			       void (* copy) (vo_frame_t *, uint8_t **),
+			       void (* field) (vo_frame_t *, int),
+			       void (* draw) (vo_frame_t *));
+void libvo_common_free_frames (vo_instance_t * instance);
+vo_frame_t * libvo_common_get_frame (vo_instance_t * instance, int prediction);
