@@ -45,26 +45,26 @@ static const int32_t Inverse_Table_6_9[8][4] = {
     {117579, 136230, 16907, 35559}  /* SMPTE 240M (1987) */
 };
 
-static const uint8_t dither_8x8_36[8][8] ATTR_ALIGN(16) = {
-    { 0, 27,  6, 34,  1, 29,  8, 35},
-    {18,  9, 25, 15, 19, 10, 26, 17},
-    { 4, 31,  2, 29,  6, 33,  3, 31},
-    {22, 13, 20, 11, 24, 15, 22, 13},
-    { 1, 28,  7, 35,  0, 27,  7, 34},
-    {19, 10, 26, 17, 18,  9, 25, 16},
-    { 5, 33,  3, 30,  5, 32,  2, 30},
-    {23, 14, 21, 12, 23, 14, 21, 11}
+static const uint8_t dither_8x8_31[8][8] ATTR_ALIGN(16) = {
+    { 0, 23,  5, 29,  1, 24,  7, 30},
+    {15,  7, 21, 13, 17,  9, 22, 15},
+    { 3, 27,  1, 25,  5, 28,  3, 26},
+    {19, 11, 17,  9, 21, 13, 19, 11},
+    { 0, 24,  6, 30,  0, 23,  6, 29},
+    {16,  8, 22, 14, 16,  8, 21, 14},
+    { 4, 28,  2, 26,  4, 27,  2, 25},
+    {20, 12, 18, 10, 20, 12, 18, 10}
 };
 
-static const uint8_t dither_8x8_85[8][8] ATTR_ALIGN(16) = {
-    { 0, 63, 15, 79,  3, 67, 19, 83},
-    {42, 21, 58, 37, 46, 25, 62, 41},
-    {10, 74,  5, 69, 14, 78,  9, 73},
-    {53, 31, 47, 26, 57, 35, 51, 30},
-    { 2, 66, 18, 82,  1, 65, 17, 81},
-    {45, 23, 61, 39, 43, 22, 59, 38},
-    {13, 77,  7, 71, 11, 75,  6, 70},
-    {55, 34, 50, 29, 54, 33, 49, 27}
+static const uint8_t dither_8x8_73[8][8] ATTR_ALIGN(16) = {
+    { 0, 54, 13, 68,  3, 58, 17, 71},
+    {36, 18, 50, 31, 39, 21, 53, 35},
+    { 9, 63,  4, 59, 12, 67,  7, 62},
+    {45, 27, 41, 22, 49, 30, 44, 26},
+    { 2, 57, 15, 70,  1, 55, 14, 69},
+    {38, 20, 52, 34, 37, 19, 51, 33},
+    {11, 66,  6, 61, 10, 65,  5, 60},
+    {47, 29, 43, 25, 46, 28, 42, 23}
 };
 
 typedef void yuv2rgb_c_internal (uint8_t *, uint8_t *, uint8_t *, uint8_t *,
@@ -102,9 +102,9 @@ void * table_bU[256];
 
 #define DSTDITHER(py,dst,i,d)						\
 	Y = py[2*i];							\
-	dst[2*i] = r[Y+d36[2*i+d]] + g[Y-d36[2*i+d]] + b[Y+d85[2*i+d]];	\
+	dst[2*i] = r[Y+d31[2*i+d]] + g[Y-d31[2*i+d]] + b[Y+d73[2*i+d]];	\
 	Y = py[2*i+1];							\
-	dst[2*i+1] = r[Y+d36[2*i+1+d]] + g[Y-d36[2*i+1+d]] + b[Y+d85[2*i+1+d]];
+	dst[2*i+1] = r[Y+d31[2*i+1+d]] + g[Y-d31[2*i+1+d]] + b[Y+d73[2*i+1+d]];
 
 static void yuv2rgb_c_32 (uint8_t * py_1, uint8_t * py_2,
 			  uint8_t * pu, uint8_t * pv,
@@ -271,10 +271,10 @@ static void yuv2rgb_c_8 (uint8_t * py_1, uint8_t * py_2,
     int U, V, Y;
     uint8_t * r, * g, * b;
     uint8_t * dst_1, * dst_2;
-    const uint8_t * d36, * d85;
+    const uint8_t * d31, * d73;
 
-    d36 = dither_8x8_36[(2*loop) & 7];
-    d85 = dither_8x8_85[(2*loop) & 7];
+    d31 = dither_8x8_31[(2*loop) & 7];
+    d73 = dither_8x8_73[(2*loop) & 7];
 
     width >>= 3;
     dst_1 = _dst_1;
@@ -412,7 +412,7 @@ static yuv2rgb_c_internal * yuv2rgb_c_init (int order, int bpp)
     case 8:
 	yuv2rgb = yuv2rgb_c_8;
 
-	table_332 = (uint8_t *) malloc ((197 + 2*682 + 256 + 232 + 83) *
+	table_332 = (uint8_t *) malloc ((197 + 2*682 + 256 + 232 + 71) *
 					sizeof (uint8_t));
 
 	entry_size = sizeof (uint8_t);
@@ -420,16 +420,16 @@ static yuv2rgb_c_internal * yuv2rgb_c_init (int order, int bpp)
 	table_g = table_332 + 197 + 682;
 	table_b = table_332 + 197 + 2*682;
 
-	for (i = -197; i < 256+197+35; i++)
+	for (i = -197; i < 256+197+30; i++)
 	    ((uint8_t *)table_r)[i] =
 		(table_Y[i+384] * 7 / 255) << ((order == CONVERT_RGB) ? 5 : 0);
-	for (i = -132; i < 256+132+35; i++)
+	for (i = -132; i < 256+132+30; i++)
 	    ((uint8_t *)table_g)[i] =
 		(table_Y[i+384] * 7 / 255) << ((order == CONVERT_RGB) ? 2 : 3);
-	for (i = -232; i < 256+232+83; i++)
+	for (i = -232; i < 256+232+71; i++)
 	    ((uint8_t *)table_b)[i] =
 		(table_Y[i+384] / 85) << ((order == CONVERT_RGB) ? 0 : 6);
-	table_g += 35;	/* green dither is reversed */
+	table_g += 30;	/* green dither is reversed */
 	break;
 
     default:
