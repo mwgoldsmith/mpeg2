@@ -84,9 +84,6 @@ allocate_image_buffer_common(uint32_t width, uint32_t height, uint32_t format)
 	
 	image_size = width * height * 3 / 2;
 	image->base = malloc(image_size);
-	image->y = image->base;
-	image->v = image->base + (width * height);
-	image->u = image->base + (width * height * 5 / 4);
 
 	if(!image->base)
 	{

@@ -45,9 +45,6 @@ typedef struct vo_image_buffer_s
 	uint32_t width;
 	uint32_t format;
 	uint8_t *base;
-	uint8_t *y;
-	uint8_t *u;
-	uint8_t *v;
 	void *private;
 } vo_image_buffer_t;
 
@@ -67,12 +64,13 @@ typedef struct vo_functions_s
 	 *             title == string for titlebar of window. May be disregarded
 	 *                      if there is no such thing as a window to your
 	 *                      driver. Make a copy of this string, if you need it.
+	 *             format == desired fourCC code to use for image buffers
 	 *   returns : zero on successful initialization, non-zero on error.
 	 *              The program will probably respond to an error condition
 	 *              by terminating.
 	 */
 
-	uint32_t (*init)(uint32_t width, uint32_t height, uint32_t fullscreen, char *title);
+	uint32_t (*init)(uint32_t width, uint32_t height, uint32_t fullscreen, char *title, uint32_t format);
 
 	/*
 	 * Return driver information.
@@ -152,14 +150,12 @@ typedef struct vo_functions_s
 	 * bonus acceleration (like AGP-based transfers, etc...). If nothing
 	 * else, implementing this as a simple wrapper over malloc() is acceptable.
 	 * This memory must be system memory as it will be read often.
+	 * The image will have the format set when we init the display.
 	 *
-	 *    params : height  == heigth of image in pixels
-	 *           : width   == width of image in pixels
-	 *           : format  == fourCC code corresponding to the image format
 	 *   returns : NULL if unable to allocate, ptr to new surface
 	 */
 
-	vo_image_buffer_t* (*allocate_image_buffer)(uint32_t height, uint32_t width, uint32_t format);
+	vo_image_buffer_t* (*allocate_image_buffer)();
 
 	/*
 	 * Free an image buffer allocated with allocate_image_buffer.

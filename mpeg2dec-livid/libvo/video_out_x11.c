@@ -122,7 +122,7 @@ static uint32_t image_height;
  * allocate colors and (shared) memory
  */
 static uint32_t 
-init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
+init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title, uint32_t format)
 {
 	int screen;
 	unsigned int fg, bg;
@@ -627,7 +627,7 @@ draw_frame(uint8_t *src[])
 }
 
 static vo_image_buffer_t* 
-allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format)
+allocate_image_buffer()
 {
 #ifdef HAVE_XV
 	xvimage_counter++;
@@ -643,12 +643,8 @@ allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format)
 		allocate_xvimage(xvimage_counter);
 
 		image->base = xvimage[xvimage_counter]->data;
-		image->y = image->base;
-		image->v = image->base + (width * height);
-		image->u = image->base + (width * height * 5 / 4);
-		image->height = height;
-		image->width = width;
-		image->format = format;
+		image->height = image_height;
+		image->width = image_width;
 		
 		return image;
 	}
@@ -656,7 +652,7 @@ allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format)
 #endif
 	{
 		//use the generic fallback
-		return allocate_image_buffer_common(height,width,format);
+		return allocate_image_buffer_common(image_height, image_width, 0x32315659);
 	}
 }
 

@@ -74,7 +74,7 @@ findArrayEnd(SDL_Rect **array)
 } // findArrayEnd
 
 static uint32_t 
-init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
+init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title, uint32_t format)
 /*
  * Initialize an SDL surface and an SDL YUV overlay.
  *
@@ -292,10 +292,10 @@ flip_page(void)
 } // display_flip_page
 
 static vo_image_buffer_t* 
-allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format)
+allocate_image_buffer()
 {
 	//use the generic fallback
-	return allocate_image_buffer_common(height,width,format);
+	return allocate_image_buffer_common(dispSize.h,dispSize.w,0x32315956);
 }
 
 static void	
