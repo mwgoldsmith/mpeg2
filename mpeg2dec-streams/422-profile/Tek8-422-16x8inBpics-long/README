@@ -1,0 +1,67 @@
+Dear 4:2:2 profile conformance bitstream exchange AHG members,
+
+This is the long version of 4:2:2 profile test bitstream ID 14.  This sequence
+contains field structured pictures where all the B pictures consist of 100%
+bidirectional 16x8 motion compensated macroblocks.  The purpose is to stress
+the decoder-under-test's memory bandwidth used for motion compensation.
+
+The parameters for the sequence are as follows:
+
+Sequence:	29.97Hz, "Mobile & Calendar", 125 frames
+GOP:		i/p b/b b/b b/b b/b b/b p/p ...
+Bitrate: 	50 Mbits/sec
+Picture size:	720 x 512
+Quant. scale:	Non-uniform (q_scale_type 1)
+Picture struct:	Field
+Extras:		Sequence display extension,
+		Quantizer Matrix extension with 3 matrices
+		Lausanne slice extra information byte,
+		Intra DC precision of 11 bits.
+
+The format of the picture data is:
+
+	4:2:2 frame ("display" order) 8 bit samples per compenent.
+
+	width  = 720
+	height = 512
+
+
+                   <--------width--------->
+                  +------------------------+
+                  |                        |      ^
+                  |                        |      |
+                  |                        |      |
+                  |                        |      |
+                  |     Luminance Pels     |    height
+                  |                        |      |
+                  |                        |      |
+                  |                        |      V
+                  +-----------+------------+
+                  |           |      ^
+                  |           |      |
+                  |           |      |
+                  |  Cb pels  |    height
+                  |           |      |
+                  |           |      |
+                  |           |      V
+                  +-----------+      -
+                  |           |      ^
+                  |           |      |
+                  |           |      |
+                  |  Cr pels  |    height
+                  |           |      |
+                  |           |      |
+                  |           |      V
+                  +-----------+      -
+                   <-width/2->
+
+Please email me with the results of your decoding -- also let me know if you
+find any errors in this bitstream.
+
+--------------------------------------------------------------------------------
+Bob Eifrig, M/S 50-490
+Video and Networking Technology          Tel:   +1 503 627 3762
+Tektronix Inc                            FAX:   +1 503 627 1736
+P. O. Box 500                            Email:  Bob.Eifrig@TEK.COM
+Beaverton, Oregon, 97077, USA     
+--------------------------------------------------------------------------------
