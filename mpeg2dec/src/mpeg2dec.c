@@ -62,6 +62,7 @@ static RETSIGTYPE signal_handler (int sig)
 {
     sigint = 1;
     signal (sig, SIG_DFL);
+    return (RETSIGTYPE)0;
 }
 
 static void print_fps (int final)
