@@ -138,6 +138,9 @@ static int x11_create_image (int width, int height)
 
     priv->ximage->data =
 	malloc (priv->ximage->bytes_per_line * priv->ximage->height);
+    if (priv->ximage->data == NULL)
+	return 1;
+
     return 0;
 }
 
@@ -501,11 +504,13 @@ static int xv_create_image (int width, int height)
 
     priv->xvimage = XvCreateImage (priv->display, priv->port, FOURCC_YV12,
 				   NULL /* data */, width, height);
-    if (priv->xvimage == NULL)
+    if ((priv->xvimage == NULL) || (priv->xvimage->data_size == 0))
 	return 1;
 
-    priv->xvimage->data =
-	malloc (priv->xvimage->data_size);
+    priv->xvimage->data = malloc (priv->xvimage->data_size);
+    if (priv->xvimage->data == NULL)
+	return 1;
+
     return 0;
 }
 
@@ -624,7 +629,7 @@ static int xvshm_create_image (int width, int height)
     priv->xvimage = XvShmCreateImage (priv->display, priv->port, FOURCC_YV12,
 				      NULL /* data */, width, height,
 				      &(priv->shminfo));
-    if (priv->xvimage == NULL)
+    if ((priv->xvimage == NULL) || (priv->xvimage->data_size == 0))
 	return 1;
 
     if (xshm_create_shm (priv->xvimage->data_size))
