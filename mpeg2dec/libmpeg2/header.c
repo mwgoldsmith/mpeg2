@@ -702,13 +702,13 @@ mpeg2_state_t mpeg2_header_end (mpeg2dec_t * mpeg2dec)
     mpeg2_picture_t * picture;
     int b_type;
 
+    b_type = (mpeg2dec->decoder.coding_type == B_TYPE);
     picture = mpeg2dec->pictures;
-    if (mpeg2dec->picture < picture + 2)
+    if ((mpeg2dec->picture >= picture + 2) ^ b_type)
 	picture = mpeg2dec->pictures + 2;
 
     mpeg2dec->state = STATE_END;
     reset_info (&(mpeg2dec->info));
-    b_type = (mpeg2dec->decoder.coding_type == B_TYPE);
     if (!(mpeg2dec->sequence.flags & SEQ_FLAG_LOW_DELAY)) {
 	mpeg2dec->info.display_picture = picture;
 	if (picture->nb_fields == 1)
