@@ -1,0 +1,6 @@
+.*.swp
+*~
+*.o
+Makefile.in
+Makefile
+mga_vid_test_g[24]00

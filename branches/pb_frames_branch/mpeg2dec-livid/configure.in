@@ -1,0 +1,60 @@
+dnl Autoconf configuration script mpeg2dec
+dnl 
+dnl Aaron Holtzman - May 1999
+dnl
+AC_INIT(parse.c)
+AC_CANONICAL_HOST
+AC_PREREQ(2.13)
+AM_CONFIG_HEADER(config.h)
+AM_INIT_AUTOMAKE(mpeg2dec, 0.1.5)
+
+AM_MAINTAINER_MODE
+AC_PROG_CC
+AC_PROG_GCC_TRADITIONAL
+AC_PROG_RANLIB
+
+AC_SUBST(CONFIG_OBJS)
+
+AC_MSG_CHECKING(for /dev/mga_vid)
+if test -c "/dev/mga_vid"; then
+	AC_MSG_RESULT(found /dev/mga_vid)
+	CONFIG_OBJS="$CONFIG_OBJS display_mga_vid.o";
+	DRIVERS=drivers
+else
+	AC_MSG_RESULT(/dev/mga_vid not found -> X11 fallback configured)
+	CONFIG_OBJS="$CONFIG_OBJS display_x11.o"
+	DRIVERS=
+fi
+AC_SUBST(DRIVERS)
+
+AC_MSG_CHECKING(for SMP)
+AC_SUBST(MOD_CFLAGS)
+if uname -a | grep SMP >/dev/null; then
+	AC_MSG_RESULT(yes)
+	MOD_CFLAGS=-D__SMP__
+else
+	AC_MSG_RESULT(no)
+fi
+
+dnl Checks for libraries. (X11)
+AC_PATH_XTRA
+
+dnl Figure out which OS we're on and what to do about it
+case "$host" in
+*-linux*) ;;
+*-solaris*) ;;
+*) ;;
+esac
+
+dnl Set the appropriate architecture define
+case "$host" in
+i?86-*)
+	AC_DEFINE(__i386__) 
+	CONFIG_OBJS="$CONFIG_OBJS idct_mmx.o idct_block_mmx.o motion_comp_mmx.o";;
+alpha*-*) AC_DEFINE(__alpha__);;
+sparc-*) AC_DEFINE(__sparc__);;
+ppc-*) AC_DEFINE(__ppc__);;
+*) echo "$host is not currently supported by ac3dec"; exit 1;;
+esac
+
+AC_OUTPUT( tools/Makefile drivers/Makefile Makefile ) 
