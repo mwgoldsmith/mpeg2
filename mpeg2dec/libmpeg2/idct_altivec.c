@@ -47,7 +47,7 @@ typedef vector unsigned int vector_u32_t;
 #define VEC_S16(a,b,c,d,e,f,g,h) (vector_s16_t) (a, b, c, d, e, f, g, h)
 #endif
 
-#if 1	/* work around gcc vec_mergel bug */
+#ifdef HAVE_ALTIVEC_H	/* work around gcc vec_mergel bug */
 static inline vector_s16_t my_vec_mergel (vector_s16_t const A,
 					  vector_s16_t const B)
 {
