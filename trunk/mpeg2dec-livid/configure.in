@@ -6,7 +6,7 @@ AC_INIT(parse.c)
 AC_CANONICAL_HOST
 AC_PREREQ(2.13)
 AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE(mpeg2dec, 0.1.6)
+AM_INIT_AUTOMAKE(mpeg2dec, 0.1.7)
 
 AM_MAINTAINER_MODE
 AC_PROG_CC
@@ -112,6 +112,10 @@ fi
 
 dnl Checks for libraries. (X11)
 AC_PATH_XTRA
+AC_CHECK_LIB(Xv, XvShmCreateImage,
+ 	LIBS="$LIBS -lXv"
+ 	CFLAGS="$CFLAGS -DHAVE_XV",,
+ 	$X_LIBS $X_PRE_LIBS -lXext -lX11 $X_EXTRA_LIBS)
 AM_CONDITIONAL(HAVE_X, test "x$no_x" != "xyes")
 
 dnl Figure out which OS we're on and what to do about it

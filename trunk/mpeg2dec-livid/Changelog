@@ -1,4 +1,8 @@
-mpeg2dec-0.1.6 
+
+mpeg2dec-0.1.7 
+-added Xv support
+
+mpeg2dec-0.1.6 Wed Mar 22 09:45:44 PST 2000
 -enhanced g200 
 -solaris fixes
 -inlined, rewritten bitstream code (much faster now)
