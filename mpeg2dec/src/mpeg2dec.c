@@ -46,6 +46,7 @@ static uint8_t buffer[BUFFER_SIZE];
 static FILE * in_file;
 static int demux_track = 0;
 static int demux_pid = 0;
+static int demux_pva = 0;
 static int disable_accel = 0;
 static mpeg2dec_t * mpeg2dec;
 static vo_open_t * output_open = NULL;
@@ -127,11 +128,12 @@ static void print_usage (char ** argv)
     int i;
     vo_driver_t * drivers;
 
-    fprintf (stderr,
-	     "usage: %s [-o <mode>] [-s [<track>]] [-t <pid>] [-c] <file>\n"
+    fprintf (stderr, "usage: %s [-o <mode>] [-s [<track>]] [-t <pid>] [-p] "
+	     "[-c] <file>\n"
 	     "\t-s\tuse program stream demultiplexer, "
 	     "track 0-15 or 0xe0-0xef\n"
 	     "\t-t\tuse transport stream demultiplexer, pid 0x10-0x1ffe\n"
+	     "\t-p\tuse pva demultiplexer\n"
 	     "\t-c\tuse c implementation, disables all accelerations\n"
 	     "\t-o\tvideo output mode\n", argv[0]);
 
@@ -150,7 +152,7 @@ static void handle_args (int argc, char ** argv)
     char * s;
 
     drivers = vo_drivers ();
-    while ((c = getopt (argc, argv, "s::t:co:")) != -1)
+    while ((c = getopt (argc, argv, "s::t:pco:")) != -1)
 	switch (c) {
 	case 'o':
 	    for (i = 0; drivers[i].name != NULL; i++)
@@ -181,6 +183,10 @@ static void handle_args (int argc, char ** argv)
 		fprintf (stderr, "Invalid pid: %s\n", optarg);
 		print_usage (argv);
 	    }
+	    break;
+
+	case 'p':
+	    demux_pva = 1;
 	    break;
 
 	case 'c':
@@ -519,6 +525,102 @@ static void ps_loop (void)
     } while (end == buffer + BUFFER_SIZE);
 }
 
+static int pva_demux (uint8_t * buf, uint8_t * end)
+{
+    static int state = DEMUX_SKIP;
+    static int state_bytes = 0;
+    static uint8_t head_buf[12];
+
+    uint8_t * header;
+    int bytes;
+    int len;
+
+    switch (state) {
+    case DEMUX_HEADER:
+        if (state_bytes > 0) {
+            header = head_buf;
+            bytes = state_bytes;
+            goto continue_header;
+        }
+        break;
+    case DEMUX_DATA:
+        if (state_bytes > end - buf) {
+            decode_mpeg2 (buf, end);
+            state_bytes -= end - buf;
+            return 0;
+        }
+        decode_mpeg2 (buf, buf + state_bytes);
+        buf += state_bytes;
+        break;
+    case DEMUX_SKIP:
+        if (state_bytes > end - buf) {
+            state_bytes -= end - buf;
+            return 0;
+        }
+        buf += state_bytes;
+        break;
+    }
+
+    while (1) {
+    payload_start:
+	header = buf;
+	bytes = end - buf;
+    continue_header:
+	NEEDBYTES (2);
+	if (header[0] != 0x41 || header[1] != 0x56) {
+	    if (header != head_buf) {
+		buf++;
+		goto payload_start;
+	    } else {
+		header[0] = header[1];
+		bytes = 1;
+		goto continue_header;
+	    }
+	}
+	NEEDBYTES (8);
+	if (header[2] != 1) {
+	    DONEBYTES (8);
+	    bytes = (header[6] << 8) + header[7];
+	    if (bytes > end - buf) {
+		state = DEMUX_SKIP;
+		state_bytes = bytes - (end - buf);
+		return 0;
+	    } 
+	    buf += bytes; 
+	} else {
+	    len = 8;
+	    if (header[5] & 0x10) {
+		len = 12 + (header[5] & 3);
+		NEEDBYTES (len);
+		decode_mpeg2 (header + 12, header + len);
+		mpeg2_pts (mpeg2dec, ((header[8] << 24) | (header[9] << 16) |
+				      (header[10] << 8) | header[11]));
+	    }
+	    DONEBYTES (len);
+	    bytes = (header[6] << 8) + header[7] + 8 - len;
+	    if (bytes > end - buf) {
+		decode_mpeg2 (buf, end);
+		state = DEMUX_DATA;
+		state_bytes = bytes - (end - buf);
+		return 0;
+	    } else if (bytes > 0) {
+		decode_mpeg2 (buf, buf + bytes);
+		buf += bytes;
+	    }
+	}
+    }
+}
+
+static void pva_loop (void)
+{
+    uint8_t * end;
+
+    do {
+	end = buffer + fread (buffer, 1, BUFFER_SIZE, in_file);
+	pva_demux (buffer, end);
+    } while (end == buffer + BUFFER_SIZE);
+}
+
 static void ts_loop (void)
 {
 #define PACKETS (BUFFER_SIZE / 188)
@@ -588,7 +690,9 @@ int main (int argc, char ** argv)
     if (mpeg2dec == NULL)
 	exit (1);
 
-    if (demux_pid)
+    if (demux_pva)
+	pva_loop ();
+    else if (demux_pid)
 	ts_loop ();
     else if (demux_track)
 	ps_loop ();
