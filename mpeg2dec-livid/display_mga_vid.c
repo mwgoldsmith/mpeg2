@@ -36,19 +36,44 @@
 #include "drivers/mga_vid.h"
 #include "display.h"
 
+#define IS_G200 0
 
 mga_vid_config_t mga_vid_config;
 uint_8 *vid_data;
 
-void 
-display_frame(uint_8 *src[])
+void
+write_frame_g200(uint_8 *y,uint_8 *cr, uint_8 *cb)
 {
-	uint_8 *dest,*y,*cr,*cb;
+	uint_8 *dest;
+	uint_32 bespitch,h,w;
+
+	dest = vid_data;
+	bespitch = (mga_vid_config.src_width + 31) & ~31;
+
+	for(h=0; h < mga_vid_config.src_height; h++)
+	{
+		memcpy(dest, y, mga_vid_config.src_width);
+		y += mga_vid_config.src_width;
+		dest += bespitch;
+	}
+
+	for(h=0; h < mga_vid_config.src_height/2; h++)
+	{
+		for(w=0; w < mga_vid_config.src_width/2; w++)
+		{
+			*dest++ = *cb++;
+			*dest++ = *cr++;
+		}
+		dest += bespitch - mga_vid_config.src_width;
+	}
+}
+
+void
+write_frame_g400(uint_8 *y,uint_8 *cr, uint_8 *cb)
+{
+	uint_8 *dest;
 	uint_32 bespitch,h;
 
-	y  = src[0];
-	cb = src[1];
-	cr = src[2];
 	dest = vid_data;
 	bespitch = (mga_vid_config.src_width + 31) & ~31;
 
@@ -74,6 +99,15 @@ display_frame(uint_8 *src[])
 	}
 }
 
+void
+display_frame(uint_8 *src[])
+{
+#if IS_G200
+	write_frame_g200(src[0], src[2], src[1]);
+#else
+	write_frame_g400(src[0], src[2], src[1]);
+#endif
+}
 
 void 
 display_init(uint_32 width, uint_32 height)

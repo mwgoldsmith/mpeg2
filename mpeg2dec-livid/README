@@ -6,6 +6,7 @@ Contributions by:
 	Real Ouellet <realo@sympatico.ca> - g200 fixes
 	Brion Vibber <brion@gizmo.usc.edu> - x11 fixes
 	Franck SICARD <Franck.Sicard@miniruth.solsoft.fr> - x11 fixes
+	H}kan Hjort <d95hjort@dtek.chalmers.se> - Solaris fixes
 	Didier Gautheron <dgautheron@magic.fr> - bug fixes
 	(let me know if I've forgotten anyone)
 
@@ -30,7 +31,7 @@ decode.c
 |--mb_buffer.c
 |--idct.c
 |--motion_comp.c
-|--display.c
+|--display_*.c
 
 For each frame, decode.c uses parse.c to stuff macroblocks into the
 macroblock buffer (mb_buffer.c). When this buffer is full or the frame
@@ -65,6 +66,17 @@ preferably inline assembly. Special ISA extensions (like 3dnow,MMX)
 should be #ifdef'ed with the appropriate _ISA_, not the extension.
 You should also include a test to determine if you extension is present
 and set the appropriate function pointers.
+
+How to use mga_vid from scratch
+
+1. mknod /dev/mga_vid c 178 0
+2. ./configure.
+3. if you have a g200 then you must set IS_G200=1 in display_mga_vid.c.
+4. make
+5. su 
+6. insmod videodev; insmod drivers/mga_vid.o  (you must have v4l built
+   for your kernel)
+7. ./mpeg2dec foo.mpeg2  (you're done!)
 
 Documentation
 
