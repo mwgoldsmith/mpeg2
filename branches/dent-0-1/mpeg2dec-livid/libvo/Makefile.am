@@ -34,7 +34,7 @@ DISPLAY_SDL =
 endif
 
 
-lib_LTLIBRARIES = $(DISPLAY_X11) $(DISPLAY_3DFX) $(DISPLAY_MGA) $(DISPLAY_SDL)
+lib_LTLIBRARIES = display_null.la $(DISPLAY_X11) $(DISPLAY_3DFX) $(DISPLAY_MGA) $(DISPLAY_SDL)
 
 display_x11_la_SOURCES = video_out_x11.c yuv2rgb.c
 EXTRA_display_x11_la_SOURCES = yuv2rgb_mmx.c
@@ -49,6 +49,9 @@ display_mga_la_LDFLAGS = -avoid-version -module -Wl,-soname,display_mga
 
 display_sdl_la_SOURCES = video_out_sdl.c
 display_sdl_la_LDFLAGS = -avoid-version -module -Wl,-soname,display_sdl
+
+display_null_la_SOURCES = video_out_null.c
+display_null_la_LDFLAGS = -avoid-version -module -Wl,-soname,display_null
 
 
 noinst_HEADERS = video_out_internal.h mmx.h

@@ -1,3 +1,6 @@
+//PLUGIN_INFO(INFO_NAME, "NULL video output");
+//PLUGIN_INFO(INFO_AUTHOR, "Aaron Holtzman <aholtzma@ess.engr.uvic.ca>");
+
 /* 
  *  video_out_null.c
  *
@@ -21,60 +24,147 @@
  *
  */
 
-#include "config.h"
-#include "video_out.h"
-#include "video_out_internal.h"
 
-LIBVO_EXTERN(null)
+#include <stdlib.h>
 
+#include <oms/oms.h>
+#include <oms/plugin/output_video.h>
 
-static vo_info_t vo_info = 
-{
-	"Null video output",
-	"null",
-	"Aaron Holtzman <aholtzma@ess.engr.uvic.ca>",
-	""
+static int _null_open		(plugin_t *plugin, void *name);
+static int _null_close		(plugin_t *plugin);
+static int _null_setup		(uint32_t width, uint32_t height, uint32_t fullscreen, char *title);
+static int _null_draw_frame	(uint8_t *src[]);
+static int _null_draw_slice	(uint8_t *src[], uint32_t slice_num);
+static void _null_flip_page	(void);
+static void _null_free_image_buffer   (vo_image_buffer_t* image);
+static vo_image_buffer_t* _null_allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format);
+
+static plugin_output_video_t video_null = {
+	NULL,
+	_null_open,
+	_null_close,
+	_null_setup,
+	_null_draw_frame,
+	_null_draw_slice,
+	_null_flip_page,
+	_null_allocate_image_buffer,
+	_null_free_image_buffer
 };
 
-static uint_32
-draw_slice(uint_8 *src[], uint_32 slice_num)
+
+/**
+ *
+ **/
+
+static int _null_open (plugin_t *plugin, void *name)
+{
+        return 0;
+}
+
+
+/**
+ *
+ **/
+
+static int _null_close (plugin_t *plugin)
 {
 	return 0;
 }
 
-static void
-flip_page(void)
-{
-}
 
-static uint_32
-draw_frame(uint_8 *src[])
+/**
+ *
+ **/
+
+static int _null_draw_slice (uint8_t *src[], uint32_t slice_num)
 {
 	return 0;
 }
 
-static uint_32
-init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
+
+/**
+ *
+ **/
+
+static int _null_draw_frame (uint8_t *src[])
 {
-  return 0;
+	return 0;
 }
 
-static const vo_info_t*
-get_info(void)
+
+/**
+ *
+ **/
+
+static void _null_flip_page(void)
 {
-	return &vo_info;
 }
 
-static vo_image_buffer_t* 
-allocate_image_buffer(uint_32 height, uint_32 width, uint_32 format)
+
+/**
+ *
+ **/
+
+static int _null_setup (uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 {
-	//use the generic fallback
-	return allocate_image_buffer_common(height,width,format);
+	return 0;
 }
 
-static void	
-free_image_buffer(vo_image_buffer_t* image)
+
+/**
+ *
+ **/
+
+static vo_image_buffer_t* _null_allocate_image_buffer (uint32_t height, uint32_t width, uint32_t format)
 {
-	//use the generic fallback
-	free_image_buffer_common(image);
+	vo_image_buffer_t *image;
+
+	if (!(image = malloc (sizeof (vo_image_buffer_t))))
+		return NULL;
+
+	image->height   = height;
+	image->width    = width;
+	image->format   = format;
+
+	//we only know how to do 4:2:0 planar yuv right now.
+	if (!(image->base = malloc (width * height * 3 / 2))) {
+		free(image);
+		return NULL;
+	}
+
+	return image;
+}
+
+
+/**
+ *
+ **/
+
+static void _null_free_image_buffer (vo_image_buffer_t* image)
+{
+	free (image->base);
+	free (image);
+}
+
+/**
+ * Initialize Plugin.
+ **/
+
+void *plugin_init (char *whoami)
+{
+	pluginRegister (whoami,
+		PLUGIN_ID_OUTPUT_VIDEO,
+		"null",
+		&video_null);
+
+	return &video_null;
+}
+
+
+/**
+ * Cleanup Plugin.
+ **/
+
+void plugin_exit (void)
+{
 }
