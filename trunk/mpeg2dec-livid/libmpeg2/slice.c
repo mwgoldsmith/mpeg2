@@ -36,8 +36,8 @@
 #include "idct.h"
 
 extern mc_functions_t mc_functions;
-extern void (*idct_block_copy) (int16_t * block, uint8_t * dest, int stride);
-extern void (*idct_block_add) (int16_t * block, uint8_t * dest, int stride);
+extern void (* idct_block_copy) (int16_t * block, uint8_t * dest, int stride);
+extern void (* idct_block_add) (int16_t * block, uint8_t * dest, int stride);
 
 //XXX put these on the stack in slice_process?
 static slice_t slice;
@@ -956,6 +956,39 @@ static inline void slice_non_intra_DCT (picture_t * picture, slice_t * slice,
     memset (DCTblock, 0, sizeof (DCTblock));
 }
 
+static inline void motion_block (void (** table) (uint8_t *, uint8_t *,
+						  int32_t, int32_t), 
+				 int x_pred, int y_pred,
+				 uint8_t * dest[3], int dest_offset,
+				 uint8_t * src[3], int src_offset,
+				 int stride, int height)
+{
+    int xy_half;
+    uint8_t * src1;
+    uint8_t * src2;
+
+    xy_half = ((y_pred & 1) << 1) | (x_pred & 1);
+
+    src1 = src[0] + src_offset + (x_pred >> 1) + (y_pred >> 1) * stride;
+
+    table[xy_half] (dest[0] + dest_offset, src1, stride, height);
+
+    x_pred /= 2;
+    y_pred /= 2;
+
+    xy_half = ((y_pred & 1) << 1) | (x_pred & 1);
+    stride >>= 1;
+    height >>= 1;
+    src_offset >>= 1;
+    dest_offset >>= 1;
+
+    src1 = src[1] + src_offset + (x_pred >> 1) + (y_pred >> 1) * stride;
+    src2 = src[2] + src_offset + (x_pred >> 1) + (y_pred >> 1) * stride;
+
+    table[4+xy_half] (dest[1] + dest_offset, src1, stride, height);
+    table[4+xy_half] (dest[2] + dest_offset, src2, stride, height);
+}
+
 #define bit_buf bitstream_buf
 #define bits bitstream_bits
 
@@ -1039,7 +1072,7 @@ static void motion_zero (motion_t * motion, uint8_t * dest[3],
 		  motion->ref_frame, offset, width, 16);
 }
 
-// like motion_frame, but no actual motion compensation
+// like motion_frame, but parsing without actual motion compensation
 static void motion_conceal (motion_t * motion)
 {
     int tmp;

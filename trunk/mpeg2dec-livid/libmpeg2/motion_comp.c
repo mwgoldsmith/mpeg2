@@ -21,12 +21,6 @@
  *
  */
 
-//
-// This will get amusing in a few months I'm sure
-//
-// motion_comp.c rewrite counter: 6
-//
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -60,33 +54,74 @@ void motion_comp_init (void)
     }
 }
 
-void motion_block (void (** table) (uint8_t *, uint8_t *, int32_t, int32_t), 
-		   int x_pred, int y_pred,
-		   uint8_t * dest[3], int dest_offset,
-		   uint8_t * src[3], int src_offset,
-		   int stride, int height)
-{
-    uint32_t xy_half;
-    uint8_t *src1, *src2;
+#define avg2(a,b) ((a+b+1)>>1)
+#define avg4(a,b,c,d) ((a+b+c+d+2)>>2)
 
-    xy_half = ((y_pred & 1) << 1) | (x_pred & 1);
+#define predict(i) (ref[i])
+#define predict_x(i) (avg2 (ref[i], ref[i+1]))
+#define predict_y(i) (avg2 (ref[i], (ref+stride)[i]))
+#define predict_xy(i) (avg4 (ref[i], ref[i+1], (ref+stride)[i], (ref+stride)[i+1]))
 
-    src1 = src[0] + src_offset + (x_pred >> 1) + (y_pred >> 1) * stride;
+#define put(predictor,i) dest[i] = predictor (i)
+#define avg(predictor,i) dest[i] = avg2 (predictor (i), dest[i])
 
-    table[xy_half] (dest[0] + dest_offset, src1, stride, height);
+// mc function template
 
-    x_pred /= 2;
-    y_pred /= 2;
-
-    xy_half = ((y_pred & 1) << 1) | (x_pred & 1);
-    stride >>= 1;
-    height >>= 1;
-    src_offset >>= 1;
-    dest_offset >>= 1;
-
-    src1 = src[1] + src_offset + (x_pred >> 1) + (y_pred >> 1) * stride;
-    src2 = src[2] + src_offset + (x_pred >> 1) + (y_pred >> 1) * stride;
-
-    table[4+xy_half] (dest[1] + dest_offset, src1, stride, height);
-    table[4+xy_half] (dest[2] + dest_offset, src2, stride, height);
+#define MC_FUNC(op,xy)						\
+static void motion_comp_##op####xy##_16x16_c (uint8_t * dest,	\
+					      uint8_t * ref,	\
+					      int stride,	\
+					      int height)	\
+{								\
+    do {							\
+	op (predict##xy, 0);					\
+	op (predict##xy, 1);					\
+	op (predict##xy, 2);					\
+	op (predict##xy, 3);					\
+	op (predict##xy, 4);					\
+	op (predict##xy, 5);					\
+	op (predict##xy, 6);					\
+	op (predict##xy, 7);					\
+	op (predict##xy, 8);					\
+	op (predict##xy, 9);					\
+	op (predict##xy, 10);					\
+	op (predict##xy, 11);					\
+	op (predict##xy, 12);					\
+	op (predict##xy, 13);					\
+	op (predict##xy, 14);					\
+	op (predict##xy, 15);					\
+	ref += stride;						\
+	dest += stride;						\
+    } while (--height);						\
+}								\
+static void motion_comp_##op####xy##_8x8_c (uint8_t * dest,	\
+					    uint8_t * ref,	\
+					    int stride,		\
+					    int height)		\
+{								\
+    do {							\
+	op (predict##xy, 0);					\
+	op (predict##xy, 1);					\
+	op (predict##xy, 2);					\
+	op (predict##xy, 3);					\
+	op (predict##xy, 4);					\
+	op (predict##xy, 5);					\
+	op (predict##xy, 6);					\
+	op (predict##xy, 7);					\
+	ref += stride;						\
+	dest += stride;						\
+    } while (--height);						\
 }
+
+// definitions of the actual mc functions
+
+MC_FUNC (put,)
+MC_FUNC (avg,)
+MC_FUNC (put,_x)
+MC_FUNC (avg,_x)
+MC_FUNC (put,_y)
+MC_FUNC (avg,_y)
+MC_FUNC (put,_xy)
+MC_FUNC (avg,_xy)
+
+MOTION_COMP_EXTERN (c)
