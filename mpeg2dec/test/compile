@@ -28,7 +28,7 @@ rm -fr compile_test
 for compiler in cc gcc gcc272 gcc-2.95 gcc-3.0 gcc-3.1 gcc-3.2 c89 \
 		c++ g++ g++-2.95 g++-3.0 g++-3.1 g++-3.2 \
 		ccmalloc-gcc bgcc checkergcc tendracc icc \
-		tcc-noexec tcc-bounds i586-mingw32msvc-gcc; do
+		i586-mingw32msvc-gcc; do
     compiler_path=`which $compiler`
     if test x"$compiler_path" = x""; then continue; fi
 
