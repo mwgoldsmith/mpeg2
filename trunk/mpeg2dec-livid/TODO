@@ -1,6 +1,6 @@
 * things we dont implement yet
 	* dont crash on bad streams, make sure we can resync after a while
-		* possible chunk buffer overflow (writing or reading back)
+		* possible chunk buffer overflow while reading bits
 		* destination macroblock overflow
 		* MC source out of bounds (maybe signal handler for that one ?)
 		* dont just fprintf and exit

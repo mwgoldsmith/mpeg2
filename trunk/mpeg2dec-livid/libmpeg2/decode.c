@@ -41,6 +41,8 @@ void * memalign (size_t align, size_t size);
 #define memalign(align,size) malloc (size)
 #endif
 
+#define BUFFER_SIZE (224 * 1024)
+
 mpeg2_config_t config;
 
 void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
@@ -55,7 +57,7 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
 	motion_comp_init ();
     }
 
-    mpeg2dec->chunk_buffer = memalign (16, 224 * 1024 + 4);
+    mpeg2dec->chunk_buffer = memalign (16, BUFFER_SIZE + 4);
     mpeg2dec->picture = memalign (16, sizeof (picture_t));
 
     mpeg2dec->shift = 0;
@@ -65,7 +67,7 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
     mpeg2dec->in_slice = 0;
     mpeg2dec->output = output;
     mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
-    mpeg2dec->code = 0xff;
+    mpeg2dec->code = 0xb4;
 
     memset (mpeg2dec->picture, 0, sizeof (picture_t));
 
@@ -73,7 +75,8 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
     header_state_init (mpeg2dec->picture);
 }
 
-static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
+static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
+			       uint8_t * buffer)
 {
     picture_t * picture;
     int is_frame_done;
@@ -184,43 +187,59 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
     return is_frame_done;
 }
 
-int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
+static inline uint8_t * copy_chunk (mpeg2dec_t * mpeg2dec,
+				    uint8_t * current, uint8_t * end)
 {
     uint32_t shift;
     uint8_t * chunk_ptr;
+    uint8_t * limit;
     uint8_t byte;
-    int ret = 0;
 
     shift = mpeg2dec->shift;
     chunk_ptr = mpeg2dec->chunk_ptr;
+    limit = current + (mpeg2dec->chunk_buffer + BUFFER_SIZE - chunk_ptr);
+    if (limit > end)
+	limit = end;
 
-    while (current != end) {
-	while (1) {
-	    byte = *current++;
-	    if (shift != 0x00000100) {
-		*chunk_ptr++ = byte;
-		shift = (shift | byte) << 8;
-		if (current != end)
-		    continue;
+    while (1) {
+	byte = *current++;
+	if (shift != 0x00000100) {
+	    *chunk_ptr++ = byte;
+	    shift = (shift | byte) << 8;
+	    if (current < limit)
+		continue;
+	    if (current == end) {
 		mpeg2dec->chunk_ptr = chunk_ptr;
 		mpeg2dec->shift = shift;
-		return ret;
+		return NULL;
+	    } else {
+		/* we filled the chunk buffer without finding a start code */
+		mpeg2dec->code = 0xb4;	/* sequence_error_code */
+		mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
+		return current;
 	    }
-	    break;
 	}
-
-	/* found start_code following chunk */
-
-	ret += parse_chunk (mpeg2dec, mpeg2dec->code, mpeg2dec->chunk_buffer);
-
-	/* done with header or slice, prepare for next one */
-
 	mpeg2dec->code = byte;
-	chunk_ptr = mpeg2dec->chunk_buffer;
-	shift = 0xffffff00;
+	mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
+	mpeg2dec->shift = 0xffffff00;
+	return current;
     }
-    mpeg2dec->chunk_ptr = chunk_ptr;
-    mpeg2dec->shift = shift;
+}
+
+int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
+{
+    int ret;
+    uint8_t code;
+
+    ret = 0;
+
+    while (current != end) {
+	code = mpeg2dec->code;
+	current = copy_chunk (mpeg2dec, current, end);
+	if (current == NULL)
+	    return ret;
+	ret += parse_chunk (mpeg2dec, code, mpeg2dec->chunk_buffer);
+    }
     return ret;
 }
 
