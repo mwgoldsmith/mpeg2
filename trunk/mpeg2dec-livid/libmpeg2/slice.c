@@ -1347,7 +1347,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	}
     }
 
-    return (mba >= picture->last_mba);
+    return (mba > picture->last_mba);
 #undef bit_buf
 #undef bits
 }
