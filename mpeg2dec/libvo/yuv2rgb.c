@@ -45,26 +45,15 @@ static const int32_t Inverse_Table_6_9[8][4] = {
     {117579, 136230, 16907, 35559}  /* SMPTE 240M (1987) */
 };
 
-static const uint8_t dither_8x8_31[8][8] ATTR_ALIGN(16) = {
-    { 0, 23,  5, 29,  1, 24,  7, 30},
-    {15,  7, 21, 13, 17,  9, 22, 15},
-    { 3, 27,  1, 25,  5, 28,  3, 26},
-    {19, 11, 17,  9, 21, 13, 19, 11},
-    { 0, 24,  6, 30,  0, 23,  6, 29},
-    {16,  8, 22, 14, 16,  8, 21, 14},
-    { 4, 28,  2, 26,  4, 27,  2, 25},
-    {20, 12, 18, 10, 20, 12, 18, 10}
-};
-
-static const uint8_t dither_8x8_73[8][8] ATTR_ALIGN(16) = {
-    { 0, 54, 13, 68,  3, 58, 17, 71},
-    {36, 18, 50, 31, 39, 21, 53, 35},
-    { 9, 63,  4, 59, 12, 67,  7, 62},
-    {45, 27, 41, 22, 49, 30, 44, 26},
-    { 2, 57, 15, 70,  1, 55, 14, 69},
-    {38, 20, 52, 34, 37, 19, 51, 33},
-    {11, 66,  6, 61, 10, 65,  5, 60},
-    {47, 29, 43, 25, 46, 28, 42, 23}
+static const uint8_t dither[128] ATTR_ALIGN(16) = {
+     0,  0, 23, 54,  5, 13, 29, 68,  1,  3, 24, 58,  7, 17, 30, 71,
+    15, 36,  7, 18, 21, 50, 13, 31, 17, 39,  9, 21, 22, 53, 15, 35,
+     3,  9, 27, 63,  1,  4, 25, 59,  5, 12, 28, 67,  3,  7, 26, 62,
+    19, 45, 11, 27, 17, 41,  9, 22, 21, 49, 13, 30, 19, 44, 11, 26,
+     0,  2, 24, 57,  6, 15, 30, 70,  0,  1, 23, 55,  6, 14, 29, 69,
+    16, 38,  8, 20, 22, 52, 14, 34, 16, 37,  8, 19, 21, 51, 14, 33,
+     4, 11, 28, 66,  2,  6, 26, 61,  4, 10, 27, 65,  2,  5, 25, 60,
+    20, 47, 12, 29, 18, 43, 10, 25, 20, 46, 12, 28, 18, 42, 10, 23
 };
 
 typedef void yuv2rgb_c_internal (uint8_t *, uint8_t *, uint8_t *, uint8_t *,
@@ -102,9 +91,9 @@ void * table_bU[256];
 
 #define DSTDITHER(py,dst,i,d)						\
 	Y = py[2*i];							\
-	dst[2*i] = r[Y+d31[2*i+d]] + g[Y-d31[2*i+d]] + b[Y+d73[2*i+d]];	\
+	dst[2*i] = r[Y+pd[4*i+d]] + g[Y-pd[4*i+d]] + b[Y+pd[4*i+1+d]];	\
 	Y = py[2*i+1];							\
-	dst[2*i+1] = r[Y+d31[2*i+1+d]] + g[Y-d31[2*i+1+d]] + b[Y+d73[2*i+1+d]];
+	dst[2*i+1] = r[Y+pd[4*i+2+d]] + g[Y-pd[4*i+2+d]] + b[Y+pd[4*i+3+d]];
 
 static void yuv2rgb_c_32 (uint8_t * py_1, uint8_t * py_2,
 			  uint8_t * pu, uint8_t * pv,
@@ -271,31 +260,29 @@ static void yuv2rgb_c_8 (uint8_t * py_1, uint8_t * py_2,
     int U, V, Y;
     uint8_t * r, * g, * b;
     uint8_t * dst_1, * dst_2;
-    const uint8_t * d31, * d73;
+    const uint8_t * pd;
 
-    d31 = dither_8x8_31[(2*loop) & 7];
-    d73 = dither_8x8_73[(2*loop) & 7];
-
+    pd = dither + ((32 * loop) & 127);
     width >>= 3;
     dst_1 = (uint8_t *) _dst_1;
     dst_2 = (uint8_t *) _dst_2;
 
     do {
 	RGB (uint8_t, 0);
-	DSTDITHER (py_1, dst_1, 0, 8);
+	DSTDITHER (py_1, dst_1, 0, 16);
 	DSTDITHER (py_2, dst_2, 0, 0);
 
 	RGB (uint8_t, 1);
 	DSTDITHER (py_2, dst_2, 1, 0);
-	DSTDITHER (py_1, dst_1, 1, 8);
+	DSTDITHER (py_1, dst_1, 1, 16);
 
 	RGB (uint8_t, 2);
-	DSTDITHER (py_1, dst_1, 2, 8);
+	DSTDITHER (py_1, dst_1, 2, 16);
 	DSTDITHER (py_2, dst_2, 2, 0);
 
 	RGB (uint8_t, 3);
 	DSTDITHER (py_2, dst_2, 3, 0);
-	DSTDITHER (py_1, dst_1, 3, 8);
+	DSTDITHER (py_1, dst_1, 3, 16);
 
 	pu += 4;
 	pv += 4;
