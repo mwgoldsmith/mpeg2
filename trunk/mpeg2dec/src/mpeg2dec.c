@@ -156,9 +156,6 @@ static void handle_args (int argc, char ** argv)
     drivers = vo_drivers ();
     while ((c = getopt (argc, argv, "hs::t:pco:")) != -1)
 	switch (c) {
-	case 'h':
-	    print_usage (argv);
-
 	case 'o':
 	    for (i = 0; drivers[i].name != NULL; i++)
 		if (strcmp (drivers[i].name, optarg) == 0)
@@ -175,7 +172,7 @@ static void handle_args (int argc, char ** argv)
 		demux_track = strtol (optarg, &s, 0);
 		if (demux_track < 0xe0)
 		    demux_track += 0xe0;
-		if ((demux_track < 0xe0) || (demux_track > 0xef) || (*s)) {
+		if (demux_track < 0xe0 || demux_track > 0xef || *s) {
 		    fprintf (stderr, "Invalid track number: %s\n", optarg);
 		    print_usage (argv);
 		}
@@ -184,7 +181,7 @@ static void handle_args (int argc, char ** argv)
 
 	case 't':
 	    demux_pid = strtol (optarg, &s, 0);
-	    if ((demux_pid < 0x10) || (demux_pid > 0x1ffe) || (*s)) {
+	    if (demux_pid < 0x10 || demux_pid > 0x1ffe || *s) {
 		fprintf (stderr, "Invalid pid: %s\n", optarg);
 		print_usage (argv);
 	    }
