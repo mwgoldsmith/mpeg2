@@ -23,7 +23,7 @@
 
 //FIXME normally I wouldn't nest includes, but we'll leave this here until I get
 //another chance to move things around
-#include "libvo/video_out.h"
+#include "video_out.h"
 
 #ifndef AARONS_TYPES
 #define AARONS_TYPES
