@@ -1568,7 +1568,7 @@ do {									\
     if (decoder->offset == decoder->width) {				\
 	do { /* just so we can use the break statement */		\
 	    if (decoder->convert) {					\
-		decoder->convert (decoder->fbuf_id, decoder->dest,	\
+		decoder->convert (decoder->convert_id, decoder->dest,	\
 				  decoder->v_offset);			\
 		if (decoder->coding_type == B_TYPE)			\
 		    break;						\

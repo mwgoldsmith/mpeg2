@@ -93,10 +93,12 @@ void mpeg2_header_state_init (mpeg2dec_t * mpeg2dec)
 		mpeg2_free (mpeg2dec->yuv_buf[i][1]);
 		mpeg2_free (mpeg2dec->yuv_buf[i][2]);
 	    }
-	if (mpeg2dec->convert_id)
-	    mpeg2_free (mpeg2dec->convert_id);
+	if (mpeg2dec->decoder.convert_id)
+	    mpeg2_free (mpeg2dec->decoder.convert_id);
     }
     mpeg2dec->decoder.coding_type = I_TYPE;
+    mpeg2dec->decoder.convert = NULL;
+    mpeg2dec->decoder.convert_id = NULL;
     mpeg2dec->picture = mpeg2dec->pictures;
     mpeg2dec->fbuf[0] = &mpeg2dec->fbuf_alloc[0].fbuf;
     mpeg2dec->fbuf[1] = &mpeg2dec->fbuf_alloc[1].fbuf;
@@ -106,7 +108,7 @@ void mpeg2_header_state_init (mpeg2dec_t * mpeg2dec)
     mpeg2dec->alloc_index_user = 0;
     mpeg2dec->first_decode_slice = 1;
     mpeg2dec->nb_decode_slices = 0xb0 - 1;
-    mpeg2dec->convert_id = NULL;
+    mpeg2dec->convert = NULL;
     mpeg2dec->convert_start = NULL;
     mpeg2dec->custom_fbuf = 0;
     mpeg2dec->yuv_index = 0;
@@ -447,7 +449,7 @@ void mpeg2_set_fbuf (mpeg2dec_t * mpeg2dec, int b_type)
 	    mpeg2dec->fbuf[0] = &mpeg2dec->fbuf_alloc[i].fbuf;
 	    mpeg2dec->info.current_fbuf = mpeg2dec->fbuf[0];
 	    if (b_type || (mpeg2dec->sequence.flags & SEQ_FLAG_LOW_DELAY)) {
-		if (b_type || mpeg2dec->convert_start)
+		if (b_type || mpeg2dec->convert)
 		    mpeg2dec->info.discard_fbuf = mpeg2dec->fbuf[0];
 		mpeg2dec->info.display_fbuf = mpeg2dec->fbuf[0];
 	    }
@@ -599,7 +601,7 @@ static int picture_display_ext (mpeg2dec_t * mpeg2dec)
     return 0;
 }
 
-void mpeg2_header_picture_finalize (mpeg2dec_t * mpeg2dec)
+void mpeg2_header_picture_finalize (mpeg2dec_t * mpeg2dec, uint32_t accels)
 {
     mpeg2_decoder_t * decoder = &(mpeg2dec->decoder);
     int old_type_b = (decoder->coding_type == B_TYPE);
@@ -642,38 +644,79 @@ void mpeg2_header_picture_finalize (mpeg2dec_t * mpeg2dec)
 		    mpeg2dec->info.display_fbuf = mpeg2dec->fbuf[1];
 		}
 	    }
-	    if (!low_delay + !mpeg2dec->convert_start)
+	    if (!low_delay + !mpeg2dec->convert)
 		mpeg2dec->info.discard_fbuf =
-		    mpeg2dec->fbuf[!low_delay + !mpeg2dec->convert_start];
+		    mpeg2dec->fbuf[!low_delay + !mpeg2dec->convert];
 	}
-	if (!mpeg2dec->custom_fbuf) {
+	if (mpeg2dec->convert) {
+	    mpeg2_convert_init_t convert_init;
+	    if (!mpeg2dec->convert_start) {
+		int y_size, uv_size;
+
+		convert_init.id = mpeg2_malloc (mpeg2dec->convert_id_size,
+						MPEG2_ALLOC_CONVERT_ID);
+		mpeg2dec->convert (&(mpeg2dec->sequence), accels,
+				   mpeg2dec->convert_arg, &convert_init);
+		mpeg2dec->convert_start = convert_init.start;
+		mpeg2dec->decoder.convert = convert_init.copy;
+		mpeg2dec->decoder.convert_id = convert_init.id;
+
+		y_size = mpeg2dec->sequence.width * mpeg2dec->sequence.height;
+		uv_size = y_size >> (2 - mpeg2dec->decoder.chroma_format);
+		mpeg2dec->yuv_buf[0][0] =
+		    (uint8_t *) mpeg2_malloc (y_size, MPEG2_ALLOC_YUV);
+		mpeg2dec->yuv_buf[0][1] =
+		    (uint8_t *) mpeg2_malloc (uv_size, MPEG2_ALLOC_YUV);
+		mpeg2dec->yuv_buf[0][2] =
+		    (uint8_t *) mpeg2_malloc (uv_size, MPEG2_ALLOC_YUV);
+		mpeg2dec->yuv_buf[1][0] =
+		    (uint8_t *) mpeg2_malloc (y_size, MPEG2_ALLOC_YUV);
+		mpeg2dec->yuv_buf[1][1] =
+		    (uint8_t *) mpeg2_malloc (uv_size, MPEG2_ALLOC_YUV);
+		mpeg2dec->yuv_buf[1][2] =
+		    (uint8_t *) mpeg2_malloc (uv_size, MPEG2_ALLOC_YUV);
+		y_size = mpeg2dec->sequence.width * 32;
+		uv_size = y_size >> (2 - mpeg2dec->decoder.chroma_format);
+		mpeg2dec->yuv_buf[2][0] =
+		    (uint8_t *) mpeg2_malloc (y_size, MPEG2_ALLOC_YUV);
+		mpeg2dec->yuv_buf[2][1] =
+		    (uint8_t *) mpeg2_malloc (uv_size, MPEG2_ALLOC_YUV);
+		mpeg2dec->yuv_buf[2][2] =
+		    (uint8_t *) mpeg2_malloc (uv_size, MPEG2_ALLOC_YUV);
+	    }
+	    if (!mpeg2dec->custom_fbuf) {
+		while (mpeg2dec->alloc_index < 3) {
+		    mpeg2_fbuf_t * fbuf;
+
+		    fbuf = &mpeg2dec->fbuf_alloc[mpeg2dec->alloc_index++].fbuf;
+		    fbuf->id = NULL;
+		    fbuf->buf[0] =
+			(uint8_t *) mpeg2_malloc (convert_init.buf_size[0],
+						  MPEG2_ALLOC_CONVERTED);
+		    fbuf->buf[1] =
+			(uint8_t *) mpeg2_malloc (convert_init.buf_size[1],
+						  MPEG2_ALLOC_CONVERTED);
+		    fbuf->buf[2] =
+			(uint8_t *) mpeg2_malloc (convert_init.buf_size[2],
+						  MPEG2_ALLOC_CONVERTED);
+		}
+		mpeg2_set_fbuf (mpeg2dec, (decoder->coding_type == B_TYPE));
+	    }
+	} else if (!mpeg2dec->custom_fbuf) {
 	    while (mpeg2dec->alloc_index < 3) {
 		mpeg2_fbuf_t * fbuf;
+		int y_size, uv_size;
 
 		fbuf = &(mpeg2dec->fbuf_alloc[mpeg2dec->alloc_index++].fbuf);
 		fbuf->id = NULL;
-		if (mpeg2dec->convert_start) {    
-		    fbuf->buf[0] =
-			(uint8_t *) mpeg2_malloc (mpeg2dec->convert_size[0],
-						  MPEG2_ALLOC_CONVERTED);
-		    fbuf->buf[1] =
-			(uint8_t *) mpeg2_malloc (mpeg2dec->convert_size[1],
-						  MPEG2_ALLOC_CONVERTED);
-		    fbuf->buf[2] =
-			(uint8_t *) mpeg2_malloc (mpeg2dec->convert_size[2],
-						  MPEG2_ALLOC_CONVERTED);
-		} else {
-		    int y_size, uv_size;
-		    y_size = (mpeg2dec->sequence.width *
-			      mpeg2dec->sequence.height);
-		    uv_size = y_size >> (2 - decoder->chroma_format);
-		    fbuf->buf[0] = (uint8_t *) mpeg2_malloc (y_size,
-							     MPEG2_ALLOC_YUV);
-		    fbuf->buf[1] = (uint8_t *) mpeg2_malloc (uv_size,
-							     MPEG2_ALLOC_YUV);
-		    fbuf->buf[2] = (uint8_t *) mpeg2_malloc (uv_size,
-							     MPEG2_ALLOC_YUV);
-		}
+		y_size = mpeg2dec->sequence.width * mpeg2dec->sequence.height;
+		uv_size = y_size >> (2 - decoder->chroma_format);
+		fbuf->buf[0] = (uint8_t *) mpeg2_malloc (y_size,
+							 MPEG2_ALLOC_YUV);
+		fbuf->buf[1] = (uint8_t *) mpeg2_malloc (uv_size,
+							 MPEG2_ALLOC_YUV);
+		fbuf->buf[2] = (uint8_t *) mpeg2_malloc (uv_size,
+							 MPEG2_ALLOC_YUV);
 	    }
 	    mpeg2_set_fbuf (mpeg2dec, (decoder->coding_type == B_TYPE));
 	}
@@ -781,11 +824,8 @@ mpeg2_state_t mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec)
     if (!(mpeg2dec->nb_decode_slices))
 	mpeg2dec->picture->flags |= PIC_FLAG_SKIP;
     else if (mpeg2dec->convert_start) {
-	mpeg2dec->convert_start (mpeg2dec->convert_id, mpeg2dec->fbuf[0],
+	mpeg2dec->convert_start (decoder->convert_id, mpeg2dec->fbuf[0],
 				 mpeg2dec->picture, mpeg2dec->info.gop);
-
-	mpeg2dec->decoder.convert = mpeg2dec->convert_copy;
-	mpeg2dec->decoder.fbuf_id = mpeg2dec->convert_id;
 
 	if (mpeg2dec->decoder.coding_type == B_TYPE)
 	    mpeg2_init_fbuf (&(mpeg2dec->decoder), mpeg2dec->yuv_buf[2],
@@ -802,7 +842,6 @@ mpeg2_state_t mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec)
     } else {
 	int b_type;
 
-	mpeg2dec->decoder.convert = NULL;
 	b_type = (mpeg2dec->decoder.coding_type == B_TYPE);
 	mpeg2_init_fbuf (&(mpeg2dec->decoder), mpeg2dec->fbuf[0]->buf,
 			 mpeg2dec->fbuf[b_type + 1]->buf,
@@ -838,9 +877,9 @@ mpeg2_state_t mpeg2_header_end (mpeg2dec_t * mpeg2dec)
 	if (picture->nb_fields == 1)
 	    mpeg2dec->info.display_picture_2nd = picture + 1;
 	mpeg2dec->info.display_fbuf = mpeg2dec->fbuf[b_type];
-	if (!mpeg2dec->convert_start)
+	if (!mpeg2dec->convert)
 	    mpeg2dec->info.discard_fbuf = mpeg2dec->fbuf[b_type + 1];
-    } else if (!mpeg2dec->convert_start)
+    } else if (!mpeg2dec->convert)
 	mpeg2dec->info.discard_fbuf = mpeg2dec->fbuf[b_type];
     mpeg2dec->action = seek_sequence;
     return STATE_END;
