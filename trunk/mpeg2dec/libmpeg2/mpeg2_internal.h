@@ -193,6 +193,10 @@ struct mpeg2dec_s {
     uint8_t * buf_end;
 
     int16_t display_offset_x, display_offset_y;
+
+    int copy_matrix;
+    uint8_t intra_quantizer_matrix [64];
+    uint8_t non_intra_quantizer_matrix [64];
 };
 
 typedef struct {
@@ -230,6 +234,7 @@ int mpeg2_header_picture_start (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_picture (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_extension (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec);
+void mpeg2_header_matrix_finalize (mpeg2dec_t * mpeg2dec);
 void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_end (mpeg2dec_t * mpeg2dec);
