@@ -42,7 +42,7 @@ typedef signed char sint_8;
 #define MPEG2_SSE_ENABLE        0x4
 #define MPEG2_ALTIVEC_ENABLE    0x8
 #define MPEG2_XIL_ENABLE        0x10
-#define MPEG2_MLIB_ENABLE       0x12
+#define MPEG2_MLIB_ENABLE       0x20
 
 typedef struct mpeg2_config_s
 {
