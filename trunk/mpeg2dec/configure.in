@@ -113,6 +113,7 @@ AC_C_RESTRICT
 AC_C_BUILTIN_EXPECT
 AC_TYPE_SIZE_T
 AC_C_BIGENDIAN
+AC_SYS_LARGEFILE
 
 dnl Checks for library functions.
 AC_CHECK_FUNCS([gettimeofday ftime])
