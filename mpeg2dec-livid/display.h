@@ -61,3 +61,8 @@ uint_32 display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *ti
  */
 uint_32 display_frame(uint_8 *src[]);
 
+
+//FIXME document this when things settle down
+uint_32 display_slice(uint_8 *src[],uint_32 slice_num);
+void display_flip_page(void);
+void* display_allocate_buffer(uint_32 num_bytes);

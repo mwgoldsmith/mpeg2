@@ -59,38 +59,38 @@ static void (* yuv2rgb_c_internal) (const uint_8 *, const uint_8 *,
 				    const uint_8 *, const uint_8 *,
 				    void *, void *, int);
 
-static void yuv2rgb_c (void * dst, const uint_8 * py,
-		       const uint_8 * pu, const uint_8 * pv,
-		       int h_size, int v_size,
-		       int rgb_stride, int y_stride, int uv_stride) 
+static void yuv2rgb_c (void * dst, const uint_8 * py, 
+		const uint_8 * pu, const uint_8 * pv, 
+		int h_size, int v_size, 
+		int rgb_stride, int y_stride, int uv_stride) 
 {
-    v_size >>= 1;
+	v_size >>= 1;
 
-    while (v_size--)
-    {
-	yuv2rgb_c_internal (py, py + y_stride, pu, pv, dst, dst + rgb_stride,
-			    h_size);
+	while (v_size--)
+	{
+		yuv2rgb_c_internal (py, py + y_stride, pu, pv, dst, dst + rgb_stride,
+						h_size);
 
-	py += 2 * y_stride;
-	pu += uv_stride;
-	pv += uv_stride;
-	dst += 2 * rgb_stride;
-    }
+		py += 2 * y_stride;
+		pu += uv_stride;
+		pv += uv_stride;
+		dst += 2 * rgb_stride;
+	}
 }
 
 void yuv2rgb_init (uint_32 bpp, uint_32 mode) 
 {
 #ifdef HAVE_MLIB
-    if(1 || config.flags & MPEG2_MLIB_ENABLE) // Fix me
-    {
+	if(1 || config.flags & MPEG2_MLIB_ENABLE) // Fix me
+	{
 	yuv2rgb = yuv2rgb_mlib_init (bpp, mode);
 	return;
-    }
+	}
 #endif
 
-    fprintf (stderr, "No accelerated colorspace conversion found\n");
-    yuv2rgb_c_init (bpp, mode);
-    yuv2rgb = (yuv2rgb_fun) yuv2rgb_c;
+	fprintf (stderr, "No accelerated colorspace conversion found\n");
+	yuv2rgb_c_init (bpp, mode);
+	yuv2rgb = (yuv2rgb_fun) yuv2rgb_c;
 }
 
 void * table_rV[256];
@@ -145,39 +145,39 @@ static void yuv2rgb_c_32 (const uint_8 * py_1, const uint_8 * py_2,
 			  const uint_8 * pu, const uint_8 * pv,
 			  void * _dst_1, void * _dst_2, int h_size)
 {
-    int U, V, Y;
-    uint_32 * r, * g, * b;
-    uint_32 * dst_1, * dst_2;
+	int U, V, Y;
+	uint_32 * r, * g, * b;
+	uint_32 * dst_1, * dst_2;
 
-    h_size >>= 3;
-    dst_1 = _dst_1;
-    dst_2 = _dst_2;
+	h_size >>= 3;
+	dst_1 = _dst_1;
+	dst_2 = _dst_2;
 
-    while (h_size--)
-    {
-	RGB(0);
-	DST1(0);
-	DST2(0);
+	while (h_size--)
+	{
+		RGB(0);
+		DST1(0);
+		DST2(0);
 
-	RGB(1);
-	DST2(1);
-	DST1(1);
+		RGB(1);
+		DST2(1);
+		DST1(1);
 
-	RGB(2);
-	DST1(2);
-	DST2(2);
+		RGB(2);
+		DST1(2);
+		DST2(2);
 
-	RGB(3);
-	DST2(3);
-	DST1(3);
+		RGB(3);
+		DST2(3);
+		DST1(3);
 
-	pu += 4;
-	pv += 4;
-	py_1 += 8;
-	py_2 += 8;
-	dst_1 += 8;
-	dst_2 += 8;
-    }
+		pu += 4;
+		pv += 4;
+		py_1 += 8;
+		py_2 += 8;
+		dst_1 += 8;
+		dst_2 += 8;
+	}
 }
 
 // This is very near from the yuv2rgb_c_32 code
@@ -185,39 +185,39 @@ static void yuv2rgb_c_24_rgb (const uint_8 * py_1, const uint_8 * py_2,
 			      const uint_8 * pu, const uint_8 * pv,
 			      void * _dst_1, void * _dst_2, int h_size)
 {
-    int U, V, Y;
-    uint_8 * r, * g, * b;
-    uint_8 * dst_1, * dst_2;
+	int U, V, Y;
+	uint_8 * r, * g, * b;
+	uint_8 * dst_1, * dst_2;
 
-    h_size >>= 3;
-    dst_1 = _dst_1;
-    dst_2 = _dst_2;
+	h_size >>= 3;
+	dst_1 = _dst_1;
+	dst_2 = _dst_2;
 
-    while (h_size--)
-    {
-	RGB(0);
-	DST1RGB(0);
-	DST2RGB(0);
+	while (h_size--)
+	{
+		RGB(0);
+		DST1RGB(0);
+		DST2RGB(0);
 
-	RGB(1);
-	DST2RGB(1);
-	DST1RGB(1);
+		RGB(1);
+		DST2RGB(1);
+		DST1RGB(1);
 
-	RGB(2);
-	DST1RGB(2);
-	DST2RGB(2);
+		RGB(2);
+		DST1RGB(2);
+		DST2RGB(2);
 
-	RGB(3);
-	DST2RGB(3);
-	DST1RGB(3);
+		RGB(3);
+		DST2RGB(3);
+		DST1RGB(3);
 
-	pu += 4;
-	pv += 4;
-	py_1 += 8;
-	py_2 += 8;
-	dst_1 += 24;
-	dst_2 += 24;
-    }
+		pu += 4;
+		pv += 4;
+		py_1 += 8;
+		py_2 += 8;
+		dst_1 += 24;
+		dst_2 += 24;
+	}
 }
 
 // only trivial mods from yuv2rgb_c_24_rgb
@@ -225,39 +225,39 @@ static void yuv2rgb_c_24_bgr (const uint_8 * py_1, const uint_8 * py_2,
 			      const uint_8 * pu, const uint_8 * pv,
 			      void * _dst_1, void * _dst_2, int h_size)
 {
-    int U, V, Y;
-    uint_8 * r, * g, * b;
-    uint_8 * dst_1, * dst_2;
+	int U, V, Y;
+	uint_8 * r, * g, * b;
+	uint_8 * dst_1, * dst_2;
 
-    h_size >>= 3;
-    dst_1 = _dst_1;
-    dst_2 = _dst_2;
+	h_size >>= 3;
+	dst_1 = _dst_1;
+	dst_2 = _dst_2;
 
-    while (h_size--)
-    {
-	RGB(0);
-	DST1BGR(0);
-	DST2BGR(0);
+	while (h_size--)
+	{
+		RGB(0);
+		DST1BGR(0);
+		DST2BGR(0);
 
-	RGB(1);
-	DST2BGR(1);
-	DST1BGR(1);
+		RGB(1);
+		DST2BGR(1);
+		DST1BGR(1);
 
-	RGB(2);
-	DST1BGR(2);
-	DST2BGR(2);
+		RGB(2);
+		DST1BGR(2);
+		DST2BGR(2);
 
-	RGB(3);
-	DST2BGR(3);
-	DST1BGR(3);
+		RGB(3);
+		DST2BGR(3);
+		DST1BGR(3);
 
-	pu += 4;
-	pv += 4;
-	py_1 += 8;
-	py_2 += 8;
-	dst_1 += 24;
-	dst_2 += 24;
-    }
+		pu += 4;
+		pv += 4;
+		py_1 += 8;
+		py_2 += 8;
+		dst_1 += 24;
+		dst_2 += 24;
+	}
 }
 
 // This is exactly the same code as yuv2rgb_c_32 except for the types of
@@ -266,150 +266,152 @@ static void yuv2rgb_c_16 (const uint_8 * py_1, const uint_8 * py_2,
 			  const uint_8 * pu, const uint_8 * pv,
 			  void * _dst_1, void * _dst_2, int h_size)
 {
-    int U, V, Y;
-    uint_16 * r, * g, * b;
-    uint_16 * dst_1, * dst_2;
+	int U, V, Y;
+	uint_16 * r, * g, * b;
+	uint_16 * dst_1, * dst_2;
 
-    h_size >>= 3;
-    dst_1 = _dst_1;
-    dst_2 = _dst_2;
+	h_size >>= 3;
+	dst_1 = _dst_1;
+	dst_2 = _dst_2;
 
-    while (h_size--)
-    {
-	RGB(0);
-	DST1(0);
-	DST2(0);
+	while (h_size--)
+	{
+		RGB(0);
+		DST1(0);
+		DST2(0);
 
-	RGB(1);
-	DST2(1);
-	DST1(1);
+		RGB(1);
+		DST2(1);
+		DST1(1);
 
-	RGB(2);
-	DST1(2);
-	DST2(2);
+		RGB(2);
+		DST1(2);
+		DST2(2);
 
-	RGB(3);
-	DST2(3);
-	DST1(3);
+		RGB(3);
+		DST2(3);
+		DST1(3);
 
-	pu += 4;
-	pv += 4;
-	py_1 += 8;
-	py_2 += 8;
-	dst_1 += 8;
-	dst_2 += 8;
-    }
+		pu += 4;
+		pv += 4;
+		py_1 += 8;
+		py_2 += 8;
+		dst_1 += 8;
+		dst_2 += 8;
+	}
 }
 
 static int div_round (int dividend, int divisor)
 {
-    if (dividend > 0)
-	return (dividend + (divisor>>1)) / divisor;
-    else
-	return -((-dividend + (divisor>>1)) / divisor);
+	if (dividend > 0)
+		return (dividend + (divisor>>1)) / divisor;
+	else
+		return -((-dividend + (divisor>>1)) / divisor);
 }
 
 static void yuv2rgb_c_init (uint_32 bpp, uint_32 mode) 
 {  
-    int i;
-    uint_8 table_Y[1024];
-    uint_32 * table_32;
-    uint_16 * table_16;
-    uint_8 * table_8;
-    int entry_size = 0;
-    void * table_r, * table_g, * table_b;
+	int i;
+	uint_8 table_Y[1024];
+	uint_32 * table_32;
+	uint_16 * table_16;
+	uint_8 * table_8;
+	int entry_size = 0;
+	void * table_r, * table_g, * table_b;
 
-    int crv = Inverse_Table_6_9[matrix_coefficients][0];
-    int cbu = Inverse_Table_6_9[matrix_coefficients][1];
-    int cgu = -Inverse_Table_6_9[matrix_coefficients][2];
-    int cgv = -Inverse_Table_6_9[matrix_coefficients][3];
+	int crv = Inverse_Table_6_9[matrix_coefficients][0];
+	int cbu = Inverse_Table_6_9[matrix_coefficients][1];
+	int cgu = -Inverse_Table_6_9[matrix_coefficients][2];
+	int cgv = -Inverse_Table_6_9[matrix_coefficients][3];
 
-    for (i = 0; i < 1024; i++)
-    {
-	int j;
-
-	j = (76309 * (i - 384 - 16) + 32768) >> 16;
-	j = (j < 0) ? 0 : ((j > 255) ? 255 : j);
-	table_Y[i] = j;
-    }
-
-    switch (bpp)
-    {
-    case 32:
-	yuv2rgb_c_internal = yuv2rgb_c_32;
-
-	table_32 = malloc ((197 + 2*682 + 256 + 132) * sizeof (uint_32));
-
-	entry_size = sizeof (uint_32);
-	table_r = table_32 + 197;
-	table_b = table_32 + 197 + 685;
-	table_g = table_32 + 197 + 2*682;
-
-	for (i = -197; i < 256+197; i++)
-	    ((uint_32 *)table_r)[i] =
-		table_Y[i+384] << ((mode==MODE_RGB) ? 16 : 0);
-	for (i = -132; i < 256+132; i++)
-	    ((uint_32 *)table_g)[i] = table_Y[i+384] << 8;
-	for (i = -232; i < 256+232; i++)
-	    ((uint_32 *)table_b)[i] =
-		table_Y[i+384] << ((mode==MODE_RGB) ? 0 : 16);
-	break;
-
-    case 24:
-	yuv2rgb_c_internal =
-	    (mode==MODE_RGB) ? yuv2rgb_c_24_rgb : yuv2rgb_c_24_bgr;
-
-	table_8 = malloc ((256 + 2*232) * sizeof (uint_8));
-
-	entry_size = sizeof (uint_8);
-	table_r = table_g = table_b = table_8 + 232;
-
-	for (i = -232; i < 256+232; i++)
-	    ((uint_8 * )table_b)[i] = table_Y[i+384];
-	break;
-
-    case 15:
-    case 16:
-	yuv2rgb_c_internal = yuv2rgb_c_16;
-
-	table_16 = malloc ((197 + 2*682 + 256 + 132) * sizeof (uint_16));
-
-	entry_size = sizeof (uint_16);
-	table_r = table_16 + 197;
-	table_b = table_16 + 197 + 685;
-	table_g = table_16 + 197 + 2*682;
-
-	for (i = -197; i < 256+197; i++)
+	for (i = 0; i < 1024; i++)
 	{
-	    int j = table_Y[i+384] >> 3;
-	    if (mode == MODE_RGB)
-		j <<= ((bpp==16) ? 11 : 10);
-	    ((uint_16 *)table_r)[i] = j;
-	}
-	for (i = -132; i < 256+132; i++)
-	{
-	    int j = table_Y[i+384] >> ((bpp==16) ? 2 : 3);
-	    ((uint_16 *)table_g)[i] = j << 5;
-	}
-	for (i = -232; i < 256+232; i++)
-	{
-	    int j = table_Y[i+384] >> 3;
-	    if (mode == MODE_BGR)
-		j <<= ((bpp==16) ? 11 : 10);
-	    ((uint_16 *)table_b)[i] = j;
-	}
-	break;
+		int j;
 
-    default:
-	fprintf (stderr, "%ibpp not supported by yuv2rgb\n", bpp);
-	exit (1);
-    }
+		j = (76309 * (i - 384 - 16) + 32768) >> 16;
+		j = (j < 0) ? 0 : ((j > 255) ? 255 : j);
+		table_Y[i] = j;
+	}
 
-    for (i = 0; i < 256; i++)
-    {
-	table_rV[i] = table_r + entry_size * div_round (crv * (i-128), 76309);
-	table_gU[i] = table_g + entry_size * div_round (cgu * (i-128), 76309);
-	table_gV[i] = entry_size * div_round (cgv * (i-128), 76309);
-	table_bU[i] = table_b + entry_size * div_round (cbu * (i-128), 76309);
-    }
+	switch (bpp)
+	{
+		case 32:
+			yuv2rgb_c_internal = yuv2rgb_c_32;
+
+			table_32 = malloc ((197 + 2*682 + 256 + 132) * sizeof (uint_32));
+
+			entry_size = sizeof (uint_32);
+			table_r = table_32 + 197;
+			table_b = table_32 + 197 + 685;
+			table_g = table_32 + 197 + 2*682;
+
+			for (i = -197; i < 256+197; i++)
+				((uint_32 *)table_r)[i] = table_Y[i+384] << ((mode==MODE_RGB) ? 16 : 0);
+			for (i = -132; i < 256+132; i++)
+				((uint_32 *)table_g)[i] = table_Y[i+384] << 8;
+			for (i = -232; i < 256+232; i++)
+				((uint_32 *)table_b)[i] = table_Y[i+384] << ((mode==MODE_RGB) ? 0 : 16);
+		break;
+
+		case 24:
+			yuv2rgb_c_internal = (mode==MODE_RGB) ? yuv2rgb_c_24_rgb : yuv2rgb_c_24_bgr;
+
+			table_8 = malloc ((256 + 2*232) * sizeof (uint_8));
+
+			entry_size = sizeof (uint_8);
+			table_r = table_g = table_b = table_8 + 232;
+
+			for (i = -232; i < 256+232; i++)
+				((uint_8 * )table_b)[i] = table_Y[i+384];
+		break;
+
+		case 15:
+		case 16:
+			yuv2rgb_c_internal = yuv2rgb_c_16;
+
+			table_16 = malloc ((197 + 2*682 + 256 + 132) * sizeof (uint_16));
+
+			entry_size = sizeof (uint_16);
+			table_r = table_16 + 197;
+			table_b = table_16 + 197 + 685;
+			table_g = table_16 + 197 + 2*682;
+
+			for (i = -197; i < 256+197; i++)
+			{
+				int j = table_Y[i+384] >> 3;
+
+				if (mode == MODE_RGB)
+					j <<= ((bpp==16) ? 11 : 10);
+
+				((uint_16 *)table_r)[i] = j;
+			}
+			for (i = -132; i < 256+132; i++)
+			{
+				int j = table_Y[i+384] >> ((bpp==16) ? 2 : 3);
+
+				((uint_16 *)table_g)[i] = j << 5;
+			}
+			for (i = -232; i < 256+232; i++)
+			{
+				int j = table_Y[i+384] >> 3;
+
+				if (mode == MODE_BGR)
+					j <<= ((bpp==16) ? 11 : 10);
+
+				((uint_16 *)table_b)[i] = j;
+			}
+		break;
+
+		default:
+			fprintf (stderr, "%ibpp not supported by yuv2rgb\n", bpp);
+			exit (1);
+	}
+
+	for (i = 0; i < 256; i++)
+	{
+		table_rV[i] = table_r + entry_size * div_round (crv * (i-128), 76309);
+		table_gU[i] = table_g + entry_size * div_round (cgu * (i-128), 76309);
+		table_gV[i] = entry_size * div_round (cgv * (i-128), 76309);
+		table_bU[i] = table_b + entry_size * div_round (cbu * (i-128), 76309);
+	}
 }
