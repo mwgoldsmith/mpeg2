@@ -10,3 +10,185 @@ III - pts
 IV - app that preallocates buffers
 
 V - app that does its own buffer management
+
+
+
+
+
+Quick-and-dirty documentation for libmpeg2 0.3.1
+Kees Cook <mpeg2@outflux.net>
+2003-04-08
+
+
+
+Basic Usage Pseudocode
+----------------------
+
+        if (no acceleration autodetection)
+                mpeg2_accel(desired_acceleration);
+        handle=mpeg2_init();
+        info=mpeg2_info(handle);
+        while (data_available) {
+                state=mpeg2_parse(handle);
+                switch (state) {
+                case -1:
+                        read some data
+                        mpeg2_buffer(handle,data_start,data_end);
+                        break;
+                case STATE_SLICE:
+                case STATE_END:
+                        display the frame described in "info"
+                        break;
+                case STATE_INVALID:
+                        abort
+                        break;
+                }
+        }
+        mpeg2_close(handle);
+
+
+Basic Usage Explained
+---------------------
+
+libmpeg2 uses an opaque pointer which is the active "handle" to the mpeg2
+decoder.  To get this handle (of type "mpeg2dec_t"), call "mpeg2_init()".
+
+Data is loaded into the decoder with "mpeg2_buffer" whenever "mpeg2_parse"
+is ready for more data (return state is -1).  Pictures are available whenever
+"mpeg2_parse"'s return state is STATE_SLICE or STATE_END.
+
+        This means the *previous* picture is available, right?  In other
+        words, when STATE_SLICE is seen, that means that the *previous*
+        picture is all done.  Same thing for STATE_END.  So if you want to
+        see one frame at a time (without starting to fill the mpeg2 decoder
+        with more data not from that picture) we'd have to inject something
+        to make it report STATE_END?
+
+
+
+Basic Function Reference
+------------------------
+
+mpeg2dec_t * mpeg2_init()
+        Initializes a memory space for mpeg2 decoding.  This memory must
+        be freed with a call to "mpeg2_close" when finished.
+
+        Returns NULL on error (when system is out of memory)
+
+                - Doesn't check if chunk_buffer is NULL?
+
+
+uint32_t mpeg2_accel(uint32_t accel)
+        Sets the CPU acceleration type to be used for all decoders for the
+        life of the program.
+       
+        By default, a call to mpeg2_accel is not needed, since the best
+        available acceleration will be auto-detected.  To override the
+        default, this function must be called before any calls to
+        "mpeg2_init".  See mpeg2.h for a list of the available accelerations
+        (prefix "MPEG2_ACCEL_...").
+        
+        After a call to mpeg2_init, mpeg2_accel can be called to find out
+        what the selected acceleration is.  Once an acceleration has been
+        selected (through explicitly requesting one, or through
+        auto-detection) the "accel" parameter will be ignored.
+
+        Returns selected acceleration method.  If the requested acceleration
+        is not available, the function will auto-detect the best available
+        and return that instead.
+        
+                - Cannot be undone!  This should maybe be a part of
+                  the mpeg2 structure somehow?
+
+
+mpeg2_info_t * mpeg2_info(mpeg2dec_t * handle)
+        Gets structure for the mpeg2 decoder's "mpeg2_info_t" structure.
+        This will let you do something (like display!) the decoded pictures
+        with the mpeg2_info_t structure members:
+
+        display_fbuf:
+                memory area containing the rendered picture information.
+                If this is NULL, no frame is available.
+
+        display_fbuf->buf:
+                RGB pixel data for the picture.
+
+        display_picture:
+                data structure describing the current picture.
+                see mpeg2.h for more details.
+
+        sequence:
+                data structure describing the entire current picture sequence:
+
+                width:  picture width in pixels.
+                height: picture height in pixels.
+
+                see mpeg2.h for more details.
+
+        user_data:
+                handy place to attach things needed by your program.  Must
+                be detached before calling "mpeg2_close".
+
+        there are more...check mpeg2.h
+
+
+
+
+int mpeg2_parse(mpeg2dec_t * handle)
+        Parses available data and returns state of the decoder:
+
+        -1:
+                ready for more data.  decoder has finished reading
+                the buffer sent with mpeg2_buffer.
+
+        STATE_SEQUENCE:
+                A sequence header has been found.
+
+        STATE_SEQUENCE_REPEATED:
+                A repeated sequence header has been found and processed.
+
+        STATE_GOP:
+                A GOP has been found.
+
+        STATE_PICTURE:
+                A picture header has been found.
+        STATE_PICTURE_2ND:
+                A second field picture header has been found.
+
+        STATE_SLICE_1ST:
+                First slice of a multi-field picture has been found.
+        STATE_SLICE:
+                Final slice (multi-field or not) of a picture has been found.
+                Good time to update the display.
+        STATE_END:
+                End of the stream?  Good time to update the display.
+
+        STATE_INVALID:
+                Filled the internal buffers without finding any start codes.
+                Cannot continue: mpeg2_close must be called next.
+
+
+void mpeg2_buffer(mpeg2dec_t * handle, uint8_t * start, uint8_t * end)
+        Makes data between "start" and "end" available for processing.
+        If a subsequent call to "mpeg2_parse" doesn't find anything useful
+        (returns -1) then this data will be copied into the mpeg2 decoder's
+        private data area.  This process repeats until something useful is
+        found with mpeg2_parse (returns something other than -1), or the
+        buffer fills up.
+
+
+void mpeg2_close(mpeg2dec_t * handle)
+        Cleans up the memory associated with the mpeg2 decoder handle.
+
+        - does not check for NULL frees! (via mpeg2_free)
+
+
+Advanced Function Reference
+---------------------------
+
+mpeg2_convert
+mpeg2_set_buf
+mpeg2_custom_fbuf
+mpeg2_init_fbuf
+mpeg2_slice
+
