@@ -60,7 +60,8 @@ static int vo_setup (vo_instance_t * this, int width, int height)
 
 static inline void vo_close (vo_instance_t * this)
 {
-    this->close (this);
+    if (this->close)
+	this->close (this);
 }
 
 #define VO_TOP_FIELD 1
@@ -75,7 +76,7 @@ static inline vo_frame_t * vo_get_frame (vo_instance_t * this, int flags)
 
 static inline void vo_field (vo_frame_t * frame, int flags)
 {
-    if (frame->field != NULL)
+    if (frame->field)
 	frame->field (frame, flags);
 }
 
