@@ -1224,7 +1224,8 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     slice.b_motion.pmv[0][0] = slice.b_motion.pmv[0][1] = 0;
     slice.b_motion.pmv[1][0] = slice.b_motion.pmv[1][1] = 0;
 
-    if ((! HACK_MODE) && (picture->picture_coding_type == B_TYPE))
+    if ((! HACK_MODE) && (!picture->mpeg1) &&
+	(picture->picture_coding_type == B_TYPE))
 	offset = 0;
 
     dest[0] = picture->current_frame[0] + offset * 4;
