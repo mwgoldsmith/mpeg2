@@ -145,8 +145,11 @@ static void sdl_draw_frame (vo_frame_t * _frame)
     sdl_frame_t * frame;
     sdl_instance_t * this;
 
+
     frame = (sdl_frame_t *)_frame;
     this = (sdl_instance_t *)frame->vo.this;
+
+    SDL_UnlockYUVOverlay (frame->overlay);
 	
     /* blit to the YUV overlay */
     SDL_DisplayYUVOverlay (frame->overlay, &(this->surface->clip_rect));
@@ -156,7 +159,7 @@ static void sdl_draw_frame (vo_frame_t * _frame)
 	
     /* Unlock the frame - the frame is 100% filled with data to display 
      * We Lock it again when the frame was displayed. */
-    SDL_UnlockYUVOverlay (frame->overlay);
+    SDL_LockYUVOverlay (frame->overlay);
 }
 
 static int sdl_alloc_frames (sdl_instance_t * this, int width, int height)
