@@ -43,7 +43,8 @@ static int demux_pva = 0;
 
 static void print_usage (char ** argv)
 {
-    fprintf (stderr, "usage: %s [-s <track>] [-t <pid>] [-p] <file>\n"
+    fprintf (stderr, "usage: %s [-h] [-s <track>] [-t <pid>] [-p] <file>\n"
+	     "\t-h\tdisplay help\n"
 	     "\t-s\tset track number (0-15 or 0xe0-0xef)\n"
 	     "\t-t\tuse transport stream demultiplexer, pid 0x10-0x1ffe\n"
 	     "\t-p\tuse pva demultiplexer\n",
@@ -57,8 +58,11 @@ static void handle_args (int argc, char ** argv)
     int c;
     char * s;
 
-    while ((c = getopt (argc, argv, "s:t:p")) != -1)
+    while ((c = getopt (argc, argv, "hs:t:p")) != -1)
 	switch (c) {
+	case 'h':
+	    print_usage (argv);
+
 	case 's':
 	    demux_track = strtol (optarg, &s, 0);
 	    if (demux_track < 0xe0)
