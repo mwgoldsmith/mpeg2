@@ -321,8 +321,7 @@ void mpeg2_convert (mpeg2dec_t * mpeg2dec,
     mpeg2dec->convert_copy = convert_init.copy;
 
     y_size = mpeg2dec->sequence.width * mpeg2dec->sequence.height;
-    uv_size = (mpeg2dec->sequence.chroma_width *
-	       mpeg2dec->sequence.chroma_height);
+    uv_size = y_size >> (2 - mpeg2dec->decoder.chroma_format);
     mpeg2dec->yuv_buf[0][0] = (uint8_t *) mpeg2_malloc (y_size,
 							MPEG2_ALLOC_YUV);
     mpeg2dec->yuv_buf[0][1] = (uint8_t *) mpeg2_malloc (uv_size,
@@ -336,7 +335,7 @@ void mpeg2_convert (mpeg2dec_t * mpeg2dec,
     mpeg2dec->yuv_buf[1][2] = (uint8_t *) mpeg2_malloc (uv_size,
 							MPEG2_ALLOC_YUV);
     y_size = mpeg2dec->sequence.width * 32;
-    uv_size = mpeg2dec->sequence.chroma_width * 32;
+    uv_size = y_size >> (2 - mpeg2dec->decoder.chroma_format);
     if (mpeg2dec->sequence.chroma_height < mpeg2dec->sequence.height)
 	uv_size >>= 1;
     mpeg2dec->yuv_buf[2][0] = (uint8_t *) mpeg2_malloc (y_size,

@@ -1431,9 +1431,9 @@ do {									\
 		if (decoder->coding_type == B_TYPE)			\
 		    break;						\
 	    }								\
-	    decoder->dest[0] += 16 * decoder->stride;			\
-	    decoder->dest[1] += 4 * decoder->stride;			\
-	    decoder->dest[2] += 4 * decoder->stride;			\
+	    decoder->dest[0] += decoder->slice_stride;			\
+	    decoder->dest[1] += decoder->slice_uv_stride;		\
+	    decoder->dest[2] += decoder->slice_uv_stride;		\
 	} while (0);							\
 	decoder->v_offset += 16;					\
 	if (decoder->v_offset > decoder->limit_y) {			\
@@ -1492,6 +1492,9 @@ void mpeg2_init_fbuf (mpeg2_decoder_t * decoder, uint8_t * current_fbuf[3],
 
     decoder->stride = stride;
     decoder->uv_stride = stride >> 1;
+    decoder->slice_stride = 16 * stride;
+    decoder->slice_uv_stride =
+	decoder->slice_stride >> (2 - decoder->chroma_format);
     decoder->limit_x = 2 * decoder->width - 32;
     decoder->limit_y_16 = 2 * height - 32;
     decoder->limit_y_8 = 2 * height - 16;
@@ -1534,9 +1537,10 @@ static inline int slice_init (mpeg2_decoder_t * const decoder, int code)
     decoder->v_offset = (code - 1) * 16;
     offset = 0;
     if (!(decoder->convert) || decoder->coding_type != B_TYPE)
-	offset = (code - 1) * decoder->stride * 4;
+	offset = (code - 1) * decoder->slice_stride;
 
-    decoder->dest[0] = decoder->picture_dest[0] + offset * 4;
+    decoder->dest[0] = decoder->picture_dest[0] + offset;
+    offset >>= (2 - decoder->chroma_format);
     decoder->dest[1] = decoder->picture_dest[1] + offset;
     decoder->dest[2] = decoder->picture_dest[2] + offset;
 
@@ -1578,9 +1582,9 @@ static inline int slice_init (mpeg2_decoder_t * const decoder, int code)
     while (decoder->offset - decoder->width >= 0) {
 	decoder->offset -= decoder->width;
 	if (!(decoder->convert) || decoder->coding_type != B_TYPE) {
-	    decoder->dest[0] += 16 * decoder->stride;
-	    decoder->dest[1] += 4 * decoder->stride;
-	    decoder->dest[2] += 4 * decoder->stride;
+	    decoder->dest[0] += decoder->slice_stride;
+	    decoder->dest[1] += decoder->slice_uv_stride;
+	    decoder->dest[2] += decoder->slice_uv_stride;
 	}
 	decoder->v_offset += 16;
     }
@@ -1654,14 +1658,24 @@ void mpeg2_slice (mpeg2_decoder_t * const decoder, const int code,
 	    slice_intra_DCT (decoder, 0, dest_y + 8, DCT_stride);
 	    slice_intra_DCT (decoder, 0, dest_y + DCT_offset, DCT_stride);
 	    slice_intra_DCT (decoder, 0, dest_y + DCT_offset + 8, DCT_stride);
-	    slice_intra_DCT (decoder, 1, decoder->dest[1] + (offset >> 1),
-			     decoder->uv_stride);
-	    slice_intra_DCT (decoder, 2, decoder->dest[2] + (offset >> 1),
-			     decoder->uv_stride);
-
-	    if (decoder->coding_type == D_TYPE) {
-		NEEDBITS (bit_buf, bits, bit_ptr);
-		DUMPBITS (bit_buf, bits, 1);
+	    if (likely (decoder->chroma_format == 0)) {
+		slice_intra_DCT (decoder, 1, decoder->dest[1] + (offset >> 1),
+				 decoder->uv_stride);
+		slice_intra_DCT (decoder, 2, decoder->dest[2] + (offset >> 1),
+				 decoder->uv_stride);
+		if (decoder->coding_type == D_TYPE) {
+		    NEEDBITS (bit_buf, bits, bit_ptr);
+		    DUMPBITS (bit_buf, bits, 1);
+		}
+	    } else {
+		uint8_t * dest_u = decoder->dest[1] + (offset >> 1);
+		uint8_t * dest_v = decoder->dest[2] + (offset >> 1);
+		DCT_stride >>= 1;
+		DCT_offset >>= 1;
+		slice_intra_DCT (decoder, 1, dest_u, DCT_stride);
+		slice_intra_DCT (decoder, 2, dest_v, DCT_stride);
+		slice_intra_DCT (decoder, 1, dest_u + DCT_offset, DCT_stride);
+		slice_intra_DCT (decoder, 2, dest_v + DCT_offset, DCT_stride);
 	    }
 	} else {
 
