@@ -43,4 +43,6 @@ typedef enum {
 mpeg2_convert_t * mpeg2convert_rgb (mpeg2convert_rgb_order_t order,
 				    unsigned int bpp);
 
+mpeg2_convert_t mpeg2convert_uyvy;
+
 #endif /* MPEG2CONVERT_H */

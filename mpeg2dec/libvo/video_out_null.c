@@ -88,13 +88,14 @@ static void nullslice_copy (void * id, uint8_t * const * src,
 {
 }
 
-static void nullslice_convert (const mpeg2_sequence_t * seq, uint32_t accel,
-			       void * arg, mpeg2_convert_init_t * result)
+static int nullslice_convert (const mpeg2_sequence_t * seq, uint32_t accel,
+			      void * arg, mpeg2_convert_init_t * result)
 {
     result->id_size = 0;
     result->buf_size[0] = result->buf_size[1] = result->buf_size[2] = 0;
     result->start = nullslice_start;
     result->copy = nullslice_copy;
+    return 0;
 }
 
 static int nullslice_setup (vo_instance_t * instance, unsigned int width,
