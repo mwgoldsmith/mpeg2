@@ -22,6 +22,7 @@
 #include "config.h"
 
 #include <stdio.h>
+#include <string.h>	// memcpy/memset, try to remove
 #include <stdlib.h>
 #include <inttypes.h>
 
@@ -49,10 +50,11 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output,
     mpeg2dec->in_slice=0;
 
     // copy output structure into local mpeg2dec structure
+    // FIXME this is ugly
     if (output != NULL) {
-      mpeg2dec->output=(vo_output_video_t *) 
-	malloc (sizeof (vo_output_video_t));
-      memcpy(mpeg2dec->output,output,sizeof (vo_output_video_t));
+	mpeg2dec->output=(vo_output_video_t *) 
+	    malloc (sizeof (vo_output_video_t));
+	memcpy(mpeg2dec->output,output,sizeof (vo_output_video_t));
     }
     
     // opaque user pointer (is passed to the output)
