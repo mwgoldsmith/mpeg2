@@ -627,22 +627,21 @@ static void pva_loop (void)
 
 static void ts_loop (void)
 {
-#define PACKETS (BUFFER_SIZE / 188)
     uint8_t * buf;
+    uint8_t * nextbuf;
     uint8_t * data;
     uint8_t * end;
-    int packets;
-    int i;
     int pid;
 
+    buf = buffer;
     do {
-	packets = fread (buffer, 188, PACKETS, in_file);
-	for (i = 0; i < packets; i++) {
-	    buf = buffer + i * 188;
-	    end = buf + 188;
-	    if (buf[0] != 0x47) {
+	end = buf + fread (buf, 1, buffer + BUFFER_SIZE - buf, in_file);
+	buf = buffer;
+	for (; (nextbuf = buf + 188) <= end; buf = nextbuf) {
+	    if (*buf != 0x47) {
 		fprintf (stderr, "bad sync byte\n");
-		exit (1);
+		nextbuf = buf + 1;
+		continue;
 	    }
 	    pid = ((buf[1] << 8) + buf[2]) & 0x1fff;
 	    if (pid != demux_pid)
@@ -650,13 +649,18 @@ static void ts_loop (void)
 	    data = buf + 4;
 	    if (buf[3] & 0x20) {	/* buf contains an adaptation field */
 		data = buf + 5 + buf[4];
-		if (data > end)
+		if (data > nextbuf)
 		    continue;
 	    }
 	    if (buf[3] & 0x10)
-		demux (data, end, (buf[1] & 0x40) ? DEMUX_PAYLOAD_START : 0);
+		demux (data, nextbuf,
+		       (buf[1] & 0x40) ? DEMUX_PAYLOAD_START : 0);
 	}
-    } while (packets == PACKETS && !sigint);
+	if (end != buffer + BUFFER_SIZE)
+	    break;
+	memcpy (buffer, buf, end - buf);
+	buf = buffer + (end - buf);
+    } while (!sigint);
 }
 
 static void es_loop (void)
