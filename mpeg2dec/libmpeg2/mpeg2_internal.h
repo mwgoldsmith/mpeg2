@@ -54,7 +54,7 @@ typedef struct {
     int f_code[2];
 } motion_t;
 
-struct decoder_s {
+struct mpeg2_decoder_s {
     /* first, state that carries information from one macroblock to the */
     /* next inside a slice, and is never used outside of mpeg2_slice() */
 
@@ -138,18 +138,18 @@ struct decoder_s {
 };
 
 typedef struct {
-    fbuf_t fbuf;
+    mpeg2_fbuf_t fbuf;
 } fbuf_alloc_t;
 
 struct mpeg2dec_s {
-    decoder_t decoder;
+    mpeg2_decoder_t decoder;
 
     mpeg2_info_t info;
 
     uint32_t shift;
     int is_display_initialized;
-    state_t (* action) (struct mpeg2dec_s * mpeg2dec);
-    state_t state;
+    mpeg2_state_t (* action) (struct mpeg2dec_s * mpeg2dec);
+    mpeg2_state_t state;
     uint32_t ext_state;
 
     /* allocated in init - gcc has problems allocating such big structures */
@@ -172,12 +172,12 @@ struct mpeg2dec_s {
     uint8_t first_decode_slice;
     uint8_t nb_decode_slices;
 
-    sequence_t new_sequence;
-    sequence_t sequence;
-    gop_t gop;
-    picture_t pictures[4];
-    picture_t * picture;
-    /*const*/ fbuf_t * fbuf[3];	/* 0: current fbuf, 1-2: prediction fbufs */
+    mpeg2_sequence_t new_sequence;
+    mpeg2_sequence_t sequence;
+    mpeg2_gop_t gop;
+    mpeg2_picture_t pictures[4];
+    mpeg2_picture_t * picture;
+    /*const*/ mpeg2_fbuf_t * fbuf[3];	/* 0: current fbuf, 1-2: prediction fbufs */
 
     fbuf_alloc_t fbuf_alloc[3];
     int custom_fbuf;
@@ -223,21 +223,21 @@ uint32_t mpeg2_detect_accel (void);
 void mpeg2_cpu_state_init (uint32_t accel);
 
 /* decode.c */
-state_t mpeg2_seek_sequence (mpeg2dec_t * mpeg2dec);
-state_t mpeg2_parse_header (mpeg2dec_t * mpeg2dec);
+mpeg2_state_t mpeg2_seek_sequence (mpeg2dec_t * mpeg2dec);
+mpeg2_state_t mpeg2_parse_header (mpeg2dec_t * mpeg2dec);
 
 /* header.c */
 void mpeg2_header_state_init (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_gop (mpeg2dec_t * mpeg2dec);
-state_t mpeg2_header_picture_start (mpeg2dec_t * mpeg2dec);
+mpeg2_state_t mpeg2_header_picture_start (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_picture (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_extension (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec);
 void mpeg2_header_matrix_finalize (mpeg2dec_t * mpeg2dec);
 void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec);
-state_t mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec);
-state_t mpeg2_header_end (mpeg2dec_t * mpeg2dec);
+mpeg2_state_t mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec);
+mpeg2_state_t mpeg2_header_end (mpeg2dec_t * mpeg2dec);
 void mpeg2_set_fbuf (mpeg2dec_t * mpeg2dec, int coding_type);
 
 /* idct.c */

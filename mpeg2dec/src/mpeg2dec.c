@@ -218,7 +218,7 @@ static void handle_args (int argc, char ** argv)
 static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 {
     const mpeg2_info_t * info;
-    state_t state;
+    mpeg2_state_t state;
     vo_setup_result_t setup_result;
 
     mpeg2_buffer (mpeg2dec, current, end);

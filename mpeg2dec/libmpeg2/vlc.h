@@ -27,7 +27,8 @@ do {								\
     bit_ptr += 2;						\
 } while (0)
 
-static inline void bitstream_init (decoder_t * decoder, const uint8_t * start)
+static inline void bitstream_init (mpeg2_decoder_t * decoder,
+				   const uint8_t * start)
 {
     decoder->bitstream_buf =
 	(start[0] << 24) | (start[1] << 16) | (start[2] << 8) | start[3];
