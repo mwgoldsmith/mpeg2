@@ -7,7 +7,7 @@ libmpeg2_la_SOURCES = alloc.c cpu_accel.c header.c decode.c cpu_state.c \
 		      motion_comp_alpha.c idct_alpha.c \
 		      motion_comp_mlib.c idct_mlib.c \
 		      motion_comp.c idct.c
-libmpeg2_la_LIBADD = @LIBMPEG2_LIBS@
+libmpeg2_la_LIBADD = $(LIBMPEG2_LIBS)
 libmpeg2_la_LDFLAGS = -no-undefined
 
 pkgconfigdir = $(libdir)/pkgconfig
