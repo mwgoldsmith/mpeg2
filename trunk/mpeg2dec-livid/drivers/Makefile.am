@@ -13,7 +13,7 @@ CFLAGS = -g -O2  -Wall -D__KERNEL__  -DMODULE @MOD_CFLAGS@\
 
 noinst_HEADERS = mga_vid.h
 
-if BUILD_MGA_DRIVER
+if HAVE_MGA
 all: mga_vid.o mga_vid_test
 endif
 

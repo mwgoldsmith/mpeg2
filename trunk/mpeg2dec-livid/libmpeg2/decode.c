@@ -38,7 +38,6 @@
 #include "idct.h"
 #include "header.h"
 #include "slice.h"
-#include "display.h"
 
 #ifdef __i386__
 #include "mmx.h"
@@ -51,7 +50,7 @@ picture_t picture;
 mpeg2_config_t config;
 
 //pointers to the display interface functions
-mpeg2_display_t mpeg2_display;
+vo_functions_t video_out;
 
 //
 //the current start code chunk we are working on
@@ -67,31 +66,28 @@ static uint_32 is_display_initialized = 0;
 static uint_32 is_sequence_needed = 1;
 
 void
-mpeg2_init(mpeg2_display_t *foo)
+mpeg2_init(vo_functions_t *foo)
 {
 	uint_32 max_frame_size;
 	uint_32 max_slice_size;
 
 	//copy the display interface function pointers
-	mpeg2_display = *foo;
+	video_out = *foo;
 
 	max_frame_size = 720 * 576;
 	max_slice_size = 720 *  16;
 
-	picture.throwaway_frame[0] = mpeg2_display.allocate_buffer((max_slice_size * 3) / 2);
+	picture.throwaway_frame[0] = video_out.allocate_buffer((max_slice_size * 3) / 2);
 	picture.throwaway_frame[1] = picture.throwaway_frame[0] + max_slice_size;
 	picture.throwaway_frame[2] = picture.throwaway_frame[1] + max_slice_size/4;
-	printf("throwaway_frame %p\n",picture.throwaway_frame[0]);
 
-	picture.backward_reference_frame[0] = mpeg2_display.allocate_buffer((max_frame_size *3) / 2); 
+	picture.backward_reference_frame[0] = video_out.allocate_buffer((max_frame_size *3) / 2); 
 	picture.backward_reference_frame[1] = picture.backward_reference_frame[0] + max_frame_size;
 	picture.backward_reference_frame[2] = picture.backward_reference_frame[1] + max_frame_size/4;
-	printf("back ref_frame %p\n",picture.backward_reference_frame[0]);
 
-	picture.forward_reference_frame[0] = mpeg2_display.allocate_buffer((max_frame_size * 3) / 2); 
+	picture.forward_reference_frame[0] = video_out.allocate_buffer((max_frame_size * 3) / 2); 
 	picture.forward_reference_frame[1] = picture.forward_reference_frame[0] + max_frame_size;
 	picture.forward_reference_frame[2] = picture.forward_reference_frame[1] + max_frame_size/4;
-	printf("forward ref_frame %p\n",picture.forward_reference_frame[0]);
 
 	//FIXME setup config properly
 	config.flags = MPEG2_MMX_ENABLE;
@@ -206,7 +202,7 @@ mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end)
 
 			if(!is_display_initialized)
 			{
-				mpeg2_display.init(picture.coded_picture_width,picture.coded_picture_height,0,0);
+				video_out.init(picture.coded_picture_width,picture.coded_picture_height,0,0);
 				is_display_initialized = 1;
 			}
 		}
@@ -229,7 +225,7 @@ mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end)
 
 			if(picture.picture_coding_type == B_TYPE)
 			{
-				mpeg2_display.draw_slice(picture.throwaway_frame,chunk_buffer[0] - 1);
+				video_out.draw_slice(picture.throwaway_frame,chunk_buffer[0] - 1);
 
 				picture.current_frame[0] = picture.throwaway_frame[0] - 
 					(chunk_buffer[0]) * 16 * picture.coded_picture_width;
@@ -248,8 +244,8 @@ mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end)
 					picture.coded_picture_width/2;
 				foo[2] = picture.forward_reference_frame[2] + (chunk_buffer[0]-1) * 8 *
 					picture.coded_picture_width/2;
-				mpeg2_display.draw_slice(foo,chunk_buffer[0]-1);
-				//mpeg2_display.draw_frame(picture.forward_reference_frame);
+				video_out.draw_slice(foo,chunk_buffer[0]-1);
+				//video_out.draw_frame(picture.forward_reference_frame);
 			}
 		}
 
@@ -260,7 +256,7 @@ mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end)
 
 		if(is_frame_done)
 		{
-			mpeg2_display.flip_page();
+			video_out.flip_page();
 
 			is_frame_done = 0;
 

@@ -1,3 +1,25 @@
+/* 
+ *    3dfx.h
+ *
+ *	Copyright (C) Colin Cross Apr 2000
+ *	
+ *  mpeg2dec is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2, or (at your option)
+ *  any later version.
+ *   
+ *  mpeg2dec is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *   
+ *  You should have received a copy of the GNU General Public License
+ *  along with GNU Make; see the file COPYING.  If not, write to
+ *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. 
+ *
+ */
+
+
 #define VOODOO_IO_REG_OFFSET     ((unsigned long int)0x0000000)
 #define VOODOO_YUV_REG_OFFSET    ((unsigned long int)0x0080100)
 #define VOODOO_AGP_REG_OFFSET    ((unsigned long int)0x0080000)
@@ -8,9 +30,6 @@
 #define VOODOO_BLT_FORMAT_16     (3<<16)
 
 #define VOODOO_YUV_STRIDE        (1024>>2)
-
-typedef unsigned long int uint_32;
-typedef unsigned char uint_8;
 
 struct voodoo_yuv_fb_t {
   uint_32 Y[0x0040000];
@@ -132,9 +151,4 @@ typedef struct voodoo_2d_reg_t voodoo_2d_reg;
 typedef struct voodoo_io_reg_t voodoo_io_reg;
 typedef struct voodoo_yuv_reg_t voodoo_yuv_reg;
 typedef struct voodoo_yuv_fb_t voodoo_yuv_fb;
-
-
-
-
-
 

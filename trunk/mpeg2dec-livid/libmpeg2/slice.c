@@ -34,7 +34,6 @@
 #include "motion_comp.h"
 #include "bitstream.h"
 #include "idct.h"
-#include "display.h"
 #include "stats.h"
 
 

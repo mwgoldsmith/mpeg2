@@ -1,5 +1,5 @@
 /* 
- * display_x11.c, X11 interface                                               
+ * video_out_x11.c, X11 interface                                               
  *
  *
  * Copyright (C) 1996, MPEG Software Simulation Group. All Rights Reserved. 
@@ -15,16 +15,20 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include "config.h"
+#include "video_out.h"
+#include "video_out_internal.h"
+
+LIBVO_EXTERN(x11)
+
+#ifdef HAVE_X11
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/XShm.h>
-#include <string.h>
 #include <errno.h>
-
-#include <config.h>
-#include "libmpeg2/mpeg2.h"
-#include "libmpeg2/mpeg2_internal.h"
 #include "yuv2rgb.h"
 
 /* private prototypes */
@@ -98,7 +102,7 @@ uint_32 progressive_sequence = 0;
  * allocate colors and (shared) memory
  */
 uint_32 
-display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
+init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 {
 	int screen;
 	unsigned int fg, bg;
@@ -117,7 +121,7 @@ display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 	image_width = width;
 
 	if (X_already_started)
-		return 0;
+		return -1;
 
 	if(getenv("DISPLAY"))
 		name = getenv("DISPLAY");
@@ -127,7 +131,7 @@ display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 	if (mydisplay == NULL)
 	{
 		fprintf(stderr,"Can not open display\n");
-		return(0);
+		return -1;
 	}
 
 	screen = DefaultScreen(mydisplay);
@@ -217,7 +221,7 @@ display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 		if (Success != XvQueryAdaptors(mydisplay,DefaultRootWindow(mydisplay), &adaptors,&ai)) 
 		{
 			fprintf(stderr,"Xv: XvQueryAdaptors failed");
-			return(0);
+			return -1;
 		}
 		/* check adaptors */
 		for (i = 0; i < adaptors; i++) 
@@ -274,7 +278,7 @@ display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 
 			/* all done (I hope...) */
 			X_already_started++;
-			return 1;
+			return 0;
 		}
 	}
 #endif
@@ -387,8 +391,8 @@ display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 	if (myximage->byte_order != LSBFirst) 
 #endif
 	{
-	fprintf( stderr, "No support fon non-native XImage byte order!\n" );
-	return 0;
+		fprintf( stderr, "No support fon non-native XImage byte order!\n" );
+		return -1;
 	}
 
 	/* 
@@ -402,7 +406,7 @@ display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 	yuv2rgb_init((depth == 24) ? bpp : depth, mode);
 
 	X_already_started++;
-	return(-1);  // non-zero == success.
+	return 0;
 }
 
 void 
@@ -428,58 +432,110 @@ Display_Image(XImage *myximage, uint_8 *ImageData)
 #ifdef SH_MEM
 	if (Shmem_Flag) 
 	{
-	XShmPutImage(mydisplay, mywindow, mygc, myximage,
-	0, 0, 0, 0, myximage->width, myximage->height, True);
-	XFlush(mydisplay);
-
+		XShmPutImage(mydisplay, mywindow, mygc, myximage, 
+				0, 0, 0, 0, myximage->width, myximage->height, True); 
+		XFlush(mydisplay);
 	} 
 	else
 #endif
 	{
 		XPutImage(mydisplay, mywindow, mygc, myximage, 0, 0, 0, 0, 
-			myximage->width, myximage->height);
+				myximage->width, myximage->height);
 	}
 }
 
-void
-display_flip_page(void)
+#ifdef HAVE_XV
+static inline void
+flip_page_xv(void)
+{
+	Window root;
+	XEvent event;
+	int x, y;
+	unsigned int w, h, b, d;
+
+	if (xv_port != 0) 
+	{
+		if (XCheckWindowEvent(mydisplay, mywindow, StructureNotifyMask, &event))
+		{
+			XGetGeometry(mydisplay, mywindow, &root, &x, &y, &w, &h, &b, &d);
+			win_width  = w;
+			win_height = h;
+			fprintf(stderr,"win resize: %dx%d\n",win_width,win_height);                
+		}
+
+		XvShmPutImage(mydisplay, xv_port, mywindow, mygc, xvimage1,
+		0, 0,  image_width, image_height,
+		0, 0,  win_width, win_height,
+		False);
+		XFlush(mydisplay);
+		return;
+	}
+}
+#endif
+
+static inline void
+flip_page_x11(void)
 {
 	Display_Image(myximage, ImageData);
 }
 
-uint_32
-display_slice(uint_8 *src[], uint_32 slice_num)
+
+void
+flip_page(void)
+{
+#if HAVE_XV
+	if (xv_port != 0)
+		return flip_page_xv();
+	else
+#endif
+		return flip_page_x11();
+}
+
+#if HAVE_XV
+static inline uint_32
+draw_slice_xv(uint_8 *src[], uint_32 slice_num)
+{
+	dst = xvimage1->data + image_width * 16 * slice_num;
+
+	memcpy(dst,src[0],image_width*16);
+	dst = xvimage1->data + image_width * image_height + image_width * 4 * slice_num;
+	memcpy(dst, src[2],image_width*4);
+	dst = xvimage1->data + image_width * image_height * 5 / 4 + image_width * 4 * slice _num;
+	memcpy(dst, src[1],image_width*4);
+
+	return 0;  
+}
+#endif
+
+static inline uint_32
+draw_slice_x11(uint_8 *src[], uint_32 slice_num)
 {
 	uint_8 *dst;
 
 	dst = ImageData + image_width * 16 * (bpp/8) * slice_num;
 
-	if (bpp==32)
-	{
-		yuv2rgb(dst, src[0], src[1], src[2],
-				image_width, 16,
-				image_width*4, image_width, image_width/2 );
-	}
-	else if (bpp == 24)
-	{
-		yuv2rgb(dst, src[0], src[1], src[2],
-				image_width, 16,
-				image_width*3, image_width, image_width/2 );
-	}
-	else if (bpp == 15 || bpp == 16)
-	{
-		yuv2rgb(dst, src[0], src[1], src[2],
-				image_width, 16,
-				image_width*2, image_width, image_width/2 );
-	}
+	yuv2rgb(dst , src[0], src[1], src[2], 
+			image_width, 16, 
+			image_width*(bpp/8), image_width, image_width/2 );
 
 	return 0;
 }
 
-uint_32 
-display_frame(uint_8 *src[])
+uint_32
+draw_slice(uint_8 *src[], uint_32 slice_num)
 {
+#if HAVE_XV
+	if (xv_port != 0)
+		return draw_slice_xv(src,slice_num);
+	else
+#endif
+		return draw_slice_x11(src,slice_num);
+}
+
 #ifdef HAVE_XV
+static inline uint_32 
+draw_frame_xv(uint_8 *src[])
+{
 	Window root;
 	XEvent event;
 	int x, y;
@@ -509,22 +565,43 @@ display_frame(uint_8 *src[])
 		0, 0,  win_width, win_height,
 		False);
 		XFlush(mydisplay);
-		return(-1);  // non-zero == success.
+		return 0;  
 	}
+}
 #endif
 
+static inline uint_32 
+draw_frame_x11(uint_8 *src[])
+{
 	yuv2rgb(ImageData, src[0], src[1], src[2],
 		image_width, image_height, 
 		image_width*(bpp/8), image_width, image_width/2 );
 
 	Display_Image(myximage, ImageData);
-	return(-1);  // non-zero == success.
+	return 0; 
+}
+
+uint_32
+draw_frame(uint_8 *src[])
+{
+#if HAVE_XV
+	if (xv_port != 0)
+		return draw_frame_xv(src);
+	else
+#endif
+		return draw_frame_x11(src);
 }
 
 //FIXME this should allocate AGP memory via agpgart and then we
 //can use AGP transfers to the framebuffer
 void* 
-display_allocate_buffer(uint_32 num_bytes)
+allocate_buffer(uint_32 num_bytes)
 {
 	return(malloc(num_bytes));	
 }
+
+#else /* HAVE_X11 */
+
+LIBVO_DUMMY_FUNCTIONS(x11);
+
+#endif

@@ -1,11 +1,11 @@
-CFLAGS = -g -O3 -Wall  -Werror -I../libvo @LIBMPEG2_CFLAGS@ @GLOBAL_CFLAGS@
+CFLAGS = -g -O3 -Wall  -Werror @LIBMPEG2_CFLAGS@ @GLOBAL_CFLAGS@
 
 lib_LTLIBRARIES = libmpeg2.la
 
-include_HEADERS = mpeg2.h 
+lib_HEADER = mpeg2.h 
 
-libmpeg2_la_LIBADD = @LIB_CONFIG_OBJS@ 
-libmpeg2_la_DEPENDENCIES = @LIB_CONFIG_OBJS@
+libmpeg2_la_LIBADD = @LIBMPEG2_CONFIG_OBJS@ 
+libmpeg2_la_DEPENDENCIES = @LIBMPEG2_CONFIG_OBJS@
 libmpeg2_la_LDFLAGS = -version-info 1:6:1 -export-symbols libmpeg2.sym
 
 libmpeg2_la_SOURCES = getvlc.c slice.c header.c stats.c idct.c motion_comp.c\
@@ -18,4 +18,3 @@ noinst_HEADERS = config.h getvlc.h stats.h header.h slice.h motion_comp.h \
 	mpeg2.h mpeg2_internal.h idct.h\
 	mpeg2dec.h debug.h bitstream.h idct_mmx.h idct_mlib.h motion_comp_mmx.h\
 	motion_comp_mlib.h mmx.h
-

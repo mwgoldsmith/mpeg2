@@ -1,5 +1,5 @@
 /*
- *  display_sdl.c
+ *  video_out_sdl.c
  *
  *  Copyright (C) Ryan C. Gordon <icculus@lokigames.com> - April 22, 2000.
  *
@@ -27,22 +27,32 @@
  *
  */
 
+#include <stdio.h>
 #include <stdlib.h>
-#include <SDL.h>
+#include <string.h>
 
-#include <config.h>
-#include <wchar.h>
-#include "libmpeg2/mpeg2.h"
-#include "libmpeg2/mpeg2_internal.h"
-#include "display.h"
+#include "config.h"
+#include "video_out.h"
+#include "video_out_internal.h"
+
+LIBVO_EXTERN(sdl)
+
+#ifdef HAVE_SDL
+
+#include "SDL.h"
 
 static SDL_Surface *surface = NULL;
 static SDL_Overlay *overlay = NULL;
 static SDL_Rect dispSize;
 static Uint8 *keyState = NULL;
+static int framePlaneY = -1;
+static int framePlaneUV = -1;
+static int slicePlaneY = -1;
+static int slicePlaneUV = -1;
 
 
-static inline int findArrayEnd(SDL_Rect **array)
+static inline int 
+findArrayEnd(SDL_Rect **array)
 /*
  * Take a null-terminated array of pointers, and find the last element.
  *
@@ -55,8 +65,8 @@ static inline int findArrayEnd(SDL_Rect **array)
     return(i - 1);
 } // findArrayEnd
 
-
-uint_32 display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
+uint_32 
+init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 /*
  * Initialize an SDL surface and an SDL YUV overlay.
  *
@@ -153,9 +163,10 @@ uint_32 display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *ti
     {
         printf("\n\n"
                "WARNING: Your SDL display target wants to be at a color\n"
-               " depth of (%d), so we need to emulate 16-bit color.\n"
-               " This is going to slow things down; you might want to\n"
-               " increase your display's color depth, if possible.\n", bpp);
+               " depth of (%d), but we need it to be at least 16 bits,\n"
+               " so we need to emulate 16-bit color. This is going to slow\n"
+               " things down; you might want to increase your display's\n"
+               " color depth, if possible.\n\n", bpp);
         bpp = 16;  // (*shrug*)
     } // if
 
@@ -167,34 +178,94 @@ uint_32 display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *ti
     } // if
 
     if (title == NULL)
-        title = "There is no spoon.";
+        title = "Help! I'm trapped inside a Palm IIIc!";
 
     SDL_WM_SetCaption(title, "MPEG2DEC");
 
     overlay = SDL_CreateYUVOverlay(width, height, SDL_IYUV_OVERLAY, surface);
     if (overlay == NULL)
     {
-        printf("Couldn't create SDL-based YUV overlay!\n");
+        printf("ERROR: Couldn't create an SDL-based YUV overlay!\n");
         return(0);
     } // if
 
     keyState = SDL_GetKeyState(NULL);
+
+    framePlaneY = (dispSize.w * dispSize.h);
+    framePlaneUV = ((dispSize.w / 2) * (dispSize.h / 2));
+    slicePlaneY = ((dispSize.w) * 16);
+    slicePlaneUV = ((dispSize.w / 2) * (8));
+
+// temp !!!!
+setbuf(stdout, NULL);
     return(-1);  // non-zero == SUCCESS. Oooh yeah.
 } // display_init
 
 
-uint_32 display_frame(uint_8 *src[])
+
+    // !!! do we still need this API function?
+uint_32 
+draw_frame(uint_8 *src[])
 /*
- * Draw a frame to the SDL surface.
+ * Draw a frame to the SDL YUV overlay.
  *
  *   params : *src[] == the Y, U, and V planes that make up the frame.
  *  returns : non-zero on success, zero on error.
  */
 {
-    int plane = (dispSize.w * dispSize.h);
-    int halfPlane = ((dispSize.w / 2) * (dispSize.h / 2));
     char *dst;
 
+    if (SDL_LockYUVOverlay(overlay) != 0)
+    {
+        printf("ERROR: Couldn't lock SDL-based YUV overlay!\n");
+        return(0);
+    } // if
+
+    dst = overlay->pixels;
+    memcpy(dst, src[0], framePlaneY);
+    dst += framePlaneY;
+    memcpy(dst, src[1], framePlaneUV);
+    dst += framePlaneUV;
+    memcpy(dst, src[2], framePlaneUV);
+
+    SDL_UnlockYUVOverlay(overlay);
+    flip_page();
+    return(-1);
+} // display_frame
+
+
+uint_32 
+draw_slice(uint_8 *src[], uint_32 slice_num)
+/*
+ * Draw a slice (16 rows of image) to the SDL YUV overlay.
+ *
+ *   params : *src[] == the Y, U, and V planes that make up the slice.
+ *  returns : non-zero on success, zero on error.
+ */
+{
+    char *dst;
+
+    if (SDL_LockYUVOverlay(overlay) != 0)
+    {
+        printf("ERROR: Couldn't lock SDL-based YUV overlay!\n");
+        return(0);
+    } // if
+
+    dst = overlay->pixels + (slicePlaneY * slice_num);
+    memcpy(dst, src[0], slicePlaneY);
+    dst = (overlay->pixels + framePlaneY) + (slicePlaneUV * slice_num);
+    memcpy(dst, src[1], slicePlaneUV);
+    dst += framePlaneUV;
+    memcpy(dst, src[2], slicePlaneUV);
+
+    SDL_UnlockYUVOverlay(overlay);
+    return(-1);
+} // display_slice
+
+
+void 
+flip_page(void)
+{
     SDL_PumpEvents();  // get keyboard and win resize events.
     if ( (SDL_GetModState() & KMOD_ALT) &&
          ((keyState[SDLK_KP_ENTER] == SDL_PRESSED) ||
@@ -203,24 +274,25 @@ uint_32 display_frame(uint_8 *src[])
         SDL_WM_ToggleFullScreen(surface);
     } // if
 
-    if (SDL_LockYUVOverlay(overlay) != 0)
-    {
-        printf("SDL: Couldn't lock YUV overlay!\n");
-        return(0);
-    } // if
-
-    dst = overlay->pixels;
-    memcpy(dst, src[0], plane);
-    dst += plane;
-    memcpy(dst, src[1], halfPlane);
-    dst += halfPlane;
-    memcpy(dst, src[2], halfPlane);
-
-    SDL_UnlockYUVOverlay(overlay);
     SDL_DisplayYUVOverlay(overlay, &dispSize);
+} // display_flip_page
 
-    return(-1);
-} // display_frame
 
-// end of display_sdl.c ...
+void*
+allocate_buffer(uint_32 num_bytes)
+/*
+ * Allocate a display buffer. This allows, for some drivers, some
+ *  acceleration (like AGP-based transfers, etc...)
+ *
+ *    params : num_bytes == number of bytes to allocate.
+ *   returns : NULL if unable to allocate, ptr to new buffer on success.
+ */
+{
+    return(malloc(num_bytes));
+} // display_allocate_buffer
 
+#else /* HAVE_SDL*/
+
+LIBVO_DUMMY_FUNCTIONS(sdl);
+
+#endif
