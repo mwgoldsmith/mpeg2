@@ -63,13 +63,11 @@ static void print_fps(uint_32 final)
 	total_elapsed += elapsed / 10000;	/* store 1/100ts */
 	frames = frame_counter - last_count;
 
-	fps = frames * 1000000 / (elapsed + 1);
-	tfps = frame_counter * 100 / (total_elapsed + 1);
+	fps = frames * 100000000 / (elapsed + 1);	 /* 100x */
+	tfps = frame_counter * 10000 / (total_elapsed + 1);	/* 100x */
 
 	fprintf(stderr, "%8d %8d.%02d %8d %8d.%02d\r", frame_counter,
-		fps, frames * 100000000 / (elapsed + 1) - (fps * 100),
-		total_elapsed, tfps,
-		frame_counter * 10000/(total_elapsed+1) - (tfps * 100));
+		fps / 100, fps %100, total_elapsed, tfps / 100, tfps % 100);
 	last_count = frame_counter;
 	if (final)
 		putchar('\n');
