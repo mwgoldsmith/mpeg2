@@ -448,7 +448,7 @@ static inline void idct_col (int16_t * col, int offset)
     psubsw_r2r (mm3, mm4);		// mm4 = v26
     paddsw_r2r (mm6, mm5);		// mm5 = v12
 
-    movq_r2m (mm0, *&scratch0);		// save b3
+    movq_r2m (mm0, scratch0);		// save b3
     movq_r2r (mm1, mm6);		// mm6 = u17
 
     paddsw_m2r (*(col+offset+2*8), mm2);// mm2 = u26
@@ -463,7 +463,7 @@ static inline void idct_col (int16_t * col, int offset)
     movq_m2r (*_C4, mm0);		// mm0 = C4/2
     psubsw_r2r (mm5, mm7);		// mm7 = u12-v12
 
-    movq_r2m (mm6, *&scratch1);		// save b0
+    movq_r2m (mm6, scratch1);		// save b0
     pmulhw_r2r (mm0, mm1);		// mm1 = b1/2
 
     movq_r2r (mm4, mm6);		// mm6 = v26
@@ -496,7 +496,7 @@ static inline void idct_col (int16_t * col, int offset)
     psraw_i2r (COL_SHIFT, mm4);		// mm4 = y1
     psubsw_r2r (mm1, mm6);		// mm6 = a1-b1
 
-    movq_m2r (*&scratch1, mm1);		// mm1 = b0
+    movq_m2r (scratch1, mm1);		// mm1 = b0
     psubsw_r2r (mm7, mm2);		// mm2 = a2-b2
 
     psraw_i2r (COL_SHIFT, mm6);		// mm6 = y6
@@ -508,7 +508,7 @@ static inline void idct_col (int16_t * col, int offset)
     movq_r2m (mm3, *(col+offset+2*8));	// save y2
     paddsw_r2r (mm1, mm5);		// mm5 = a0+b0
 
-    movq_m2r (*&scratch0, mm4);		// mm4 = b3
+    movq_m2r (scratch0, mm4);		// mm4 = b3
     psubsw_r2r (mm1, mm7);		// mm7 = a0-b0
 
     psraw_i2r (COL_SHIFT, mm5);		// mm5 = y0
