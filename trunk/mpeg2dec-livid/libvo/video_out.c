@@ -71,18 +71,22 @@ allocate_image_buffer_common(uint32_t width, uint32_t height, uint32_t format)
 	vo_image_buffer_t *image;
 	uint32_t image_size;
 
+	//we only know how to do YV12 right now
+	if(format != 0x32315659) return NULL;
+	
 	image = malloc(sizeof(vo_image_buffer_t));
 
-	if(!image)
-		return NULL;
+	if(!image) return NULL;
 
 	image->height = height;
 	image->width = width;
 	image->format = format;
 	
-	//we only know how to do 4:2:0 planar yuv right now.
 	image_size = width * height * 3 / 2;
 	image->base = malloc(image_size);
+	image->y = image->base;
+	image->v = image->base + (width * height);
+	image->u = image->base + (width * height * 5 / 4);
 
 	if(!image->base)
 	{
