@@ -28,6 +28,10 @@
 #include <string.h>
 #include <errno.h>
 #include <getopt.h>
+#ifdef HAVE_IO_H
+#include <fcntl.h>
+#include <io.h>
+#endif
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #include <signal.h>
@@ -496,6 +500,10 @@ int main (int argc, char ** argv)
 {
     vo_instance_t * output;
     uint32_t accel;
+
+#ifdef HAVE_IO_H
+    setmode (fileno (stdout), O_BINARY);
+#endif
 
     fprintf (stderr, PACKAGE"-"VERSION
 	     " - by Michel Lespinasse <walken@zoy.org> and Aaron Holtzman\n");

@@ -28,6 +28,10 @@
 #include <string.h>
 #include <errno.h>
 #include <getopt.h>
+#ifdef HAVE_IO_H
+#include <fcntl.h>
+#include <io.h>
+#endif
 #include <inttypes.h>
 
 #define BUFFER_SIZE 4096
@@ -335,6 +339,10 @@ static void ts_loop (void)
 
 int main (int argc, char ** argv)
 {
+#ifdef HAVE_IO_H
+    setmode (fileno (stdout), O_BINARY);
+#endif
+
     handle_args (argc, argv);
 
     if (demux_pid)
