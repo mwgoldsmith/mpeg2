@@ -55,6 +55,30 @@ vo_output_video_t* video_out_drivers[] =
 	NULL
 };
 
+frame_t * request_frame (void)
+{
+    int i;
+
+    for ( i = 0 ; i < VIDEO_BUFFER_SIZE ; i++ )
+	if (!video_buffer[i]->used)
+	{
+	    video_buffer[i]->used = 1;
+	    return video_buffer[i];
+	}
+
+    // if we don't find a free frame, we should find what is
+    // the next frame queud for display and wait for it to
+    // be displayed before we return
+
+    return NULL;
+}
+
+void release_frame (frame_t *frame)
+{
+    video_buffer[i]->used = 0;
+    return;
+}
+
 frame_t * libvo_common_alloc (int width, int height)
 {
     frame_t * frame;

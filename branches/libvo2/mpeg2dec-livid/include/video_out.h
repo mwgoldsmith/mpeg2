@@ -12,6 +12,8 @@
 
 typedef struct frame_s {
 	uint8_t *base[3];	// pointer to 3 planes
+
+	uint8_t used:1;		// determine whether the frame is being used
 	void *private;
 } frame_t;
 
