@@ -9,6 +9,8 @@
  * Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * 15 & 16 bpp support added by Franck Sicard <Franck.Sicard@solsoft.fr>
+ *
+ * Xv image suuport by Gerd Knorr <kraxel@goldbach.in-berlin.de>
  */
 
 #include <stdio.h>
@@ -41,6 +43,17 @@ static int bpp, mode;
 static XWindowAttributes attribs;
 static int X_already_started = 0;
 
+
+#ifdef HAVE_XV
+#include <X11/extensions/Xv.h>
+#include <X11/extensions/Xvlib.h>
+static unsigned int ver,rel,req,ev,err;
+static unsigned int formats, adaptors,i,xv_port,xv_format;
+static int win_width,win_height;
+static XvAdaptorInfo        *ai;
+static XvImageFormatValues  *fo;
+static XvImage *xvimage1;
+#endif
 
 #define SH_MEM
 
@@ -184,7 +197,72 @@ void display_init(uint_32 width, uint_32 height)
     
    mygc = XCreateGC(mydisplay, mywindow, 0L, &xgcv);
     
+#ifdef HAVE_XV
+   xv_port = 0;
+   if (Success == XvQueryExtension(mydisplay,&ver,&rel,&req,&ev,&err)) {
+       /* check for Xvideo support */
+       if (Success != XvQueryAdaptors(mydisplay,DefaultRootWindow(mydisplay),
+				      &adaptors,&ai)) {
+	   fprintf(stderr,"Xv: XvQueryAdaptors failed");
+	   exit(1);
+       }
+       /* check adaptors */
+       for (i = 0; i < adaptors; i++) {
+	   if ((ai[i].type & XvInputMask) &&
+	       (ai[i].type & XvImageMask) &&
+	       (xv_port == 0)) {
+	       xv_port = ai[i].base_id;
+	   }
+       }
+       /* check image formats */
+       if (xv_port != 0) {
+	   fo = XvListImageFormats(mydisplay, xv_port, (int*)&formats);
+	   for(i = 0; i < formats; i++) {
+	       fprintf(stderr, "Xvideo image format: 0x%x (%4.4s) %s\n",
+		       fo[i].id,
+		       (char*)&fo[i].id,
+		       (fo[i].format == XvPacked) ? "packed" : "planar");
+	       if (0x32315659 == fo[i].id) {
+		   xv_format = fo[i].id;
+		   break;
+	       }
+	   }
+	   if (i == formats)
+	       /* no matching image format not */
+	       xv_port = 0;
+       }
+       if (xv_port != 0) {
+	   fprintf(stderr,"using Xvideo port %d for hw scaling\n",
+		   xv_port);
+	   
+	   /* allocate XvImages.  FIXME: no error checking, without
+	    * mit-shm this will bomb... */
+	   xvimage1 = XvShmCreateImage(mydisplay, xv_port, xv_format, 0,
+				       image_width, image_height,
+				       &Shminfo1);
+	   Shminfo1.shmid    = shmget(IPC_PRIVATE, xvimage1->data_size,
+				      IPC_CREAT | 0777);
+	   Shminfo1.shmaddr  = (char *) shmat(Shminfo1.shmid, 0, 0);
+	   Shminfo1.readOnly = False;
+	   xvimage1->data = Shminfo1.shmaddr;
+	   XShmAttach(mydisplay, &Shminfo1);
+	   XSync(mydisplay, False);
+	   shmctl(Shminfo1.shmid, IPC_RMID, 0);
 
+	   /* so we can do grayscale while testing... */
+	   memset(xvimage1->data,128,xvimage1->data_size);
+
+	   /* catch window resizes */
+	   XSelectInput(mydisplay, mywindow, StructureNotifyMask);
+	   win_width  = image_width;
+	   win_height = image_height;
+
+	   /* all done (I hope...) */
+	   X_already_started++;
+	   return;
+       }
+   }
+#endif
 
 #ifdef SH_MEM
    if (XShmQueryExtension(mydisplay))
@@ -339,7 +417,35 @@ unsigned char *ImageData;
 
 void display_frame(uint_8 *src[])
 {
-   if (bpp==32) {
+#ifdef HAVE_XV
+    Window root;
+    XEvent event;
+    int x, y;
+    unsigned int w, h, b, d;
+    
+    if (xv_port != 0) {
+	if (XCheckWindowEvent(mydisplay, mywindow,
+			      StructureNotifyMask, &event)) {
+	    XGetGeometry(mydisplay, mywindow, &root, &x, &y, &w, &h, &b, &d);
+	    win_width  = w;
+	    win_height = h;
+	    fprintf(stderr,"win resize: %dx%d\n",win_width,win_height);
+	}
+	memcpy(xvimage1->data,src[0],image_width*image_height);
+	memcpy(xvimage1->data+image_width*image_height,
+	       src[2],image_width*image_height/4);
+	memcpy(xvimage1->data+image_width*image_height*5/4,
+	       src[1],image_width*image_height/4);
+	XvShmPutImage(mydisplay, xv_port, mywindow, mygc, xvimage1,
+		      0, 0,  image_width, image_height,
+		      0, 0,  win_width, win_height,
+		      False);
+	XFlush(mydisplay);
+	return;
+    }
+#endif
+
+  if (bpp==32) {
      yuv2rgb(ImageData, src[0], src[1], src[2],
 	     image_width, image_height, 
 	     image_width*4, image_width, image_width/2 );

@@ -9,6 +9,7 @@ Contributions by:
 	Franck SICARD <Franck.Sicard@miniruth.solsoft.fr> - x11 fixes
 	H}kan Hjort <d95hjort@dtek.chalmers.se> - Solaris fixes
 	Didier Gautheron <dgautheron@magic.fr> - bug fixes
+  Gerd Knorr <kraxel@goldbach.in-berlin.de> - Xv support
 	(let me know if I've forgotten anyone)
 
 First of all, this is very early code. If you're not interested
