@@ -33,20 +33,17 @@
 #endif
 
 #include <inttypes.h>
+#include "oms_accel.h"
 
 //config flags
-#define MPEG2_MMX_ENABLE 0x1
-#define MPEG2_3DNOW_ENABLE 0x2
-#define MPEG2_SSE_ENABLE 0x4
-#define MPEG2_ALTIVEC_ENABLE 0x8
-#define MPEG2_XIL_ENABLE 0x10
-#define MPEG2_MLIB_ENABLE 0x20
+#define MPEG2_MLIB_ENABLE OMS_ACCEL_MLIB
+#define MPEG2_MMX_ENABLE OMS_ACCEL_X86_MMX
+#define MPEG2_3DNOW_ENABLE OMS_ACCEL_X86_3DNOW
+#define MPEG2_SSE_ENABLE OMS_ACCEL_X86_MMXEXT
 
 typedef struct mpeg2_config_s {
     //Bit flags that enable various things
     uint32_t flags;
-    //Callback that points the decoder to new stream data
-    void (*fill_buffer_callback) (uint8_t **, uint8_t **);
 } mpeg2_config_t;
 
 void mpeg2_init (void);
