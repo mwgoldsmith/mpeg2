@@ -76,7 +76,6 @@ typedef struct common_instance_s {
     vo_instance_t vo;
     int prediction_index;
     vo_frame_t * frame_ptr[3];
-    uint8_t private_data[0];
 } common_instance_t;
 
 int libvo_common_alloc_frames (vo_instance_t * _this, int width, int height,
@@ -97,7 +96,8 @@ int libvo_common_alloc_frames (vo_instance_t * _this, int width, int height,
 
     for (i = 0; i < 3; i++) {
 	this->frame_ptr[i] =
-	    (vo_frame_t *)(this->private_data + i * frame_size);
+	    (vo_frame_t *)(((char *)this) + sizeof (common_instance_t) +
+			   i * frame_size);
 	this->frame_ptr[i]->base[0] = alloc;
 	this->frame_ptr[i]->base[1] = alloc + 4 * size;
 	this->frame_ptr[i]->base[2] = alloc + 5 * size;
