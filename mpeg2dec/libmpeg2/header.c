@@ -746,6 +746,5 @@ mpeg2_state_t mpeg2_header_end (mpeg2dec_t * mpeg2dec)
     } else if (!mpeg2dec->convert_start)
 	mpeg2dec->info.discard_fbuf = mpeg2dec->fbuf[b_type];
     mpeg2dec->action = mpeg2_seek_sequence;
-    mpeg2dec->first = 1;
     return STATE_END;
 }
