@@ -227,6 +227,8 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 	case STATE_SEQUENCE:
 	    /* might set nb fbuf, convert format, stride */
 	    /* might set fbufs */
+	    printf ("STATE_SEQUENCE %d %d\n",
+		    info->sequence->width, info->sequence->height);
 	    if (output->setup (output, info->sequence->width,
 			       info->sequence->height, &setup_result)) {
 		fprintf (stderr, "display setup failed\n");
@@ -419,7 +421,7 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 	    /* break;         */
 	    return 1;
 	case 0xba:	/* pack header */
-	    NEEDBYTES (12);
+	    NEEDBYTES (5);
 	    if ((header[4] & 0xc0) == 0x40) {	/* mpeg2 */
 		NEEDBYTES (14);
 		len = 14 + (header[13] & 7);
@@ -427,11 +429,12 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 		DONEBYTES (len);
 		/* header points to the mpeg2 pack header */
 	    } else if ((header[4] & 0xf0) == 0x20) {	/* mpeg1 */
+		NEEDBYTES (12);
 		DONEBYTES (12);
 		/* header points to the mpeg1 pack header */
 	    } else {
 		fprintf (stderr, "weird pack header\n");
-		exit (1);
+		DONEBYTES (5);
 	    }
 	    break;
 	default:
