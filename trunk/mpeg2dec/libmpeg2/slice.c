@@ -1798,7 +1798,7 @@ void mpeg2_slice (mpeg2_decoder_t * const decoder, const int code,
 					     decoder->dest[2] + (offset >> 1),
 					     decoder->uv_stride);
 		} else {
-		    coded_block_pattern |= UBITS (bit_buf, 2) << 6;
+		    coded_block_pattern |= bit_buf & (3 << 30);
 		    DUMPBITS (bit_buf, bits, 2);
 
 		    offset = decoder->offset;
@@ -1824,11 +1824,11 @@ void mpeg2_slice (mpeg2_decoder_t * const decoder, const int code,
 			slice_non_intra_DCT (decoder,
 					     decoder->dest[2] + (offset >> 1),
 					     DCT_stride);
-		    if (coded_block_pattern & 64)
+		    if (coded_block_pattern & (2 << 30))
 			slice_non_intra_DCT (decoder,
 					     decoder->dest[1] + DCT_offset,
 					     DCT_stride);
-		    if (coded_block_pattern & 128)
+		    if (coded_block_pattern & (1 << 30))
 			slice_non_intra_DCT (decoder,
 					     decoder->dest[2] + DCT_offset,
 					     DCT_stride);
