@@ -1,5 +1,3 @@
-/* make sure shm is not reused while the server uses it */
-
 /* 
  * video_out_x11.c, X11 interface
  *
@@ -198,6 +196,22 @@ static void destroy_shm (x11_instance_t * instance)
     shmctl (instance->shminfo.shmid, IPC_RMID, 0);
 }
 
+static void x11_event (x11_instance_t * instance)
+{
+    XEvent event;
+    char * addr;
+    int i;
+
+    XNextEvent (instance->display, &event);
+    if (event.type == instance->completion_type) {
+	addr = (instance->shminfo.shmaddr +
+		((XShmCompletionEvent *)&event)->offset);
+	for (i = 0; i < 3; i++)
+	    if (addr == instance->frame[i].ximage->data)
+		instance->frame[i].wait_completion = 0;
+    }
+}
+
 static vo_frame_t * x11_get_frame (vo_instance_t * _instance, int flags)
 {
     x11_instance_t * instance;
@@ -207,20 +221,8 @@ static vo_frame_t * x11_get_frame (vo_instance_t * _instance, int flags)
     frame = (x11_frame_t *) libvo_common_get_frame ((vo_instance_t *) instance,
 						    flags);
 
-    while (frame->wait_completion) {
-	XEvent event;
-	char * addr;
-	int i;
-
-	XNextEvent (instance->display, &event);
-	if (event.type == instance->completion_type) {
-	    addr = (instance->shminfo.shmaddr +
-		    ((XShmCompletionEvent *)&event)->offset);
-	    for (i = 0; i < 3; i++)
-		if (addr == instance->frame[i].ximage->data)
-		    instance->frame[i].wait_completion = 0;
-	}
-    }
+    while (frame->wait_completion)
+	x11_event (instance);
 
     frame->rgb_ptr = frame->ximage->data;
     frame->rgb_stride = frame->ximage->bytes_per_line;
@@ -356,15 +358,34 @@ static void x11_close (vo_instance_t * _instance)
     int i;
 
     libvo_common_free_frames ((vo_instance_t *) instance);
-    destroy_shm (instance);
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < 3; i++) {
+	while (instance->frame[i].wait_completion)
+	    x11_event (instance);
 	XDestroyImage (instance->frame[i].ximage);
+    }
+    destroy_shm (instance);
     XFreeGC (instance->display, instance->gc);
     XDestroyWindow (instance->display, instance->window);
     XCloseDisplay (instance->display);
 }
 
 #ifdef LIBVO_XV
+static void xv_event (x11_instance_t * instance)
+{
+    XEvent event;
+    char * addr;
+    int i;
+
+    XNextEvent (instance->display, &event);
+    if (event.type == instance->completion_type) {
+	addr = (instance->shminfo.shmaddr +
+		((XShmCompletionEvent *)&event)->offset);
+	for (i = 0; i < 3; i++)
+	    if (addr == instance->frame[i].xvimage->data)
+		instance->frame[i].wait_completion = 0;
+    }
+}
+
 static vo_frame_t * xv_get_frame (vo_instance_t * _instance, int flags)
 {
     x11_instance_t * instance;
@@ -374,20 +395,8 @@ static vo_frame_t * xv_get_frame (vo_instance_t * _instance, int flags)
     frame = (x11_frame_t *) libvo_common_get_frame ((vo_instance_t *) instance,
 						    flags);
 
-    while (frame->wait_completion) {
-	XEvent event;
-	char * addr;
-	int i;
-
-	XNextEvent (instance->display, &event);
-	if (event.type == instance->completion_type) {
-	    addr = (instance->shminfo.shmaddr +
-		    ((XShmCompletionEvent *)&event)->offset);
-	    for (i = 0; i < 3; i++)
-		if (addr == instance->frame[i].xvimage->data)
-		    instance->frame[i].wait_completion = 0;
-	}
-    }
+    while (frame->wait_completion)
+	xv_event (instance);
 
     return (vo_frame_t *) frame;
 }
@@ -503,9 +512,12 @@ static void xv_close (vo_instance_t * _instance)
     x11_instance_t * instance = (x11_instance_t *) _instance;
     int i;
 
-    destroy_shm (instance);
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < 3; i++) {
+	while (instance->frame[i].wait_completion)
+	    xv_event (instance);
 	XFree (instance->frame[i].xvimage);
+    }
+    destroy_shm (instance);
     XvUngrabPort (instance->display, instance->port, 0);
     XFreeGC (instance->display, instance->gc);
     XDestroyWindow (instance->display, instance->window);
