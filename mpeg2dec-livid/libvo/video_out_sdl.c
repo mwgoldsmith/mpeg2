@@ -25,13 +25,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <inttypes.h>
+#include <SDL.h>
+
 #include "video_out.h"
 #include "video_out_internal.h"
 
 LIBVO_EXTERN(sdl)
-
-#include "SDL.h"
 
 static vo_info_t vo_info = 
 {
