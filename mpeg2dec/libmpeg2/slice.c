@@ -76,24 +76,24 @@ static inline int get_macroblock_modes (mpeg2_decoder_t * const decoder)
 
 	if (decoder->picture_structure != FRAME_PICTURE) {
 	    if (macroblock_modes & MACROBLOCK_MOTION_FORWARD) {
-		macroblock_modes |= UBITS (bit_buf, 2) * MOTION_TYPE_BASE;
+		macroblock_modes |= UBITS (bit_buf, 2) << MOTION_TYPE_SHIFT;
 		DUMPBITS (bit_buf, bits, 2);
 	    }
-	    return macroblock_modes;
+	    return macroblock_modes | MACROBLOCK_MOTION_FORWARD;
 	} else if (decoder->frame_pred_frame_dct) {
 	    if (macroblock_modes & MACROBLOCK_MOTION_FORWARD)
-		macroblock_modes |= MC_FRAME;
-	    return macroblock_modes;
+		macroblock_modes |= MC_FRAME << MOTION_TYPE_SHIFT;
+	    return macroblock_modes | MACROBLOCK_MOTION_FORWARD;
 	} else {
 	    if (macroblock_modes & MACROBLOCK_MOTION_FORWARD) {
-		macroblock_modes |= UBITS (bit_buf, 2) * MOTION_TYPE_BASE;
+		macroblock_modes |= UBITS (bit_buf, 2) << MOTION_TYPE_SHIFT;
 		DUMPBITS (bit_buf, bits, 2);
 	    }
 	    if (macroblock_modes & (MACROBLOCK_INTRA | MACROBLOCK_PATTERN)) {
 		macroblock_modes |= UBITS (bit_buf, 1) * DCT_TYPE_INTERLACED;
 		DUMPBITS (bit_buf, bits, 1);
 	    }
-	    return macroblock_modes;
+	    return macroblock_modes | MACROBLOCK_MOTION_FORWARD;
 	}
 
     case B_TYPE:
@@ -104,18 +104,18 @@ static inline int get_macroblock_modes (mpeg2_decoder_t * const decoder)
 
 	if (decoder->picture_structure != FRAME_PICTURE) {
 	    if (! (macroblock_modes & MACROBLOCK_INTRA)) {
-		macroblock_modes |= UBITS (bit_buf, 2) * MOTION_TYPE_BASE;
+		macroblock_modes |= UBITS (bit_buf, 2) << MOTION_TYPE_SHIFT;
 		DUMPBITS (bit_buf, bits, 2);
 	    }
 	    return macroblock_modes;
 	} else if (decoder->frame_pred_frame_dct) {
 	    /* if (! (macroblock_modes & MACROBLOCK_INTRA)) */
-	    macroblock_modes |= MC_FRAME;
+	    macroblock_modes |= MC_FRAME << MOTION_TYPE_SHIFT;
 	    return macroblock_modes;
 	} else {
 	    if (macroblock_modes & MACROBLOCK_INTRA)
 		goto intra;
-	    macroblock_modes |= UBITS (bit_buf, 2) * MOTION_TYPE_BASE;
+	    macroblock_modes |= UBITS (bit_buf, 2) << MOTION_TYPE_SHIFT;
 	    DUMPBITS (bit_buf, bits, 2);
 	    if (macroblock_modes & (MACROBLOCK_INTRA | MACROBLOCK_PATTERN)) {
 	    intra:
@@ -1236,11 +1236,14 @@ static inline void motion_reuse (const mpeg2_decoder_t * const decoder,
     MOTION (table, motion->ref[0], motion_x, motion_y, 16, 0);
 }
 
-static inline void motion_zero (const mpeg2_decoder_t * const decoder,
-				const motion_t * const motion,
-				mpeg2_mc_fct * const * const table)
+static void motion_zero (mpeg2_decoder_t * const decoder,
+			 motion_t * const motion,
+			 mpeg2_mc_fct * const * const table)
 {
     unsigned int offset;
+
+    motion->pmv[0][0] = motion->pmv[0][1] = 0;
+    motion->pmv[1][0] = motion->pmv[1][1] = 0;
 
     table[0] (decoder->dest[0] + decoder->offset,
 	      (motion->ref[0][0] + decoder->offset +
@@ -1507,6 +1510,19 @@ void mpeg2_init_fbuf (mpeg2_decoder_t * decoder, uint8_t * current_fbuf[3],
     decoder->limit_y_16 = 2 * height - 32;
     decoder->limit_y_8 = 2 * height - 16;
     decoder->limit_y = height - 16;
+
+    decoder->motion_parser[0] = motion_zero;
+    if (decoder->mpeg1)
+	decoder->motion_parser[MC_FRAME] = motion_mp1;
+    else if (decoder->picture_structure == FRAME_PICTURE) {
+	decoder->motion_parser[MC_FIELD] = motion_fr_field;
+	decoder->motion_parser[MC_FRAME] = motion_fr_frame;
+	decoder->motion_parser[MC_DMV] = motion_fr_dmv;
+    } else {
+	decoder->motion_parser[MC_FIELD] = motion_fi_field;
+	decoder->motion_parser[MC_16X8] = motion_fi_16x8;
+	decoder->motion_parser[MC_DMV] = motion_fi_dmv;
+    }
 }
 
 static inline int slice_init (mpeg2_decoder_t * const decoder, int code)
@@ -1663,55 +1679,11 @@ void mpeg2_slice (mpeg2_decoder_t * const decoder, const int code,
 	    }
 	} else {
 
-	    if (decoder->picture_structure == FRAME_PICTURE)
-		switch (macroblock_modes & MOTION_TYPE_MASK) {
-		case MC_FRAME:
-		    if (decoder->mpeg1)
-			MOTION_CALL (motion_mp1, macroblock_modes);
-		    else
-			MOTION_CALL (motion_fr_frame, macroblock_modes);
-		    break;
+	    motion_parser_t * parser;
 
-		case MC_FIELD:
-		    MOTION_CALL (motion_fr_field, macroblock_modes);
-		    break;
-
-		case MC_DMV:
-		    MOTION_CALL (motion_fr_dmv, MACROBLOCK_MOTION_FORWARD);
-		    break;
-
-		case 0:
-		    /* non-intra mb without forward mv in a P picture */
-		    decoder->f_motion.pmv[0][0] = 0;
-		    decoder->f_motion.pmv[0][1] = 0;
-		    decoder->f_motion.pmv[1][0] = 0;
-		    decoder->f_motion.pmv[1][1] = 0;
-		    MOTION_CALL (motion_zero, MACROBLOCK_MOTION_FORWARD);
-		    break;
-		}
-	    else
-		switch (macroblock_modes & MOTION_TYPE_MASK) {
-		case MC_FIELD:
-		    MOTION_CALL (motion_fi_field, macroblock_modes);
-		    break;
-
-		case MC_16X8:
-		    MOTION_CALL (motion_fi_16x8, macroblock_modes);
-		    break;
-
-		case MC_DMV:
-		    MOTION_CALL (motion_fi_dmv, MACROBLOCK_MOTION_FORWARD);
-		    break;
-
-		case 0:
-		    /* non-intra mb without forward mv in a P picture */
-		    decoder->f_motion.pmv[0][0] = 0;
-		    decoder->f_motion.pmv[0][1] = 0;
-		    decoder->f_motion.pmv[1][0] = 0;
-		    decoder->f_motion.pmv[1][1] = 0;
-		    MOTION_CALL (motion_zero, MACROBLOCK_MOTION_FORWARD);
-		    break;
-		}
+	    parser =
+		decoder->motion_parser[macroblock_modes >> MOTION_TYPE_SHIFT];
+	    MOTION_CALL (parser, macroblock_modes);
 
 	    if (macroblock_modes & MACROBLOCK_PATTERN) {
 		int coded_block_pattern;
@@ -1788,9 +1760,6 @@ void mpeg2_slice (mpeg2_decoder_t * const decoder, const int code,
 		decoder->dc_dct_pred[2] = 128 << decoder->intra_dc_precision;
 
 	    if (decoder->coding_type == P_TYPE) {
-		decoder->f_motion.pmv[0][0] = decoder->f_motion.pmv[0][1] = 0;
-		decoder->f_motion.pmv[1][0] = decoder->f_motion.pmv[1][1] = 0;
-
 		do {
 		    MOTION_CALL (motion_zero, MACROBLOCK_MOTION_FORWARD);
 		    NEXT_MACROBLOCK;

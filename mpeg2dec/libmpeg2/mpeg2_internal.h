@@ -29,12 +29,11 @@
 #define MACROBLOCK_QUANT 16
 #define DCT_TYPE_INTERLACED 32
 /* motion_type */
-#define MOTION_TYPE_MASK (3*64)
-#define MOTION_TYPE_BASE 64
-#define MC_FIELD (1*64)
-#define MC_FRAME (2*64)
-#define MC_16X8 (2*64)
-#define MC_DMV (3*64)
+#define MOTION_TYPE_SHIFT 6
+#define MC_FIELD 1
+#define MC_FRAME 2
+#define MC_16X8 2
+#define MC_DMV 3
 
 /* picture structure */
 #define TOP_FIELD 1
@@ -47,12 +46,18 @@
 #define B_TYPE 3
 #define D_TYPE 4
 
+typedef void mpeg2_mc_fct (uint8_t *, const uint8_t *, int, int);
+
 typedef struct {
     uint8_t * ref[2][3];
     uint8_t ** ref2[2];
     int pmv[2][2];
     int f_code[2];
 } motion_t;
+
+typedef void motion_parser_t (mpeg2_decoder_t * decoder,
+			      motion_t * motion,
+			      mpeg2_mc_fct * const * table);
 
 struct mpeg2_decoder_s {
     /* first, state that carries information from one macroblock to the */
@@ -78,6 +83,7 @@ struct mpeg2_decoder_s {
     /* predictors */
     motion_t b_motion;
     motion_t f_motion;
+    motion_parser_t * motion_parser[4];
 
     /* predictor for DC coefficients in intra blocks */
     int16_t dc_dct_pred[3];
@@ -270,8 +276,6 @@ void mpeg2_idct_alpha_init (void);
 
 /* motion_comp.c */
 void mpeg2_mc_init (uint32_t accel);
-
-typedef void mpeg2_mc_fct (uint8_t *, const uint8_t *, int, int);
 
 typedef struct {
     mpeg2_mc_fct * put [8];
