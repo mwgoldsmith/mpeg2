@@ -229,9 +229,7 @@ typedef struct slice_s
 
 typedef struct macroblock_s
 {
-	sint_16 *y_blocks;
-	sint_16 *cr_blocks;
-	sint_16 *cb_blocks;
+	sint_16 *blocks;
 
 	uint_16 mba;
 	uint_16 macroblock_type;

@@ -133,17 +133,15 @@ motion_comp (picture_t * picture, macroblock_t *mb)
 		/* intra block : there is no prediction, only IDCT components */
 
 		/* FIXME this could be merged into the IDCT transform */
-		mc_functions.idct_copy (dst_y, mb->y_blocks, pitch);
-		mc_functions.idct_copy (dst_y + 8, mb->y_blocks + 64, pitch);
-		mc_functions.idct_copy (dst_y + width * d, mb->y_blocks + 2*64, pitch);
-		mc_functions.idct_copy (dst_y + width * d + 8, mb->y_blocks + 3*64, pitch);
-		mc_functions.idct_copy (dst_cr, mb->cr_blocks, width>>1);
-		mc_functions.idct_copy (dst_cb, mb->cb_blocks, width>>1);
+		mc_functions.idct_copy (dst_y, &mb->blocks[0*64], pitch);
+		mc_functions.idct_copy (dst_y + 8, &mb->blocks[1*64], pitch);
+		mc_functions.idct_copy (dst_y + width * d, &mb->blocks[2*64], pitch);
+		mc_functions.idct_copy (dst_y + width * d + 8, &mb->blocks[3*64], pitch);
+		mc_functions.idct_copy (dst_cr, &mb->blocks[4*64], width>>1);
+		mc_functions.idct_copy (dst_cb, &mb->blocks[5*64], width>>1);
 		
 		//clear the blocks for next time
-		memset(mb->y_blocks,0,sizeof(sint_16) * 4 * 64);
-		memset(mb->cr_blocks,0,sizeof(sint_16) * 64);
-		memset(mb->cb_blocks,0,sizeof(sint_16) * 64);
+		memset(mb->blocks,0,sizeof(sint_16) * 6 * 64);
 	} 
 	else 
 	{ 
@@ -205,22 +203,22 @@ motion_comp (picture_t * picture, macroblock_t *mb)
 			}
 
 			if (mb->coded_block_pattern & 0x20)
-				mc_functions.idct_add (dst_y, mb->y_blocks + 0 * 64, pitch);
+				mc_functions.idct_add (dst_y, &mb->blocks[0*64], pitch);
 			if (mb->coded_block_pattern & 0x10)
-				mc_functions.idct_add (dst_y + 8, mb->y_blocks + 1 * 64, pitch);
+				mc_functions.idct_add (dst_y + 8, &mb->blocks[1*64], pitch);
 			if (mb->coded_block_pattern & 0x08)
-				mc_functions.idct_add (dst_y + width * d, mb->y_blocks + 2 * 64, pitch);
+				mc_functions.idct_add (dst_y + width * d, &mb->blocks[2*64], pitch);
 			if (mb->coded_block_pattern & 0x04)
-				mc_functions.idct_add (dst_y + width * d + 8, mb->y_blocks + 3 * 64, pitch);
+				mc_functions.idct_add (dst_y + width * d + 8, &mb->blocks[3*64], pitch);
 			if (mb->coded_block_pattern & 0x02)
-				mc_functions.idct_add (dst_cr, mb->cr_blocks, width >> 1);
+				mc_functions.idct_add (dst_cr, &mb->blocks[4*64], width >> 1);
 			if (mb->coded_block_pattern & 0x01)
-				mc_functions.idct_add (dst_cb, mb->cb_blocks, width >> 1);
+				mc_functions.idct_add (dst_cb, &mb->blocks[5*64], width >> 1);
 
 			//clear the blocks for next time
-			memset(mb->y_blocks,0,sizeof(sint_16) * 4 * 64);
-			memset(mb->cr_blocks,0,sizeof(sint_16) * 64);
-			memset(mb->cb_blocks,0,sizeof(sint_16) * 64);
+			//I've tried only clearing blocks that had patterns, but it
+			//wasn't a gain - ah
+			memset(mb->blocks,0,sizeof(sint_16) * 6 * 64);
 		}
 	}
 }

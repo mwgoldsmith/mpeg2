@@ -142,7 +142,6 @@ typedef struct vo_functions_s
 extern vo_functions_t video_out_mga;
 extern vo_functions_t video_out_x11;
 extern vo_functions_t video_out_sdl;
-extern vo_functions_t video_out_gatos;
 extern vo_functions_t video_out_3dfx;
 
 #ifdef __cplusplus

@@ -272,19 +272,17 @@ idct(macroblock_t *mb)
 {
 	//XXX only 4:2:0 supported here
 	if(mb->coded_block_pattern & 0x20)
-		idct_block(mb->y_blocks + 64*0);
+		idct_block(&mb->blocks[0*64]);
 	if(mb->coded_block_pattern & 0x10)
-		idct_block(mb->y_blocks + 64*1);
+		idct_block(&mb->blocks[1*64]);
 	if(mb->coded_block_pattern & 0x08)
-		idct_block(mb->y_blocks + 64*2);
+		idct_block(&mb->blocks[2*64]);
 	if(mb->coded_block_pattern & 0x04)
-		idct_block(mb->y_blocks + 64*3);
-
+		idct_block(&mb->blocks[3*64]);
 	if(mb->coded_block_pattern & 0x2)
-		idct_block(mb->cr_blocks);
-
+		idct_block(&mb->blocks[4*64]);
 	if(mb->coded_block_pattern & 0x1)
-		idct_block(mb->cb_blocks);
+		idct_block(&mb->blocks[5*64]);
 
 	idct_end();
 }
