@@ -43,13 +43,16 @@ int XShmGetEventBase (Display *);
 #include "video_out_internal.h"
 #include "yuv2rgb.h"
 
-
 typedef struct x11_frame_s {
     vo_frame_t vo;
     XImage * ximage;
     uint8_t * rgb_ptr;
     int rgb_stride;
     int yuv_stride;
+
+#ifdef LIBVO_XSHM
+    int wait_completion;
+#endif
 
 #ifdef LIBVO_XV
     XvImage * xvimage;
@@ -74,6 +77,7 @@ typedef struct x11_instance_s {
 
 #ifdef LIBVO_XSHM
     XShmSegmentInfo shminfo;
+    int completion_type;
 #endif
 
 #ifdef LIBVO_XV
@@ -362,6 +366,8 @@ static int xshm_check_extension (x11_instance_t * this)
     if ((major < 1) || ((major == 1) && (minor < 1)))
 	return 1;
 
+    this->completion_type = XShmGetEventBase (this->display) + ShmCompletion;
+
     return 0;
 }
 
@@ -415,6 +421,36 @@ static void xshm_destroy_shm (x11_instance_t * this)
 	shmctl (this->shminfo.shmid, IPC_RMID, 0);
 }
 
+static void xshm_next_event (x11_instance_t * this)
+{
+    XEvent event;
+    char * addr;
+    int i;
+
+    XNextEvent (this->display, &event);
+    if (event.type == this->completion_type) {
+	addr = this->shminfo.shmaddr + ((XShmCompletionEvent *)&event)->offset;
+	for (i = 0; i < 3; i++)
+	    if (addr == this->frame[i].ximage->data) {
+		this->frame[i].wait_completion = 0;
+		return;
+	    }
+	/* NOTREACHED */
+    }
+}
+
+static vo_frame_t * xshm_get_frame (vo_instance_t * _this, int flags)
+{
+    x11_instance_t * this;
+    x11_frame_t * frame;
+
+    this = (x11_instance_t *) _this;
+    frame = (x11_frame_t *) x11_get_frame ((vo_instance_t *) this, flags);
+    while (frame->wait_completion)
+	xshm_next_event (this);
+    return (vo_frame_t *) frame;
+}
+
 static int xshm_create_images (x11_instance_t * this, int width, int height)
 {
     int size;
@@ -424,6 +460,7 @@ static int xshm_create_images (x11_instance_t * this, int width, int height)
     size = 0;
     alloc = NULL;
     for (i = 0; i < 3; i++) {
+	this->frame[i].wait_completion = 0;
 	this->frame[i].ximage =
 	    XShmCreateImage (this->display, this->vinfo.visual,
 			     this->vinfo.depth, ZPixmap, NULL /* data */,
@@ -456,8 +493,9 @@ static void xshm_draw_frame (vo_frame_t * _frame)
     this = (x11_instance_t *)frame->vo.this;
 
     XShmPutImage (this->display, this->window, this->gc, frame->ximage, 
-		  0, 0, 0, 0, this->width, this->height, False);
-    XSync (this->display, False);
+		  0, 0, 0, 0, this->width, this->height, True);
+    XFlush (this->display);
+    frame->wait_completion = 1;
 }
 
 static void xshm_close (vo_instance_t * _this)
@@ -499,7 +537,7 @@ vo_instance_t * vo_xshm_setup (vo_instance_t * _this, int width, int height)
 
     this->vo.reinit = vo_xshm_setup;
     this->vo.close = xshm_close;
-    this->vo.get_frame = x11_get_frame;
+    this->vo.get_frame = xshm_get_frame;
 
     return (vo_instance_t *)this;
 }
@@ -705,6 +743,37 @@ vo_instance_t * vo_xv_setup (vo_instance_t * _this, int width, int height)
     return (vo_instance_t *)this;
 }
 
+static void xvshm_next_event (x11_instance_t * this)
+{
+    XEvent event;
+    char * addr;
+    int i;
+
+    XNextEvent (this->display, &event);
+    if (event.type == this->completion_type) {
+	addr = this->shminfo.shmaddr + ((XShmCompletionEvent *)&event)->offset;
+	for (i = 0; i < 3; i++)
+	    if (addr == this->frame[i].xvimage->data) {
+		this->frame[i].wait_completion = 0;
+		return;
+	    }
+	/* NOTREACHED */
+    }
+}
+
+static vo_frame_t * xvshm_get_frame (vo_instance_t * _this, int flags)
+{
+    x11_instance_t * this;
+    x11_frame_t * frame;
+
+    this = (x11_instance_t *) _this;
+    frame = (x11_frame_t *) libvo_common_get_frame ((vo_instance_t *) this,
+						    flags);
+    while (frame->wait_completion)
+	xvshm_next_event (this);
+    return (vo_frame_t *) frame;
+}
+
 static void xvshm_draw_frame (vo_frame_t * _frame)
 {
     x11_frame_t * frame;
@@ -715,8 +784,9 @@ static void xvshm_draw_frame (vo_frame_t * _frame)
 
     XvShmPutImage (this->display, this->port, this->window, this->gc,
 		   frame->xvimage, 0, 0, this->width, this->height,
-		   0, 0, this->width, this->height, False);
-    XSync (this->display, False);
+		   0, 0, this->width, this->height, True);
+    XFlush (this->display);
+    frame->wait_completion = 1;
 }
 
 static int xvshm_alloc_frames (x11_instance_t * this, int width, int height)
@@ -738,6 +808,7 @@ static int xvshm_alloc_frames (x11_instance_t * this, int width, int height)
 	this->frame[i].vo.copy = NULL;
 	this->frame[i].vo.draw = xvshm_draw_frame;
 	this->frame[i].vo.this = (vo_instance_t *)this;
+	this->frame[i].wait_completion = 0;
 	this->frame[i].xvimage =
 	    XvShmCreateImage (this->display, this->port, FOURCC_YV12, alloc,
 			      width, height, &(this->shminfo));
@@ -795,7 +866,7 @@ vo_instance_t * vo_xvshm_setup (vo_instance_t * _this, int width, int height)
 
     this->vo.reinit = vo_xvshm_setup;
     this->vo.close = xvshm_close;
-    this->vo.get_frame = libvo_common_get_frame;
+    this->vo.get_frame = xvshm_get_frame;
 
     return (vo_instance_t *)this;
 }
