@@ -33,7 +33,6 @@ struct vo_frame_s {
     uint8_t * base[3];	/* pointer to 3 planes */
     void (* copy) (vo_frame_t * frame, uint8_t ** src);
     void (* field) (vo_frame_t * frame, int flags);
-    void (* draw) (vo_frame_t * frame);
     vo_instance_t * instance;
 };
 
@@ -43,6 +42,7 @@ struct vo_instance_s {
     int (* setup) (vo_instance_t * instance, int width, int height);
     void (* close) (vo_instance_t * instance);
     void (* set_frame) (vo_instance_t * instance, int flags);
+    void (* draw) (vo_frame_t * frame);
 };
 
 typedef struct {
@@ -90,7 +90,7 @@ static inline void vo_field (vo_frame_t * frame, int flags)
 
 static inline void vo_draw (vo_frame_t * frame)
 {
-    frame->draw (frame);
+    frame->instance->draw (frame);
 }
 
 #endif /* VIDEO_OUT_H */

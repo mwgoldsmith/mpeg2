@@ -95,8 +95,7 @@ typedef struct {
 int libvo_common_alloc_frames (vo_instance_t * _instance,
 			       int width, int height, int frame_size,
 			       void (* copy) (vo_frame_t *, uint8_t **),
-			       void (* field) (vo_frame_t *, int),
-			       void (* draw) (vo_frame_t *))
+			       void (* field) (vo_frame_t *, int))
 {
     common_instance_t * instance;
     int size;
@@ -119,7 +118,6 @@ int libvo_common_alloc_frames (vo_instance_t * _instance,
 	instance->frame_ptr[i]->base[2] = alloc + 5 * size;
 	instance->frame_ptr[i]->copy = copy;
 	instance->frame_ptr[i]->field = field;
-	instance->frame_ptr[i]->draw = draw;
 	instance->frame_ptr[i]->instance = (vo_instance_t *) instance;
 	alloc += 6 * size;
     }

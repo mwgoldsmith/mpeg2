@@ -67,12 +67,13 @@ static int internal_setup (vo_instance_t * _instance, int width, int height,
 
     instance->vo.close = libvo_common_free_frames;
     instance->vo.set_frame = libvo_common_set_frame;
+    instance->vo.draw = draw_frame;
     instance->width = width;
     instance->height = height;
     sprintf (instance->header, "P5\n\n%d %d\n255\n", width, height * 3 / 2);
     return libvo_common_alloc_frames ((vo_instance_t *) instance,
 				      width, height, sizeof (vo_frame_t),
-				      NULL, NULL, draw_frame);
+				      NULL, NULL);
 }
 
 static void pgm_draw_frame (vo_frame_t * frame)
