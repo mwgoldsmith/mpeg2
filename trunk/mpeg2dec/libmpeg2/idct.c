@@ -139,10 +139,10 @@ static void inline idct_col (int16_t * const block)
     BUTTERFLY (t2, t3, W3, W5, d1, d2);
     b0 = t0 + t2;
     b3 = t1 + t3;
-    t0 = (t0 - t2) >> 3;
-    t1 = (t1 - t3) >> 3;
-    b1 = ((t0 + t1) * 181) >> 5;
-    b2 = ((t0 - t1) * 181) >> 5;
+    t0 = (t0 - t2) >> 8;
+    t1 = (t1 - t3) >> 8;
+    b1 = (t0 + t1) * 181;
+    b2 = (t0 - t1) * 181;
 
     block[8*0] = (a0 + b0) >> 17;
     block[8*1] = (a1 + b1) >> 17;
