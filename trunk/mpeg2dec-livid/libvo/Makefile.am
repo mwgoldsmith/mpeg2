@@ -15,6 +15,7 @@ libvo_la_LDFLAGS = -version-info 1:6:1
 libvo_la_SOURCES =\
 	yuv2rgb.c\
 	video_out.c\
+	video_out_null.c\
 	video_out_mga.c\
 	video_out_x11.c\
 	video_out_3dfx.c\

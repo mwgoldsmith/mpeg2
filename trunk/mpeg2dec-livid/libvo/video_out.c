@@ -34,6 +34,7 @@ extern vo_functions_t video_out_mga;
 extern vo_functions_t video_out_x11;
 extern vo_functions_t video_out_sdl;
 extern vo_functions_t video_out_3dfx;
+extern vo_functions_t video_out_null;
 
 vo_functions_t* video_out_drivers[] = 
 {
@@ -49,6 +50,7 @@ vo_functions_t* video_out_drivers[] =
 #ifdef HAVE_SDL
 	&video_out_sdl,
 #endif
+	&video_out_null,
 	NULL
 };
 
