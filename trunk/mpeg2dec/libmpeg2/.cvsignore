@@ -8,5 +8,5 @@ Makefile
 Makefile.in
 .deps
 .libs
-libmpeg2.la
+libmpeg2*.la
 libmpeg2.pc
