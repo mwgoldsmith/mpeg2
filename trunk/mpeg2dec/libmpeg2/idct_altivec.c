@@ -663,7 +663,7 @@ asm ("									\n"
 
 #endif
 
-void idct_mmx_init (void)
+void idct_altivec_init (void)
 {
     extern uint8_t scan_norm[64];
     extern uint8_t scan_alt[64];

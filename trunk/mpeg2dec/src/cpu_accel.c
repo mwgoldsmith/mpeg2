@@ -118,7 +118,7 @@ static RETSIGTYPE sigill_handler (int sig)
     }
 
     canjump = 0;
-    siglongjump (jmpbuf, 1);
+    siglongjmp (jmpbuf, 1);
 }
 
 static uint32_t arch_accel (void)
