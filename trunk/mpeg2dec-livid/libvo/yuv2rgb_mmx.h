@@ -1,40 +1,26 @@
 /*
- * yuv2rgb_mmx.c, Software YUV to RGB coverter with Intel MMX "technology"
- *
- * Copyright (C) 2000, Silicon Integrated System Corp.
+ * yuv2rgb_mmx.h
+ * Copyright (C) 2000-2001 Silicon Integrated System Corp.
  * All Rights Reserved.
  *
  * Author: Olie Lho <ollie@sis.com.tw>
  *
- */
-
-/*****************************************************************************
- * video_yuv_asm.h: MMX YUV transformation assembly
- *****************************************************************************
- * Copyright (C) 1999, 2000 VideoLAN
+ * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
  *
- * Authors:
- * Olie Lho <ollie@sis.com.tw>
+ * mpeg2dec is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- * Adapted to VideoLAN by:
- * Gaël Hendryckx <jimmy@via.ecp.fr>
- * Samuel Hocevar <sam@via.ecp.fr>
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
+ * mpeg2dec is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Library General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Library General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
- *****************************************************************************/
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
 
 /* hope these constant values are cache line aligned */
 uint64_t mmx_80w     = 0x0080008000800080;

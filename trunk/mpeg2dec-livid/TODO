@@ -4,6 +4,7 @@
 	* generic slice yuv2rgb handling, plus nullrgb and sdl implementations
 	* clean up frame_t declaration and usage (libvo/libmpeg2) + video_out.h
 	* clean up yuv2rgb for interlaced pictures (handling of uv)
+	* clean up yuv2rgb_mmx.c / yuv2rgb_mmx.h
 
 * things we dont implement yet
 	* dont crash on bad streams, make sure we can resync after a while
@@ -19,10 +20,11 @@
 	* once we have sync, call draw_frame before decoding I or P not after
 
 * local optimizations
+	* try feig IDCT instead of MSSG c IDCT ?
 	* review the use of static inline functions
 	* rework the MC parsing code
 	* improve MMX motion comp inner routines
-	* optimize DCT for very sparse input matrixes ?
+	* optimize IDCT for very sparse input matrixes ?
 	* optimize startcode search loop ?
 	* bit parsing / DCT parsing optimizations
 
