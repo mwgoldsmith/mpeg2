@@ -30,8 +30,6 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <X11/extensions/XShm.h>
-#include <sys/socket.h>	// getsockname, getpeername
-#include <netinet/in.h>	// struct sockaddr_in
 /* since it doesn't seem to be defined on some platforms */
 int XShmGetEventBase (Display *);
 #endif
@@ -290,39 +288,6 @@ vo_output_video_t video_out_x11 = {
 };
 
 #ifdef LIBVO_XSHM
-static int x11_check_local (void)
-{
-    struct x11_priv_s * priv = &x11_priv;
-    int fd;
-    struct sockaddr_in me;
-    struct sockaddr_in peer;
-    int len;
-
-    fd = ConnectionNumber (priv->display);
-
-    len = sizeof (me);
-    if (getsockname (fd, (struct sockaddr *) &me, &len))
-	return 1;	// should not happen, assume remote display
-
-    if (me.sin_family == PF_UNIX)
-	return 0;	// display is local, using unix domain socket
-
-    if (me.sin_family != PF_INET)
-	return 1;	// unknown protocol, assume remote display
-
-    len = sizeof (peer);
-    if (getpeername (fd, (struct sockaddr *) &peer, &len))
-	return 1;	// should not happen, assume remote display
-
-    if (peer.sin_family != PF_INET)
-	return 1;	// should not happen, assume remote display
-
-    if (memcmp (&(me.sin_addr), &(peer.sin_addr), sizeof(me.sin_addr)))
-	return 1;	// display is remote, using tcp/ip socket
-
-    return 0;		// display is local, using tcp/ip socket
-}
-
 static int xshm_check_extension (void)
 {
     struct x11_priv_s * priv = &x11_priv;
@@ -396,11 +361,6 @@ static int xshm_setup (int width, int height)
     priv->display = XOpenDisplay (NULL);
     if (! (priv->display)) {
 	fprintf (stderr, "Can not open display\n");
-	return 1;
-    }
-
-    if (x11_check_local ()) {
-	fprintf (stderr, "Can not use xshm on a remote display\n");
 	return 1;
     }
 
@@ -672,11 +632,6 @@ static int xvshm_setup (int width, int height)
 	return 1;
     }
 
-    if (x11_check_local ()) {
-	fprintf (stderr, "Can not use xshm on a remote display\n");
-	return 1;
-    }
-
     if (xshm_check_extension ()) {
 	fprintf (stderr, "No xshm extension\n");
 	return 1;
@@ -710,56 +665,5 @@ vo_output_video_t video_out_xvshm = {
     xvshm_setup, xvshm_close, libvo_common_get_frame, xvshm_draw_frame
 };
 #endif
-
-static int x11auto_setup (int width, int height)
-{
-    extern vo_output_video_t video_out_x11auto;
-    struct x11_priv_s * priv = &x11_priv;
-    int use_xv = 0;
-    int use_xshm = 0;
-
-    priv->display = XOpenDisplay (NULL);
-    if (! (priv->display)) {
-	fprintf (stderr, "Can not open display\n");
-	return 1;
-    }
-
-#ifdef LIBVO_XV
-    use_xv = (xv_check_extension () == 0);
-#endif
-#ifdef LIBVO_XSHM
-    use_xshm = (x11_check_local () == 0) && (xshm_check_extension () == 0);
-#endif
-
-#ifdef LIBVO_XVSHM
-    if (use_xv && use_xshm) {
-	fprintf (stderr, "using xvshm output\n");
-	video_out_x11auto = video_out_xvshm;
-    } else
-#endif
-#ifdef LIBVO_XV
-    if (use_xv) {
-	fprintf (stderr, "using xv output\n");
-	video_out_x11auto = video_out_xv;
-    } else
-#endif
-#ifdef LIBVO_XSHM
-    if (use_xshm) {
-	fprintf (stderr, "using xshm output\n");
-	video_out_x11auto = video_out_xshm;
-    } else
-#endif
-    {
-	fprintf (stderr, "using x11 output\n");
-	video_out_x11auto = video_out_x11;
-    }
-
-    return video_out_x11auto.setup (width, height);
-}
-
-vo_output_video_t video_out_x11auto = {
-    "x11auto",
-    x11auto_setup, NULL, NULL, NULL
-};
 
 #endif
