@@ -44,10 +44,11 @@ static FILE * in_file;
 static uint32_t frame_counter = 0;
 
 static struct timeval tv_beg, tv_end, tv_start;
-static uint32_t elapsed;
-static uint32_t total_elapsed;
-static uint32_t last_count = 0;
-static uint32_t demux_ps = 0;
+static int elapsed;
+static int total_elapsed;
+static int last_count = 0;
+static int demux_ps = 0;
+static int disable_accel = 0;
 static mpeg2dec_t mpeg2dec;
 static vo_open_t * output_open = NULL;
 
@@ -110,8 +111,9 @@ static void print_usage (char * argv[])
     int i;
     vo_driver_t * drivers;
 
-    fprintf (stderr, "usage: %s [-o mode] [-s] file\n"
+    fprintf (stderr, "usage: %s [-o mode] [-s] [-c] file\n"
 	     "\t-s\tuse program stream demultiplexer\n"
+	     "\t-c\tuse c implementation, disables all accelerations\n"
 	     "\t-o\tvideo output mode\n", argv[0]);
 
     drivers = vo_drivers ();
@@ -128,7 +130,7 @@ static void handle_args (int argc, char * argv[])
     int i;
 
     drivers = vo_drivers ();
-    while ((c = getopt (argc, argv, "so:")) != -1) {
+    while ((c = getopt (argc, argv, "sco:")) != -1) {
 	switch (c) {
 	case 'o':
 	    for (i = 0; drivers[i].name != NULL; i++)
@@ -142,6 +144,10 @@ static void handle_args (int argc, char * argv[])
 
 	case 's':
 	    demux_ps = 1;
+	    break;
+
+	case 'c':
+	    disable_accel = 1;
 	    break;
 
 	default:
@@ -299,7 +305,7 @@ int main (int argc,char *argv[])
 
     handle_args (argc, argv);
 
-    accel = mm_accel () | MM_ACCEL_MLIB;
+    accel = disable_accel ? 0 : (mm_accel () | MM_ACCEL_MLIB);
 
     vo_accel (accel);
     output = vo_open (output_open);
