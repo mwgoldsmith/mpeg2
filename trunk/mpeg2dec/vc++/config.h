@@ -15,6 +15,9 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 /* #undef HAVE_INTTYPES_H */
 
+/* Define to 1 if you have the <io.h> header file. */
+#define HAVE_IO_H 1
+
 /* Define to 1 if you have the `memalign' function. */
 /* #undef HAVE_MEMALIGN */
 
@@ -62,9 +65,6 @@
 
 /* libvo Xv support */
 /* #undef LIBVO_XV */
-
-/* mpeg2dec profiling */
-/* #undef MPEG2DEC_GPROF */
 
 /* Name of package */
 #define PACKAGE "mpeg2dec"
