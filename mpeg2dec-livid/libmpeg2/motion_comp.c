@@ -44,17 +44,23 @@ motion_comp_init (void)
 {
 
 #ifdef __i386__
-    if (1 | (config.flags & MPEG2_MMX_ENABLE))
-		{
-			mc_functions = mc_functions_mmx;
-		}
-#if HAVE_MLIB
-	else if(1 || config.flags & MPEG2_MLIB_ENABLE) // FIXME
-		mc_functions = mc_functions_mlib;
+	if(config.flags & MPEG2_MMX_ENABLE)
+	{
+		fprintf (stderr, "Using MMX for motion compensation\n");
+		mc_functions = mc_functions_mmx;
+	}
+	else
 #endif
+#if HAVE_MLIB
+	if(config.flags & MPEG2_MLIB_ENABLE)
+	{
+		fprintf (stderr, "Using mlib for motion compensation\n");
+		mc_functions = mc_functions_mlib;
+	}
 	else
 #endif
 	{
+		fprintf (stderr, "No accelerated motion compensation found\n");
 		mc_functions = mc_functions_c;
 		motion_comp_c_init();
 	}

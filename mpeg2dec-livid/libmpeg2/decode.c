@@ -72,7 +72,7 @@ mpeg2_init(vo_functions_t *foo)
 	video_out = *foo;
 
 	//FIXME setup config properly
-	config.flags = MPEG2_MMX_ENABLE;
+	config.flags = MPEG2_MMX_ENABLE | MPEG2_MLIB_ENABLE;
 	//config.flags = 0;
 
 	//intialize the decoder state 
