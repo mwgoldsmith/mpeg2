@@ -31,8 +31,6 @@ extern mc_functions_t mc_functions;
 extern void (* idct_block_copy) (int16_t * block, uint8_t * dest, int stride);
 extern void (* idct_block_add) (int16_t * block, uint8_t * dest, int stride);
 
-//XXX put these on the stack in slice_process?
-static slice_t slice;
 static int16_t DCTblock[64] ATTR_ALIGN(16);
 
 #include "vlc.h"
@@ -44,12 +42,13 @@ static int non_linear_quantizer_scale [] = {
     56, 64, 72, 80, 88, 96, 104, 112
 };
 
-static inline int get_macroblock_modes (int picture_coding_type,
+static inline int get_macroblock_modes (slice_t * slice,
+					int picture_coding_type,
 					int frame_pred_frame_dct)
 {
-#define bit_buf (slice.bitstream_buf)
-#define bits (slice.bitstream_bits)
-#define bit_ptr (slice.bitstream_ptr)
+#define bit_buf (slice->bitstream_buf)
+#define bits (slice->bitstream_bits)
+#define bit_ptr (slice->bitstream_ptr)
     int macroblock_modes;
     MBtab * tab;
 
@@ -125,11 +124,11 @@ static inline int get_macroblock_modes (int picture_coding_type,
 #undef bit_ptr
 }
 
-static inline int get_quantizer_scale (int q_scale_type)
+static inline int get_quantizer_scale (slice_t * slice, int q_scale_type)
 {
-#define bit_buf (slice.bitstream_buf)
-#define bits (slice.bitstream_bits)
-#define bit_ptr (slice.bitstream_ptr)
+#define bit_buf (slice->bitstream_buf)
+#define bits (slice->bitstream_bits)
+#define bit_ptr (slice->bitstream_ptr)
 
     int quantizer_scale_code;
 
@@ -145,11 +144,11 @@ static inline int get_quantizer_scale (int q_scale_type)
 #undef bit_ptr
 }
 
-static inline int get_motion_delta (int f_code)
+static inline int get_motion_delta (slice_t * slice, int f_code)
 {
-#define bit_buf (slice.bitstream_buf)
-#define bits (slice.bitstream_bits)
-#define bit_ptr (slice.bitstream_ptr)
+#define bit_buf (slice->bitstream_buf)
+#define bits (slice->bitstream_bits)
+#define bit_ptr (slice->bitstream_ptr)
 
     int delta;
     int sign;
@@ -215,11 +214,11 @@ static inline int bound_motion_vector (int vector, int f_code)
 #endif
 }
 
-static inline int get_dmv (void)
+static inline int get_dmv (slice_t * slice)
 {
-#define bit_buf (slice.bitstream_buf)
-#define bits (slice.bitstream_bits)
-#define bit_ptr (slice.bitstream_ptr)
+#define bit_buf (slice->bitstream_buf)
+#define bits (slice->bitstream_bits)
+#define bit_ptr (slice->bitstream_ptr)
 
     DMVtab * tab;
 
@@ -231,11 +230,11 @@ static inline int get_dmv (void)
 #undef bit_ptr
 }
 
-static inline int get_coded_block_pattern (void)
+static inline int get_coded_block_pattern (slice_t * slice)
 {
-#define bit_buf (slice.bitstream_buf)
-#define bits (slice.bitstream_bits)
-#define bit_ptr (slice.bitstream_ptr)
+#define bit_buf (slice->bitstream_buf)
+#define bits (slice->bitstream_bits)
+#define bit_ptr (slice->bitstream_ptr)
 
     CBPtab * tab;
 
@@ -259,11 +258,11 @@ static inline int get_coded_block_pattern (void)
 #undef bit_ptr
 }
 
-static inline int get_luma_dc_dct_diff (void)
+static inline int get_luma_dc_dct_diff (slice_t * slice)
 {
-#define bit_buf (slice.bitstream_buf)
-#define bits (slice.bitstream_bits)
-#define bit_ptr (slice.bitstream_ptr)
+#define bit_buf (slice->bitstream_buf)
+#define bits (slice->bitstream_bits)
+#define bit_ptr (slice->bitstream_ptr)
     DCtab * tab;
     int size;
     int dc_diff;
@@ -296,11 +295,11 @@ static inline int get_luma_dc_dct_diff (void)
 #undef bit_ptr
 }
 
-static inline int get_chroma_dc_dct_diff (void)
+static inline int get_chroma_dc_dct_diff (slice_t * slice)
 {
-#define bit_buf (slice.bitstream_buf)
-#define bits (slice.bitstream_bits)
-#define bit_ptr (slice.bitstream_ptr)
+#define bit_buf (slice->bitstream_buf)
+#define bits (slice->bitstream_bits)
+#define bit_ptr (slice->bitstream_ptr)
     DCtab * tab;
     int size;
     int dc_diff;
@@ -934,11 +933,11 @@ static void get_mpeg1_non_intra_block (picture_t * picture, slice_t * slice,
     slice->bitstream_ptr = bit_ptr;
 }
 
-static inline int get_macroblock_address_increment (void)
+static inline int get_macroblock_address_increment (slice_t * slice)
 {
-#define bit_buf (slice.bitstream_buf)
-#define bits (slice.bitstream_bits)
-#define bit_ptr (slice.bitstream_ptr)
+#define bit_buf (slice->bitstream_buf)
+#define bits (slice->bitstream_bits)
+#define bit_ptr (slice->bitstream_ptr)
 
     MBAtab * tab;
     int mba;
@@ -981,9 +980,9 @@ static inline void slice_intra_DCT (picture_t * picture, slice_t * slice,
     NEEDBITS (bit_buf, bits, bit_ptr);
     //Get the intra DC coefficient and inverse quantize it
     if (cc == 0)
-	slice->dc_dct_pred[0] += get_luma_dc_dct_diff ();
+	slice->dc_dct_pred[0] += get_luma_dc_dct_diff (slice);
     else
-	slice->dc_dct_pred[cc] += get_chroma_dc_dct_diff ();
+	slice->dc_dct_pred[cc] += get_chroma_dc_dct_diff (slice);
     DCTblock[0] = slice->dc_dct_pred[cc] << (3 - picture->intra_dc_precision);
 
     if (picture->mpeg1) {
@@ -1044,34 +1043,41 @@ static inline void motion_block (void (** table) (uint8_t *, uint8_t *,
     table[4+xy_half] (dest[2] + dest_offset, src2, stride, height);
 }
 
-#define bit_buf (slice.bitstream_buf)
-#define bits (slice.bitstream_bits)
-#define bit_ptr (slice.bitstream_ptr)
 
-static void motion_frame (motion_t * motion, uint8_t * dest[3],
-			  int offset, int width,
+static void motion_frame (slice_t * slice, motion_t * motion,
+			  uint8_t * dest[3], int offset, int width,
 			  void (** table) (uint8_t *, uint8_t *, int, int))
 {
+#define bit_buf (slice->bitstream_buf)
+#define bits (slice->bitstream_bits)
+#define bit_ptr (slice->bitstream_ptr)
     int motion_x, motion_y;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    motion_x = motion->pmv[0][0] + get_motion_delta (motion->f_code[0]);
+    motion_x = motion->pmv[0][0] + get_motion_delta (slice, motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[1][0] = motion->pmv[0][0] = motion_x;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    motion_y = motion->pmv[0][1] + get_motion_delta (motion->f_code[1]);
+    motion_y = motion->pmv[0][1] + get_motion_delta (slice, motion->f_code[1]);
     motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
     motion->pmv[1][1] = motion->pmv[0][1] = motion_y;
 
     motion_block (table, motion_x, motion_y, dest, offset,
 		  motion->ref_frame, offset, width, 16);
+#undef bit_buf
+#undef bits
+#undef bit_ptr
 }
 
-static void motion_field (motion_t * motion, uint8_t * dest[3],
-			  int offset, int width,
+static void motion_field (slice_t * slice, motion_t * motion,
+			  uint8_t * dest[3], int offset, int width,
 			  void (** table) (uint8_t *, uint8_t *, int, int))
 {
+#define bit_buf (slice->bitstream_buf)
+#define bits (slice->bitstream_bits)
+#define bit_ptr (slice->bitstream_ptr)
+
     int vertical_field_select;
     int motion_x, motion_y;
 
@@ -1079,12 +1085,13 @@ static void motion_field (motion_t * motion, uint8_t * dest[3],
     vertical_field_select = UBITS (bit_buf, 1);
     DUMPBITS (bit_buf, bits, 1);
 
-    motion_x = motion->pmv[0][0] + get_motion_delta (motion->f_code[0]);
+    motion_x = motion->pmv[0][0] + get_motion_delta (slice, motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[0][0] = motion_x;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    motion_y = (motion->pmv[0][1] >> 1) + get_motion_delta (motion->f_code[1]);
+    motion_y = (motion->pmv[0][1] >> 1) + get_motion_delta (slice,
+							    motion->f_code[1]);
     //motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
     motion->pmv[0][1] = motion_y << 1;
 
@@ -1096,45 +1103,53 @@ static void motion_field (motion_t * motion, uint8_t * dest[3],
     vertical_field_select = UBITS (bit_buf, 1);
     DUMPBITS (bit_buf, bits, 1);
 
-    motion_x = motion->pmv[1][0] + get_motion_delta (motion->f_code[0]);
+    motion_x = motion->pmv[1][0] + get_motion_delta (slice, motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[1][0] = motion_x;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    motion_y = (motion->pmv[1][1] >> 1) + get_motion_delta (motion->f_code[1]);
+    motion_y = (motion->pmv[1][1] >> 1) + get_motion_delta (slice,
+							    motion->f_code[1]);
     //motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
     motion->pmv[1][1] = motion_y << 1;
 
     motion_block (table, motion_x, motion_y, dest, offset + width,
 		  motion->ref_frame, offset + vertical_field_select * width,
 		  width * 2, 8);
+#undef bit_buf
+#undef bits
+#undef bit_ptr
 }
 
 static int motion_dmv_top_field_first;
-static void motion_dmv (motion_t * motion, uint8_t * dest[3],
-			int offset, int width,
+static void motion_dmv (slice_t * slice, motion_t * motion,
+			uint8_t * dest[3], int offset, int width,
 			void (** table) (uint8_t *, uint8_t *, int, int))
 {
+#define bit_buf (slice->bitstream_buf)
+#define bits (slice->bitstream_bits)
+#define bit_ptr (slice->bitstream_ptr)
     int motion_x, motion_y;
     int dmv_x, dmv_y;
     int m;
     int other_x, other_y;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    motion_x = motion->pmv[0][0] + get_motion_delta (motion->f_code[0]);
+    motion_x = motion->pmv[0][0] + get_motion_delta (slice, motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[1][0] = motion->pmv[0][0] = motion_x;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    dmv_x = get_dmv ();
+    dmv_x = get_dmv (slice);
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    motion_y = (motion->pmv[0][1] >> 1) + get_motion_delta (motion->f_code[1]);
+    motion_y = (motion->pmv[0][1] >> 1) + get_motion_delta (slice,
+							    motion->f_code[1]);
     //motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
     motion->pmv[1][1] = motion->pmv[0][1] = motion_y << 1;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    dmv_y = get_dmv ();
+    dmv_y = get_dmv (slice);
 
     motion_block (mc_functions.put, motion_x, motion_y, dest, offset,
 		  motion->ref_frame, offset, width * 2, 8);
@@ -1153,11 +1168,14 @@ static void motion_dmv (motion_t * motion, uint8_t * dest[3],
     other_y = ((motion_y * m + (motion_y > 0)) >> 1) + dmv_y + 1;
     motion_block (mc_functions.avg, other_x, other_y, dest, offset + width,
 		  motion->ref_frame, offset, width * 2, 8);
+#undef bit_buf
+#undef bits
+#undef bit_ptr
 }
 
 // like motion_frame, but reuse previous motion vectors
-static void motion_reuse (motion_t * motion, uint8_t * dest[3],
-			  int offset, int width,
+static void motion_reuse (slice_t * slice, motion_t * motion,
+			  uint8_t * dest[3], int offset, int width,
 			  void (** table) (uint8_t *, uint8_t *, int, int))
 {
     motion_block (table, motion->pmv[0][0], motion->pmv[0][1], dest, offset,
@@ -1165,8 +1183,8 @@ static void motion_reuse (motion_t * motion, uint8_t * dest[3],
 }
 
 // like motion_frame, but use null motion vectors
-static void motion_zero (motion_t * motion, uint8_t * dest[3],
-			 int offset, int width,
+static void motion_zero (slice_t * slice, motion_t * motion,
+			 uint8_t * dest[3], int offset, int width,
 			 void (** table) (uint8_t *, uint8_t *, int, int))
 {
     motion_block (table, 0, 0, dest, offset,
@@ -1174,36 +1192,38 @@ static void motion_zero (motion_t * motion, uint8_t * dest[3],
 }
 
 // like motion_frame, but parsing without actual motion compensation
-static void motion_conceal (motion_t * motion)
+static void motion_conceal (slice_t * slice, motion_t * motion)
 {
+#define bit_buf (slice->bitstream_buf)
+#define bits (slice->bitstream_bits)
+#define bit_ptr (slice->bitstream_ptr)
     int tmp;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    tmp = motion->pmv[0][0] + get_motion_delta (motion->f_code[0]);
+    tmp = motion->pmv[0][0] + get_motion_delta (slice, motion->f_code[0]);
     tmp = bound_motion_vector (tmp, motion->f_code[0]);
     motion->pmv[1][0] = motion->pmv[0][0] = tmp;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    tmp = motion->pmv[0][1] + get_motion_delta (motion->f_code[1]);
+    tmp = motion->pmv[0][1] + get_motion_delta (slice, motion->f_code[1]);
     tmp = bound_motion_vector (tmp, motion->f_code[1]);
     motion->pmv[1][1] = motion->pmv[0][1] = tmp;
 
     DUMPBITS (bit_buf, bits, 1); // remove marker_bit
-}
-
 #undef bit_buf
 #undef bits
 #undef bit_ptr
+}
 
-#define MOTION(routine,direction,slice,dest,offset,stride)	\
-do {								\
-    if ((direction) & MACROBLOCK_MOTION_FORWARD)		\
-	routine (& ((slice).f_motion), dest, offset, stride,	\
-		 mc_functions.put);				\
-    if ((direction) & MACROBLOCK_MOTION_BACKWARD)		\
-	routine (& ((slice).b_motion), dest, offset, stride,	\
-		 ((direction) & MACROBLOCK_MOTION_FORWARD ?	\
-		  mc_functions.avg : mc_functions.put));	\
+#define MOTION(routine,direction,slice,dest,offset,stride)		\
+do {									\
+    if ((direction) & MACROBLOCK_MOTION_FORWARD)			\
+	routine (&slice, &((slice).f_motion), dest, offset, stride,	\
+		 mc_functions.put);					\
+    if ((direction) & MACROBLOCK_MOTION_BACKWARD)			\
+	routine (&slice, &((slice).b_motion), dest, offset, stride,	\
+		 ((direction) & MACROBLOCK_MOTION_FORWARD ?		\
+		  mc_functions.avg : mc_functions.put));		\
 } while (0)
 
 #define CHECK_DISPLAY					\
@@ -1227,6 +1247,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 #define bit_buf (slice.bitstream_buf)
 #define bits (slice.bitstream_bits)
 #define bit_ptr (slice.bitstream_ptr)
+    slice_t slice;
     int mba; 
     int macroblock_modes;
     int width;
@@ -1270,7 +1291,8 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 
     bitstream_init (&slice, buffer);
 
-    slice.quantizer_scale = get_quantizer_scale (picture->q_scale_type);
+    slice.quantizer_scale = get_quantizer_scale (&slice,
+						 picture->q_scale_type);
 
     //Ignore intra_slice and all the extra data
     while (bit_buf & 0x80000000) {
@@ -1279,7 +1301,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     }
     DUMPBITS (bit_buf, bits, 1);
 
-    offset = get_macroblock_address_increment ();
+    offset = get_macroblock_address_increment (&slice);
     mba += offset;
     offset <<= 4;
 
@@ -1287,20 +1309,20 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	NEEDBITS (bit_buf, bits, bit_ptr);
 
 	macroblock_modes =
-	    get_macroblock_modes (picture->picture_coding_type,
+	    get_macroblock_modes (&slice, picture->picture_coding_type,
 				  picture->frame_pred_frame_dct);
 
 	// maybe integrate MACROBLOCK_QUANT test into get_macroblock_modes ?
 	if (macroblock_modes & MACROBLOCK_QUANT)
 	    slice.quantizer_scale =
-		get_quantizer_scale (picture->q_scale_type);
+		get_quantizer_scale (&slice, picture->q_scale_type);
 
 	if (macroblock_modes & MACROBLOCK_INTRA) {
 
 	    int DCT_offset, DCT_stride;
 
 	    if (picture->concealment_motion_vectors)
-		motion_conceal (&slice.f_motion);
+		motion_conceal (&slice, &slice.f_motion);
 	    else {
 		slice.f_motion.pmv[0][0] = slice.f_motion.pmv[0][1] = 0;
 		slice.f_motion.pmv[1][0] = slice.f_motion.pmv[1][1] = 0;
@@ -1378,7 +1400,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		    DCT_stride = width;
 		}
 
-		coded_block_pattern = get_coded_block_pattern ();
+		coded_block_pattern = get_coded_block_pattern (&slice);
 
 		// Decode lum blocks
 
@@ -1422,7 +1444,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	} else {
 	    int mba_inc;
 
-	    mba_inc = get_macroblock_address_increment ();
+	    mba_inc = get_macroblock_address_increment (&slice);
 	    if (!mba_inc)
 		break;
 
