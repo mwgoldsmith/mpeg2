@@ -49,6 +49,7 @@
 
 typedef struct motion_s {
     uint8_t * ref[2][3];
+    uint8_t ** ref2[2];
     int pmv[2][2];
     int f_code[2];
 } motion_t;
@@ -80,7 +81,7 @@ typedef struct picture_s {
     int16_t dc_dct_pred[3];
 
     int quantizer_scale;	/* remove */
-    int current_field;		/* remove */
+    int dmv_offset;		/* remove */
     int v_offset;		/* remove */
 
 
