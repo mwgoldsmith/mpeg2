@@ -19,6 +19,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef MPEG2_H
+#define MPEG2_H
+
 /* Structure for the mpeg2dec decoder */
 
 typedef struct mpeg2dec_s {
@@ -63,3 +66,5 @@ int mpeg2_decode_data (mpeg2dec_t * mpeg2dec,
 		       uint8_t * data_start, uint8_t * data_end);
 
 void mpeg2_drop (mpeg2dec_t * mpeg2dec, int flag);
+
+#endif /* MPEG2_H */

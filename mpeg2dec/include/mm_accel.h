@@ -19,6 +19,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef MM_ACCEL_H
+#define MM_ACCEL_H
+
 /* generic accelerations */
 #define MM_ACCEL_MLIB		0x00000001
 
@@ -28,3 +31,5 @@
 #define MM_ACCEL_X86_MMXEXT	0x20000000
 
 uint32_t mm_accel (void);
+
+#endif /* MM_ACCEL_H */
