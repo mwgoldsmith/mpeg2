@@ -68,26 +68,8 @@ static uint_32 is_sequence_needed = 1;
 void
 mpeg2_init(vo_functions_t *foo)
 {
-	uint_32 max_frame_size;
-	uint_32 max_slice_size;
-
 	//copy the display interface function pointers
 	video_out = *foo;
-
-	max_frame_size = 720 * 576;
-	max_slice_size = 720 *  16;
-
-	picture.throwaway_frame[0] = video_out.allocate_buffer((max_slice_size * 3) / 2);
-	picture.throwaway_frame[1] = picture.throwaway_frame[0] + max_slice_size;
-	picture.throwaway_frame[2] = picture.throwaway_frame[1] + max_slice_size/4;
-
-	picture.backward_reference_frame[0] = video_out.allocate_buffer((max_frame_size *3) / 2); 
-	picture.backward_reference_frame[1] = picture.backward_reference_frame[0] + max_frame_size;
-	picture.backward_reference_frame[2] = picture.backward_reference_frame[1] + max_frame_size/4;
-
-	picture.forward_reference_frame[0] = video_out.allocate_buffer((max_frame_size * 3) / 2); 
-	picture.forward_reference_frame[1] = picture.forward_reference_frame[0] + max_frame_size;
-	picture.forward_reference_frame[2] = picture.forward_reference_frame[1] + max_frame_size/4;
 
 	//FIXME setup config properly
 	config.flags = MPEG2_MMX_ENABLE;
@@ -98,6 +80,28 @@ mpeg2_init(vo_functions_t *foo)
 	slice_init();
 	idct_init();
 	motion_comp_init();
+}
+
+static void 
+decode_allocate_surfaces(picture_t *picture)
+{
+	uint_32 frame_size;
+	uint_32 slice_size;
+
+	frame_size = picture->coded_picture_width * picture->coded_picture_height;
+	slice_size = picture->coded_picture_width * 16;
+
+	picture->throwaway_frame[0] = video_out.allocate_buffer((slice_size * 3) / 2);
+	picture->throwaway_frame[1] = picture->throwaway_frame[0] + slice_size;
+	picture->throwaway_frame[2] = picture->throwaway_frame[1] + slice_size/4;
+
+	picture->backward_reference_frame[0] = video_out.allocate_buffer((frame_size *3) / 2); 
+	picture->backward_reference_frame[1] = picture->backward_reference_frame[0] + frame_size;
+	picture->backward_reference_frame[2] = picture->backward_reference_frame[1] + frame_size/4;
+
+	picture->forward_reference_frame[0] = video_out.allocate_buffer((frame_size * 3) / 2); 
+	picture->forward_reference_frame[1] = picture->forward_reference_frame[0] + frame_size;
+	picture->forward_reference_frame[2] = picture->forward_reference_frame[1] + frame_size/4;
 }
 
 //
@@ -203,6 +207,7 @@ mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end)
 			if(!is_display_initialized)
 			{
 				video_out.init(picture.coded_picture_width,picture.coded_picture_height,0,0);
+				decode_allocate_surfaces(&picture);
 				is_display_initialized = 1;
 			}
 		}
