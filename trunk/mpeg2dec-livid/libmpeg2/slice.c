@@ -1024,6 +1024,34 @@ static inline void slice_non_intra_DCT (picture_t * picture, uint8_t * dest,
     idct_block_add (picture->DCTblock, dest, stride);
 }
 
+#define MOTION_Y(table,offset_x,offset_y,motion_x,motion_y,		\
+		 dest,src,offset_dest,offset_src,stride,height)		\
+do {									\
+    int xy_half;							\
+    int total_offset;							\
+									\
+    xy_half = ((motion_y & 1) << 1) | (motion_x & 1);			\
+    total_offset = ((offset_y + (motion_y >> 1)) * stride +		\
+		    offset_x + (motion_x >> 1) + (offset_src));		\
+    table[xy_half] (dest[0] + offset_x + (offset_dest),			\
+		    src[0] + total_offset, stride, height);		\
+} while (0)
+
+#define MOTION_UV(table,offset_x,offset_y,motion_x,motion_y,		\
+		  dest,src,offset_dest,offset_src,stride,height)	\
+do {									\
+    int xy_half;							\
+    int total_offset;							\
+									\
+    xy_half = ((motion_y & 1) << 1) | (motion_x & 1);			\
+    total_offset = (((offset_y + motion_y) >> 1) * (stride) +		\
+		    ((offset_x + motion_x) >> 1) + (offset_src));	\
+    table[4+xy_half] (dest[1] + (offset_x >> 1) + (offset_dest),	\
+		      src[1] + total_offset, stride, height);		\
+    table[4+xy_half] (dest[2] + (offset_x >> 1) + (offset_dest),	\
+		      src[2] + total_offset, stride, height);		\
+} while (0)
+
 static inline void motion_block (void (** table) (uint8_t *, uint8_t *,
 						  int32_t, int32_t),
 				 int x_offset, int y_offset, int mb_y_8_offset,
@@ -1032,39 +1060,17 @@ static inline void motion_block (void (** table) (uint8_t *, uint8_t *,
 				 uint8_t * dest[3], uint8_t * src[3],
 				 int stride, int height)
 {
-    unsigned int src_x_offset;
-    unsigned int src_y_offset;
-    int src_offset;
-    int xy_half;
-
-    src_x_offset = 2 * x_offset + x_pred;
-    src_y_offset = 2 * y_offset + y_pred;
-
-#if 0
-    if ((src_x_offset > blah) || (src_y_offset > blah))
-	return;
-#endif
-
-    src_offset = (src_x_offset >> 1) + (src_y_offset >> 1) * stride + src_field;
-    xy_half = ((y_pred & 1) << 1) | (x_pred & 1);
-
-    table[xy_half] (dest[0] + x_offset + dest_field + mb_y_8_offset*8*stride,
-		    src[0] + src_offset, stride, height);
+    MOTION_Y (table, x_offset, y_offset, x_pred, y_pred, dest, src,
+	      dest_field + mb_y_8_offset*8*stride, src_field, stride, height);
 
     x_pred /= 2;
     y_pred /= 2;
     stride >>= 1;
-    src_offset =
-	((x_offset + x_pred) >> 1) + ((y_offset + y_pred) >> 1) * stride + (src_field >> 1);
-    xy_half = ((y_pred & 1) << 1) | (x_pred & 1);
-
     height >>= 1;
-    x_offset = (x_offset >> 1) + (dest_field >> 1) + mb_y_8_offset*4*stride;
 
-    table[4+xy_half] (dest[1] + x_offset,
-		      src[1] + src_offset, stride, height);
-    table[4+xy_half] (dest[2] + x_offset,
-		      src[2] + src_offset, stride, height);
+    MOTION_UV (table, x_offset, y_offset, x_pred, y_pred, dest, src,
+	       (dest_field >> 1) + mb_y_8_offset*4*stride, src_field >> 1,
+	       stride, height);
 }
 
 static void motion_mp1 (picture_t * picture, motion_t * motion,
