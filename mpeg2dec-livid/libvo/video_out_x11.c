@@ -598,9 +598,7 @@ vo_output_video_t video_out_xv = {
     "xv",
     xv_setup, xv_close, libvo_common_get_frame, xv_draw_frame
 };
-#endif
 
-#ifdef LIBVO_XVSHM
 static int xvshm_alloc_frame (frame_t * frame, int width, int height)
 {
     struct x11_priv_s * priv = &x11_priv;

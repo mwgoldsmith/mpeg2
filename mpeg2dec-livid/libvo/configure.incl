@@ -19,15 +19,10 @@ if test x"$no_x" != x"yes"; then
 	LIBVO_LIBS="$LIBVO_LIBS -lXext"],,
 	[$X_PRE_LIBS $X_LIBS -lX11 $X_EXTRA_LIBS])
 
-    dnl check for Xv
-    AC_CHECK_LIB([Xv],[XvCreateImage],
+    dnl check for Xv/XvShm
+    AC_CHECK_LIB([Xv],[XvShmCreateImage],
 	[AC_DEFINE([LIBVO_XV],,[libvo Xv support])
 	LIBVO_LIBS="$LIBVO_LIBS -lXv"],,
-	[$X_PRE_LIBS $X_LIBS -lX11 $X_EXTRA_LIBS -lXext])
-
-    dnl check for XvShm
-    AC_CHECK_LIB([Xv],[XvShmCreateImage],
-	[AC_DEFINE([LIBVO_XVSHM],,[libvo XvShm support])],,
 	[$X_PRE_LIBS $X_LIBS -lX11 $X_EXTRA_LIBS -lXext])
 fi
 
