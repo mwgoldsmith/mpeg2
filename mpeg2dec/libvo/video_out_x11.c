@@ -50,6 +50,7 @@ int XShmGetEventBase (Display *);
 
 typedef struct {
     unsigned int width;
+    int chroma420;
     uint8_t * out;
 } convert_uyvy_t;
 
@@ -92,7 +93,7 @@ static void uyvy_copy (void * id, uint8_t * const * src, unsigned int v_offset)
 	    v += 8;
 	    out += 8;
 	} while (--width);
-	if (--height & 1) {
+	if (--height & instance->chroma420) {
 	    u -= instance->width >> 1;
 	    v -= instance->width >> 1;
 	}
@@ -106,6 +107,7 @@ void convert_uyvy (const mpeg2_sequence_t * seq, uint32_t accel, void * arg,
 
     if (instance) {
 	instance->width = seq->width;
+	instance->chroma420 = (seq->chroma_height < seq->height);
 	result->buf_size[0] = seq->width * seq->height * 2;
 	result->buf_size[1] = result->buf_size[2] = 0;
 	result->start = uyvy_start;
