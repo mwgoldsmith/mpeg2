@@ -41,6 +41,13 @@
 #define SEQ_VIDEO_FORMAT_MAC 0x80
 #define SEQ_VIDEO_FORMAT_UNSPECIFIED 0xa0
 
+typedef enum {
+	CHROMA_FORMAT_INVALID = 0,
+	CHROMA_FORMAT_420 = 1,
+	CHROMA_FORMAT_422 = 2,
+	CHROMA_FORMAT_444 = 3
+} mpeg2_chroma_format_t;
+
 typedef struct {
     unsigned int width, height;
     unsigned int chroma_width, chroma_height;
@@ -57,6 +64,8 @@ typedef struct {
     uint8_t colour_primaries;
     uint8_t transfer_characteristics;
     uint8_t matrix_coefficients;
+
+	mpeg2_chroma_format_t chroma_format;
 } mpeg2_sequence_t;
 
 #define GOP_FLAG_DROP_FRAME 1
@@ -85,9 +94,14 @@ typedef struct {
 #define PIC_MASK_COMPOSITE_DISPLAY 0xfffff000
 
 typedef struct {
+	uint32_t low;
+	uint32_t high;
+} mpeg2_pts_t;
+
+typedef struct {
     unsigned int temporal_reference;
     unsigned int nb_fields;
-    uint32_t pts;
+    mpeg2_pts_t pts;
     uint32_t flags;
     struct {
 	int x, y;
@@ -157,7 +171,7 @@ mpeg2_state_t mpeg2_parse (mpeg2dec_t * mpeg2dec);
 void mpeg2_skip (mpeg2dec_t * mpeg2dec, int skip);
 void mpeg2_slice_region (mpeg2dec_t * mpeg2dec, int start, int end);
 
-void mpeg2_pts (mpeg2dec_t * mpeg2dec, uint32_t pts);
+void mpeg2_pts (mpeg2dec_t * mpeg2dec, mpeg2_pts_t * pts);
 
 void mpeg2_init_fbuf (mpeg2_decoder_t * decoder, uint8_t * current_fbuf[3],
 		      uint8_t * forward_fbuf[3], uint8_t * backward_fbuf[3]);
