@@ -74,8 +74,8 @@ How to use mga_vid from scratch
 3. if you have a g200 then you must set IS_G200=1 in display_mga_vid.c.
 4. make
 5. su 
-6. insmod videodev; insmod drivers/mga_vid.o  (you must have v4l built
-   for your kernel)
+6. /sbin/insmod videodev; /sbin/insmod drivers/mga_vid.o  (you must have 
+   v4l built for your kernel)
 7. ./mpeg2dec foo.mpeg2  (you're done!)
 
 Documentation
