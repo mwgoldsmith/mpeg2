@@ -39,15 +39,17 @@
 #include <wchar.h>
 #include <signal.h>
 #include <inttypes.h>
+//#include <linux/types.h>
 
 #include <X11/Xlib.h>
 #include <X11/extensions/xf86dga.h>
 #include <X11/Xutil.h>
 
-#include <oms/plugin/output_video.h>
+#include <oms/oms.h>
 #include <oms/log.h>
+#include <oms/plugin/output_video.h>
 
-#include "drivers/3dfx.h"
+#include "3dfx.h"
 
 static uint32_t is_fullscreen = 1;
 
@@ -58,8 +60,8 @@ static uint32_t screenwidth;
 static uint32_t screenheight;
 static uint32_t screendepth = 2; //Only 16bpp supported right now
 
-static uint32_t dispwidth = 1280; // You can change these to whatever you want
-static uint32_t dispheight = 720; // 16:9 screen ratio??
+static uint32_t dispwidth = 640; // You can change these to whatever you want
+static uint32_t dispheight = 360; // 16:9 screen ratio??
 static uint32_t dispx;
 static uint32_t dispy;
 
@@ -92,14 +94,25 @@ static int bpp;
 static XWindowAttributes attribs;
 static int X_already_started = 0;
 
-static struct 3dfx_priv_s {
+static int _3dfx_open (plugin_t *plugin, void *name);
+static int _3dfx_close (plugin_t *plugin);
+static int _3dfx_setup (plugin_output_video_attr_t *attr);
+static int _3dfx_draw_frame (uint8_t *src[]);
+static int _3dfx_draw_slice (uint8_t *src[], uint32_t slice_num);
+static void _3dfx_flip_page (void) ;
+static vo_image_buffer_t* allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format);
+static void free_image_buffer(vo_image_buffer_t* image);
+
+static struct dfx_priv_s {
         int fd;
-} _3dfx_priv;
+} _dfx_priv;
 
 static plugin_output_video_t video_3dfx = {
 	open:           _3dfx_open,
 	close:          _3dfx_close,
 	setup:          _3dfx_setup,
+	draw_frame:     _3dfx_draw_frame,
+	draw_slice:     _3dfx_draw_slice,
 	flip_page:      _3dfx_flip_page,
 	allocate_image_buffer:  allocate_image_buffer,
 	free_image_buffer:      free_image_buffer
@@ -112,7 +125,7 @@ static plugin_output_video_t video_3dfx = {
 
 static int _3dfx_open (plugin_t *plugin, void *name)
 {
-	if ((_3dfx_priv.fd = open ((char *) name, O_RDWR)) < 0) {
+	if ((_dfx_priv.fd = open ((char *) name, O_RDWR)) < 0) {
 		LOG (LOG_ERROR, "Can't open %s\n", (char *) name);
 		return -1;
 	}
@@ -127,8 +140,8 @@ static int _3dfx_open (plugin_t *plugin, void *name)
 
 static int _3dfx_close (plugin_t *plugin)
 {
-	close (_3dfx_priv.fd);
-	_mga_3dfxv.fd = -1;
+	close (_dfx_priv.fd);
+	_dfx_priv.fd = -1;
 
 	return 0;
 }
@@ -153,7 +166,7 @@ static void sighup (int foo)
 {
 	//reg_IO->vidDesktopStartAddr = vidpage0offset;
 	XF86DGADirectVideo (display,0,0);
-	exit(0);
+	//exit(0);
 }
 
 
@@ -213,11 +226,9 @@ static uint32_t create_window(Display *display)
 	fg = BlackPixel(display, screen);
 
 	XGetWindowAttributes(display, DefaultRootWindow(display), &attribs);
-	bpp = attribs.depth;
-	if (bpp != 16) 
-	{
-		fprintf(stderr,"Only 16bpp supported!");
-		exit(-1);
+	if ((bpp = attribs.depth) != 16) {
+		LOG (LOG_ERROR, "Only 16bpp supported!");
+		return -1;
 	}
 
 	XMatchVisualInfo(display,screen,bpp,TrueColor,&vinfo);
@@ -407,25 +418,20 @@ static int _3dfx_setup (plugin_output_video_attr_t *attr)
 	data.size = 4;
 	data.value = &baseAddr0;
 	data.device = 0;
-	if ((retval = ioctl(_3dfx_priv.fd,_IOC(_IOC_READ,'3',3,0),&data)) < 0) {
-		printf("Error: %d\n",retval);
-		//return -1;
-	}
+	if ((retval = ioctl(_dfx_priv.fd,_IOC(_IOC_READ,'3',3,0),&data)) < 0)
+		goto error;
 
 	// Ask 3dfx driver for base memory address 1
 	data.port = 0x14; // PCI_BASE_ADDRESS_1_LINUX;
 	data.size = 4;
 	data.value = &baseAddr1;
 	data.device = 0;
-	if ((retval = ioctl(_3dfx_priv.fd,_IOC(_IOC_READ,'3',3,0),&data)) < 0) 
-	{
-		printf("Error: %d\n",retval);
-		//return -1;
-	}
+	if ((retval = ioctl(_dfx_priv.fd,_IOC(_IOC_READ,'3',3,0),&data)) < 0) 
+		goto error;
 
 	// Map all 3dfx memory areas
-	memBase0 = mmap(0,0x1000000,PROT_READ | PROT_WRITE,MAP_SHARED,_3dfx_priv.fd,baseAddr0);
-	memBase1 = mmap(0,3*page_space,PROT_READ | PROT_WRITE,MAP_SHARED,_3dfx_priv.fd,baseAddr1);
+	memBase0 = mmap(0,0x1000000,PROT_READ | PROT_WRITE,MAP_SHARED,_dfx_priv.fd,baseAddr0);
+	memBase1 = mmap(0,3*page_space,PROT_READ | PROT_WRITE,MAP_SHARED,_dfx_priv.fd,baseAddr1);
 	if (memBase0 == (uint32_t *) 0xFFFFFFFF || memBase1 == (uint32_t *) 0xFFFFFFFF) 
 	{
 		printf("Couldn't map 3dfx memory areas: %p,%p,%d\n", 
@@ -469,8 +475,12 @@ static int _3dfx_setup (plugin_output_video_attr_t *attr)
 
 	atexit(restore);
 
-	printf("(display) 3dfx initialized %p\n",memBase1);
+	LOG (LOG_DEBUG, "(display) 3dfx initialized %p\n",memBase1);
 	return 0;
+
+error:
+	LOG (LOG_ERROR, "Error: %d\n",retval);
+	return -1;
 }
 
 
@@ -478,7 +488,7 @@ static int _3dfx_setup (plugin_output_video_attr_t *attr)
  *
  **/
 
-static uint32_t draw_frame(uint8_t *src[]) 
+static int _3dfx_draw_frame (uint8_t *src[]) 
 {
 	LOG (LOG_DEBUG, "video_out_3dfx: starting display_frame\n");
 
@@ -495,7 +505,7 @@ static uint32_t draw_frame(uint8_t *src[])
  *
  **/
 
-static uint32_t draw_slice(uint8_t *src[], uint32_t slice_num) 
+static int _3dfx_draw_slice (uint8_t *src[], uint32_t slice_num) 
 {
 	uint32_t target;
 
@@ -546,7 +556,7 @@ static vo_image_buffer_t* allocate_image_buffer(uint32_t height, uint32_t width,
 
 /**
  *
- **_
+ **/
 
 static void free_image_buffer(vo_image_buffer_t* image)
 {
@@ -563,7 +573,9 @@ void *plugin_init (char *whoami)
 {
 	pluginRegister (whoami,
 		PLUGIN_ID_OUTPUT_VIDEO,
-		0,
+		"3dfx",
+		NULL,
+		NULL,
 		&video_3dfx);
 
 	return &video_3dfx;
