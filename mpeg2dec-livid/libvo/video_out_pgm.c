@@ -23,19 +23,15 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 #include <inttypes.h>
 
 #include "video_out.h"
 #include "video_out_internal.h"
 
-
 static int image_width;
 static int image_height;
 static char header[1024];
 static int framenum = -2;
-
-
 
 static int pgm_close (void * plugin)
 {
