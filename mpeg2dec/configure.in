@@ -9,7 +9,6 @@ AM_INIT_AUTOMAKE([mpeg2dec],[0.2.2-cvs])
 AM_CONFIG_HEADER(include/config.h)
 AM_MAINTAINER_MODE
 AC_CANONICAL_HOST
-if test x"$host_alias" = x""; then host_alias="$host"; fi
 
 dnl Checks for compiler
 AC_PROG_CC
@@ -39,10 +38,10 @@ elif test x"$GCC" = x"yes"; then
     AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS])
 
     dnl arch-specific flags
-    case "$host_alias" in
+    case "$host" in
     i?86-* | k?-*)
 	AC_DEFINE([ARCH_X86],,[x86 architecture])
-	case "$host_alias" in
+	case "$host" in
 	i386-*) OPT_CFLAGS="$CFLAGS -mcpu=i386";;
 	i486-*) OPT_CFLAGS="$CFLAGS -mcpu=i486";;
 	i586-*) OPT_CFLAGS="$CFLAGS -mcpu=pentium";;
@@ -73,7 +72,7 @@ elif test x"$CC" = x"icc" -a x"`$CC -V 2>&1 | grep Intel`" != x""; then
     CFLAGS="-g -O3 -unroll -ip"
 else
     dnl non-gcc flags - we probably need exact configuration triplets here.
-    case "$host_alias" in
+    case "$host" in
     mips-sgi-irix6.*)
 	OPT_CFLAGS="$CFLAGS -64"
 	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
