@@ -2,6 +2,7 @@ mpeg2dec-0.1.6
 -enhanced g200 
 -solaris fixes
 -inlined, rewritten bitstream code (much faster now)
+-moved colorspace conversion code into yuv2rgb.c
 
 mpeg2dec-0.1.5  Mon Dec 13 23:08:43 EST 1999
 -numerous bugfixes to mga_vid and x11 displays.

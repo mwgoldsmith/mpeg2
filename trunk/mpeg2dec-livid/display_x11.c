@@ -20,20 +20,10 @@
 #include <string.h>
 #include <errno.h>
 
+#include <config.h>
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
-
-int Inverse_Table_6_9[8][4] =
-{
-  {117504, 138453, 13954, 34903}, /* no sequence_display_extension */
-  {117504, 138453, 13954, 34903}, /* ITU-R Rec. 709 (1990) */
-  {104597, 132201, 25675, 53279}, /* unspecified */
-  {104597, 132201, 25675, 53279}, /* reserved */
-  {104448, 132798, 24759, 53109}, /* FCC */
-  {104597, 132201, 25675, 53279}, /* ITU-R Rec. 624-4 System B, G */
-  {104597, 132201, 25675, 53279}, /* SMPTE 170M */
-  {117579, 136230, 16907, 35559}  /* SMPTE 240M (1987) */
-};
+#include "yuv2rgb.h"
 
 
 /* private prototypes */
@@ -47,7 +37,7 @@ static Display *mydisplay;
 static Window mywindow;
 static GC mygc;
 static XImage *myximage;
-static int bpp;
+static int bpp, mode;
 static XWindowAttributes attribs;
 static int X_already_started = 0;
 
@@ -95,14 +85,10 @@ static void DeInstallXErrorHandler()
 
 #endif
 
-// Clamp to [0,255]
-static uint_8 clip_tbl[1024]; /* clipping table */
-static uint_8 *clip;
 
 uint_32 image_width;
 uint_32 image_height;
 uint_32 progressive_sequence = 0;
-uint_32 matrix_coefficients = 1;
 
 /* connect to server, create and map window,
  * allocate colors and (shared) memory
@@ -111,7 +97,6 @@ void display_init(uint_32 width, uint_32 height)
 {
    int screen;
    unsigned int fg, bg;
-   sint_32 i;
    char *hello = "I hate X11";
    char *name = ":0.0";
    XSizeHints hint;
@@ -123,11 +108,6 @@ void display_init(uint_32 width, uint_32 height)
    XSetWindowAttributes xswa;
    unsigned long xswamask;
 
-   clip = clip_tbl + 384;
-
-   for (i= -384; i< 640; i++)
-      clip[i] = (i < 0) ? 0 : ((i > 255) ? 255 : i);
-                
    image_height = height;
    image_width = width;
 
@@ -297,8 +277,22 @@ void display_init(uint_32 width, uint_32 height)
 
    DeInstallXErrorHandler();
 #endif
+   
+   bpp = myximage->bits_per_pixel;
+   // If we have blue in the lowest bit then obviously RGB 
+   mode = ((myximage->blue_mask & 0x01) != 0) ? MODE_RGB : MODE_BGR;
+#ifdef WORDS_BIGENDIAN 
+   if (myximage->byte_order != MSBFirst)
+#else
+   if (myximage->byte_order != LSBFirst) 
+#endif
+     {
+       fprintf( stderr, "No support fon non-native XImage byte order!\n" );
+       exit(1);
+     }
+   yuv2rgb_init(bpp, mode);
+   
    X_already_started++;
-	 bpp = myximage->bits_per_pixel;
 }
 
 void Terminate_Display_Process() {
@@ -343,308 +337,21 @@ unsigned char *ImageData;
 		0, 0, myximage->width, myximage->height);
 }
 
-void Display_First_Field(void) { /* nothing */ }
-void Display_Second_Field(void) { /* nothing */ }
-
-unsigned char *dst, *py, *pu, *pv;
-
-static void display_frame_32bpp_420(const uint_8 * py, const uint_8 * pv,
-                                    const uint_8 * pu, uint_8 * image,
-                                    int h_size, int v_size, int bpp);
-static void display_frame_24bpp_420(const uint_8 * py, const uint_8 * pv,
-                                    const uint_8 * pu, uint_8 * image,
-                                    int h_size, int v_size, int bpp);
-static void display_frame_16bpp_420(const uint_8 * py, const uint_8 * pv,
-                                    const uint_8 * pu, uint_8 * image,
-                                    int h_size, int v_size, int bpp);
 void display_frame(uint_8 *src[])
 {
-   if (bpp==32) 
-	 {
-      display_frame_32bpp_420(src[0],src[1],src[2],ImageData, 
-					image_width, image_height, bpp);
-   } 
-	 else if (bpp==24) 
-	 {
-      display_frame_24bpp_420(src[0],src[1],src[2],ImageData, 
-					image_width, image_height, bpp);
-   } 
-	 else if (bpp == 15 || bpp == 16) 
-	 {
-      display_frame_16bpp_420(src[0],src[1],src[2],ImageData, 
-					image_width, image_height, bpp);
+   if (bpp==32) {
+     yuv2rgb(ImageData, src[0], src[1], src[2],
+	     image_width, image_height, 
+	     image_width*4, image_width, image_width/2 );
+   } else if (bpp == 24) {
+     yuv2rgb(ImageData, src[0], src[1], src[2],
+	     image_width, image_height, 
+	     image_width*3, image_width, image_width/2 );
+   } else if (bpp == 15 || bpp == 16) {
+     yuv2rgb(ImageData, src[0], src[1], src[2],
+	     image_width, image_height, 
+	     image_width*2, image_width, image_width/2 );
    }
+   
    Display_Image(myximage, ImageData);
 }
-
-/* do 32 bpp output */
-static void display_frame_32bpp_420(const uint_8 * py, const uint_8 * pv, 
-		const uint_8 * pu, uint_8 * image, int h_size, int v_size, int bpp)
-{
-	sint_32 Y,U,V;
-	sint_32 g_common,b_common,r_common;
-	uint_32 x,y;
-
-	uint_8 *dst_line_1;
-	uint_8 *dst_line_2;
-	const uint_8* py_line_1;
-	const uint_8* py_line_2;
-	volatile char prefetch;
-
-	int byte_per_line=h_size*(bpp/8);
-
-	int crv,cbu,cgu,cgv;
-
-	/* matrix coefficients */
-	crv = Inverse_Table_6_9[matrix_coefficients][0];
-	cbu = Inverse_Table_6_9[matrix_coefficients][1];
-	cgu = Inverse_Table_6_9[matrix_coefficients][2];
-	cgv = Inverse_Table_6_9[matrix_coefficients][3];
-
-
-	dst_line_1 = dst_line_2 =  image;
-	dst_line_2 = dst_line_1 + byte_per_line;
-
-	py_line_1 = py;
-	py_line_2 = py + h_size;
-
-	for (y = 0; y < v_size / 2; y++) 
-	{
-		for (x = 0; x < h_size / 2; x++) 
-		{
-
-			//Common to all four pixels
-			prefetch = pu[32];
-			U = (*pu++) - 128;
-			prefetch = pv[32];
-			V = (*pv++) - 128;
-
-			g_common = cgu * U + cgv * V - 32768;
-			b_common = cbu * U + 32768;
-			r_common = crv * V;
-
-			//Pixel I
-			prefetch = py_line_1[32];
-			Y = 76309 * ((*py_line_1++) - 16);
-			*dst_line_1++ = clip[(Y+r_common)>>16];
-			*dst_line_1++ = clip[(Y-g_common)>>16];
-			*dst_line_1++ = clip[(Y+b_common)>>16];
-			dst_line_1++;
-
-			//Pixel II
-			Y = 76309 * ((*py_line_1++) - 16);
-
-			*dst_line_1++ = clip[(Y+r_common)>>16];
-			*dst_line_1++ = clip[(Y-g_common)>>16];
-			*dst_line_1++ = clip[(Y+b_common)>>16];
-			dst_line_1++;
-
-			//Pixel III
-			prefetch = py_line_2[32];
-			Y = 76309 * ((*py_line_2++) - 16);
-
-			*dst_line_2++ = clip[(Y+r_common)>>16];
-			*dst_line_2++ = clip[(Y-g_common)>>16];
-			*dst_line_2++ = clip[(Y+b_common)>>16];
-			dst_line_2++;
-
-			//Pixel IV
-			Y = 76309 * ((*py_line_2++) - 16);
-
-			*dst_line_2++ = clip[(Y+r_common)>>16];
-			*dst_line_2++ = clip[(Y-g_common)>>16];
-			*dst_line_2++ = clip[(Y+b_common)>>16];
-			dst_line_2++;
-		}
-
-		py_line_1 += h_size;
-		py_line_2 += h_size;
-		dst_line_1 += byte_per_line;
-		dst_line_2 += byte_per_line;
-	}
-}
-
-/* do 24 bpp output */
-static void display_frame_24bpp_420(const uint_8 * py, const uint_8 * pv, 
-		const uint_8 * pu, uint_8 * image, int h_size, int v_size, int bpp)
-{
-	sint_32 Y,U,V;
-	sint_32 g_common,b_common,r_common;
-	uint_32 x,y;
-
-	uint_8 *dst_line_1;
-	uint_8 *dst_line_2;
-	const uint_8* py_line_1;
-	const uint_8* py_line_2;
-	volatile char prefetch;
-
-	int byte_per_line=h_size*(bpp/8);
-
-	int crv,cbu,cgu,cgv;
-
-	/* matrix coefficients */
-	crv = Inverse_Table_6_9[matrix_coefficients][0];
-	cbu = Inverse_Table_6_9[matrix_coefficients][1];
-	cgu = Inverse_Table_6_9[matrix_coefficients][2];
-	cgv = Inverse_Table_6_9[matrix_coefficients][3];
-
-
-	dst_line_1 = dst_line_2 =  image;
-	dst_line_2 = dst_line_1 + byte_per_line;
-
-	py_line_1 = py;
-	py_line_2 = py + h_size;
-
-	for (y = 0; y < v_size / 2; y++) 
-	{
-		for (x = 0; x < h_size / 2; x++) 
-		{
-
-			//Common to all four pixels
-			prefetch = pu[32];
-			U = (*pu++) - 128;
-			prefetch = pv[32];
-			V = (*pv++) - 128;
-
-			g_common = cgu * U + cgv * V - 32768;
-			b_common = cbu * U + 32768;
-			r_common = crv * V;
-
-			//Pixel I
-			prefetch = py_line_1[32];
-			Y = 76309 * ((*py_line_1++) - 16);
-			*dst_line_1++ = clip[(Y+r_common)>>16];
-			*dst_line_1++ = clip[(Y-g_common)>>16];
-			*dst_line_1++ = clip[(Y+b_common)>>16];
-			if (bpp==32)
-			{
-				dst_line_1++;
-			}
-
-			//Pixel II
-			Y = 76309 * ((*py_line_1++) - 16);
-
-			*dst_line_1++ = clip[(Y+r_common)>>16];
-			*dst_line_1++ = clip[(Y-g_common)>>16];
-			*dst_line_1++ = clip[(Y+b_common)>>16];
-			if (bpp==32)
-			{
-				dst_line_1++;
-			}
-
-			//Pixel III
-			prefetch = py_line_2[32];
-			Y = 76309 * ((*py_line_2++) - 16);
-
-			*dst_line_2++ = clip[(Y+r_common)>>16];
-			*dst_line_2++ = clip[(Y-g_common)>>16];
-			*dst_line_2++ = clip[(Y+b_common)>>16];
-			if (bpp==32)
-			{
-				dst_line_1++;
-			}
-
-			//Pixel IV
-			Y = 76309 * ((*py_line_2++) - 16);
-
-			*dst_line_2++ = clip[(Y+r_common)>>16];
-			*dst_line_2++ = clip[(Y-g_common)>>16];
-			*dst_line_2++ = clip[(Y+b_common)>>16];
-			if (bpp==32)
-			{
-				dst_line_1++;
-			}
-		}
-
-		py_line_1 += h_size;
-		py_line_2 += h_size;
-		dst_line_1 += byte_per_line;
-		dst_line_2 += byte_per_line;
-	}
-}
-
-/* do 16 and 15 bpp output */
-static void display_frame_16bpp_420(const uint_8 * py, const uint_8 * pv, 
-		const uint_8 * pu, uint_8 * image, int h_size, int v_size, int bpp)
-{
-	uint_32 U,V;
-	uint_32 pixel_idx;
-	uint_32 x,y;
-
-	uint_16 *dst_line_1;
-	uint_16 *dst_line_2;
-	const uint_8* py_line_1;
-	const uint_8* py_line_2;
-	uint_8  r,v,b;
-
-	static uint_16 * lookUpTable=NULL;
-
-	int i,j,k;
-
-	//not sure if this is a win using the LUT. Can someone try
-	//the direct calculation (like in the 32bpp) and compare?
-	if (lookUpTable==NULL) 
-	{
-		lookUpTable=malloc((1<<18)*sizeof(uint_16));
-
-		for (i=0;i<(1<<6);++i) 
-		{ /* Y */
-			int Y=i<<2;
-
-			for(j=0;j<(1<<6);++j) 
-			{ /* Cr */
-				int Cb=j<<2;
-
-				for(k=0;k<(1<<6);k++) 
-				{ /* Cb */
-					int Cr=k<<2;
-
-					/*
-					R = clp[(int)(*Y + 1.371*(*Cr-128))];  
-					V = clp[(int)(*Y - 0.698*(*Cr-128) - 0.336*(*Cr-128))]; 
-					B = clp[(int)(*Y++ + 1.732*(*Cb-128))];
-					*/
-					r=clip[(Y*1000 + 1371*(Cr-128))/1000] >>3;
-					v=clip[(Y*1000 - 698*(Cr-128) - 336*(Cr-128))/1000] >> (bpp==16?2:3);
-					b=clip[(Y*1000 + 1732*(Cb-128))/1000] >> 3;
-					lookUpTable[i|(j<<6)|(k<<12)] = r | (v << 5) | (b <<  (bpp==16?11:10));
-				}
-			}
-		}
-	}
-
-	dst_line_1 = dst_line_2 =  (uint_16*) image;
-	dst_line_2 = dst_line_1 + h_size;
-
-	py_line_1 = py;
-	py_line_2 = py + h_size;
-
-	for (y = 0; y < v_size / 2; y++) 
-	{
-		for (x = 0; x < h_size / 2; x++) 
-		{
-			//Common to all four pixels
-			U = (*pu++)>>2;
-			V = (*pv++)>>2;
-			pixel_idx=U<<6|V<<12;
-
-			//Pixel I
-			*dst_line_1++=lookUpTable[(*py_line_1++)>>2|pixel_idx];
-
-			//Pixel II
-			*dst_line_1++=lookUpTable[(*py_line_1++)>>2|pixel_idx];
-
-			//Pixel III
-			*dst_line_2++=lookUpTable[(*py_line_2++)>>2|pixel_idx];
-
-			//Pixel IV
-			*dst_line_2++=lookUpTable[(*py_line_2++)>>2|pixel_idx];
-		}
-		py_line_1 += h_size;
-		py_line_2 += h_size;
-		dst_line_1 += h_size;
-		dst_line_2 += h_size;
-	}
-}
-
-

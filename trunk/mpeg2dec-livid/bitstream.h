@@ -27,21 +27,24 @@
 
 #	define swab32(x) (x)
 
-#elsif defined (__i386__)
+#else
+
+#	if defined (__i386__)
 
 #	define swab32(x) __i386_swab32(x)
-	static inline const __u32 __i386_swab32(__u32 x)
+	static inline const uint_32 __i386_swab32(uint_32 x)
 	{
 		__asm__("bswap %0" : "=r" (x) : "0" (x));
 		return x;
 	}
 
-#else
+#	else
 
 #	define swab32(x)\
 ((((uint_8*)&x)[0] << 24) | (((uint_8*)&x)[1] << 16) |  \
  (((uint_8*)&x)[2] << 8)  | (((uint_8*)&x)[3]))
 
+#	endif
 #endif
 
 extern uint_32 bits_left;
