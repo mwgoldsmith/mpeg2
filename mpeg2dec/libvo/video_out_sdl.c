@@ -160,8 +160,8 @@ vo_instance_t * vo_sdl_open (void)
     instance->surface = NULL;
     instance->sdlflags = SDL_HWSURFACE | SDL_RESIZABLE;
 
-    setenv("SDL_VIDEO_YUV_HWACCEL", "1", 1);
-    setenv("SDL_VIDEO_X11_NODIRECTCOLOR", "1", 1);
+    putenv("SDL_VIDEO_YUV_HWACCEL=1");
+    putenv("SDL_VIDEO_X11_NODIRECTCOLOR=1");
 
     if (SDL_Init (SDL_INIT_VIDEO)) {
 	fprintf (stderr, "sdl video initialization failed.\n");
