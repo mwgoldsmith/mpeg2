@@ -188,7 +188,7 @@ static int parse_chunk (vo_functions_t * video_out, int code, uint8_t * buffer)
 	    else
 		bar = picture.forward_reference_frame;
 
-	    if (HACK_MODE < 2) {
+	    if ((HACK_MODE < 2) && (!picture.mpeg1)) {
 
 		uint8_t * foo[3];
 		int offset;

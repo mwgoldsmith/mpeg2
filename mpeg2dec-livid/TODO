@@ -5,7 +5,7 @@
 * things we dont implement yet
 	* field pictures
 	* missing MC modes
-	* mpeg1
+	* mpeg1 - do oddification, full-pixel MC, D pictures
 	* conformance testing
 	* dont crash on bad streams, make sure we can resync after a while
 	* make the decoder reentrant (if the speed impact is small enough)
