@@ -65,6 +65,7 @@ typedef struct {
 #define PIC_FLAG_TOP_FIELD_FIRST 8
 #define PIC_FLAG_PROGRESSIVE_FRAME 16
 #define PIC_FLAG_COMPOSITE_DISPLAY 32
+#define PIC_FLAG_SKIP 64
 #define PIC_MASK_COMPOSITE_DISPLAY 0xfffff000
 
 typedef struct {
@@ -118,6 +119,8 @@ void mpeg2_close (mpeg2dec_t * mpeg2dec);
 
 void mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t * start, uint8_t * end);
 int mpeg2_parse (mpeg2dec_t * mpeg2dec);
+
+void mpeg2_skip (mpeg2dec_t * mpeg2dec, int skip);
 
 void mpeg2_pts (mpeg2dec_t * mpeg2dec, uint32_t pts);
 
