@@ -6,7 +6,7 @@ include_HEADERS = mpeg2.h
 
 libmpeg2_la_LIBADD = @LIBMPEG2_CONFIG_OBJS@ 
 libmpeg2_la_DEPENDENCIES = @LIBMPEG2_CONFIG_OBJS@
-libmpeg2_la_LDFLAGS = -version-info 1:6:1 -export-symbols libmpeg2.sym
+libmpeg2_la_LDFLAGS = -version-info 1:6:1 -export-symbols libmpeg2.sym @LIBMPEG2_LDFLAGS@
 
 libmpeg2_la_SOURCES = slice.c header.c stats.c idct.c motion_comp.c\
 	decode.c debug.c

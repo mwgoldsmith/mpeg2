@@ -65,7 +65,7 @@ static void mlib_YUV2RGB420_24(uint8_t* image, const uint8_t* py,
 }
 
 
-yuv2rgb_fun yuv2rgb_init_mlib(uint32_t bpp, uint32_t mode) 
+yuv2rgb_fun yuv2rgb_init_mlib(int bpp, int mode) 
 {  
 
 	if( bpp == 24 ) 
