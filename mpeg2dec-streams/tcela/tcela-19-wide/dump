@@ -1,4 +1,10 @@
       9b S- --- --- - SEQUENCE CONST PROG 768x128 chroma 384x64 fps 23.98 maxBps 232000 vbv 40960 picture 768x128 display 768x128 pixel 2000x1347
+         USER_DATA 71 bytes
+         e6 1d 37 2f 00 00 e6 1d 37 31 40 28 23 29 4d 50    7/    71@(#)MP
+         45 47 20 45 6e 63 6f 64 65 72 20 76 33 2e 30 20  EG Encoder v3.0 
+         62 79 20 54 72 69 73 74 61 6e 20 53 61 76 61 74  by Tristan Savat
+         69 65 72 2c 20 54 43 45 20 28 4c 6f 73 20 41 6e  ier, TCE (Los An
+         67 65 6c 65 73 29 00                             geles)          
       a3 SG --- --- - GOP  0: 0:21: 9
       af SG AA- --- ? PICTURE I fields 2 time_ref 0 offset 0/0
     6015 SG aa- --- ? SLICE
@@ -21,6 +27,12 @@
    1694c SG JJ- JJ- J PICTURE B fields 2 time_ref 8 offset 0/0
    17a4f SG jj- jj- j SLICE
    17ae6 S- --- --- - SEQUENCE_REPEATED CONST PROG 768x128 chroma 384x64 fps 23.98 maxBps 232000 vbv 40960 picture 768x128 display 768x128 pixel 2000x1347
+         USER_DATA 71 bytes
+         e6 1d 37 2f 00 00 e6 1d 37 31 40 28 23 29 4d 50    7/    71@(#)MP
+         45 47 20 45 6e 63 6f 64 65 72 20 76 33 2e 30 20  EG Encoder v3.0 
+         62 79 20 54 72 69 73 74 61 6e 20 53 61 76 61 74  by Tristan Savat
+         69 65 72 2c 20 54 43 45 20 28 4c 6f 73 20 41 6e  ier, TCE (Los An
+         67 65 6c 65 73 29 00                             geles)          
    17aee SG --- --- - GOP  0: 0:21:19
    17afa SG KK- hh- e PICTURE I fields 2 time_ref 2 offset 0/0
    1db18 SG kk- hh- e SLICE
@@ -47,6 +59,12 @@
    32e60 SG VV- VV- V PICTURE B fields 2 time_ref 10 offset 0/0
    343f7 SG vv- vv- v SLICE
    3448e S- --- --- - SEQUENCE_REPEATED CONST PROG 768x128 chroma 384x64 fps 23.98 maxBps 232000 vbv 40960 picture 768x128 display 768x128 pixel 2000x1347
+         USER_DATA 71 bytes
+         e6 1d 37 2f 00 00 e6 1d 37 31 40 28 23 29 4d 50    7/    71@(#)MP
+         45 47 20 45 6e 63 6f 64 65 72 20 76 33 2e 30 20  EG Encoder v3.0 
+         62 79 20 54 72 69 73 74 61 6e 20 53 61 76 61 74  by Tristan Savat
+         69 65 72 2c 20 54 43 45 20 28 4c 6f 73 20 41 6e  ier, TCE (Los An
+         67 65 6c 65 73 29 00                             geles)          
    34496 SG --- --- - GOP  0: 0:22: 7
    344a2 SG WW- tt- q PICTURE I fields 2 time_ref 2 offset 0/0
    39bcf SG ww- tt- q SLICE

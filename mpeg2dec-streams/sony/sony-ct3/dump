@@ -1,23 +1,47 @@
       b9 S- --- --- - SEQUENCE MPEG2 MP@ML 720x480 chroma 360x240 fps 30 maxBps 500000 vbv 229376 picture 720x480 display 120x120 pixel 4x3
+         USER_DATA 10 bytes
+         01 02 03 04 05 06 07 08 09 0a                                    
       cf SG --- --- - GOP CLOSED  0: 0: 0: 0
+         USER_DATA 10 bytes
+         0b 0c 0d 0e 0f 10 11 12 13 14                                    
      17c SG AA- --- ? PICTURE I fields 1 TFF time_ref 0 offset 0/0
+         USER_DATA 10 bytes
+         15 16 17 18 19 1a 1b 1c 1d 1e                                    
     41b4 SG aa- --- ? SLICE_1ST
     4262 SG aaB --- ? PICTURE_2ND P fields 1 time_ref 0 offset 1/1
+         USER_DATA 10 bytes
+         15 16 17 18 19 1a 1b 1c 1d 1e                                    
     7f4e SG aab --- ? SLICE
     8005 SG BC- aab ? PICTURE P PROG fields 3 TFF time_ref 1 offset 2/2 3/3 4/4
+         USER_DATA 10 bytes
+         15 16 17 18 19 1a 1b 1c 1d 1e                                    
     c9cd SG bc- aab ? SLICE
     ca84 SG CD- bc- a PICTURE P PROG fields 3 time_ref 3 offset 7/7 8/8 9/9
+         USER_DATA 10 bytes
+         15 16 17 18 19 1a 1b 1c 1d 1e                                    
    10af1 SG cd- bc- a SLICE
    10b9f SG DE- DE- D PICTURE B fields 1 time_ref 2 offset 5/5
+         USER_DATA 10 bytes
+         15 16 17 18 19 1a 1b 1c 1d 1e                                    
    12c64 SG de- de- d SLICE_1ST
    12d12 SG deF deF d PICTURE_2ND B fields 1 TFF time_ref 2 offset 6/6
+         USER_DATA 10 bytes
+         15 16 17 18 19 1a 1b 1c 1d 1e                                    
    149eb SG def def d SLICE
    14a98 SG EG- cd- b PICTURE I fields 1 time_ref 6 offset 15/15
+         USER_DATA 10 bytes
+         15 16 17 18 19 1a 1b 1c 1d 1e                                    
    18f33 SG eg- cd- b SLICE_1ST
    18fe1 SG egH cd- b PICTURE_2ND P fields 1 TFF time_ref 6 offset 16/-16
+         USER_DATA 10 bytes
+         15 16 17 18 19 1a 1b 1c 1d 1e                                    
    1afda SG egh cd- b SLICE
    1b08c SG FI- FI- F PICTURE B fields 2 TFF time_ref 4 offset 10/10 11/11
+         USER_DATA 10 bytes
+         15 16 17 18 19 1a 1b 1c 1d 1e                                    
    1dfe0 SG fi- fi- f SLICE
    1e097 SG GJ- GJ- G PICTURE B PROG fields 3 TFF time_ref 5 offset 12/12 13/13 14/14
+         USER_DATA 10 bytes
+         15 16 17 18 19 1a 1b 1c 1d 1e                                    
    21f88 SG gj- gj- g SLICE
    21f88 SG --- egh c END
