@@ -55,7 +55,7 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
 	motion_comp_init ();
     }
 
-    mpeg2dec->chunk_buffer = memalign(16, 224 * 1024 + 4);
+    mpeg2dec->chunk_buffer = memalign (16, 224 * 1024 + 4);
     mpeg2dec->picture = memalign (16, sizeof (picture_t));
 
     mpeg2dec->shift = 0;
