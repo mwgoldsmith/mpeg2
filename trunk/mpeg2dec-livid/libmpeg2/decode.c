@@ -84,9 +84,9 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 	if (((picture->picture_structure == FRAME_PICTURE) ||
 	     (picture->second_field)) &&
 	    (!(mpeg2dec->drop_frame))) {
-	    mpeg2dec->output->draw_frame
-		((picture->picture_coding_type == B_TYPE) ?
-		 picture->current_frame : picture->forward_reference_frame);
+	    vo_draw ((picture->picture_coding_type == B_TYPE) ?
+		     picture->current_frame :
+		     picture->forward_reference_frame);
 #ifdef ARCH_X86
 	    if (config.flags & MM_ACCEL_X86_MMX)
 		emms ();
@@ -217,8 +217,7 @@ void mpeg2_close (mpeg2dec_t * mpeg2dec)
     mpeg2_decode_data (mpeg2dec, finalizer, finalizer+4);
 
     if (mpeg2dec->output) {
-	mpeg2dec->output->draw_frame
-	    (mpeg2dec->picture->backward_reference_frame);
+	vo_draw (mpeg2dec->picture->backward_reference_frame);
 	vo_close (mpeg2dec->output);
     }
 }
