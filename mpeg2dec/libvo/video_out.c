@@ -56,8 +56,7 @@ void vo_accel (uint32_t accel)
     vo_mm_accel = accel;
 }
 
-static vo_driver_t video_out_drivers[] =
-{
+static vo_driver_t video_out_drivers[] = {
 #ifdef LIBVO_XV
     {"xv", vo_xv_open},
 #endif

@@ -26,11 +26,11 @@
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
-#ifdef HAVE_GETOPT_H 
-#include <getopt.h> 
-#else 
-#include <unistd.h> 
-#endif 
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#else
+#include <unistd.h>
+#endif
 
 #define BUFFER_SIZE 262144
 static uint8_t buffer[BUFFER_SIZE];
@@ -47,9 +47,8 @@ static void handle_args (int argc, char * argv[])
 {
     int c;
 
-    if ((c = getopt (argc,argv,"")) != -1) {
+    if ((c = getopt (argc, argv, "")) != -1)
 	print_usage (argv);
-    }
 
     if (optind < argc) {
 	in_file = fopen (argv[optind], "rb");
