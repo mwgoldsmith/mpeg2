@@ -94,9 +94,9 @@ struct mpeg2_decoder_s {
     int16_t DCTblock[64] ATTR_ALIGN(64);
 
     uint8_t * picture_dest[3];
-    void (* convert) (void * fbuf_id, uint8_t * const * src,
+    void (* convert) (void * convert_id, uint8_t * const * src,
 		      unsigned int v_offset);
-    void * fbuf_id;
+    void * convert_id;
 
     int dmv_offset;
     unsigned int v_offset;
@@ -196,13 +196,12 @@ struct mpeg2dec_s {
 
     uint8_t * yuv_buf[3][3];
     int yuv_index;
-    void * convert_id;
-    unsigned int convert_size[3];
+    mpeg2_convert_t * convert;
+    void * convert_arg;
+    unsigned int convert_id_size;
     void (* convert_start) (void * id, const mpeg2_fbuf_t * fbuf,
 			    const mpeg2_picture_t * picture,
 			    const mpeg2_gop_t * gop);
-    void (* convert_copy) (void * id, uint8_t * const * src,
-			   unsigned int v_offset);
 
     uint8_t * buf_start;
     uint8_t * buf_end;
@@ -243,7 +242,7 @@ int mpeg2_header_extension (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec);
 void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec);
 void mpeg2_header_gop_finalize (mpeg2dec_t * mpeg2dec);
-void mpeg2_header_picture_finalize (mpeg2dec_t * mpeg2dec);
+void mpeg2_header_picture_finalize (mpeg2dec_t * mpeg2dec, uint32_t accels);
 mpeg2_state_t mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec);
 mpeg2_state_t mpeg2_header_end (mpeg2dec_t * mpeg2dec);
 void mpeg2_set_fbuf (mpeg2dec_t * mpeg2dec, int b_type);
