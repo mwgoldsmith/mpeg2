@@ -297,6 +297,7 @@ int main (int argc,char *argv[])
     else
 	es_loop ();
 
+    mpeg2_close (video_out);
     print_fps (1);
     return 0;
 }
