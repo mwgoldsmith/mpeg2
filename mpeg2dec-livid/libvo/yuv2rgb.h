@@ -31,27 +31,13 @@
 #define MODE_RGB  0x1
 #define MODE_BGR  0x2
 
-extern uint32_t matrix_coefficients;
-
-extern const int32_t Inverse_Table_6_9[8][4];
-
-typedef void (*yuv2rgb_fun) 
-(
-				uint8_t* image,
-	const uint8_t* py,
-	const uint8_t* pu,
-	const uint8_t* pv,
-	const uint32_t h_size,
-	const uint32_t v_size,
-	const uint32_t rgb_stride,
-	const uint32_t y_stride,
-	const uint32_t uv_stride
-);
+typedef void (* yuv2rgb_fun) (uint8_t * image, uint8_t * py,
+			      uint8_t * pu, uint8_t * pv,
+			      int h_size, int v_size,
+			      int rgb_stride, int y_stride, int uv_stride);
 
 extern yuv2rgb_fun yuv2rgb;
 
-void yuv2rgb_init(uint32_t bpp, uint32_t mode);
-yuv2rgb_fun yuv2rgb_init_mmx(uint32_t bpp, uint32_t mode);
-yuv2rgb_fun yuv2rgb_init_mlib(uint32_t bpp, uint32_t mode);
-
-
+void yuv2rgb_init (int bpp, int mode);
+yuv2rgb_fun yuv2rgb_init_mmx (int bpp, int mode);
+yuv2rgb_fun yuv2rgb_init_mlib (int bpp, int mode);

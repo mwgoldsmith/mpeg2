@@ -47,16 +47,16 @@ const int32_t Inverse_Table_6_9[8][4] = {
     {117579, 136230, 16907, 35559}  /* SMPTE 240M (1987) */
 };
 
-static void yuv2rgb_c_init (uint32_t bpp, uint32_t mode);
+static void yuv2rgb_c_init (int bpp, int mode);
 
 yuv2rgb_fun yuv2rgb;
 
-static void (* yuv2rgb_c_internal) (const uint8_t *, const uint8_t *,
-				    const uint8_t *, const uint8_t *,
+static void (* yuv2rgb_c_internal) (uint8_t *, uint8_t *,
+				    uint8_t *, uint8_t *,
 				    void *, void *, int);
 
-static void yuv2rgb_c (void * dst, const uint8_t * py, 
-		       const uint8_t * pu, const uint8_t * pv, 
+static void yuv2rgb_c (void * dst, uint8_t * py, 
+		       uint8_t * pu, uint8_t * pv, 
 		       int h_size, int v_size, 
 		       int rgb_stride, int y_stride, int uv_stride) 
 {
@@ -73,24 +73,24 @@ static void yuv2rgb_c (void * dst, const uint8_t * py,
     }
 }
 
-void yuv2rgb_init (uint32_t bpp, uint32_t mode) 
+void yuv2rgb_init (int bpp, int mode) 
 {
     yuv2rgb = NULL;
 #ifdef __i386__
-    if(yuv2rgb == NULL /*&& (config.flags & VO_MMX_ENABLE)*/) {
-	yuv2rgb = yuv2rgb_init_mmx(bpp,mode);
-	if(yuv2rgb != NULL)
+    if (yuv2rgb == NULL /*&& (config.flags & VO_MMX_ENABLE)*/) {
+	yuv2rgb = yuv2rgb_init_mmx (bpp, mode);
+	if (yuv2rgb != NULL)
 	    fprintf (stderr, "Using MMX for colorspace transform\n");
     }
 #endif
 #ifdef HAVE_MLIB
-    if(yuv2rgb == NULL /*&& (config.flags & VO_MLIB_ENABLE)*/) {
-	yuv2rgb = yuv2rgb_init_mlib(bpp,mode);
-	if(yuv2rgb != NULL)
+    if (yuv2rgb == NULL /*&& (config.flags & VO_MLIB_ENABLE)*/) {
+	yuv2rgb = yuv2rgb_init_mlib (bpp, mode);
+	if (yuv2rgb != NULL)
 	    fprintf (stderr, "Using mlib for colorspace transform\n");
     }
 #endif
-    if(yuv2rgb == NULL) {
+    if (yuv2rgb == NULL) {
 	fprintf (stderr, "No accelerated colorspace conversion found\n");
 	yuv2rgb_c_init (bpp, mode);
 	yuv2rgb = (yuv2rgb_fun)yuv2rgb_c;
@@ -145,8 +145,8 @@ void * table_bU[256];
 	Y = py_2[2*i+1];						\
 	dst_2[6*i+3] = b[Y]; dst_2[6*i+4] = g[Y]; dst_2[6*i+5] = r[Y];
 
-static void yuv2rgb_c_32 (const uint8_t * py_1, const uint8_t * py_2,
-			  const uint8_t * pu, const uint8_t * pv,
+static void yuv2rgb_c_32 (uint8_t * py_1, uint8_t * py_2,
+			  uint8_t * pu, uint8_t * pv,
 			  void * _dst_1, void * _dst_2, int h_size)
 {
     int U, V, Y;
@@ -184,8 +184,8 @@ static void yuv2rgb_c_32 (const uint8_t * py_1, const uint8_t * py_2,
 }
 
 // This is very near from the yuv2rgb_c_32 code
-static void yuv2rgb_c_24_rgb (const uint8_t * py_1, const uint8_t * py_2,
-			      const uint8_t * pu, const uint8_t * pv,
+static void yuv2rgb_c_24_rgb (uint8_t * py_1, uint8_t * py_2,
+			      uint8_t * pu, uint8_t * pv,
 			      void * _dst_1, void * _dst_2, int h_size)
 {
     int U, V, Y;
@@ -223,8 +223,8 @@ static void yuv2rgb_c_24_rgb (const uint8_t * py_1, const uint8_t * py_2,
 }
 
 // only trivial mods from yuv2rgb_c_24_rgb
-static void yuv2rgb_c_24_bgr (const uint8_t * py_1, const uint8_t * py_2,
-			      const uint8_t * pu, const uint8_t * pv,
+static void yuv2rgb_c_24_bgr (uint8_t * py_1, uint8_t * py_2,
+			      uint8_t * pu, uint8_t * pv,
 			      void * _dst_1, void * _dst_2, int h_size)
 {
     int U, V, Y;
@@ -263,8 +263,8 @@ static void yuv2rgb_c_24_bgr (const uint8_t * py_1, const uint8_t * py_2,
 
 // This is exactly the same code as yuv2rgb_c_32 except for the types of
 // r, g, b, dst_1, dst_2
-static void yuv2rgb_c_16 (const uint8_t * py_1, const uint8_t * py_2,
-			  const uint8_t * pu, const uint8_t * pv,
+static void yuv2rgb_c_16 (uint8_t * py_1, uint8_t * py_2,
+			  uint8_t * pu, uint8_t * pv,
 			  void * _dst_1, void * _dst_2, int h_size)
 {
     int U, V, Y;
@@ -309,7 +309,7 @@ static int div_round (int dividend, int divisor)
 	return -((-dividend + (divisor>>1)) / divisor);
 }
 
-static void yuv2rgb_c_init (uint32_t bpp, uint32_t mode) 
+static void yuv2rgb_c_init (int bpp, int mode)
 {  
     int i;
     uint8_t table_Y[1024];
