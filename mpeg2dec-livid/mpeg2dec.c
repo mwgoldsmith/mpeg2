@@ -30,7 +30,7 @@
 #include "config.h"
 #include "mpeg2.h"
 
-uint_32 buf[2048/4];
+uint_8 buf[2048];
 FILE *in_file;
 static struct timeval tv_beg;
 static uint_32 frame_counter = 0;
@@ -41,25 +41,24 @@ static void sighandler(int sig)
 	float elapsed;
 	
 	gettimeofday(&tv_end, NULL);
-	
-	elapsed = (float)(1000000 * (tv_end.tv_sec - tv_beg.tv_sec)
-													+ (tv_end.tv_usec - tv_beg.tv_usec))/1000000.0;
-	
+
+	elapsed = (tv_end.tv_sec - tv_beg.tv_sec) + 
+			(tv_end.tv_usec - tv_beg.tv_usec) / 1000000.0;        
 	printf("\n %u frames in %5.2f seconds ( %5.3f fps )\n", 
-				 frame_counter, elapsed, (float)frame_counter / elapsed );
+			frame_counter, elapsed, frame_counter / elapsed);
 
 	signal(sig, SIG_DFL);
 	raise(sig);
 }
  
-void fill_buffer(uint_32 **start,uint_32 **end)
+void fill_buffer(uint_8 **start,uint_8 **end)
 {
 	uint_32 bytes_read;
 
 	bytes_read = fread(buf,1,2048,in_file);
 
 	*start = buf;
-	*end   = buf + bytes_read/4;
+	*end   = buf + bytes_read;
 
 	if(bytes_read != 2048)
 		exit(1);
@@ -110,7 +109,6 @@ int main(int argc,char *argv[])
 		}
 	}
 
-	sighandler(0);
   return 0;
 }
 
