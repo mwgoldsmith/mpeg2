@@ -998,8 +998,14 @@ static inline void slice_non_intra_DCT (decoder_t * const decoder,
 #define MOTION(table,ref,motion_x,motion_y,size,y)			      \
     pos_x = 2 * decoder->offset + motion_x;				      \
     pos_y = 2 * decoder->v_offset + motion_y + 2 * y;			      \
-    if ((pos_x > decoder->limit_x) || (pos_y > decoder->limit_y_ ## size))    \
-	return;								      \
+    if (pos_x > decoder->limit_x) {					      \
+	pos_x = ((int)pos_x < 0) ? 0 : decoder->limit_x;		      \
+	motion_x = pos_x - 2 * decoder->offset;				      \
+    }									      \
+    if (pos_y > decoder->limit_y_ ## size) {				      \
+	pos_y = ((int)pos_y < 0) ? 0 : decoder->limit_y_ ## size;	      \
+	motion_y = pos_y - 2 * decoder->v_offset - 2 * y;		      \
+    }									      \
     xy_half = ((pos_y & 1) << 1) | (pos_x & 1);				      \
     table[xy_half] (decoder->dest[0] + y * decoder->stride + decoder->offset, \
 		    ref[0] + (pos_x >> 1) + (pos_y >> 1) * decoder->stride,   \
@@ -1019,8 +1025,14 @@ static inline void slice_non_intra_DCT (decoder_t * const decoder,
 #define MOTION_FIELD(table,ref,motion_x,motion_y,dest_field,op,src_field)     \
     pos_x = 2 * decoder->offset + motion_x;				      \
     pos_y = decoder->v_offset + motion_y;				      \
-    if ((pos_x > decoder->limit_x) || (pos_y > decoder->limit_y))	      \
-	return;								      \
+    if (pos_x > decoder->limit_x) {					      \
+	pos_x = ((int)pos_x < 0) ? 0 : decoder->limit_x;		      \
+	motion_x = pos_x - 2 * decoder->offset;				      \
+    }									      \
+    if (pos_y > decoder->limit_y) {					      \
+	pos_y = ((int)pos_y < 0) ? 0 : decoder->limit_y;		      \
+	motion_y = pos_y - decoder->v_offset;				      \
+    }									      \
     xy_half = ((pos_y & 1) << 1) | (pos_x & 1);				      \
     table[xy_half] (decoder->dest[0] + dest_field * decoder->stride +	      \
 		    decoder->offset,					      \
@@ -1179,9 +1191,18 @@ static void motion_fr_dmv (decoder_t * const decoder, motion_t * const motion,
     other_y = ((motion_y * m + (motion_y > 0)) >> 1) + dmv_y + 1;
     MOTION_FIELD (mpeg2_mc.put, motion->ref[0], other_x, other_y, 1, & ~1, 0);
 
-    xy_half = ((motion_y & 1) << 1) | (motion_x & 1);
-    offset = (decoder->offset + (motion_x >> 1) +
-	      (decoder->v_offset + (motion_y & ~1)) * decoder->stride);
+    pos_x = 2 * decoder->offset + motion_x;
+    pos_y = decoder->v_offset + motion_y;
+    if (pos_x > decoder->limit_x) {
+	pos_x = ((int)pos_x < 0) ? 0 : decoder->limit_x;
+	motion_x = pos_x - 2 * decoder->offset;
+    }
+    if (pos_y > decoder->limit_y) {
+	pos_y = ((int)pos_y < 0) ? 0 : decoder->limit_y;
+	motion_y = pos_y - decoder->v_offset;
+    }
+    xy_half = ((pos_y & 1) << 1) | (pos_x & 1);
+    offset = (pos_x >> 1) + (pos_y & ~1) * decoder->stride;
     mpeg2_mc.avg[xy_half]
 	(decoder->dest[0] + decoder->offset,
 	 motion->ref[0][0] + offset, 2 * decoder->stride, 8);
