@@ -37,14 +37,14 @@ typedef struct pgm_instance_s {
     int width;
     int height;
     char header[1024];
-    void (* writer) (struct pgm_instance_s *, void *, size_t);
+    void (* writer) (struct pgm_instance_s *, uint8_t *, size_t);
     FILE * file;
     uint32_t md5_hash[4];
     uint32_t md5_block[16];
     uint32_t md5_bytes;
 } pgm_instance_t;
 
-static void file_writer (pgm_instance_t * instance, void * ptr, size_t size)
+static void file_writer (pgm_instance_t * instance, uint8_t * ptr, size_t size)
 {
     fwrite (ptr, size, 1, instance->file);
 }
@@ -95,7 +95,7 @@ static int pgm_setup (vo_instance_t * _instance, int width, int height,
 static vo_instance_t * internal_open (void draw (vo_instance_t *,
 						 uint8_t * const *, void *),
 				      void writer (pgm_instance_t *,
-						   void *, size_t))
+						   uint8_t *, size_t))
 {
     pgm_instance_t * instance;
 
@@ -240,30 +240,31 @@ static inline void little_endian (uint32_t * buf, unsigned int words)
 #endif
 }
 
-static void md5_writer (pgm_instance_t * instance, void * ptr, size_t size)
+static void md5_writer (pgm_instance_t * instance, uint8_t * ptr, size_t size)
 {
-    const int avail = 64 - (instance->md5_bytes & 0x3f);
+    const unsigned int offset = instance->md5_bytes & 0x3f;
 
     instance->md5_bytes += size;
 
-    if (avail > size) {
-	memcpy ((char *)instance->md5_block + 64 - avail, ptr, size);
+    if (offset + size < 64) {
+	memcpy ((char *)instance->md5_block + offset, ptr, size);
 	return;
+    } else if (offset) {
+	const int avail = 64 - offset;
+	memcpy ((char *)instance->md5_block + offset, ptr, avail);
+	little_endian (instance->md5_block, 16);
+	md5_transform (instance->md5_hash, instance->md5_block);
+	ptr += avail;
+	size -= avail;
     }
 
-    memcpy ((char *)instance->md5_block + 64 - avail, ptr, avail);
-    little_endian (instance->md5_block, 16);
-    md5_transform (instance->md5_hash, instance->md5_block);
-    ptr += avail;
-    size -= avail;
-
     while (size >= 64) {
-#ifdef WORDS_BIGENDIAN
+#ifndef ARCH_X86
 	memcpy (instance->md5_block, ptr, 64);
 	little_endian (instance->md5_block, 16);
 	md5_transform (instance->md5_hash, instance->md5_block);
 #else
-	md5_transform (instance->md5_hash, ptr);
+	md5_transform (instance->md5_hash, (uint32_t *)ptr);
 #endif
 	ptr += 64;
 	size -= 64;
