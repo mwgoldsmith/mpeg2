@@ -30,12 +30,12 @@
 #include "mpeg2_internal.h"
 #include "attributes.h"
 
-#define W1 2841 /* 2048*sqrt (2)*cos (1*pi/16) */
-#define W2 2676 /* 2048*sqrt (2)*cos (2*pi/16) */
-#define W3 2408 /* 2048*sqrt (2)*cos (3*pi/16) */
-#define W5 1609 /* 2048*sqrt (2)*cos (5*pi/16) */
-#define W6 1108 /* 2048*sqrt (2)*cos (6*pi/16) */
-#define W7 565  /* 2048*sqrt (2)*cos (7*pi/16) */
+#define W1 2841 /* 2048 * sqrt (2) * cos (1 * pi / 16) */
+#define W2 2676 /* 2048 * sqrt (2) * cos (2 * pi / 16) */
+#define W3 2408 /* 2048 * sqrt (2) * cos (3 * pi / 16) */
+#define W5 1609 /* 2048 * sqrt (2) * cos (5 * pi / 16) */
+#define W6 1108 /* 2048 * sqrt (2) * cos (6 * pi / 16) */
+#define W7 565  /* 2048 * sqrt (2) * cos (7 * pi / 16) */
 
 /* idct main entry point  */
 void (* mpeg2_idct_copy) (int16_t * block, uint8_t * dest, int stride);
@@ -48,8 +48,8 @@ static uint8_t clip_lut[1024];
 #if 0
 #define BUTTERFLY(t0,t1,W0,W1,d0,d1)	\
 do {					\
-    t0 = W0*d0 + W1*d1;			\
-    t1 = W0*d1 - W1*d0;			\
+    t0 = W0 * d0 + W1 * d1;		\
+    t1 = W0 * d1 - W1 * d0;		\
 } while (0)
 #else
 #define BUTTERFLY(t0,t1,W0,W1,d0,d1)	\
