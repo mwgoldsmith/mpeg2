@@ -28,10 +28,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 #include "mmx.h"
-#include "libmpeg2/mpeg2.h"
-#include "libmpeg2/mpeg2_internal.h"
 #include "yuv2rgb.h"
 
 /* hope these constant values are cache line aligned */

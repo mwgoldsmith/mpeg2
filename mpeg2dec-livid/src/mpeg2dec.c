@@ -19,17 +19,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdlib.h>
+#include "config.h"
+
 #include <stdio.h>
-#include <signal.h>
-#include <unistd.h>
 #include <sys/time.h>
+#include <unistd.h>
+#include <signal.h>
 #include <string.h>
 #include <errno.h>
+#include <inttypes.h>
 
-#include "config.h"
+#include "video_out.h"
 #include "mpeg2.h"
-//#include "video_out.h"
 
 #define BUFFER_SIZE 262144
 static uint8_t buffer[BUFFER_SIZE];

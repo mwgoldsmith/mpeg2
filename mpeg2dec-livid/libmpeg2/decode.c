@@ -19,26 +19,20 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "config.h"
+
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
+#include <inttypes.h>
 
 #ifdef __OMS__
 #include <oms/oms.h>
 #include <oms/plugin/output_video.h>
 #endif
  
-#include "config.h"
+#include "video_out.h"
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
-
-#include "motion_comp.h"
-#include "idct.h"
-#include "header.h"
-#include "slice.h"
-#include "stats.h"
+#include "oms_accel.h"
 
 #ifdef ARCH_X86
 #include "mmx.h"
@@ -64,9 +58,9 @@ void mpeg2_init (void)
 {
     //FIXME setup config properly
 #ifdef __OMS__
-    config.flags = MPEG2_MMX_ENABLE | MPEG2_MLIB_ENABLE;
+    config.flags = OMS_ACCEL_X86_MMX | OMS_ACCEL_MLIB;
 #else
-    config.flags = oms_cpu_accel () | MPEG2_MLIB_ENABLE;
+    config.flags = oms_cpu_accel () | OMS_ACCEL_MLIB;
 #endif
     //config.flags = 0;
 
@@ -248,7 +242,7 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 		output->flip_page ();
 
 #ifdef ARCH_X86
-	    if (config.flags & MPEG2_MMX_ENABLE)
+	    if (config.flags & OMS_ACCEL_X86_MMX)
 		emms ();
 #endif
 	}

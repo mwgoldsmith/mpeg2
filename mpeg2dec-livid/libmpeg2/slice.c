@@ -19,17 +19,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "config.h"
-#include "mpeg2.h"
-#include "mpeg2_internal.h"
 
-#include "motion_comp.h"
-#include "vlc.h"
-#include "idct.h"
+#include <inttypes.h>
+
+#include "mpeg2_internal.h"
 
 extern mc_functions_t mc_functions;
 extern void (* idct_block_copy) (int16_t * block, uint8_t * dest, int stride);
@@ -37,11 +31,13 @@ extern void (* idct_block_add) (int16_t * block, uint8_t * dest, int stride);
 
 //XXX put these on the stack in slice_process?
 static slice_t slice;
-static int16_t DCTblock[64] ALIGN_16_BYTE;
+static int16_t DCTblock[64] ATTR_ALIGN(16);
 
 static uint32_t bitstream_buf;
 static int bitstream_bits;
 static uint8_t * bitstream_ptr;
+
+#include "vlc.h"
 
 static int non_linear_quantizer_scale [] = {
      0,  1,  2,  3,  4,  5,   6,   7,

@@ -53,19 +53,9 @@
 
 //use gcc attribs to align critical data structures
 #ifdef ATTRIBUTE_ALIGNED_MAX
-#if ATTRIBUTE_ALIGNED_MAX > 16
-#define ALIGN_16_BYTE __attribute__ ((aligned (16)))
+#define ATTR_ALIGN(align) __attribute__ ((__aligned__ ((ATTRIBUTE_ALIGNED_MAX < align) ? ATTRIBUTE_ALIGNED_MAX : align)))
 #else
-#define ALIGN_16_BYTE __attribute__ ((aligned (ATTRIBUTE_ALIGNED_MAX)))
-#endif
-#if ATTRIBUTE_ALIGNED_MAX > 8
-#define ALIGN_8_BYTE __attribute__ ((aligned (8)))
-#else
-#define ALIGN_8_BYTE __attribute__ ((aligned (ATTRIBUTE_ALIGNED_MAX)))
-#endif
-#else
-#define ALIGN_16_BYTE
-#define ALIGN_8_BYTE
+#define ATTR_ALIGN(align)
 #endif
 
 //The picture struct contains all of the top level state
@@ -151,17 +141,64 @@ typedef struct slice_s {
     uint16_t quantizer_scale;	// remove
 } slice_t;
 
+typedef struct mpeg2_config_s {
+    //Bit flags that enable various things
+    uint32_t flags;
+} mpeg2_config_t;
+
 //The only global variable,
 //the config struct
 extern mpeg2_config_t config;
 
 
 
+// slice.c
+void header_state_init (picture_t * picture);
+int header_process_picture_header (picture_t * picture, uint8_t * buffer);
+int header_process_sequence_header (picture_t * picture, uint8_t * buffer);
+int header_process_extension (picture_t * picture, uint8_t * buffer);
 
-//FIXME remove
-int Get_Luma_DC_dct_diff (void);
-int Get_Chroma_DC_dct_diff (void);
-int Get_macroblock_type (int picture_coding_type);
-int Get_motion_code (void);
-int Get_coded_block_pattern (void);
-int Get_macroblock_address_increment (void);
+// idct.c
+void idct_init (void);
+
+// idct_mlib.c
+void idct_block_copy_mlib (int16_t * block, uint8_t * dest, int stride);
+void idct_block_add_mlib (int16_t * block, uint8_t * dest, int stride);
+
+// idct_mmx.c
+void idct_block_copy_sse (int16_t *block, uint8_t * dest, int stride);
+void idct_block_add_sse (int16_t *block, uint8_t * dest, int stride);
+void idct_block_copy_mmx (int16_t *block, uint8_t * dest, int stride);
+void idct_block_add_mmx (int16_t *block, uint8_t * dest, int stride);
+void idct_mmx_init (void);
+
+// motion_comp.c
+void motion_comp_init (void);
+
+typedef struct mc_functions_s
+{
+    void (* put [8]) (uint8_t *dst, uint8_t *, int32_t, int32_t);
+    void (* avg [8]) (uint8_t *dst, uint8_t *, int32_t, int32_t);
+} mc_functions_t;
+
+#define MOTION_COMP_EXTERN(x) mc_functions_t mc_functions_##x =\
+{\
+    {motion_comp_put_16x16_##x, motion_comp_put_x_16x16_##x,\
+     motion_comp_put_y_16x16_##x, motion_comp_put_xy_16x16_##x,\
+     motion_comp_put_8x8_##x, motion_comp_put_x_8x8_##x,\
+     motion_comp_put_y_8x8_##x, motion_comp_put_xy_8x8_##x},\
+    {motion_comp_avg_16x16_##x, motion_comp_avg_x_16x16_##x,\
+     motion_comp_avg_y_16x16_##x, motion_comp_avg_xy_16x16_##x,\
+     motion_comp_avg_8x8_##x, motion_comp_avg_x_8x8_##x,\
+     motion_comp_avg_y_8x8_##x, motion_comp_avg_xy_8x8_##x}\
+};
+
+extern mc_functions_t mc_functions_c;
+extern mc_functions_t mc_functions_mmx;
+extern mc_functions_t mc_functions_mlib;
+
+// slice.c
+int slice_process (picture_t *picture, uint8_t code, uint8_t * buffer);
+
+// stats.c
+void stats_header (uint8_t code, uint8_t * buffer);

@@ -23,15 +23,13 @@
 
 #ifdef LIBMPEG2_MLIB
 
-#include <stdio.h>
-#include "mpeg2.h"
-#include "mpeg2_internal.h"
-
-#include "idct.h"
+#include <inttypes.h>
 #include <mlib_types.h>
 #include <mlib_status.h>
 #include <mlib_sys.h>
 #include <mlib_video.h>
+
+#include "mpeg2_internal.h"
 
 void idct_block_copy_mlib (int16_t * block, uint8_t * dest, int stride)
 {

@@ -37,15 +37,13 @@
 /* this code assumes >> to be a two's-complement arithmetic */
 /* right shift: (-2)>>1 == -1 , (-3)>>1 == -2 */
 
-#include <stdio.h>
 #include "config.h"
-#include "mpeg2.h"
+
+#include <stdio.h>
+#include <inttypes.h>
+
 #include "mpeg2_internal.h"
-
-#include "idct.h"
-#include "idct_mmx.h"
-#include "idct_mlib.h"
-
+#include "oms_accel.h"
 
 #define W1 2841 /* 2048*sqrt (2)*cos (1*pi/16) */
 #define W2 2676 /* 2048*sqrt (2)*cos (2*pi/16) */

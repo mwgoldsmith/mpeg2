@@ -1,4 +1,4 @@
-#define DISP
+//#define DISP
 
 /*
  * video_out_x11.c
@@ -37,6 +37,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <errno.h>
+#include <inttypes.h>
 
 #include "video_out.h"
 #include "video_out_internal.h"
