@@ -1,7 +1,8 @@
 * before 0.2.0 :
+	* libmpeg2 reentrancy
+	* check if mlib is working - DCTblock alignment problem
 	* generic slice handling, plus sdl implementation
 	* clean up frame_t declaration and usage (libvo/libmpeg2) + video_out.h
-	* libmpeg2 reentrancy
 	* clean up yuv2rgb for interlaced pictures (handling of uv)
 
 * things we dont implement yet
