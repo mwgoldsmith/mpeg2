@@ -36,7 +36,6 @@
 #include <string.h>
 
 #include <oms/oms.h>
-#include <oms/log.h>
 #include <oms/plugin/output_video.h>
 
 #include <SDL/SDL.h>
@@ -133,7 +132,7 @@ static int _sdl_setup (plugin_output_video_attr_t *attr)
 		sdlflags |= SDL_FULLSCREEN;
 
 	if ((rc = SDL_Init (SDL_INIT_VIDEO))) {
-		LOG (LOG_ERROR, "SDL_Init() failed! rc == (%d)", rc);
+		LOG (LOG_ERROR, "SDL_Init failed! rc == (%d)", rc);
 		return -1;
 	}
 
@@ -148,7 +147,7 @@ static int _sdl_setup (plugin_output_video_attr_t *attr)
 			sdlflags &= ~SDL_HWSURFACE;
 
 			if (!(modes = SDL_ListModes(vidInfo->vfmt, sdlflags))) {   // give me ANYTHING.
-				LOG (LOG_ERROR, "SDL_ListModes() failed");
+				LOG (LOG_ERROR, "SDL_ListModes failed");
 				return -1;
 			}
 		}

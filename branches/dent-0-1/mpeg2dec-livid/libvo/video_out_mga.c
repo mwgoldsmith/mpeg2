@@ -232,10 +232,16 @@ static int _mga_write_slice_g200_mmx (uint8_t *src[], uint32_t slice_num)
 
 	for (h=0; h < 16; h++) {
 		for (w=0; w < _mga_priv.mga_vid_config.src_width/8; w++) {
+#if 1
+			mmx_m2m (movq, *y, *dest);
+//			movq_m2r (*y, mm0);
+//			movq_r2m (mm0, *dest);
+#else
 			asm volatile (
 				"movq       (%1),%%mm0\n\t"
 				"movq       %%mm0,(%0)\n\t"
 				: : "r" (dest), "r" (y));
+#endif
 			y += 8;
 			dest += 8;
 		}
@@ -246,6 +252,17 @@ static int _mga_write_slice_g200_mmx (uint8_t *src[], uint32_t slice_num)
         
 	for (h=0; h < 8; h++) {
 		for(w=0; w < _mga_priv.mga_vid_config.src_width/16; w++) {
+#if 1
+			movq_m2r (*cb, mm1);
+			movq_r2r (mm1, mm2);
+			movq_m2r (*cr, mm3);
+			movq_r2r (mm3, mm4);
+
+			punpcklbw_r2r (mm3, mm1);
+			movq_r2m (mm1,*dest);
+			punpckhbw_r2r (mm4,mm2);
+			movq_r2m (mm2,*(dest+8));
+#else
 			asm volatile (
 			"movq 		   (%1),%%mm0\n\t"
 			"movq 		  %%mm0,%%mm1\n\t"
@@ -254,7 +271,7 @@ static int _mga_write_slice_g200_mmx (uint8_t *src[], uint32_t slice_num)
 			"movq 		  %%mm0,(%0)\n\t"
 			"movq 		  %%mm1,8(%0)\n\t"
 			: "+r" (dest) : "r" (cb),"r" (cr));
-
+#endif
 			dest += 16;
 			cb += 8;
 			cr += 8;
