@@ -43,8 +43,7 @@
 #include "convert.h"
 #include "gettimeofday.h"
 
-#define BUFFER_SIZE 4096
-static uint8_t buffer[BUFFER_SIZE];
+static int buffer_size = 4096;
 static FILE * in_file;
 static int demux_track = 0;
 static int demux_pid = 0;
@@ -138,7 +137,7 @@ static void print_usage (char ** argv)
 
     fprintf (stderr, "usage: "
 	     "%s [-h] [-o <mode>] [-s [<track>]] [-t <pid>] [-p] [-c] \\\n"
-	     "\t\t[-v] <file>\n"
+	     "\t\t[-v] [-b <bufsize>] <file>\n"
 	     "\t-h\tdisplay help and available video output modes\n"
 	     "\t-s\tuse program stream demultiplexer, "
 	     "track 0-15 or 0xe0-0xef\n"
@@ -146,6 +145,7 @@ static void print_usage (char ** argv)
 	     "\t-p\tuse pva demultiplexer\n"
 	     "\t-c\tuse c implementation, disables all accelerations\n"
 	     "\t-v\tverbose information about the MPEG stream\n"
+	     "\t-b\tset input buffer size, default 4096 bytes\n"
 	     "\t-o\tvideo output mode\n", argv[0]);
 
     drivers = vo_drivers ();
@@ -209,6 +209,14 @@ static void handle_args (int argc, char ** argv)
 		print_usage (argv);
 	    break;
 
+	case 'b':
+	    buffer_size = strtol (optarg, &s, 0);
+	    if (buffer_size < 1 || *s) {
+		fprintf (stderr, "Invalid buffer size: %s\n", optarg);
+		print_usage (argv);
+	    }
+	    break;
+
 	default:
 	    print_usage (argv);
 	}
@@ -238,11 +246,14 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
     total_offset += end - current;
 
     info = mpeg2_info (mpeg2dec);
-    while ((state = mpeg2_parse (mpeg2dec)) != STATE_BUFFER) {
+    while (1) {
+	state = mpeg2_parse (mpeg2dec);
 	if (verbose)
 	    dump_state (stderr, state, info,
 			total_offset - mpeg2_getpos (mpeg2dec), verbose);
 	switch (state) {
+	case STATE_BUFFER:
+	    return;
 	case STATE_SEQUENCE:
 	    /* might set nb fbuf, convert format, stride */
 	    /* might set fbufs */
@@ -536,13 +547,16 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 
 static void ps_loop (void)
 {
+    uint8_t * buffer = malloc (buffer_size);
     uint8_t * end;
 
+    if (buffer == NULL)
+	exit (1);
     do {
-	end = buffer + fread (buffer, 1, BUFFER_SIZE, in_file);
+	end = buffer + fread (buffer, 1, buffer_size, in_file);
 	if (demux (buffer, end, 0))
 	    break;	/* hit program_end_code */
-    } while (end == buffer + BUFFER_SIZE && !sigint);
+    } while (end == buffer + buffer_size && !sigint);
 }
 
 static int pva_demux (uint8_t * buf, uint8_t * end)
@@ -633,25 +647,31 @@ static int pva_demux (uint8_t * buf, uint8_t * end)
 
 static void pva_loop (void)
 {
+    uint8_t * buffer = malloc (buffer_size);
     uint8_t * end;
 
+    if (buffer == NULL)
+	exit (1);
     do {
-	end = buffer + fread (buffer, 1, BUFFER_SIZE, in_file);
+	end = buffer + fread (buffer, 1, buffer_size, in_file);
 	pva_demux (buffer, end);
-    } while (end == buffer + BUFFER_SIZE && !sigint);
+    } while (end == buffer + buffer_size && !sigint);
 }
 
 static void ts_loop (void)
 {
+    uint8_t * buffer = malloc (buffer_size);
     uint8_t * buf;
     uint8_t * nextbuf;
     uint8_t * data;
     uint8_t * end;
     int pid;
 
+    if (buffer == NULL || buffer_size < 188)
+	exit (1);
     buf = buffer;
     do {
-	end = buf + fread (buf, 1, buffer + BUFFER_SIZE - buf, in_file);
+	end = buf + fread (buf, 1, buffer + buffer_size - buf, in_file);
 	buf = buffer;
 	for (; (nextbuf = buf + 188) <= end; buf = nextbuf) {
 	    if (*buf != 0x47) {
@@ -672,7 +692,7 @@ static void ts_loop (void)
 		demux (data, nextbuf,
 		       (buf[1] & 0x40) ? DEMUX_PAYLOAD_START : 0);
 	}
-	if (end != buffer + BUFFER_SIZE)
+	if (end != buffer + buffer_size)
 	    break;
 	memcpy (buffer, buf, end - buf);
 	buf = buffer + (end - buf);
@@ -681,12 +701,15 @@ static void ts_loop (void)
 
 static void es_loop (void)
 {
+    uint8_t * buffer = malloc (buffer_size);
     uint8_t * end;
 
+    if (buffer == NULL)
+	exit (1);
     do {
-	end = buffer + fread (buffer, 1, BUFFER_SIZE, in_file);
+	end = buffer + fread (buffer, 1, buffer_size, in_file);
 	decode_mpeg2 (buffer, end);
-    } while (end == buffer + BUFFER_SIZE && !sigint);
+    } while (end == buffer + buffer_size && !sigint);
 }
 
 int main (int argc, char ** argv)
