@@ -162,10 +162,7 @@ static void handle_args (int argc, char * argv[])
 	}
     } else
 	in_file = stdin;
-    //
-    // Now we have the output plugin, we need to initialize it
-    // 
-    video_out->open (&video_out, "What Name?");
+
     mpeg2_init (&mpeg2dec, video_out, NULL);
 }
 
