@@ -381,6 +381,18 @@ static void convert_start (void * _id, uint8_t * dest[3], int flags)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
     id->rgb_ptr = dest[0];
+    switch (flags) {
+    case CONVERT_BOTTOM_FIELD:
+	id->rgb_ptr += id->rgb_stride_frame;
+	/* break thru */
+    case CONVERT_TOP_FIELD:
+	id->uv_stride = id->uv_stride_frame << 1;
+	id->rgb_stride = id->rgb_stride_frame << 1;
+	break;
+    default:
+	id->uv_stride = id->uv_stride_frame;
+	id->rgb_stride = id->rgb_stride_frame;
+    }
 }
 
 static void convert_internal (int order, int bpp, int width, int height,
@@ -392,8 +404,8 @@ static void convert_internal (int order, int bpp, int width, int height,
 	result->id_size = sizeof (convert_rgb_t);
     } else {
 	id->width = width;
-	id->uv_stride = width >> 1;
-	id->rgb_stride = ((bpp + 7) >> 3) * width;
+	id->uv_stride_frame = width >> 1;
+	id->rgb_stride_frame = ((bpp + 7) >> 3) * width;
 
 	result->buf_size[0] = id->rgb_stride * height;
 	result->buf_size[1] = result->buf_size[2] = 0;

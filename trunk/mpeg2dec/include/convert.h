@@ -24,6 +24,11 @@
 #ifndef CONVERT_H
 #define CONVERT_H
 
+#define CONVERT_FRAME 0
+#define CONVERT_TOP_FIELD 1
+#define CONVERT_BOTTOM_FIELD 2
+#define CONVERT_BOTH_FIELDS 3
+
 typedef struct convert_init_s {
     void * id;
     int id_size;

@@ -28,6 +28,7 @@
 
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
+#include "convert.h"
 #include "attributes.h"
 
 #define SEQ_EXT 2
@@ -188,6 +189,7 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
     decoder->scan = mpeg2_scan_norm;
     decoder->picture_structure = FRAME_PICTURE;
     decoder->second_field = 0;
+    decoder->progressive_sequence = 1;
 
     mpeg2dec->ext_state = SEQ_EXT | USER_DATA;
     mpeg2dec->state = STATE_SEQUENCE;
@@ -538,10 +540,20 @@ void mpeg2_header_slice (mpeg2dec_t * mpeg2dec)
 		       STATE_SLICE : STATE_SLICE_1ST);
 
     if (mpeg2dec->convert_start) {
+	int flags;
+
+	switch (mpeg2dec->decoder.picture_structure) {
+	case TOP_FIELD:		flags = CONVERT_TOP_FIELD;	break;
+	case BOTTOM_FIELD:	flags = CONVERT_BOTTOM_FIELD;	break;
+	default:
+	    flags = ((mpeg2dec->decoder.progressive_sequence) ?
+		     CONVERT_FRAME : CONVERT_BOTH_FIELDS);
+	}
+	mpeg2dec->convert_start (mpeg2dec->convert_id, mpeg2dec->fbuf->buf,
+				 flags);
+
 	mpeg2dec->decoder.convert = mpeg2dec->convert_copy;
 	mpeg2dec->decoder.fbuf_id = mpeg2dec->convert_id;
-
-	mpeg2dec->convert_start (mpeg2dec->convert_id, mpeg2dec->fbuf->buf, 0);
 
 	if (mpeg2dec->decoder.coding_type == B_TYPE)
 	    mpeg2_init_fbuf (&(mpeg2dec->decoder), mpeg2dec->yuv_buf[2],
