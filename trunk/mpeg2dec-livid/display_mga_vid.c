@@ -37,8 +37,10 @@
 #include "drivers/mga_vid.h"
 #include "display.h"
 
-mga_vid_config_t mga_vid_config;
-uint_8 *vid_data;
+static mga_vid_config_t mga_vid_config;
+static uint_8 *vid_data, *frame0, *frame1;
+static int next_frame = 0;
+static int f;
 
 void
 write_frame_g200(uint_8 *y,uint_8 *cr, uint_8 *cb)
@@ -98,7 +100,37 @@ write_frame_g400(uint_8 *y,uint_8 *cr, uint_8 *cb)
 	}
 }
 
-void
+static void
+write_slice_g200(uint_8 *y,uint_8 *cr, uint_8 *cb,uint_32 slice_num)
+{
+	uint_8 *dest;
+	uint_32 bespitch,h,w;
+
+	bespitch = (mga_vid_config.src_width + 31) & ~31;
+	dest = vid_data + bespitch * 16 * slice_num;
+
+	for(h=0; h < 16; h++) 
+	{
+		memcpy(dest, y, mga_vid_config.src_width);
+		y += mga_vid_config.src_width;
+		dest += bespitch;
+	}
+
+	dest = vid_data +  bespitch * mga_vid_config.src_height + 
+		bespitch * 8 * slice_num;
+
+	for(h=0; h < 8; h++)
+	{
+		for(w=0; w < mga_vid_config.src_width/2; w++)
+		{
+			*dest++ = *cb++;
+			*dest++ = *cr++;
+		}
+		dest += bespitch - mga_vid_config.src_width;
+	}
+}
+
+static void
 write_slice_g400(uint_8 *y,uint_8 *cr, uint_8 *cb,uint_32 slice_num)
 {
 	uint_8 *dest;
@@ -138,7 +170,10 @@ write_slice_g400(uint_8 *y,uint_8 *cr, uint_8 *cb,uint_32 slice_num)
 uint_32
 display_slice(uint_8 *src[], uint_32 slice_num)
 {
-	write_slice_g400(src[0],src[2],src[1],slice_num);
+	if (mga_vid_config.card_type == MGA_G200)
+		write_slice_g200(src[0],src[2],src[1],slice_num);
+	else
+		write_slice_g400(src[0],src[2],src[1],slice_num);
 
 	return 0;
 }
@@ -146,7 +181,14 @@ display_slice(uint_8 *src[], uint_32 slice_num)
 void
 display_flip_page(void)
 {
-//FIXME do proper page flipping in hardware
+	//ioctl(f,MGA_VID_FSEL,&next_frame);
+
+	//next_frame = 2 - next_frame; // switch between fields A1 and B1
+
+	//if (next_frame) 
+		//vid_data = frame1;
+	//else
+		//vid_data = frame0;
 }
 
 uint_32
@@ -156,13 +198,15 @@ display_frame(uint_8 *src[])
 		write_frame_g200(src[0], src[2], src[1]);
 	else
 		write_frame_g400(src[0], src[2], src[1]);
+
+	display_flip_page();
 	return(-1);  // non-zero == success.
 }
 
 uint_32
 display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 {
-	int f;
+	char *frame_mem;
 	uint_32 frame_size;
 
 	f = open("/dev/mga_vid",O_RDWR);
@@ -189,13 +233,17 @@ display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 	ioctl(f,MGA_VID_ON,0);
 
 	frame_size = ((width + 31) & ~31) * height + (((width + 31) & ~31) * height) / 2;
-	vid_data = (char*)mmap(0,frame_size,PROT_WRITE,MAP_SHARED,f,0);
+	frame_mem = (char*)mmap(0,frame_size*2,PROT_WRITE,MAP_SHARED,f,0);
+	frame0 = frame_mem;
+	frame1 = frame_mem + frame_size;
+	vid_data = frame0;
+	next_frame = 0;
 
 	//clear the buffer
-	memset(vid_data,0x80,frame_size);
+	memset(frame_mem,0x80,frame_size*2);
 
 	dprintf("(display) mga_vid initialized %p\n",vid_data);
-    return(-1);  // non-zero == success.
+  return(-1);  // non-zero == success.
 }
 
 //FIXME this should allocate AGP memory via agpgart and then we

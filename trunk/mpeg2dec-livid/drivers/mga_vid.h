@@ -36,10 +36,10 @@ uint_8  colkey_green;
 uint_8  colkey_blue;
 } mga_vid_config_t;
 
-#define MGA_VID_CONFIG _IOR('J', 1, mga_vid_config_t)
-#define MGA_VID_ON     _IO ('J', 2)
-#define MGA_VID_OFF    _IO ('J', 3)
-
+#define MGA_VID_CONFIG    _IOR('J', 1, mga_vid_config_t)
+#define MGA_VID_ON        _IO ('J', 2)
+#define MGA_VID_OFF       _IO ('J', 3)
+#define MGA_VID_FSEL _IOR('J', 4, int)
 
 #define MGA_G200 0x1234
 #define MGA_G400 0x5678

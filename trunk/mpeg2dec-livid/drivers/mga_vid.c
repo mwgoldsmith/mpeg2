@@ -181,6 +181,15 @@ static mga_vid_config_t mga_config;
 #define BESA1C3ORG  0x3d60
 #define BESA1CORG   0x3d10
 #define BESA1ORG    0x3d00
+#define BESA2C3ORG  0x3d64 
+#define BESA2CORG   0x3d14
+#define BESA2ORG    0x3d04
+#define BESB1C3ORG  0x3d68
+#define BESB1CORG   0x3d18
+#define BESB1ORG    0x3d08
+#define BESB2C3ORG  0x3d6C
+#define BESB2CORG   0x3d1C
+#define BESB2ORG    0x3d0C
 #define BESHCOORD   0x3d28
 #define BESHISCAL   0x3d30
 #define BESHSRCEND  0x3d3C
@@ -193,6 +202,18 @@ static mga_vid_config_t mga_config;
 #define BESVISCAL   0x3d34
 #define BESVCOORD   0x3d2c
 #define BESSTATUS   0x3dc4
+
+
+static void mga_vid_frame_sel(int frame)
+{
+	//Make sure internal registers don't get updated until we're done
+	writel( (readl(mga_mmio_base + VCOUNT)-1)<<16,
+			mga_mmio_base + BESGLOBCTL);
+
+	regs.besctl = (regs.besctl & ~0x07000000) + (frame << 25);
+	writel( regs.besctl, mga_mmio_base + BESCTL ); 
+}
+
 
 static void mga_vid_write_regs(void)
 {
@@ -267,8 +288,13 @@ static void mga_vid_write_regs(void)
 
 	writel( regs.besa1org,    mga_mmio_base + BESA1ORG);
 	writel( regs.besa1corg,   mga_mmio_base + BESA1CORG);
-	if(is_g400)
+	writel( regs.besb1org,    mga_mmio_base + BESB1ORG);
+	writel( regs.besb1corg,   mga_mmio_base + BESB1CORG);
+	if(is_g400) 
+	{
 		writel( regs.besa1c3org,  mga_mmio_base + BESA1C3ORG);
+		writel( regs.besb1c3org,  mga_mmio_base + BESB1C3ORG);
+	}
 
 	writel( regs.beshcoord,   mga_mmio_base + BESHCOORD);
 	writel( regs.beshiscal,   mga_mmio_base + BESHISCAL);
@@ -292,18 +318,13 @@ static void mga_vid_write_regs(void)
 			readl(mga_mmio_base + BESGLOBCTL));
 	printk("mga_vid: BESSTATUS= 0x%08x\n",
 			readl(mga_mmio_base + BESSTATUS));
-	
-	//FIXME remove
-	printk("besa1org = %08lx\n",regs.besa1org);
-	printk("besa1corg= %08lx\n",regs.besa1corg);
-	printk("besa1c3org= %08lx\n",regs.besa1c3org);
-	//FIXME remove
 }
 
 static int mga_vid_set_config(mga_vid_config_t *config)
 {
 	int x, y, sw, sh, dw, dh;
 	int besleft, bestop, ifactor, ofsleft, ofstop, baseadrofs, weight, weights;
+	int frame_size;
 	x = config->x_org;
 	y = config->y_org;
 	sw = config->src_width;
@@ -326,8 +347,8 @@ static int mga_vid_set_config(mga_vid_config_t *config)
 	
 	//BES enabled, even start polarity, filtering enabled, chroma upsampling
 	//enabled, 420 mode enabled, dither enabled, mirror disabled, b/w
-	//disabled, blanking enabled, software field select, buffer a1 displayed
-	regs.besctl = 1 + (1<<10) + (1<<11) + (1<<16) + (1<<17) + (1<<18); 
+	//disabled, blanking enabled, software field select, buffer b1 displayed
+	regs.besctl = 1 + (1<<10) + (1<<11) + (1<<16) + (1<<17) + (1<<18) + (1<<25); 
 
 	if(is_g400)
 	{
@@ -373,15 +394,19 @@ static int mga_vid_set_config(mga_vid_config_t *config)
 	regs.besviscal = ifactor<<2;
 
 	baseadrofs = ((ofstop*regs.besviscal)>>16)*regs.bespitch;
+	frame_size = ((sw + 31) & ~31) * sh + (((sw + 31) & ~31) * sh) / 2;
 	regs.besa1org = (uint_32) mga_src_base + baseadrofs;
+	regs.besb1org = (uint_32) mga_src_base + baseadrofs + frame_size;
 
 	if (is_g400) 
 		baseadrofs = (((ofstop*regs.besviscal)/4)>>16)*regs.bespitch;
 	else 
 		baseadrofs = (((ofstop*regs.besviscal)/2)>>16)*regs.bespitch;
 
-	regs.besa1corg = (uint_32) mga_src_base + regs.bespitch * sh + baseadrofs;
+	regs.besa1corg = (uint_32) mga_src_base + baseadrofs + regs.bespitch * sh ;
+	regs.besb1corg = (uint_32) mga_src_base + baseadrofs + frame_size + regs.bespitch * sh;
 	regs.besa1c3org = regs.besa1corg + ((regs.bespitch * sh) / 4);
+	regs.besb1c3org = regs.besb1corg + ((regs.bespitch * sh) / 4);
 
 	weight = ofstop * (regs.besviscal >> 2);
 	weights = weight < 0 ? 1 : 0;
@@ -395,7 +420,8 @@ static int mga_vid_set_config(mga_vid_config_t *config)
 
 static int mga_vid_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
 {
-  
+	int frame;
+
 	switch(cmd) 
 	{
 		case MGA_VID_CONFIG:
@@ -442,8 +468,18 @@ static int mga_vid_ioctl(struct inode *inode, struct file *file, unsigned int cm
 			vid_src_ready = 0;   
 			regs.besctl &= ~1;
 			mga_vid_write_regs();
-			break;
+		break;
 			
+		case MGA_VID_FSEL:
+			if(copy_from_user(&frame,(int *) arg,sizeof(int)))
+			{
+				printk("mga_vid: FSEL failed copy from userspace\n");
+				return(-EFAULT);
+			}
+
+			mga_vid_frame_sel(frame);
+		break;
+
 	        default:
 			printk("mga_vid: Invalid ioctl\n");
 			return (-EINVAL);
@@ -790,7 +826,7 @@ static int mga_vid_initialize(void)
 
 int init_module(void)
 {
-   return mga_vid_initialize();
+	return mga_vid_initialize();
 }
 
 void cleanup_module(void)
