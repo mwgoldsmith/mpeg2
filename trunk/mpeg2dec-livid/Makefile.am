@@ -2,11 +2,12 @@
 
 AUTOMAKE_OPTIONS = 1.3 foreign no-dependencies
 
-SUBDIRS = libmpeg2 tools drivers
+CFLAGS = -Wall -O3 -g -fomit-frame-pointer 
+
+SUBDIRS = libmpeg2 tools drivers .
 
 EXTRA_DIST = Changelog autogen.sh
 
-CFLAGS = -Wall -O3 -g -I/usr/src/linux
 
 bin_PROGRAMS = mpeg2dec
 
@@ -20,9 +21,12 @@ EXTRA_mpeg2dec_SOURCES = display_gatos.c display_mga_vid.c display_x11.c\
 
 noinst_HEADERS =  config.h  display.h  yuv2rgb.h  yuv2rgb_mlib.h
 
-prof:
-	$(MAKE) mpeg2dec CFLAGS="-pg $(CFLAGS)"
 
+lib_LTLIBRARIES = libmpeg2.la
+libmpeg2_la_SOURCES = mpeg2dec.c
+
+prof:
+	$(MAKE) mpeg2dec CFLAGS="-pg `echo $(CFLAGS) | sed s/-fomit-frame-pointer//`"
 
 x11:
 	$(MAKE) -e mpeg2dec mpeg2dec_LDADD="display_x11.o idct_block_mmx.S motion_comp_mmx.c idct_mmx.c"

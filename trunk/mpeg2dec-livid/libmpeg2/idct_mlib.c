@@ -25,7 +25,6 @@
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 
-#include "mb_buffer.h"
 #include "idct.h"
 #include <mlib_types.h>
 #include <mlib_status.h>
@@ -33,42 +32,15 @@
 #include <mlib_video.h>
 
 void
-idct_mlib(mb_buffer_t *mb_buffer)
+idct_block_mlib(sint_16 *block)
 {
-  uint_32 k;
-  macroblock_t *mb = mb_buffer->macroblocks;
-  uint_32 num_blocks = mb_buffer->num_blocks;
-  
-  for(k=0; k<num_blocks; k++)
-    {
-      if(mb[k].skipped)
-	continue;
-      
-      // Should we use mlib_VideoIDCT_IEEE_S16_S16 here ??
-      // it's ~30% slower.
-
-      //XXX only 4:2:0 supported here
-      if(mb[k].coded_block_pattern & 0x20)
-	mlib_VideoIDCT8x8_S16_S16(mb[k].y_blocks + 64*0, 
-				  mb[k].y_blocks + 64*0);
-      if(mb[k].coded_block_pattern & 0x10)
-	mlib_VideoIDCT8x8_S16_S16(mb[k].y_blocks + 64*1, 
-				  mb[k].y_blocks + 64*1);
-      if(mb[k].coded_block_pattern & 0x08)
-	mlib_VideoIDCT8x8_S16_S16(mb[k].y_blocks + 64*2, 
-				  mb[k].y_blocks + 64*2);
-      if(mb[k].coded_block_pattern & 0x04)
-	mlib_VideoIDCT8x8_S16_S16(mb[k].y_blocks + 64*3, 
-				  mb[k].y_blocks + 64*3);
-      
-      if(mb[k].coded_block_pattern & 0x2)
-	mlib_VideoIDCT8x8_S16_S16(mb[k].cr_blocks,
-				  mb[k].cr_blocks);
-      
-      if(mb[k].coded_block_pattern & 0x1)
-	mlib_VideoIDCT8x8_S16_S16(mb[k].cb_blocks,
-				  mb[k].cb_blocks);
-    }
+   // Should we use mlib_VideoIDCT_IEEE_S16_S16 here ??
+   // it's ~30% slower.
+	mlib_VideoIDCT8x8_S16_S16(block, block); 
 }
 
+void
+idct_end_mlib()
+{
+}
 

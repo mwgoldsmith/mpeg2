@@ -33,7 +33,6 @@
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 
-#include "mb_buffer.h"
 #include "motion_comp.h"
 #include "motion_comp_mmx.h"
 

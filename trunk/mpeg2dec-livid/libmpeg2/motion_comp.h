@@ -22,7 +22,7 @@
  */
 
 void motion_comp_init(void);
-void motion_comp(picture_t * picture, mb_buffer_t * mb_buffer);
+void motion_comp (picture_t * picture, macroblock_t *mb);
 
 //prototypes for the C fallback versions of motion_comp
 void motion_comp_c_init(void);

@@ -33,7 +33,6 @@
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 
-#include "mb_buffer.h"
 #include "motion_comp.h"
 #include "bitstream.h"
 #include "idct.h"
@@ -47,7 +46,11 @@
 //this is where we keep the state of the decoder
 static picture_t picture;
 static slice_t slice;
-static macroblock_t *mb;
+static macroblock_t mb;
+//storage for dct coded blocks plus one row and column of overshoot
+static sint_16 y_blocks[4 * 64 + 16];
+static sint_16 cr_blocks[64 + 16];
+static sint_16 cb_blocks[64 + 16];
 
 //global config struct
 mpeg2_config_t config;
@@ -113,19 +116,6 @@ decode_find_header(uint_32 type,picture_t *picture)
 	}
 }
 
-static void decode_flush_buffer(void)
-{
-	mb_buffer_t mb_buffer;
-
-	mb_buffer_flush(&mb_buffer);
-
-	idct(&mb_buffer);
-	motion_comp(&picture,&mb_buffer);
-
-	//reset mb pointer for next slice
-	mb = mb_buffer.macroblocks;
-}
-
 void
 mpeg2_init(void)
 {
@@ -148,12 +138,14 @@ mpeg2_init(void)
 	//FIXME setup config properly
 	config.flags = MPEG2_MMX_ENABLE;
 
+	mb.y_blocks = y_blocks;
+	mb.cr_blocks = cr_blocks;
+	mb.cb_blocks = cb_blocks;
+
 	//intialize the decoder state (ie the parser knows best)
 	parse_state_init(&picture);
 	idct_init();
 	motion_comp_init();
-	mb = mb_buffer_init(CHROMA_420);
-
 }
 
 
@@ -242,61 +234,58 @@ mpeg2_decode_frame (void)
 				slice.dc_dct_pred[0]=slice.dc_dct_pred[1]=slice.dc_dct_pred[2]=
 					1<<(picture.intra_dc_precision + 7);
 
+				mb.coded_block_pattern = 0;
+				mb.skipped = 1;
+
 				//handling of skipped mb's differs between P_TYPE and B_TYPE
 				//pictures
 				if(picture.picture_coding_type == P_TYPE)
 				{
 					parse_reset_pmv(&slice);
+					memset(mb.f_motion_vectors[0],0,8);
+					mb.macroblock_type = MACROBLOCK_MOTION_FORWARD;
 
 					for(i=0; i< mba_inc - 1; i++)
 					{
-						memset(mb->f_motion_vectors[0],0,8);
-						mb->macroblock_type = MACROBLOCK_MOTION_FORWARD;
-						mb->coded_block_pattern = 0;
-						mb->skipped = 1;
-						mb->mba = ++mba;
-						mb = mb_buffer_increment();
+						mb.mba = ++mba;
+						motion_comp(&picture,&mb);
 					}
 				}
 				else
 				{
+					memcpy(mb.f_motion_vectors[0],slice.f_pmv,8);
+					memcpy(mb.b_motion_vectors[0],slice.b_pmv,8);
+					mb.macroblock_type = prev_macroblock_type;
+
 					for(i=0; i< mba_inc - 1; i++)
 					{
-						memcpy(mb->f_motion_vectors[0],slice.f_pmv,8);
-						memcpy(mb->b_motion_vectors[0],slice.b_pmv,8);
-						mb->macroblock_type = prev_macroblock_type;
-						mb->coded_block_pattern = 0;
-						mb->skipped = 1;
-						mb->mba = ++mba;
-						mb = mb_buffer_increment();
+						mb.mba = ++mba;
+						motion_comp(&picture,&mb);
 					}
 				}
+				mb.skipped = 0;
 			}
 			
-			mb->skipped = 0;
-			mb->mba = ++mba; 
+			mb.mba = ++mba; 
 
-			parse_macroblock(&picture,&slice,mb);
+			parse_macroblock(&picture,&slice,&mb);
+
 			//we store the last macroblock mv flags, as skipped b-frame blocks
 			//inherit them
-			prev_macroblock_type = mb->macroblock_type & (MACROBLOCK_MOTION_FORWARD | MACROBLOCK_MOTION_BACKWARD);
-			mb = mb_buffer_increment();
+			prev_macroblock_type = mb.macroblock_type & (MACROBLOCK_MOTION_FORWARD | MACROBLOCK_MOTION_BACKWARD);
 
+			idct(&mb);
+			motion_comp(&picture,&mb);
 
-			if(!mb)
-				decode_flush_buffer();
 		}
 		while(bitstream_show(23));
 	}
 	while(mba < last_mba);
 	
-	decode_flush_buffer();
-
 	//FIXME blah
 #ifdef __i386__
 	emms();
 #endif
-
 
 	//decide which frame to send to the display
 	if(picture.picture_coding_type == B_TYPE)

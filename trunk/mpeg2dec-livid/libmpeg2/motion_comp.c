@@ -34,7 +34,6 @@
 #include "mpeg2_internal.h"
 #include "debug.h"
 
-#include "mb_buffer.h"
 #include "motion_comp.h"
 #include "motion_comp_mmx.h"
 //#include "motion_comp_mlib.h"
@@ -129,12 +128,8 @@ void motion_block (void (** table) (uint_8 *, uint_8 *, sint_32, sint_32),
 }
 
 void
-motion_comp (picture_t * picture, mb_buffer_t * mb_buffer)
+motion_comp (picture_t * picture, macroblock_t *mb)
 {
-	macroblock_t * macroblocks;
-	macroblock_t * mb;
-	uint_32 num_blocks;
-	int i;
 	int width, x, y;
 	int mb_width;
 	int pitch;
@@ -145,120 +140,122 @@ motion_comp (picture_t * picture, mb_buffer_t * mb_buffer)
 	width = picture->coded_picture_width;
 	mb_width = width >> 4;
 
-	macroblocks = mb_buffer->macroblocks;
-	num_blocks = mb_buffer->num_blocks;
 
-	for (i = 0; i < num_blocks; i++) 
+	//handle interlaced blocks
+	if (mb->dct_type) 
 	{
-		mb = macroblocks + i;
+		d = 1;
+		pitch = width *2;
+	} 
+	else 
+	{
+		d = 8;
+		pitch = width;
+	}
 
-		//handle interlaced blocks
-		if (mb->dct_type) 
+	//FIXME I'd really to take these two divides out.
+	//maybe do 16.16 fixed point mult 
+	//
+	//This don't seem to make much difference yet.
+	//y = ((mb->mba) * 1457) >> 16;
+	y = mb->mba / mb_width;
+	x = mb->mba - mb_width * y; 
+
+	dst_y = &picture->current_frame[0][x * 16 + y * width * 16];
+	dst_cr = &picture->current_frame[1][x * 8 + y * width * 8/2];
+	dst_cb = &picture->current_frame[2][x * 8 + y * width * 8/2];
+
+	if (mb->macroblock_type & MACROBLOCK_INTRA) 
+	{
+		/* intra block : there is no prediction, only IDCT components */
+
+		/* FIXME this could be merged into the IDCT transform */
+		motion_comp_idct_copy (dst_y, mb->y_blocks, pitch);
+		motion_comp_idct_copy (dst_y + 8, mb->y_blocks + 64, pitch);
+		motion_comp_idct_copy (dst_y + width * d, mb->y_blocks + 2*64, pitch);
+		motion_comp_idct_copy (dst_y + width * d + 8, mb->y_blocks + 3*64, pitch);
+		motion_comp_idct_copy (dst_cr, mb->cr_blocks, width>>1);
+		motion_comp_idct_copy (dst_cb, mb->cb_blocks, width>>1);
+		
+		//clear the blocks for next time
+		memset(mb->y_blocks,0,sizeof(sint_16) * 6 * 64);
+		memset(mb->cr_blocks,0,sizeof(sint_16) * 64);
+		memset(mb->cb_blocks,0,sizeof(sint_16) * 64);
+	} 
+	else 
+	{ 
+		// Not an intra block
+
+		if (mb->macroblock_type & MACROBLOCK_MOTION_FORWARD) 
 		{
-			d = 1;
-			pitch = width *2;
-		} 
-		else 
-		{
-			d = 8;
-			pitch = width;
+			if (mb->motion_type == MC_FRAME) 
+			{
+				motion_block (put_table, mb->f_motion_vectors[0][0] + x * 32, 
+						mb->f_motion_vectors[0][1] + y * 32, 0, dst_y, dst_cr, dst_cb, 
+						picture->forward_reference_frame, width, 16);
+			} 
+			else 
+			{
+				motion_block (put_table, mb->f_motion_vectors[0][0] + x * 32, 
+						(mb->f_motion_vectors[0][1] >> 1) + y * 16, mb->f_motion_vertical_field_select[0], 
+						dst_y, dst_cr, dst_cb, picture->forward_reference_frame, width * 2, 8);
+
+				motion_block (put_table, mb->f_motion_vectors[1][0] + x * 32, 
+						(mb->f_motion_vectors[1][1] >> 1) + y * 16, mb->f_motion_vertical_field_select[1], 
+						dst_y + width, dst_cr + (width>>1), dst_cb + (width>>1), picture->forward_reference_frame, 
+						width * 2, 8);
+			}
 		}
 
-		//FIXME I'd really to take these two divides out.
-		//maybe do 16.16 fixed point mult 
-		//
-		//This don't seem to make much difference yet.
-		//y = ((mb->mba) * 1457) >> 16;
-		y = mb->mba / mb_width;
-		x = mb->mba - mb_width * y; 
-
-		dst_y = &picture->current_frame[0][x * 16 + y * width * 16];
-		dst_cr = &picture->current_frame[1][x * 8 + y * width * 8/2];
-		dst_cb = &picture->current_frame[2][x * 8 + y * width * 8/2];
-
-		if (mb->macroblock_type & MACROBLOCK_INTRA) 
+		if (mb->macroblock_type & MACROBLOCK_MOTION_BACKWARD) 
 		{
-			/* intra block : there is no prediction, only IDCT components */
+			table = (mb->macroblock_type & MACROBLOCK_MOTION_FORWARD) ? ave_table : put_table;
 
-			/* FIXME this could be merged into the IDCT transform */
-			motion_comp_idct_copy (dst_y, mb->y_blocks, pitch);
-			motion_comp_idct_copy (dst_y + 8, mb->y_blocks + 64, pitch);
-			motion_comp_idct_copy (dst_y + width * d, mb->y_blocks + 2*64, pitch);
-			motion_comp_idct_copy (dst_y + width * d + 8, mb->y_blocks + 3*64, pitch);
-			motion_comp_idct_copy (dst_cr, mb->cr_blocks, width>>1);
-			motion_comp_idct_copy (dst_cb, mb->cb_blocks, width>>1);
-			continue;
-		} 
-		else 
-		{ 
-			// Not an intra block
-
-			if (mb->macroblock_type & MACROBLOCK_MOTION_FORWARD) 
+			if (mb->motion_type == MC_FRAME) 
 			{
-				if (mb->motion_type == MC_FRAME) 
-				{
-					motion_block (put_table, mb->f_motion_vectors[0][0] + x * 32, 
-							mb->f_motion_vectors[0][1] + y * 32, 0, dst_y, dst_cr, dst_cb, 
-							picture->forward_reference_frame, width, 16);
-				} 
-				else 
-				{
-					motion_block (put_table, mb->f_motion_vectors[0][0] + x * 32, 
-							(mb->f_motion_vectors[0][1] >> 1) + y * 16, mb->f_motion_vertical_field_select[0], 
-							dst_y, dst_cr, dst_cb, picture->forward_reference_frame, width * 2, 8);
-
-					motion_block (put_table, mb->f_motion_vectors[1][0] + x * 32, 
-							(mb->f_motion_vectors[1][1] >> 1) + y * 16, mb->f_motion_vertical_field_select[1], 
-							dst_y + width, dst_cr + (width>>1), dst_cb + (width>>1), picture->forward_reference_frame, 
-							width * 2, 8);
-				}
-			}
-
-			if (mb->macroblock_type & MACROBLOCK_MOTION_BACKWARD) 
-			{
-				table = (mb->macroblock_type & MACROBLOCK_MOTION_FORWARD) ? ave_table : put_table;
-
-				if (mb->motion_type == MC_FRAME) 
-				{
-					motion_block (table, mb->b_motion_vectors[0][0] + x * 32, 
-							mb->b_motion_vectors[0][1] + y * 32, 0, dst_y, dst_cr, dst_cb, 
-							picture->backward_reference_frame, width, 16);
-				} 
-				else 
-				{
 				motion_block (table, mb->b_motion_vectors[0][0] + x * 32, 
-						(mb->b_motion_vectors[0][1] >> 1) + y * 16, mb->b_motion_vertical_field_select[0], 
-						dst_y, dst_cr, dst_cb, picture->backward_reference_frame, width * 2, 8);
-
-				motion_block (table, mb->b_motion_vectors[1][0] + x * 32, 
-						(mb->b_motion_vectors[1][1] >> 1) + y * 16, mb->b_motion_vertical_field_select[1], 
-						dst_y + width, dst_cr + (width>>1), dst_cb + (width>>1), picture->backward_reference_frame, 
-						width * 2, 8);
-				}
-			}
-
-			if(mb->macroblock_type & MACROBLOCK_PATTERN) 
+						mb->b_motion_vectors[0][1] + y * 32, 0, dst_y, dst_cr, dst_cb, 
+						picture->backward_reference_frame, width, 16);
+			} 
+			else 
 			{
-				// We should assume zero forward motion if the block has none.
-				if (!(mb->macroblock_type & (MACROBLOCK_MOTION_FORWARD | MACROBLOCK_MOTION_BACKWARD)) ) 
-				{
-					fprintf (stderr, "PATTERN - NO MOTION");
-					exit (2);
-				}
+			motion_block (table, mb->b_motion_vectors[0][0] + x * 32, 
+					(mb->b_motion_vectors[0][1] >> 1) + y * 16, mb->b_motion_vertical_field_select[0], 
+					dst_y, dst_cr, dst_cb, picture->backward_reference_frame, width * 2, 8);
 
-				if (mb->coded_block_pattern & 0x20)
-					motion_comp_idct_add (dst_y, mb->y_blocks + 0 * 64, pitch);
-				if (mb->coded_block_pattern & 0x10)
-					motion_comp_idct_add (dst_y + 8, mb->y_blocks + 1 * 64, pitch);
-				if (mb->coded_block_pattern & 0x08)
-					motion_comp_idct_add (dst_y + width * d, mb->y_blocks + 2 * 64, pitch);
-				if (mb->coded_block_pattern & 0x04)
-					motion_comp_idct_add (dst_y + width * d + 8, mb->y_blocks + 3 * 64, pitch);
-				if (mb->coded_block_pattern & 0x02)
-					motion_comp_idct_add (dst_cr, mb->cr_blocks, width >> 1);
-				if (mb->coded_block_pattern & 0x01)
-					motion_comp_idct_add (dst_cb, mb->cb_blocks, width >> 1);
+			motion_block (table, mb->b_motion_vectors[1][0] + x * 32, 
+					(mb->b_motion_vectors[1][1] >> 1) + y * 16, mb->b_motion_vertical_field_select[1], 
+					dst_y + width, dst_cr + (width>>1), dst_cb + (width>>1), picture->backward_reference_frame, 
+					width * 2, 8);
 			}
+		}
+
+		if(mb->macroblock_type & MACROBLOCK_PATTERN) 
+		{
+			// We should assume zero forward motion if the block has none.
+			if (!(mb->macroblock_type & (MACROBLOCK_MOTION_FORWARD | MACROBLOCK_MOTION_BACKWARD)) ) 
+			{
+				fprintf (stderr, "PATTERN - NO MOTION");
+				exit (2);
+			}
+
+			if (mb->coded_block_pattern & 0x20)
+				motion_comp_idct_add (dst_y, mb->y_blocks + 0 * 64, pitch);
+			if (mb->coded_block_pattern & 0x10)
+				motion_comp_idct_add (dst_y + 8, mb->y_blocks + 1 * 64, pitch);
+			if (mb->coded_block_pattern & 0x08)
+				motion_comp_idct_add (dst_y + width * d, mb->y_blocks + 2 * 64, pitch);
+			if (mb->coded_block_pattern & 0x04)
+				motion_comp_idct_add (dst_y + width * d + 8, mb->y_blocks + 3 * 64, pitch);
+			if (mb->coded_block_pattern & 0x02)
+				motion_comp_idct_add (dst_cr, mb->cr_blocks, width >> 1);
+			if (mb->coded_block_pattern & 0x01)
+				motion_comp_idct_add (dst_cb, mb->cb_blocks, width >> 1);
+
+			//clear the blocks for next time
+			memset(mb->y_blocks,0,sizeof(sint_16) * 6 * 64);
+			memset(mb->cr_blocks,0,sizeof(sint_16) * 64);
+			memset(mb->cb_blocks,0,sizeof(sint_16) * 64);
 		}
 	}
 }

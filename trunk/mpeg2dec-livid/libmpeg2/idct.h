@@ -23,6 +23,5 @@
  *
  */
 
-
-extern void (*idct)(mb_buffer_t *mb_buffer);
+void idct(macroblock_t *mb);
 void idct_init(void);
