@@ -1072,7 +1072,7 @@ static inline void slice_non_intra_DCT (mpeg2_decoder_t * const decoder,
     table[4] (decoder->dest[1] + (decoder->offset >> 1),		      \
 	      ref[1] + offset, decoder->uv_stride, 8);			      \
     table[4] (decoder->dest[2] + (decoder->offset >> 1),		      \
-	      ref[2] + offset, decoder->uv_stride, 8);			      \
+	      ref[2] + offset, decoder->uv_stride, 8)
 
 #define MOTION_422(table,ref,motion_x,motion_y,size,y)			      \
     pos_x = 2 * decoder->offset + motion_x;				      \
@@ -1162,13 +1162,93 @@ static inline void slice_non_intra_DCT (mpeg2_decoder_t * const decoder,
 #define MOTION_ZERO_422(table,ref)					      \
     offset = decoder->offset + decoder->v_offset * decoder->stride;	      \
     table[0] (decoder->dest[0] + decoder->offset,			      \
-	      (ref[0] + decoder->offset +				      \
-	       decoder->v_offset * decoder->stride), decoder->stride, 16);    \
+	      ref[0] + offset, decoder->stride, 16);			      \
     offset >>= 1;							      \
     table[4] (decoder->dest[1] + (decoder->offset >> 1),		      \
 	      ref[1] + offset, decoder->uv_stride, 16);			      \
     table[4] (decoder->dest[2] + (decoder->offset >> 1),		      \
-	      ref[2] + offset, decoder->uv_stride, 16);			      \
+	      ref[2] + offset, decoder->uv_stride, 16)
+
+#define MOTION_444(table,ref,motion_x,motion_y,size,y)			      \
+    pos_x = 2 * decoder->offset + motion_x;				      \
+    pos_y = 2 * decoder->v_offset + motion_y + 2 * y;			      \
+    if (unlikely (pos_x > decoder->limit_x)) {				      \
+	pos_x = ((int)pos_x < 0) ? 0 : decoder->limit_x;		      \
+	motion_x = pos_x - 2 * decoder->offset;				      \
+    }									      \
+    if (unlikely (pos_y > decoder->limit_y_ ## size)) {			      \
+	pos_y = ((int)pos_y < 0) ? 0 : decoder->limit_y_ ## size;	      \
+	motion_y = pos_y - 2 * decoder->v_offset - 2 * y;		      \
+    }									      \
+    xy_half = ((pos_y & 1) << 1) | (pos_x & 1);				      \
+    offset = (pos_x >> 1) + (pos_y >> 1) * decoder->stride;		      \
+    table[xy_half] (decoder->dest[0] + y * decoder->stride + decoder->offset, \
+		    ref[0] + offset, decoder->stride, size);		      \
+    table[xy_half] (decoder->dest[1] + y * decoder->stride + decoder->offset, \
+		    ref[1] + offset, decoder->stride, size);		      \
+    table[xy_half] (decoder->dest[2] + y * decoder->stride + decoder->offset, \
+		    ref[2] + offset, decoder->stride, size)
+
+#define MOTION_FIELD_444(table,ref,motion_x,motion_y,dest_field,op,src_field) \
+    pos_x = 2 * decoder->offset + motion_x;				      \
+    pos_y = decoder->v_offset + motion_y;				      \
+    if (unlikely (pos_x > decoder->limit_x)) {				      \
+	pos_x = ((int)pos_x < 0) ? 0 : decoder->limit_x;		      \
+	motion_x = pos_x - 2 * decoder->offset;				      \
+    }									      \
+    if (unlikely (pos_y > decoder->limit_y)) {				      \
+	pos_y = ((int)pos_y < 0) ? 0 : decoder->limit_y;		      \
+	motion_y = pos_y - decoder->v_offset;				      \
+    }									      \
+    xy_half = ((pos_y & 1) << 1) | (pos_x & 1);				      \
+    offset = (pos_x >> 1) + ((pos_y op) + src_field) * decoder->stride;	      \
+    table[xy_half] (decoder->dest[0] + dest_field * decoder->stride +	      \
+		    decoder->offset, ref[0] + offset,			      \
+		    2 * decoder->stride, 8);				      \
+    table[xy_half] (decoder->dest[1] + dest_field * decoder->stride +	      \
+		    decoder->offset, ref[1] + offset,			      \
+		    2 * decoder->stride, 8);				      \
+    table[xy_half] (decoder->dest[2] + dest_field * decoder->stride +	      \
+		    decoder->offset, ref[2] + offset,			      \
+		    2 * decoder->stride, 8)
+
+#define MOTION_DMV_444(table,ref,motion_x,motion_y)			      \
+    pos_x = 2 * decoder->offset + motion_x;				      \
+    pos_y = decoder->v_offset + motion_y;				      \
+    if (unlikely (pos_x > decoder->limit_x)) {				      \
+	pos_x = ((int)pos_x < 0) ? 0 : decoder->limit_x;		      \
+	motion_x = pos_x - 2 * decoder->offset;				      \
+    }									      \
+    if (unlikely (pos_y > decoder->limit_y)) {				      \
+	pos_y = ((int)pos_y < 0) ? 0 : decoder->limit_y;		      \
+	motion_y = pos_y - decoder->v_offset;				      \
+    }									      \
+    xy_half = ((pos_y & 1) << 1) | (pos_x & 1);				      \
+    offset = (pos_x >> 1) + (pos_y & ~1) * decoder->stride;		      \
+    table[xy_half] (decoder->dest[0] + decoder->offset,			      \
+		    ref[0] + offset, 2 * decoder->stride, 8);		      \
+    table[xy_half] (decoder->dest[0] + decoder->stride + decoder->offset,     \
+		    ref[0] + decoder->stride + offset,			      \
+		    2 * decoder->stride, 8);				      \
+    table[xy_half] (decoder->dest[1] + decoder->offset,			      \
+		    ref[1] + offset, 2 * decoder->stride, 8);		      \
+    table[xy_half] (decoder->dest[1] + decoder->stride + decoder->offset,     \
+		    ref[1] + decoder->stride + offset,			      \
+		    2 * decoder->stride, 8);				      \
+    table[xy_half] (decoder->dest[2] + decoder->offset,			      \
+		    ref[2] + offset, 2 * decoder->stride, 8);		      \
+    table[xy_half] (decoder->dest[2] + decoder->stride + decoder->offset,     \
+		    ref[2] + decoder->stride + offset,			      \
+		    2 * decoder->stride, 8)
+
+#define MOTION_ZERO_444(table,ref)					      \
+    offset = decoder->offset + decoder->v_offset * decoder->stride;	      \
+    table[0] (decoder->dest[0] + decoder->offset,			      \
+	      ref[0] + offset, decoder->stride, 16);			      \
+    table[4] (decoder->dest[1] + decoder->offset,			      \
+	      ref[1] + offset, decoder->stride, 16);			      \
+    table[4] (decoder->dest[2] + (decoder->offset >> 1),		      \
+	      ref[2] + offset, decoder->stride, 16)
 
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -1424,6 +1504,8 @@ MOTION_FUNCTIONS (420, MOTION_420, MOTION_FIELD_420, MOTION_DMV_420,
 		  MOTION_ZERO_420)
 MOTION_FUNCTIONS (422, MOTION_422, MOTION_FIELD_422, MOTION_DMV_422,
 		  MOTION_ZERO_422)
+MOTION_FUNCTIONS (444, MOTION_444, MOTION_FIELD_444, MOTION_DMV_444,
+		  MOTION_ZERO_444)
 
 /* like motion_frame, but parsing without actual motion compensation */
 static void motion_fr_conceal (mpeg2_decoder_t * const decoder)
@@ -1571,12 +1653,18 @@ void mpeg2_init_fbuf (mpeg2_decoder_t * decoder, uint8_t * current_fbuf[3],
 	    decoder->motion_parser[MC_FRAME] = motion_fr_frame_420;
 	    decoder->motion_parser[MC_DMV] = motion_fr_dmv_420;
 	    decoder->motion_parser[4] = motion_reuse_420;
-	} else {
+	} else if (decoder->chroma_format == 1) {
 	    decoder->motion_parser[0] = motion_zero_422;
 	    decoder->motion_parser[MC_FIELD] = motion_fr_field_422;
 	    decoder->motion_parser[MC_FRAME] = motion_fr_frame_422;
 	    decoder->motion_parser[MC_DMV] = motion_fr_dmv_422;
 	    decoder->motion_parser[4] = motion_reuse_422;
+	} else {
+	    decoder->motion_parser[0] = motion_zero_444;
+	    decoder->motion_parser[MC_FIELD] = motion_fr_field_444;
+	    decoder->motion_parser[MC_FRAME] = motion_fr_frame_444;
+	    decoder->motion_parser[MC_DMV] = motion_fr_dmv_444;
+	    decoder->motion_parser[4] = motion_reuse_444;
 	}
     } else {
 	if (decoder->chroma_format == 0) {
@@ -1585,12 +1673,18 @@ void mpeg2_init_fbuf (mpeg2_decoder_t * decoder, uint8_t * current_fbuf[3],
 	    decoder->motion_parser[MC_16X8] = motion_fi_16x8_420;
 	    decoder->motion_parser[MC_DMV] = motion_fi_dmv_420;
 	    decoder->motion_parser[4] = motion_reuse_420;
-	} else {
+	} else if (decoder->chroma_format == 1) {
 	    decoder->motion_parser[0] = motion_zero_422;
 	    decoder->motion_parser[MC_FIELD] = motion_fi_field_422;
 	    decoder->motion_parser[MC_16X8] = motion_fi_16x8_422;
 	    decoder->motion_parser[MC_DMV] = motion_fi_dmv_422;
 	    decoder->motion_parser[4] = motion_reuse_422;
+	} else {
+	    decoder->motion_parser[0] = motion_zero_444;
+	    decoder->motion_parser[MC_FIELD] = motion_fi_field_444;
+	    decoder->motion_parser[MC_16X8] = motion_fi_16x8_444;
+	    decoder->motion_parser[MC_DMV] = motion_fi_dmv_444;
+	    decoder->motion_parser[4] = motion_reuse_444;
 	}
     }
 }
@@ -1748,7 +1842,7 @@ void mpeg2_slice (mpeg2_decoder_t * const decoder, const int code,
 		    NEEDBITS (bit_buf, bits, bit_ptr);
 		    DUMPBITS (bit_buf, bits, 1);
 		}
-	    } else {
+	    } else if (likely (decoder->chroma_format == 1)) {
 		uint8_t * dest_u = decoder->dest[1] + (offset >> 1);
 		uint8_t * dest_v = decoder->dest[2] + (offset >> 1);
 		DCT_stride >>= 1;
@@ -1757,6 +1851,19 @@ void mpeg2_slice (mpeg2_decoder_t * const decoder, const int code,
 		slice_intra_DCT (decoder, 2, dest_v, DCT_stride);
 		slice_intra_DCT (decoder, 1, dest_u + DCT_offset, DCT_stride);
 		slice_intra_DCT (decoder, 2, dest_v + DCT_offset, DCT_stride);
+	    } else {
+		uint8_t * dest_u = decoder->dest[1] + offset;
+		uint8_t * dest_v = decoder->dest[2] + offset;
+		slice_intra_DCT (decoder, 1, dest_u, DCT_stride);
+		slice_intra_DCT (decoder, 2, dest_v, DCT_stride);
+		slice_intra_DCT (decoder, 1, dest_u + DCT_offset, DCT_stride);
+		slice_intra_DCT (decoder, 2, dest_v + DCT_offset, DCT_stride);
+		slice_intra_DCT (decoder, 1, dest_u + 8, DCT_stride);
+		slice_intra_DCT (decoder, 2, dest_v + 8, DCT_stride);
+		slice_intra_DCT (decoder, 1, dest_u + DCT_offset + 8,
+				 DCT_stride);
+		slice_intra_DCT (decoder, 2, dest_v + DCT_offset + 8,
+				 DCT_stride);
 	    }
 	} else {
 
@@ -1769,8 +1876,6 @@ void mpeg2_slice (mpeg2_decoder_t * const decoder, const int code,
 	    if (macroblock_modes & MACROBLOCK_PATTERN) {
 		int coded_block_pattern;
 		int DCT_offset, DCT_stride;
-		int offset;
-		uint8_t * dest_y;
 
 		if (macroblock_modes & DCT_TYPE_INTERLACED) {
 		    DCT_offset = decoder->stride;
@@ -1783,8 +1888,8 @@ void mpeg2_slice (mpeg2_decoder_t * const decoder, const int code,
 		coded_block_pattern = get_coded_block_pattern (decoder);
 
 		if (likely (decoder->chroma_format == 0)) {
-		    offset = decoder->offset;
-		    dest_y = decoder->dest[0] + offset;
+		    int offset = decoder->offset;
+		    uint8_t * dest_y = decoder->dest[0] + offset;
 		    if (coded_block_pattern & 1)
 			slice_non_intra_DCT (decoder, 0, dest_y, DCT_stride);
 		    if (coded_block_pattern & 2)
@@ -1805,7 +1910,10 @@ void mpeg2_slice (mpeg2_decoder_t * const decoder, const int code,
 			slice_non_intra_DCT (decoder, 2,
 					     decoder->dest[2] + (offset >> 1),
 					     decoder->uv_stride);
-		} else {
+		} else if (likely (decoder->chroma_format == 1)) {
+		    int offset;
+		    uint8_t * dest_y;
+
 		    coded_block_pattern |= bit_buf & (3 << 30);
 		    DUMPBITS (bit_buf, bits, 2);
 
@@ -1841,6 +1949,55 @@ void mpeg2_slice (mpeg2_decoder_t * const decoder, const int code,
 		    if (coded_block_pattern & (1 << 30))
 			slice_non_intra_DCT (decoder, 2,
 					     decoder->dest[2] + DCT_offset,
+					     DCT_stride);
+		} else {
+		    int offset;
+		    uint8_t * dest_y, * dest_u, * dest_v;
+
+		    coded_block_pattern |= bit_buf & (63 << 26);
+		    DUMPBITS (bit_buf, bits, 6);
+
+		    offset = decoder->offset;
+		    dest_y = decoder->dest[0] + offset;
+		    dest_u = decoder->dest[1] + offset;
+		    dest_v = decoder->dest[2] + offset;
+
+		    if (coded_block_pattern & 1)
+			slice_non_intra_DCT (decoder, 0, dest_y, DCT_stride);
+		    if (coded_block_pattern & 2)
+			slice_non_intra_DCT (decoder, 0, dest_y + 8,
+					     DCT_stride);
+		    if (coded_block_pattern & 4)
+			slice_non_intra_DCT (decoder, 0, dest_y + DCT_offset,
+					     DCT_stride);
+		    if (coded_block_pattern & 8)
+			slice_non_intra_DCT (decoder, 0,
+					     dest_y + DCT_offset + 8,
+					     DCT_stride);
+
+		    if (coded_block_pattern & 16)
+			slice_non_intra_DCT (decoder, 1, dest_u, DCT_stride);
+		    if (coded_block_pattern & 32)
+			slice_non_intra_DCT (decoder, 2, dest_v, DCT_stride);
+		    if (coded_block_pattern & (32 << 26))
+			slice_non_intra_DCT (decoder, 1, dest_u + DCT_offset,
+					     DCT_stride);
+		    if (coded_block_pattern & (16 << 26))
+			slice_non_intra_DCT (decoder, 2, dest_v + DCT_offset,
+					     DCT_stride);
+		    if (coded_block_pattern & (8 << 26))
+			slice_non_intra_DCT (decoder, 1, dest_u + 8,
+					     DCT_stride);
+		    if (coded_block_pattern & (4 << 26))
+			slice_non_intra_DCT (decoder, 2, dest_v + 8,
+					     DCT_stride);
+		    if (coded_block_pattern & (2 << 26))
+			slice_non_intra_DCT (decoder, 1,
+					     dest_u + DCT_offset + 8,
+					     DCT_stride);
+		    if (coded_block_pattern & (1 << 26))
+			slice_non_intra_DCT (decoder, 2,
+					     dest_v + DCT_offset + 8,
 					     DCT_stride);
 		}
 	    }
