@@ -35,22 +35,42 @@ static inline uint64_t avg2(uint64_t a, uint64_t b)
     return (a | b) - (((a ^ b) & BYTE_VEC(0xfe)) >> 1);    
 }
 
-#define OP8(LOAD, STORE)			\
+// Load two unaligned quadwords from addr. This macro only works if
+// addr is actually unaligned.
+#define ULOAD16(ret_l, ret_r, addr)			\
+    do {						\
+	uint64_t _l = ldq_u(addr +  0);			\
+	uint64_t _m = ldq_u(addr +  8);			\
+	uint64_t _r = ldq_u(addr + 16);			\
+	ret_l = extql(_l, addr) | extqh(_m, addr);	\
+	ret_r = extql(_m, addr) | extqh(_r, addr);	\
+    } while (0);
+
+// Load two aligned quadwords from addr.
+#define ALOAD16(ret_l, ret_r, addr)			\
+    do {						\
+	ret_l = ldq(addr);				\
+	ret_r = ldq(addr + 8);				\
+    } while (0);
+
+#define OP8(LOAD, LOAD16, STORE)		\
     do {					\
 	STORE(LOAD(pixels), block);		\
 	pixels += line_size;			\
 	block += line_size;			\
     } while (--h)
 
-#define OP16(LOAD, STORE)			\
+#define OP16(LOAD, LOAD16, STORE)		\
     do {					\
-	STORE(LOAD(pixels), block);		\
-	STORE(LOAD(pixels + 8), (block) + 8);	\
+	uint64_t l, r;				\
+	LOAD16(l, r, pixels);			\
+	STORE(l, block);			\
+	STORE(r, block + 8);			\
 	pixels += line_size;			\
 	block += line_size;			\
     } while (--h)
 
-#define OP8_X2(LOAD, STORE)				\
+#define OP8_X2(LOAD, LOAD16, STORE)			\
     do {						\
 	uint64_t p0, p1;				\
 							\
@@ -61,12 +81,11 @@ static inline uint64_t avg2(uint64_t a, uint64_t b)
 	block += line_size;				\
     } while (--h)
 
-#define OP16_X2(LOAD, STORE)					\
+#define OP16_X2(LOAD, LOAD16, STORE)				\
     do {							\
 	uint64_t p0, p1;					\
 								\
-	p0 = LOAD(pixels);					\
-	p1 = LOAD(pixels + 8);					\
+	LOAD16(p0, p1, pixels);					\
 	STORE(avg2(p0, p0 >> 8 | p1 << 56), block);		\
 	STORE(avg2(p1, p1 >> 8 | (uint64_t) pixels[16] << 56),	\
 	      block + 8);					\
@@ -74,39 +93,44 @@ static inline uint64_t avg2(uint64_t a, uint64_t b)
 	block += line_size;					\
     } while (--h)
 
-#define OP8_Y2(LOAD, STORE)			\
-    do {					\
-	uint64_t pix = LOAD(pixels);		\
-	do {					\
-	    uint64_t np;			\
-						\
-	    pixels += line_size;		\
-	    np = LOAD(pixels);			\
-	    STORE(avg2(pix, np), block);	\
-	    block += line_size;			\
-	    pix = np;				\
-	} while (--h);				\
-    } while (0)
-
-#define OP16_Y2(LOAD, STORE)			\
+#define OP8_Y2(LOAD, LOAD16, STORE)		\
     do {					\
 	uint64_t p0 = LOAD(pixels);		\
-	uint64_t p1 = LOAD(pixels + 8);		\
+	pixels += line_size;			\
+	uint64_t p1 = LOAD(pixels);		\
 	do {					\
-	    uint64_t np0, np1;			\
-						\
+	    uint64_t av = avg2(p0, p1);		\
+	    if (--h == 0) line_size = 0;	\
 	    pixels += line_size;		\
-	    np0 = LOAD(pixels);			\
-	    np1 = LOAD(pixels + 8);		\
-	    STORE(avg2(p0, np0), block);	\
-	    STORE(avg2(p1, np1), block + 8);	\
+	    p0 = p1;				\
+	    p1 = LOAD(pixels);			\
+	    STORE(av, block);			\
 	    block += line_size;			\
-	    p0 = np0;				\
-	    p1 = np1;				\
-	} while (--h);				\
+	} while (h);				\
     } while (0)
 
-#define OP8_XY2(LOAD, STORE)					\
+#define OP16_Y2(LOAD, LOAD16, STORE)		\
+    do {					\
+	uint64_t p0l, p0r, p1l, p1r;		\
+	LOAD16(p0l, p0r, pixels);		\
+	pixels += line_size;			\
+	LOAD16(p1l, p1r, pixels);		\
+	do {					\
+	    uint64_t avl, avr;			\
+	    if (--h == 0) line_size = 0;	\
+	    avl = avg2(p0l, p1l);		\
+	    avr = avg2(p0r, p1r);		\
+	    p0l = p1l;				\
+	    p0r = p1r;				\
+	    pixels += line_size;		\
+	    LOAD16(p1l, p1r, pixels);		\
+	    STORE(avl, block);			\
+	    STORE(avr, block + 8);		\
+	    block += line_size;			\
+	} while (h);				\
+    } while (0)
+
+#define OP8_XY2(LOAD, LOAD16, STORE)				\
     do {							\
 	uint64_t pl, ph;					\
 	uint64_t p1 = LOAD(pixels);				\
@@ -138,13 +162,12 @@ static inline uint64_t avg2(uint64_t a, uint64_t b)
 	} while (--h);						\
     } while (0)
 
-#define OP16_XY2(LOAD, STORE)					\
+#define OP16_XY2(LOAD, LOAD16, STORE)				\
     do {							\
-	uint64_t pl_l, ph_l, pl_r, ph_r;			\
-	uint64_t p0 = LOAD(pixels);				\
-	uint64_t p2 = LOAD(pixels + 8);				\
-	uint64_t p1 = p0 >> 8 | (p2 << 56);			\
-	uint64_t p3 = p2 >> 8 | ((uint64_t) pixels[16] << 56);	\
+	uint64_t p0, p1, p2, p3, pl_l, ph_l, pl_r, ph_r;	\
+	LOAD16(p0, p2, pixels);					\
+	p1 = p0 >> 8 | (p2 << 56);				\
+	p3 = p2 >> 8 | ((uint64_t) pixels[16] << 56);		\
 								\
 	ph_l = ((p0 & ~BYTE_VEC(0x03)) >> 2)			\
 	     + ((p1 & ~BYTE_VEC(0x03)) >> 2);			\
@@ -159,8 +182,7 @@ static inline uint64_t avg2(uint64_t a, uint64_t b)
 	    uint64_t npl_l, nph_l, npl_r, nph_r;		\
 								\
 	    pixels += line_size;				\
-	    p0 = LOAD(pixels);					\
-	    p2 = LOAD(pixels + 8);				\
+	    LOAD16(p0, p2, pixels);				\
 	    p1 = p0 >> 8 | (p2 << 56);				\
 	    p3 = p2 >> 8 | ((uint64_t) pixels[16] << 56);	\
 	    nph_l = ((p0 & ~BYTE_VEC(0x03)) >> 2)		\
@@ -193,9 +215,9 @@ static void MC_ ## OPNAME ## _ ## SUFF ## _ ## SIZE ## _alpha		\
 	 int line_size, int h)						\
 {									\
     if ((uint64_t) pixels & 0x7) {					\
-	OPKIND(uldq, STORE);						\
+	OPKIND(uldq, ULOAD16, STORE);					\
     } else {								\
-	OPKIND(ldq, STORE);						\
+	OPKIND(ldq, ALOAD16, STORE);					\
     }									\
 }
 
