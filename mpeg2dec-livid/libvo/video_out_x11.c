@@ -328,6 +328,7 @@ static void * xshm_create_shm (int size)
     shminfo->shmaddr = shmat (shminfo->shmid, 0, 0);
     if (shminfo->shmaddr == (char *)-1)
 	return NULL;
+    shmctl (shminfo->shmid, IPC_RMID, 0);
 
     /* XShmAttach fails on remote displays, so we have to catch this event */
 
@@ -343,8 +344,6 @@ static void * xshm_create_shm (int size)
     XSetErrorHandler (NULL);
     if (priv->error)
 	return NULL;
-
-    shmctl (shminfo->shmid, IPC_RMID, 0);
 
     priv->shmindex++;
     return shminfo->shmaddr;
