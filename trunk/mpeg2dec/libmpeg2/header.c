@@ -271,6 +271,17 @@ static int sequence_display_ext (mpeg2dec_t * mpeg2dec)
     return 0;
 }
 
+static inline void simplify (unsigned int * u, unsigned int * v)
+{
+    unsigned int a, b, tmp;
+
+    a = *u;	b = *v;
+    while (a) {	/* find greatest common divisor */
+	tmp = a;	a = b % tmp;	b = tmp;
+    }
+    *u /= b;	*v /= b;
+}
+
 static inline void finalize_sequence (mpeg2_sequence_t * sequence)
 {
     int width;
@@ -307,8 +318,10 @@ static inline void finalize_sequence (mpeg2_sequence_t * sequence)
 	    sequence->pixel_width = 64;	sequence->pixel_height = 45;	return;
 	case 6:	/* 720x480 16:9 */
 	    sequence->pixel_width = 32;	sequence->pixel_height = 27;	return;
-	case 12:	/* 720*480 4:3 */
-	    sequence->pixel_width = 8;	sequence->pixel_height = 9;	return;
+	case 8: /* BT.601 625 lines 4:3 */
+	    sequence->pixel_width = 59;	sequence->pixel_height = 54;	return;
+	case 12: /* BT.601 525 lines 4:3 */
+	    sequence->pixel_width = 10;	sequence->pixel_height = 11;	return;
 	default:
 	    height = 88 * sequence->pixel_width + 1171;
 	    width = 2000;
@@ -317,13 +330,80 @@ static inline void finalize_sequence (mpeg2_sequence_t * sequence)
 
     sequence->pixel_width = width;
     sequence->pixel_height = height;
-    while (width) {	/* find greatest common divisor */
-	int tmp = width;
-	width = height % tmp;
-	height = tmp;
+    simplify (&sequence->pixel_width, &sequence->pixel_height);
+}
+
+int mpeg2_guess_aspect (const mpeg2_sequence_t * sequence,
+			unsigned int * pixel_width,
+			unsigned int * pixel_height)
+{
+    static struct {
+	unsigned int width, height;
+    } video_modes[] = {
+	{720, 576}, /* 625 lines, 13.5 MHz (D1, DV, DVB, DVD) */
+	{704, 576}, /* 625 lines, 13.5 MHz (1/1 D1, DVB, DVD, 4CIF) */
+	{544, 576}, /* 625 lines, 10.125 MHz (DVB, laserdisc) */
+	{528, 576}, /* 625 lines, 10.125 MHz (3/4 D1, DVB, laserdisc) */
+	{480, 576}, /* 625 lines, 9 MHz (2/3 D1, DVB, SVCD) */
+	{352, 576}, /* 625 lines, 6.75 MHz (D2, 1/2 D1, CVD, DVB, DVD) */
+	{352, 288}, /* 625 lines, 6.75 MHz, 1 field (D4, VCD, DVB, DVD, CIF) */
+	{176, 144}, /* 625 lines, 3.375 MHz, half field (QCIF) */
+	{720, 486}, /* 525 lines, 13.5 MHz (D1) */
+	{704, 486}, /* 525 lines, 13.5 MHz */
+	{720, 480}, /* 525 lines, 13.5 MHz (DV, DSS, DVD) */
+	{704, 480}, /* 525 lines, 13.5 MHz (1/1 D1, ATSC, DVD) */
+	{544, 480}, /* 525 lines. 10.125 MHz (DSS, laserdisc) */
+	{528, 480}, /* 525 lines. 10.125 MHz (3/4 D1, laserdisc) */
+	{480, 480}, /* 525 lines, 9 MHz (2/3 D1, SVCD) */
+	{352, 480}, /* 525 lines, 6.75 MHz (D2, 1/2 D1, CVD, DVD) */
+	{352, 240}  /* 525  lines. 6.75 MHz, 1 field (D4, VCD, DSS, DVD) */
+    };
+    unsigned int width, height, pix_width, pix_height, i, DAR_16_9;
+
+    *pixel_width = sequence->pixel_width;
+    *pixel_height = sequence->pixel_height;
+    width = sequence->picture_width;
+    height = sequence->picture_height;
+    for (i = 0; i < sizeof (video_modes) / sizeof (video_modes[0]); i++)
+	if (width == video_modes[i].width && height == video_modes[i].height)
+	    break;
+    if (i == sizeof (video_modes) / sizeof (video_modes[0]) ||
+	(sequence->pixel_width == 1 && sequence->pixel_height == 1) ||
+	width != sequence->display_width || height != sequence->display_height)
+	return 0;
+
+    for (pix_height = 1; height * pix_height < 480; pix_height <<= 1);
+    height *= pix_height;
+    for (pix_width = 1; width * pix_width <= 352; pix_width <<= 1);
+    width *= pix_width;
+
+    if (! (sequence->flags & SEQ_FLAG_MPEG2)) {
+	static unsigned int mpeg1_check[2][2] = {{11, 54}, {27, 45}};
+	DAR_16_9 = (sequence->pixel_height == 27 ||
+		    sequence->pixel_height == 45);
+	if (width < 704 ||
+	    sequence->pixel_height != mpeg1_check[DAR_16_9][height == 576])
+	    return 0;
+    } else {
+	DAR_16_9 = (3 * sequence->picture_width * sequence->pixel_width >
+		    4 * sequence->picture_height * sequence->pixel_height);
+	switch (width) {
+	case 528: case 544:	pix_width *= 4; pix_height *= 3; break;
+	case 480:		pix_width *= 3; pix_height *= 2; break;
+	}
     }
-    sequence->pixel_width /= height;
-    sequence->pixel_height /= height;
+    if (DAR_16_9) {
+	pix_width *= 4; pix_height *= 3;
+    }
+    if (height == 576) {
+	pix_width *= 59; pix_height *= 54;
+    } else {
+	pix_width *= 10; pix_height *= 11;
+    }
+    *pixel_width = pix_width;
+    *pixel_height = pix_height;
+    simplify (pixel_width, pixel_height);
+    return (height == 576) ? 1 : 2;
 }
 
 static void copy_matrix (mpeg2dec_t * mpeg2dec, int index)
