@@ -59,6 +59,7 @@ static struct x11_priv_s {
     XImage * ximage;
 
 #ifdef LIBVO_XSHM
+    int error;
     XShmSegmentInfo shminfo[3];
 #endif
 
@@ -304,6 +305,14 @@ static int xshm_check_extension (void)
     return 0;
 }
 
+static int x11_handle_error (Display * display, XErrorEvent * error)
+{
+    struct x11_priv_s * priv = &x11_priv;
+
+    priv->error = 1;
+    return 0;
+}
+
 static int xshm_create_shm (XShmSegmentInfo * shminfo, int size)
 {
     struct x11_priv_s * priv = &x11_priv;
@@ -316,11 +325,18 @@ static int xshm_create_shm (XShmSegmentInfo * shminfo, int size)
     if (shminfo->shmaddr == (char *)-1)
 	return 1;
 
+    /* XShmAttach fails on remote displays, so we have to catch this event */
+
+    priv->error = 0;
+    XSetErrorHandler (x11_handle_error);
+
     shminfo->readOnly = True;
     if (! (XShmAttach (priv->display, shminfo)))
 	return 1;
 
-    return 0;
+    XSync (priv->display, False);
+    XSetErrorHandler (NULL);
+    return priv->error;
 }
 
 static void xshm_destroy_shm (XShmSegmentInfo * shminfo)
