@@ -1,7 +1,7 @@
 
-CFLAGS = -Wall -O3 -g -fomit-frame-pointer 
+CFLAGS = @CFLAGS@
 
-#lib_LTLIBRARIES = libmpeg2.a
+lib_LTLIBRARIES = libmpeg2.la
 lib_LIBRARIES = libmpeg2.a
 
 noinst_HEADERS = config.h getvlc.h stats.h parse.h  motion_comp.h \
@@ -16,4 +16,8 @@ libmpeg2_a_LIBADD = @LIB_CONFIG_OBJS@
 libmpeg2_a_SOURCES = getvlc.c parse.c stats.c idct.c motion_comp.c\
 	motion_comp_c.c decode.c bitstream.c debug.c
 libmpeg2_a_DEPENDENCIES = @LIB_CONFIG_OBJS@
-#libmpeg2_a_LDFLAGS = -version-info 1:6:1
+
+libmpeg2_la_LIBADD = @LIB_CONFIG_OBJS@
+libmpeg2_la_SOURCES = libmpeg2_a_SOURCES
+libmpeg2_la_LDFLAGS = -version-info 1:6:1
+libmpeg2_la_DEPENDENCIES = @LIB_CONFIG_OBJS@

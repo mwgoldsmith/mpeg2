@@ -52,6 +52,3 @@ do
 done
 
 ./configure "$@"
-
-echo 
-echo "Now type 'make' to compile $PROG."

@@ -2,7 +2,7 @@
 
 AUTOMAKE_OPTIONS = 1.3 foreign no-dependencies
 
-CFLAGS = -Wall -O3 -g -fomit-frame-pointer 
+CFLAGS = @CFLAGS@
 
 SUBDIRS = libmpeg2 tools drivers .
 
