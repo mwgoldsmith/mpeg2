@@ -98,7 +98,7 @@ static void print_fps (int final)
     last_count = frame_counter;
 }
  
-static void signal_handler (int sig)
+static RETSIGTYPE signal_handler (int sig)
 {
     print_fps (1);
     signal (sig, SIG_DFL);
