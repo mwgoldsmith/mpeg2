@@ -1,5 +1,4 @@
 * things we dont get quite right yet (though we dont see the difference)
-	* DCT block parsing (rounding, oddification, ...)
 	* IDCT routine compliant with IEEE1180
 
 * things we dont implement yet
@@ -10,6 +9,7 @@
 
 * structural optimizations
 	* integrate idct_add and idct_copy into the main idct routine
+	* DCT coefficient parsing
 	* get rid of slice structure, put it into picture
 	* do yuv per sub-slice (probably big speed boost)
 	* try different memory arrangements for pictures (yuyv, pitch, ...)
