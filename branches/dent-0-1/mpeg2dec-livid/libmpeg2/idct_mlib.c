@@ -34,9 +34,16 @@
 void
 idct_block_mlib(sint_16 *block)
 {
+   // Aaron decided to integrate some scaling in the c/mmx code,
+   // we need to undo that now before calling a standard IDCT.
+   int i;
+   for (i=0; i<64; i++)
+   {
+       block[i] >>= 4;
+   }
    // Should we use mlib_VideoIDCT_IEEE_S16_S16 here ??
    // it's ~30% slower.
-	mlib_VideoIDCT8x8_S16_S16(block, block); 
+   mlib_VideoIDCT8x8_S16_S16 (block, block);
 }
 
 void
