@@ -27,7 +27,7 @@
 
 #ifdef __OMS__
 #include <oms/oms.h>
-#include <oms/plugin/codec_video.h>
+#include <oms/plugin/output_video.h>
 #endif
  
 #include "config.h"
