@@ -18,18 +18,19 @@ if test x"$no_x" != x"yes"; then
 fi
 
 dnl check for DirectX
-AC_ARG_WITH([directx],[  --with-directx          use Win32 DirectX])
-case $with_directx in
+AC_ARG_ENABLE([directx],
+    [  --enable-directx=DIR    use Win32 DirectX headers in DIR])
+case $enable_directx in
     ""|yes)	AC_CHECK_HEADERS([ddraw.h],
 		    [AC_DEFINE([LIBVO_DX],,[libvo DirectX support])
 		    LIBVO_LIBS="$LIBVO_LIBS -lgdi32"]);;
     no)		;;
-    *)		if test -f "$with_directx/ddraw.h"; then
+    *)		if test -f "$enable_directx/ddraw.h"; then
 		    AC_DEFINE([LIBVO_DX],,[libvo DirectX support])
-		    LIBVO_CFLAGS="$LIBVO_CFLAGS -I${with_directx}"
+		    LIBVO_CFLAGS="$LIBVO_CFLAGS -I$enable_directx"
 		    LIBVO_LIBS="$LIBVO_LIBS -lgdi32"
 		else
-		    AC_MSG_ERROR([Cannot find $with_directx/ddraw.h])
+		    AC_MSG_ERROR([Cannot find $enable_directx/ddraw.h])
 		fi;;
 esac
 
