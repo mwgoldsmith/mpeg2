@@ -1,0 +1,69 @@
+tcela-15 is an SP@ML bitstream designed for testing that decoders
+can handle properly bitstreams that contain a lot of stuffing.
+
+This bitstream will be added to the Video Conformance Testing bitstream
+set for the "ID = 28" test.
+
+Parameters are the following:
+
+Bitstream ID:   28
+Description:    A bitstream with a lot of zero byte stuffing;
+
+In the first half of the bitstream, at one of the legal positions in
+the bitstream, there will be at least 0.9*VBV_buffer_size zero bit
+stuffing
+
+In the second half of the bitstream, there will be in each picture, at
+a legal position, between R/P and 0.9*R/P zero bit stuffing (R=maximal
+bit rate of the bitstream ; P=picture rate of the bitstream)
+
+Stresses:       parser
+Parameters:     SP@ML, 61 frames, low_delay=0
+Organization:   TCE-LA
+
+Bit rate:               15 Mbit/sec 
+Sampling dimensions:    720  x 480 x 30 Hz 
+vbv_buffer_size:        maximum vbv_buffer_size for SP@ML 
+
+Please check that you can decode it.  Thank-you.
+
+        Bitstream file             tcela-15.bits
+        Reconstructed frames*      tcela-15.decoded
+        Decoding trace **          tcela-15.trace (first 3 frames)
+        picture structure          I0 P1 P2 P3... (frame-structure)
+
+        *frame format:
+
+                4:2:0 frame ("display" order) 8 bit
+
+                       width
+                +---------------+
+                |               |
+                |      Y0       | height
+                |width/2        |
+                +-------+-------+
+                |  Cb0  | height/2
+                +-------+
+                |  Cr0  | height/2
+                +-------+-------+
+                |               |
+                |      Y1       |
+                |               |
+                +-------+-------+
+                |       |
+                  etc...
+
+        ** Only the first row of MBs is traced.
+           More complete traces are available on special order.
+
+
+Best regards,
+
+Tristan
+
+-------------------------------------------------------------
+ Tristan Savatier                  E-mail: tristan@la.tce.com
+ THOMSON CONSUMER ELECTRONICS            TEL: +1 310 568 9003
+ Los Angeles Laboratory                  FAX: +1 310 568 9002
+ 5601 W. Slauson Ave., Suite 262, Culver City,  CA 90230, USA
+-------------------------------------------------------------

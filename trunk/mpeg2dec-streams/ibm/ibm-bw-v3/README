@@ -1,0 +1,70 @@
+ 
+-----------------------------> In this package <-----------------------
+ 
+ibm-bw.README           Readme file
+ibm-bw.BITS             Compressed data
+ibm-bw.decoded          Reconstructed images
+ibm-bw.TRACE            Decoder trace
+ 
+ 
+ 
+-----------------------------> General info <---------------------------
+ 
+Description: Stresses decoder bandwidth by mixing calls for large amounts
+        of compressed data and reconstructed data.
+Picture structure: Frame
+Number of frames: 30
+Picture types: IPPPPPPPPPPPPPPPPPPPPPPPPPPPPP
+Level/profile: MP@ML
+Vbv buffer size: Max for MP@ML
+Resolution: 720X480, 4:2:0
+Bit rate:   6,000,000 Mbits/sec
+Rate:       29.97 frames/sec
+
+-----------------------------> Frame by frame <---------------------------
+ 
+1           Regular I frame picture
+2,13,23     P frames with random mix of high bit rate intra macroblocks
+            and dual macroblocks with zero DCT coefficients.  The
+            first two intra macroblocks in each slice have maximum
+            coefficient data; the remaining have half.  The dual
+            macroblocks have no coefficient data.  The horizontal
+            vector component is always zero.  The vertical component is
+            1 in the first slice, -1 in the last slice, and zero elsewhere.
+            Delta mv is zero.
+3-11,13-22  P frames with maximum number of skipped macroblocks.
+24-30       Regular P frames
+ 
+ 
+ 
+-----------------------------> Reconstructed data <---------------------------
+ 
+4:2:0, frame based as
+ 
+                       width
+                +---------------+
+                |               |
+                |      Y0       | height
+                |width/2        |
+                +-------+-------+
+                |  Cb0  | height/2
+                +-------+
+                |  Cr0  | height/2
+                +-------+-------+
+                |               |
+                |      Y1       |
+                |               |
+                +-------+-------+
+                |       |
+                  etc...
+ 
+==================================================================================
+ 
+Elliot Linzer
+IBM Research
+P.O. Box 704
+Yorktown Heights, NY 10598
+ 
+914-784-7790
+ 
+ELLIOTL @ WATSON.IBM.COM
