@@ -88,7 +88,7 @@ void yuv2rgb_init (int bpp, int mode)
     if (yuv2rgb == NULL) {
 	fprintf (stderr, "No accelerated colorspace conversion found\n");
 	yuv2rgb_c_init (bpp, mode);
-	yuv2rgb = (yuv2rgb_fun)yuv2rgb_c;
+	yuv2rgb = (yuv2rgb_fun) yuv2rgb_c;
     }
 }
 
@@ -339,11 +339,13 @@ static void yuv2rgb_c_init (int bpp, int mode)
 	table_g = table_32 + 197 + 2*682;
 
 	for (i = -197; i < 256+197; i++)
-	    ((uint32_t *)table_r)[i] = table_Y[i+384] << ((mode==MODE_RGB) ? 16 : 0);
+	    ((uint32_t *) table_r)[i] =
+		table_Y[i+384] << ((mode==MODE_RGB) ? 16 : 0);
 	for (i = -132; i < 256+132; i++)
-	    ((uint32_t *)table_g)[i] = table_Y[i+384] << 8;
+	    ((uint32_t *) table_g)[i] = table_Y[i+384] << 8;
 	for (i = -232; i < 256+232; i++)
-	    ((uint32_t *)table_b)[i] = table_Y[i+384] << ((mode==MODE_RGB) ? 0 : 16);
+	    ((uint32_t *) table_b)[i] =
+		table_Y[i+384] << ((mode==MODE_RGB) ? 0 : 16);
 	break;
 
     case 24:

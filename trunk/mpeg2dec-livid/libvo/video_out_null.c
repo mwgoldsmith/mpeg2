@@ -21,7 +21,7 @@
 
 #include "config.h"
 
-#include <stdlib.h>	/* only used for NULL */
+#include <stdlib.h>
 #include <inttypes.h>
 
 #include "video_out.h"
