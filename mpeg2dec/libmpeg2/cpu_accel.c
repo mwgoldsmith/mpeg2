@@ -126,9 +126,11 @@ static RETSIGTYPE sigill_handler (int sig)
 
 static inline uint32_t arch_accel (void)
 {
-    signal (SIGILL, sigill_handler);
+    static volatile sighandler_t oldsig;
+
+    oldsig = signal (SIGILL, sigill_handler);
     if (sigsetjmp (jmpbuf, 1)) {
-	signal (SIGILL, SIG_DFL);
+	signal (SIGILL, oldsig);
 	return 0;
     }
 
@@ -139,7 +141,7 @@ static inline uint32_t arch_accel (void)
 		  :
 		  : "r" (-1));
 
-    signal (SIGILL, SIG_DFL);
+    signal (SIGILL, oldsig);
     return MPEG2_ACCEL_PPC_ALTIVEC;
 }
 #endif /* ARCH_PPC */
