@@ -6,34 +6,34 @@
          69 65 72 2c 20 54 43 45 20 28 4c 6f 73 20 41 6e  ier, TCE (Los An
          67 65 6c 65 73 29 00                             geles)          
       e3 SG --- --- - GOP  0: 0: 0: 3
-      ef SG AA- --- ? PICTURE I fields 2 time_ref 0 offset 0/0
+      ef SG AA- --- ? PICTURE I PROG fields 2 time_ref 0 offset 0/0
     28e6 SG aa- --- ? SLICE
-    28f3 SG BB- aa- ? PICTURE P fields 2 time_ref 1 offset 0/0
+    28f3 SG BB- aa- ? PICTURE P PROG fields 2 time_ref 1 offset 0/0
     acc7 SG bb- aa- ? SLICE
-    acd4 SG CC- bb- a PICTURE P fields 2 time_ref 2 offset 0/0
+    acd4 SG CC- bb- a PICTURE P PROG fields 2 time_ref 2 offset 0/0
     bb7a SG cc- bb- a SLICE
-    bb87 SG DD- cc- b PICTURE P fields 2 time_ref 3 offset 0/0
+    bb87 SG DD- cc- b PICTURE P PROG fields 2 time_ref 3 offset 0/0
     c54b SG dd- cc- b SLICE
-    c558 SG EE- dd- c PICTURE P fields 2 time_ref 4 offset 0/0
+    c558 SG EE- dd- c PICTURE P PROG fields 2 time_ref 4 offset 0/0
     cdc5 SG ee- dd- c SLICE
-    cdd2 SG FF- ee- d PICTURE P fields 2 time_ref 5 offset 0/0
+    cdd2 SG FF- ee- d PICTURE P PROG fields 2 time_ref 5 offset 0/0
     d9ec SG ff- ee- d SLICE
-    d9f9 SG GG- ff- e PICTURE P fields 2 time_ref 6 offset 0/0
+    d9f9 SG GG- ff- e PICTURE P PROG fields 2 time_ref 6 offset 0/0
     e5e5 SG gg- ff- e SLICE
-    e5f2 SG HH- gg- f PICTURE P fields 2 time_ref 7 offset 0/0
+    e5f2 SG HH- gg- f PICTURE P PROG fields 2 time_ref 7 offset 0/0
     f1e5 SG hh- gg- f SLICE
-    f1f2 SG II- hh- g PICTURE P fields 2 time_ref 8 offset 0/0
+    f1f2 SG II- hh- g PICTURE P PROG fields 2 time_ref 8 offset 0/0
     fdde SG ii- hh- g SLICE
-    fdeb SG JJ- ii- h PICTURE P fields 2 time_ref 9 offset 0/0
+    fdeb SG JJ- ii- h PICTURE P PROG fields 2 time_ref 9 offset 0/0
    109d4 SG jj- ii- h SLICE
-   109e1 SG KK- jj- i PICTURE P fields 2 time_ref 10 offset 0/0
+   109e1 SG KK- jj- i PICTURE P PROG fields 2 time_ref 10 offset 0/0
    115f4 SG kk- jj- i SLICE
-   11601 SG LL- kk- j PICTURE P fields 2 time_ref 11 offset 0/0
+   11601 SG LL- kk- j PICTURE P PROG fields 2 time_ref 11 offset 0/0
    1220e SG ll- kk- j SLICE
-   1221b SG MM- ll- k PICTURE P fields 2 time_ref 12 offset 0/0
+   1221b SG MM- ll- k PICTURE P PROG fields 2 time_ref 12 offset 0/0
    12e2b SG mm- ll- k SLICE
-   12e38 SG NN- mm- l PICTURE P fields 2 time_ref 13 offset 0/0
+   12e38 SG NN- mm- l PICTURE P PROG fields 2 time_ref 13 offset 0/0
    13a1a SG nn- mm- l SLICE
-   13a27 SG OO- nn- m PICTURE P fields 2 time_ref 14 offset 0/0
+   13a27 SG OO- nn- m PICTURE P PROG fields 2 time_ref 14 offset 0/0
    145d2 SG oo- nn- m SLICE
    145d2 SG --- oo- n END
