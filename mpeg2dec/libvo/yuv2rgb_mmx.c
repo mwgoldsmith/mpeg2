@@ -125,7 +125,7 @@ static inline void mmx_yuv2rgb (uint8_t * py, uint8_t * pu, uint8_t * pv)
     punpcklbw_r2r (mm5, mm2);		/* mm2 = G7 G6 G5 G4 G3 G2 G1 G0 */
 }
 
-static inline void mmx_unpack_16rgb (uint8_t * image, int cpu)
+static inline void mmx_unpack_16rgb (uint8_t * image, const int cpu)
 {
     static mmx_t mmx_bluemask = {0xf8f8f8f8f8f8f8f8LL};
     static mmx_t mmx_greenmask = {0xfcfcfcfcfcfcfcfcLL};
@@ -159,7 +159,7 @@ static inline void mmx_unpack_16rgb (uint8_t * image, int cpu)
     movntq (mm5, *(image+8));
 }
 
-static inline void mmx_unpack_32rgb (uint8_t * image, int cpu)
+static inline void mmx_unpack_32rgb (uint8_t * image, const int cpu)
 {
     /*
      * convert RGB plane to RGB packed format,
@@ -195,7 +195,7 @@ static inline void yuv420_rgb16 (uint8_t * image,
 				 uint8_t * py, uint8_t * pu, uint8_t * pv,
 				 int width, int height,
 				 int rgb_stride, int y_stride, int uv_stride,
-				 int cpu)
+				 const int cpu)
 {
     int i;
 
@@ -231,7 +231,7 @@ static inline void yuv420_argb32 (uint8_t * image, uint8_t * py,
 				  uint8_t * pu, uint8_t * pv,
 				  int width, int height,
 				  int rgb_stride, int y_stride, int uv_stride,
-				  int cpu)
+				  const int cpu)
 {
     int i;
 
