@@ -1,5 +1,0 @@
-      26 S- --- --- - SEQUENCE MPEG2 profile 9c 16x16384 chroma 8x8192 fps 30 maxBps 37500 vbv 40960 picture 16x16368 display 720x480 pixel 1x1
-      2e SG --- --- - GOP  0: 0: 0: 0
-      3f SG AA- --- ? PICTURE I fields 2 TFF time_ref 0 offset 0/0 0/0
-   3fa3f SG aa- --- ? SLICE
-   3fa3f SG --- aa- ? END
