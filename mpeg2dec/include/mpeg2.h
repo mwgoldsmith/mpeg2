@@ -130,10 +130,19 @@ typedef enum {
     STATE_INVALID_END = 10
 } mpeg2_state_t;
 
-struct convert_init_s;
-void mpeg2_convert (mpeg2dec_t * mpeg2dec,
-		    void convert (const mpeg2_sequence_t *, uint32_t, void *,
-				  struct convert_init_s *), void * arg);
+typedef struct mpeg2_convert_init_s {
+    void * id;
+    int id_size;
+    int buf_size[3];
+    void (* start) (void * id, const mpeg2_fbuf_t * fbuf,
+		    const mpeg2_picture_t * picture, const mpeg2_gop_t * gop);
+    void (* copy) (void * id, uint8_t * const * src, unsigned int v_offset);
+} mpeg2_convert_init_t;
+typedef void mpeg2_convert_t (const mpeg2_sequence_t * sequence,
+			      uint32_t accel, void * arg,
+			      mpeg2_convert_init_t * result);
+void mpeg2_convert (mpeg2dec_t * mpeg2dec, mpeg2_convert_t convert,
+		    void * arg);
 void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id);
 void mpeg2_custom_fbuf (mpeg2dec_t * mpeg2dec, int custom_fbuf);
 

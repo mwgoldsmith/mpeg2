@@ -31,7 +31,6 @@
 #include "mpeg2.h"
 #include "attributes.h"
 #include "mpeg2_internal.h"
-#include "convert.h"
 
 #define SEQ_EXT 2
 #define SEQ_DISPLAY_EXT 4

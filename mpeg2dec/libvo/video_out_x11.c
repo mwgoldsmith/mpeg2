@@ -123,7 +123,7 @@ static void uyvy_copy (void * id, uint8_t * const * src, unsigned int v_offset)
 }
 
 void convert_uyvy (const mpeg2_sequence_t * seq, uint32_t accel, void * arg,
-		   convert_init_t * result)
+		   mpeg2_convert_init_t * result)
 {
     convert_uyvy_t * instance = (convert_uyvy_t *) result->id;
 
