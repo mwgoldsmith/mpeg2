@@ -1,11 +1,11 @@
-AC_SUBST(HAVE_3DFX)
-AC_SUBST(HAVE_MGA)
-AC_SUBST(HAVE_SDL)
-AC_SUBST(HAVE_X11)
-AC_SUBST(HAVE_XV)
-AC_SUBST(LIBVO_CFLAGS)
-AC_SUBST(LIBVO_CONFIG_LIBS)
-AC_SUBST(LIBVO_CONFIG_OBJS)
+dnl AC_SUBST(HAVE_3DFX)
+dnl AC_SUBST(HAVE_MGA)
+dnl AC_SUBST(HAVE_SDL)
+dnl AC_SUBST(HAVE_X11)
+dnl AC_SUBST(HAVE_XV)
+dnl AC_SUBST(LIBVO_CFLAGS)
+dnl AC_SUBST(LIBVO_CONFIG_LIBS)
+dnl AC_SUBST(LIBVO_CONFIG_OBJS)
 
 dnl 
 dnl Display driver probing...
@@ -15,12 +15,12 @@ AC_ARG_ENABLE(3dfx,
   [  --disable-3dfx		make a version not using experimental 3dfx driver],
   enable_3dfx=no, enable_3dfx=yes)
 if test x$enable_3dfx = xyes; then
-	AC_DEFINE(HAVE_3DFX)
 	AC_MSG_CHECKING(for /dev/3dfx)
 
 	if test -c "/dev/3dfx"; then
 		AC_MSG_RESULT(found)
 		X_LIBS="$X_LIBS -lXxf86dga"
+		AC_DEFINE(HAVE_3DFX,1,[Define if MGA GX00 is installed])
 		AM_CONDITIONAL(HAVE_3DFX, true)
 	else
 		AC_MSG_RESULT(not found)
@@ -36,12 +36,11 @@ AC_ARG_ENABLE(mga,
   [  --disable-mga		make a version not using MGA],
   enable_mga=no, enable_mga=yes)
 if test x$enable_mga = xyes; then
-	AC_DEFINE(HAVE_MGA)
-	AM_CONDITIONAL(HAVE_MGA,true)
 	AC_MSG_CHECKING(for /dev/mga_vid)
 
 	if test -c "/dev/mga_vid"; then
 		AC_MSG_RESULT(found)
+		AC_DEFINE(HAVE_MGA,1,[Define if MGA GX00 is installed])
 		AM_CONDITIONAL(HAVE_MGA, true)
 	else
 		AC_MSG_RESULT(not found)
@@ -127,7 +126,7 @@ dnl
 
 AC_MSG_CHECKING(for SMP)
 AC_SUBST(MOD_CFLAGS)
-if uname -a | grep SMP >/dev/null; then
+if uname -a | grep SMP > /dev/null; then
 	AC_MSG_RESULT(yes)
 	MOD_CFLAGS=-D__SMP__
 else
