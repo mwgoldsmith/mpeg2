@@ -182,7 +182,7 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
     decoder->picture_structure = FRAME_PICTURE;
     decoder->second_field = 0;
 
-    mpeg2dec->ext_state = SEQ_EXT;
+    mpeg2dec->ext_state = SEQ_EXT | USER_DATA;
     mpeg2dec->state = STATE_SEQUENCE;
 
     mpeg2dec->info.sequence = sequence;
@@ -369,7 +369,7 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 	if (type == PIC_FLAG_CODING_TYPE_B)
 	    mpeg2dec->info.display_picture_2nd = picture;
     }
-    mpeg2dec->ext_state = PIC_CODING_EXT;
+    mpeg2dec->ext_state = PIC_CODING_EXT | USER_DATA;
     mpeg2dec->picture = picture;
 
     picture->temporal_reference = (buffer[0] << 2) | (buffer[1] >> 6);
