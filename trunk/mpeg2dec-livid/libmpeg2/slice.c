@@ -323,8 +323,6 @@ void motion_conceal (motion_t * motion)
 {
 	int tmp;
 
-	bitstream_flush (1); // remove marker_bit
-
 	tmp = motion->pmv[0][0] + get_motion_delta (motion->f_code[0]);
 	tmp = bound_motion_vector (tmp, motion->f_code[0]);
 	motion->pmv[1][0] = motion->pmv[0][0] = tmp;
@@ -332,6 +330,8 @@ void motion_conceal (motion_t * motion)
 	tmp = motion->pmv[0][1] + get_motion_delta (motion->f_code[1]);
 	tmp = bound_motion_vector (tmp, motion->f_code[1]);
 	motion->pmv[1][1] = motion->pmv[0][1] = tmp;
+
+	bitstream_flush (1); // remove marker_bit
 }
 
 
