@@ -158,6 +158,9 @@ void header_process_sequence_header (picture_t * picture, uint_8 * buffer)
 		buffer += 64;
 	}
 
+	// this is not used by the decoder
+	picture->frame_rate_code = buffer[3] & 15;
+
 	picture->non_intra_quantizer_matrix = default_non_intra_quantization_matrix;
 	if (buffer[7] & 1)
 	{
@@ -175,6 +178,9 @@ static int header_process_sequence_extension (picture_t * picture, uint_8 * buff
 {
 	if (((buffer[1] & 0x07) != 0x02) || (buffer[2] & 0xe0) || ((buffer[4] & 0x40) != 0x40))
 		return 1;	// not 4:2:0 chroma format, or size extensions not zero, or marker bit not set
+
+	// this is not used by the decoder
+	picture->progressive_sequence = (buffer[1] >> 3) & 1;
 
 	return 0;
 }
@@ -214,6 +220,11 @@ static int header_process_picture_coding_extension (picture_t * picture, uint_8 
 #endif
 			picture->scan = scan_norm;
 	}
+
+	// these are not used by the decoder
+	picture->top_field_first = buffer[3] >> 7;
+	picture->repeat_first_field = (buffer[3] >> 1) & 1;
+	picture->progressive_frame = buffer[4] >> 7;
 
 	return 0;
 }
