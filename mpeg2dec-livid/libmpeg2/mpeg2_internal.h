@@ -126,6 +126,14 @@ typedef struct picture_s
 	uint_8 *forward_reference_frame[3];
 	uint_8 *backward_reference_frame[3];
 	uint_8 *throwaway_frame[3];
+
+	//these things are not needed by the decoder
+	//NOTICE : this is a temporary interface, we will build a better one later.
+	uint_16 frame_rate_code;
+	uint_16 progressive_sequence;
+	uint_16 top_field_first;
+	uint_16 repeat_first_field;
+	uint_16 progressive_frame;
 } picture_t;
 
 // state that is carried from one macroblock to the next inside of a same slice
