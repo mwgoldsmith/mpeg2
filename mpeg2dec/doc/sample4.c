@@ -84,7 +84,7 @@ static void sample4 (FILE * mpgfile)
 	    mpeg2_convert (decoder, convert_rgb24, NULL);
 	    pixels = info->sequence->width * info->sequence->height;
 	    for (i = 0; i < 3; i++) {
-		fbuf[i][0] = malloc (3 * pixels);
+		fbuf[i][0] = (uint8_t *) malloc (3 * pixels);
 		fbuf[i][1] = fbuf[i][2] = NULL;
 		if (!fbuf[i][0]) {
 		    fprintf (stderr, "Could not allocate an output buffer.\n");

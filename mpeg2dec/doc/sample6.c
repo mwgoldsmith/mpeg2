@@ -103,7 +103,7 @@ static void sample6 (FILE * mpgfile)
 	    mpeg2_custom_fbuf (decoder, 1);
 	    pixels = info->sequence->width * info->sequence->height;
 	    for (i = 0; i < 3; i++) {
-		fbuf[i].rgb[0] = malloc (3 * pixels);
+		fbuf[i].rgb[0] = (uint8_t *) malloc (3 * pixels);
 		fbuf[i].rgb[1] = fbuf[i].rgb[2] = NULL;
 		if (!fbuf[i].rgb[0]) {
 		    fprintf (stderr, "Could not allocate an output buffer.\n");
