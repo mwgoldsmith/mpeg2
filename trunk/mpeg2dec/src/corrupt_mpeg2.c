@@ -29,6 +29,7 @@
 #include <string.h>
 #include <errno.h>
 #include <getopt.h>
+#include <ctype.h>
 #ifdef HAVE_IO_H
 #include <fcntl.h>
 #include <io.h>
@@ -45,17 +46,25 @@ typedef struct {
     uint32_t p, q[8], r;
 } randbyte_t;
 
-typedef struct {
-    randbyte_t prob;
-} random_corrupt_t;
+#define CORRUPT_RANDOM 0
+#define CORRUPT_VALUE 1
 
-typedef union {
-    random_corrupt_t random;
+typedef struct corrupt_s {
+    int type;
+    int chunk_start, chunk_stop;
+    int bit_start, bit_stop;
+    union {
+	randbyte_t prob;
+    } u;
+    struct corrupt_s * next;
+    uint8_t mask;
 } corrupt_t;
 
 #define CORRUPT_LIST_SIZE 10
 static corrupt_t corrupt_list[10];
 static int corrupt_list_index = 0;
+static corrupt_t * corrupt_head = NULL;
+static int current_chunk = -1, current_bit = 0, target_bit = 0x7fffffff;
 
 static inline uint32_t fastrand (void)
 {
@@ -87,7 +96,7 @@ static inline uint8_t randbyte (const randbyte_t * const rand)
 {
     int i, j;
 
-    if (fastrand () > rand->r)
+    if (fastrand () > rand->r || rand->r == 0)
 	return 0;
 
     i = 7; j = 0;
@@ -100,13 +109,52 @@ static inline uint8_t randbyte (const randbyte_t * const rand)
 
 static void print_usage (char ** argv)
 {
-    fprintf (stderr, "usage: %s [-h] [-l <seed>] [-s <seedfile>] <file>\n"
+    fprintf (stderr, "usage: %s [-h] [-l <seed>] [-s <seedfile>] \\\n"
+	     "\t\t[-r prob[,restrict] [-v prob[,restrict]] <file>\n"
 	     "\t-h\tdisplay help\n"
 	     "\t-l load seed\n"
 	     "\t-s save seed file\n"
-	     , argv[0]);
+	     "\t-r random corruption\n"
+	     "\t-v random value\n"
+	     "restrict: chunk[-endchunk][,bit[-endbit]]\n", argv[0]);
 
     exit (1);
+}
+
+static void corrupt_arg (corrupt_t * corrupt, int type, char * s, char ** argv)
+{
+    corrupt->type = type;
+    if (! *s)
+	s = ",0-0xff,0-";
+    else if (*s != ',' || !isdigit (s[1]))
+	print_usage (argv);
+    corrupt->chunk_start = strtol (s + 1, &s, 0);
+    if (*s != '-')
+	corrupt->chunk_stop = corrupt->chunk_start;
+    else if (isdigit (* ++s))
+	corrupt->chunk_stop = strtol (s, &s, 0);
+    else
+	print_usage (argv);
+    if (! *s)
+	s = ",32-";
+    else if (*s != ',' || !isdigit (s[1]))
+	print_usage (argv);
+    corrupt->bit_start = strtol (s + 1, &s, 0);
+    if (*s != '-')
+	corrupt->bit_stop = corrupt->bit_start;
+    else if (isdigit (* ++s))
+	corrupt->bit_stop = strtol (s, &s, 0);
+    else
+	corrupt->bit_stop = 0x7ffffffe;
+    if (corrupt->chunk_start < 0 ||
+	corrupt->chunk_start > corrupt->chunk_stop ||
+	corrupt->chunk_stop >= 0x1000 ||
+	corrupt->bit_start < 0 || corrupt->bit_start > corrupt->bit_stop || *s)
+	print_usage (argv);
+    if (corrupt->chunk_stop < 0x100) {
+	corrupt->chunk_start <<= 4;
+	corrupt->chunk_stop = (corrupt->chunk_stop << 4) | 0xf;
+    }
 }
 
 static void handle_args (int argc, char ** argv)
@@ -116,7 +164,7 @@ static void handle_args (int argc, char ** argv)
     char * s;
     corrupt_t * corrupt;
 
-    while ((c = getopt (argc, argv, "hl:s:r:")) != -1)
+    while ((c = getopt (argc, argv, "hl:s:r:v:")) != -1)
 	switch (c) {
 	case 'l':
 	    if (seed_file || seed_loaded)
@@ -137,11 +185,22 @@ static void handle_args (int argc, char ** argv)
 
 	case 'r':
 	    prob = strtod (optarg, &s);
-	    if (prob < 0 || prob > 1 || *s ||
+	    if (prob < 0 || prob > 1 || 
 		corrupt_list_index == CORRUPT_LIST_SIZE)
 		print_usage (argv);
 	    corrupt = corrupt_list + corrupt_list_index++;
-	    randbyte_init (prob, &corrupt->random.prob);
+	    corrupt_arg (corrupt, CORRUPT_RANDOM, s, argv);
+	    randbyte_init (prob, &corrupt->u.prob);
+	    break;
+
+	case 'v':
+	    prob = strtod (optarg, &s);
+	    if (prob < 0 || prob > 1 || 
+		corrupt_list_index == CORRUPT_LIST_SIZE)
+		print_usage (argv);
+	    corrupt = corrupt_list + corrupt_list_index++;
+	    corrupt_arg (corrupt, CORRUPT_VALUE, s, argv);
+	    randbyte_init (prob, &corrupt->u.prob);
 	    break;
 
 	default:
@@ -162,12 +221,64 @@ static void handle_args (int argc, char ** argv)
 	seed_file = fopen ("seed", "wt");
 }
 
+static void update_corrupt_list (void)
+{
+    corrupt_t * corrupt;
+    corrupt_t ** corrupt_link;
+
+    corrupt_link = &corrupt_head;
+    target_bit = 0x7fffffff;
+    for (corrupt = corrupt_list;
+	 corrupt < corrupt_list + corrupt_list_index; corrupt++)
+	if (corrupt->chunk_start <= current_chunk &&
+	    corrupt->chunk_stop >= current_chunk &&
+	    corrupt->bit_stop >= current_bit) {
+	    if (corrupt->bit_start >= current_bit + 8) {
+		if (corrupt->bit_start <= target_bit)
+		    target_bit = corrupt->bit_start & ~7;
+	    } else {
+		*corrupt_link = corrupt;
+		corrupt_link = &corrupt->next;
+		if (corrupt->bit_stop >= current_bit + 7) {
+		    corrupt->mask = 0xff;
+		    if (corrupt->bit_stop <= target_bit)
+			target_bit = (corrupt->bit_stop + 1) & ~7;
+		} else {
+		    corrupt->mask = -1 << (7 - (corrupt->bit_stop & 7));
+		    target_bit = current_bit + 8;
+		}
+		if (corrupt->bit_start > current_bit) {
+		    corrupt->mask &= 0xff >> (corrupt->bit_start & 7);
+		    target_bit = current_bit + 8;
+		}
+	    }
+	}
+    *corrupt_link = NULL;
+}
+
 static void corrupt (uint8_t * ptr)
 {
-    int i;
+    corrupt_t * corrupt;
 
-    for (i = 0; i < corrupt_list_index; i++)
-	*ptr ^= randbyte (&corrupt_list[i].random.prob);
+    if (ptr[0] == 0 && ptr[1] == 0 && ptr[2] == 1) {
+	current_chunk = (ptr[3] << 4) | (ptr[4] >> 4);
+	current_bit = 0;
+	update_corrupt_list ();
+    } else if (current_bit == target_bit)
+	update_corrupt_list ();
+
+    current_bit += 8;
+
+    for (corrupt = corrupt_head; corrupt; corrupt = corrupt->next)
+	switch (corrupt->type) {
+	case CORRUPT_RANDOM:
+	    *ptr ^= randbyte (&corrupt->u.prob) & corrupt->mask;
+	    break;
+	case CORRUPT_VALUE:
+	    *ptr = ((*ptr & ~corrupt->mask) |
+		    (randbyte (&corrupt->u.prob) & corrupt->mask));
+	    break;
+	}
 }
 
 static void corrupt_loop (void)
