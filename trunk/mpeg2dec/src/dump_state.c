@@ -30,17 +30,87 @@
 #include "mpeg2.h"
 
 static struct {
+    const mpeg2_sequence_t * ptr;
+    mpeg2_sequence_t value;
+} last_sequence;
+static struct {
+    const mpeg2_gop_t * ptr;
+    mpeg2_gop_t value;
+} last_gop;
+static struct save_buf {
     const mpeg2_fbuf_t * ptr;
     mpeg2_fbuf_t value;
-} buf_code_list[26];
+} last_curbuf, last_dispbuf, last_discbuf, buf_code_list[26];
 static int buf_code_index = 0;
 static int buf_code_new = -1;
-static struct {
+static struct save_pic {
     const mpeg2_picture_t * ptr;
     mpeg2_picture_t value;
-} pic_code_list[26];
+} last_curpic, last_curpic2, last_disppic, last_disppic2, pic_code_list[26];
 static int pic_code_index = 0;
 static int pic_code_new = -1;
+
+static int sequence_match (const mpeg2_sequence_t * seq)
+{
+    return (last_sequence.ptr == seq &&
+	    (seq == NULL ||
+	     !memcmp (seq, &last_sequence.value, sizeof (mpeg2_sequence_t))));
+}
+
+static void sequence_save (const mpeg2_sequence_t * seq)
+{
+    last_sequence.ptr = seq;
+    if (seq != NULL)
+	last_sequence.value = *seq;
+}
+
+static char seq_code (const mpeg2_sequence_t * seq)
+{
+    if (seq == NULL)
+	return '-';
+    else if (sequence_match (seq))
+	return 'S';
+    else
+	return '?';
+}
+
+static int gop_match (const mpeg2_gop_t * gop)
+{
+    return (last_gop.ptr == gop &&
+	    (gop == NULL ||
+	     !memcmp (gop, &last_gop.value, sizeof (mpeg2_gop_t))));
+}
+
+static void gop_save (const mpeg2_gop_t * gop)
+{
+    last_gop.ptr = gop;
+    if (gop != NULL)
+	last_gop.value = *gop;
+}
+
+static char gop_code (const mpeg2_gop_t * gop)
+{
+    if (gop == NULL)
+	return '-';
+    else if (gop_match (gop))
+	return 'G';
+    else
+	return '?';
+}
+
+static int fbuf_match (const mpeg2_fbuf_t * fbuf, struct save_buf * saved)
+{
+    return (saved->ptr == fbuf &&
+	    (fbuf == NULL ||
+	     !memcmp (fbuf, &saved->value, sizeof (mpeg2_fbuf_t))));
+}
+
+static void fbuf_save (const mpeg2_fbuf_t * fbuf, struct save_buf * saved)
+{
+    saved->ptr = fbuf;
+    if (fbuf != NULL)
+	saved->value = *fbuf;
+}
 
 static char buf_code (const mpeg2_fbuf_t * fbuf)
 {
@@ -49,8 +119,7 @@ static char buf_code (const mpeg2_fbuf_t * fbuf)
     if (fbuf == NULL)
 	return '-';
     for (i = 0; i < 26; i++)
-	if (buf_code_list[i].ptr == fbuf &&
-	    !memcmp (fbuf, &buf_code_list[i].value, sizeof (mpeg2_fbuf_t)))
+	if (fbuf_match (fbuf, buf_code_list + i))
 	    return ((i == buf_code_new) ? 'A' : 'a') + i;
     return '?';
 }
@@ -60,13 +129,12 @@ static void buf_code_add (const mpeg2_fbuf_t * fbuf, FILE * f)
     int i;
 
     if (fbuf == NULL)
-	return;
+	fprintf (f, "buf_code_add error\n");
     for (i = 0; i < 26; i++)
 	if (buf_code_list[i].ptr == fbuf)
 	    fprintf (f, "buf_code_add error\n");
     buf_code_new = buf_code_index;
-    buf_code_list[buf_code_index].ptr = fbuf;
-    buf_code_list[buf_code_index].value = *fbuf;
+    fbuf_save (fbuf, buf_code_list + buf_code_index);
     if (++buf_code_index == 26)
 	buf_code_index = 0;
 }
@@ -78,11 +146,24 @@ static void buf_code_del (const mpeg2_fbuf_t * fbuf)
     if (fbuf == NULL)
 	return;
     for (i = 0; i < 26; i++)
-	if (buf_code_list[i].ptr == fbuf &&
-	    !memcmp (fbuf, &buf_code_list[i].value, sizeof (mpeg2_fbuf_t))) {
+	if (fbuf_match (fbuf, buf_code_list + i)) {
 	    buf_code_list[i].ptr = NULL;
 	    return;
 	}
+}
+
+static int picture_match (const mpeg2_picture_t * pic, struct save_pic * saved)
+{
+    return (saved->ptr == pic && 
+	    (pic == NULL ||
+	     !memcmp (pic, &saved->value, sizeof (mpeg2_picture_t))));
+}
+
+static void picture_save (const mpeg2_picture_t * pic, struct save_pic * saved)
+{
+    saved->ptr = pic;
+    if (pic != NULL)
+	saved->value = *pic;
 }
 
 static char pic_code (const mpeg2_picture_t * pic)
@@ -92,8 +173,7 @@ static char pic_code (const mpeg2_picture_t * pic)
     if (pic == NULL)
 	return '-';
     for (i = 0; i < 26; i++)
-	if (pic_code_list[i].ptr == pic &&
-	    !memcmp (pic, &pic_code_list[i].value, sizeof (mpeg2_picture_t)))
+	if (picture_match (pic, pic_code_list + i))
 	    return ((i == pic_code_new) ? 'A' : 'a') + i;
     return '?';
 }
@@ -103,13 +183,12 @@ static void pic_code_add (const mpeg2_picture_t * pic, FILE * f)
     int i;
 
     if (pic == NULL)
-	return;
+	fprintf (f, "pic_code_add error\n");
     for (i = 0; i < 26; i++)
 	if (pic_code_list[i].ptr == pic)
 	    fprintf (f, "pic_code_add error\n");
     pic_code_new = pic_code_index;
-    pic_code_list[pic_code_index].ptr = pic;
-    pic_code_list[pic_code_index].value = *pic;
+    picture_save (pic, pic_code_list + pic_code_index);
     if (++pic_code_index == 26)
 	pic_code_index = 0;
 }
@@ -121,8 +200,7 @@ static void pic_code_del (const mpeg2_picture_t * pic)
     if (pic == NULL)
 	return;
     for (i = 0; i < 26; i++)
-	if (pic_code_list[i].ptr == pic &&
-	    !memcmp (pic, &pic_code_list[i].value, sizeof (mpeg2_picture_t))) {
+	if (picture_match (pic, pic_code_list + i)) {
 	    pic_code_list[i].ptr = NULL;
 	    return;
 	}
@@ -149,16 +227,40 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
     int i;
     int nb_pos;
 
-    if (state == STATE_BUFFER)
+    if (state == STATE_BUFFER &&
+	sequence_match (seq) && gop_match (gop) &&
+	info->user_data == NULL && info->user_data_len == 0 &&
+	fbuf_match (info->current_fbuf, &last_curbuf) &&
+	fbuf_match (info->display_fbuf, &last_dispbuf) &&
+	fbuf_match (info->discard_fbuf, &last_discbuf) &&
+	picture_match (info->current_picture, &last_curpic) &&
+	picture_match (info->current_picture_2nd, &last_curpic2) &&
+	picture_match (info->display_picture, &last_disppic) &&
+	picture_match (info->display_picture_2nd, &last_disppic2))
 	return;
     fprintf (f, "%8x", offset);
     if (verbose > 1) {
-	if (state == STATE_PICTURE) {
+	switch (state) {
+	case STATE_PICTURE:
 	    buf_code_add (info->current_fbuf, f);
 	    pic_code_add (info->current_picture, f);
-	} else if (state == STATE_PICTURE_2ND)
+	    break;
+	case STATE_PICTURE_2ND:
 	    pic_code_add (info->current_picture_2nd, f);
-	fprintf (f, " %c%c %c%c%c %c%c%c %c", seq ? 'S' : '-', gop ? 'G' : '-',
+	    break;
+	case STATE_SEQUENCE:
+	    sequence_save (seq);
+	    break;
+	case STATE_SEQUENCE_REPEATED:
+	    last_sequence.value.byte_rate = seq->byte_rate;
+	    break;
+	case STATE_GOP:
+	    gop_save (gop);
+	    break;
+	default:
+	    break;
+	}
+	fprintf (f, " %c%c %c%c%c %c%c%c %c", seq_code (seq), gop_code (gop),
 		 buf_code (info->current_fbuf),
 		 pic_code (info->current_picture),
 		 pic_code (info->current_picture_2nd),
@@ -280,5 +382,26 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
 			fprintf (f, " ");
 		fprintf (f, "\n");
 	    }
+    }
+    if (state == STATE_END || state == STATE_INVALID_END) {
+	sequence_save (NULL);
+	gop_save (NULL);
+	fbuf_save (NULL, &last_curbuf);
+	fbuf_save (NULL, &last_dispbuf);
+	fbuf_save (NULL, &last_discbuf);
+	picture_save (NULL, &last_curpic);
+	picture_save (NULL, &last_curpic2);
+	picture_save (NULL, &last_disppic);
+	picture_save (NULL, &last_disppic2);
+    } else {
+	sequence_save (seq);
+	gop_save (gop);
+	fbuf_save (info->current_fbuf, &last_curbuf);
+	fbuf_save (info->display_fbuf, &last_dispbuf);
+	fbuf_save (info->discard_fbuf, &last_discbuf);
+	picture_save (info->current_picture, &last_curpic);
+	picture_save (info->current_picture_2nd, &last_curpic2);
+	picture_save (info->display_picture, &last_disppic);
+	picture_save (info->display_picture_2nd, &last_disppic2);
     }
 }
