@@ -23,7 +23,7 @@
 // 0 = decode B pictures in a small slice buffer, display slice per slice
 // 1 = decode in a frame buffer, display slice per slice
 // 2 = decode in a frame buffer, display whole frames
-#define HACK_MODE 0
+#define HACK_MODE 2
 
 // macroblock modes
 #define MACROBLOCK_INTRA 1
@@ -119,7 +119,7 @@ typedef struct picture_s {
 } picture_t;
 
 typedef struct motion_s {
-    uint8_t * ref[1][3];
+    uint8_t * ref[2][3];
     int pmv[2][2];
     int f_code[2];
 } motion_t;
