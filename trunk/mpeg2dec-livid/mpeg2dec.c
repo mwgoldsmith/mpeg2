@@ -156,10 +156,17 @@ static void signal_handler(int sig)
 void
 print_usage(char *argv[])
 {
+	uint_32 i = 0;
+
 	fprintf(stderr,"usage: %s [-o mode] [-s] file\n"
 	               "\t-s\tsystem stream (.vob file)\n"
-	               "\t-o\tvideo_output mode (x11,mga,sdl,3dfx)\n"
-	               , argv[0]);
+	               "\t-o\tvideo_output mode\n",argv[0]);
+	while (video_out_drivers[i++] != NULL) 
+	{
+		const vo_info_t *info = video_out_drivers[i]->get_info();
+		fprintf(stderr, "\t\t\t%s\t%s\n", info->short_name, info->name);
+	}
+
 	exit(1);
 }
 

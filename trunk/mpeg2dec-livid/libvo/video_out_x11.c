@@ -31,6 +31,18 @@ LIBVO_EXTERN(x11)
 #include <errno.h>
 #include "yuv2rgb.h"
 
+static vo_info_t vo_info = 
+{
+#ifdef HAVE_XV
+	"X11 (Xv)",
+#else
+	"X11",
+#endif
+	"x11",
+	"Aaron Holtzman <aholtzma@ess.engr.uvic.ca>",
+	""
+};
+
 /* private prototypes */
 static void Display_Image (XImage * myximage, unsigned char *ImageData);
 
@@ -94,14 +106,13 @@ static void DeInstallXErrorHandler()
 #endif
 
 
-uint_32 image_width;
-uint_32 image_height;
-uint_32 progressive_sequence = 0;
+static uint_32 image_width;
+static uint_32 image_height;
 
 /* connect to server, create and map window,
  * allocate colors and (shared) memory
  */
-uint_32 
+static uint_32 
 init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 {
 	int screen;
@@ -137,7 +148,7 @@ init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 	screen = DefaultScreen(mydisplay);
 
 	hint.x = 0;
-	hint.y = 10;
+	hint.y = 0;
 	hint.width = image_width;
 	hint.height = image_height;
 	hint.flags = PPosition | PSize;
@@ -409,7 +420,14 @@ init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 	return 0;
 }
 
-void 
+static const vo_info_t*
+get_info(void)
+{
+	return &vo_info;
+}
+
+
+static void 
 Terminate_Display_Process(void) 
 {
 	getchar();	/* wait for enter to remove window */
@@ -480,7 +498,7 @@ flip_page_x11(void)
 }
 
 
-void
+static void
 flip_page(void)
 {
 #if HAVE_XV
@@ -525,7 +543,7 @@ draw_slice_x11(uint_8 *src[], uint_32 slice_num)
 	return 0;
 }
 
-uint_32
+static uint_32
 draw_slice(uint_8 *src[], uint_32 slice_num)
 {
 #if HAVE_XV
@@ -585,7 +603,7 @@ draw_frame_x11(uint_8 *src[])
 	return 0; 
 }
 
-uint_32
+static uint_32
 draw_frame(uint_8 *src[])
 {
 #if HAVE_XV

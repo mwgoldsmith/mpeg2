@@ -41,6 +41,14 @@ LIBVO_EXTERN(sdl)
 
 #include "SDL.h"
 
+static vo_info_t vo_info = 
+{
+	"Simple Direct Media Library (SDL)",
+	"sdl",
+	"Ryan C. Gordon <icculus@lokigames.com>",
+	""
+};
+
 static SDL_Surface *surface = NULL;
 static SDL_Overlay *overlay = NULL;
 static SDL_Rect dispSize;
@@ -65,7 +73,7 @@ findArrayEnd(SDL_Rect **array)
     return(i - 1);
 } // findArrayEnd
 
-uint_32 
+static uint_32 
 init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 /*
  * Initialize an SDL surface and an SDL YUV overlay.
@@ -202,9 +210,15 @@ setbuf(stdout, NULL);
 } // display_init
 
 
+static const vo_info_t*
+get_info(void)
+{
+	return &vo_info;
+}
+
 
     // !!! do we still need this API function?
-uint_32 
+static uint_32 
 draw_frame(uint_8 *src[])
 /*
  * Draw a frame to the SDL YUV overlay.
@@ -234,7 +248,7 @@ draw_frame(uint_8 *src[])
 } // display_frame
 
 
-uint_32 
+static uint_32 
 draw_slice(uint_8 *src[], uint_32 slice_num)
 /*
  * Draw a slice (16 rows of image) to the SDL YUV overlay.
@@ -263,7 +277,7 @@ draw_slice(uint_8 *src[], uint_32 slice_num)
 } // display_slice
 
 
-void 
+static void 
 flip_page(void)
 {
     SDL_PumpEvents();  // get keyboard and win resize events.

@@ -50,6 +50,14 @@ LIBVO_EXTERN(3dfx)
 
 #include "drivers/3dfx.h"
 
+static vo_info_t vo_info = 
+{
+	"3dfx (/dev/3dfx)",
+	"3dfx",
+	"Colin Cross <colin@MIT.EDU>",
+	""
+};
+
 static uint_32 is_fullscreen = 1;
 
 static uint_32 vidwidth;
@@ -301,7 +309,7 @@ update_target(void)
 		targetoffset = vidpage0offset + (dispy*screenwidth + dispx)*screendepth;
 }
 
-uint_32 
+static uint_32 
 init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title) 
 {
 	int fd;
@@ -411,7 +419,13 @@ init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 	return 0;
 }
 
-uint_32 
+static const vo_info_t*
+get_info(void)
+{
+	return &vo_info;
+}
+
+static uint_32 
 draw_frame(uint_8 *src[]) 
 {
 	LOG("video_out_3dfx: starting display_frame\n");
@@ -424,8 +438,7 @@ draw_frame(uint_8 *src[])
 	return 0;
 }
 
-
-uint_32 
+static uint_32 
 draw_slice(uint_8 *src[], uint_32 slice_num) 
 {
 	uint_32 target;
@@ -435,7 +448,7 @@ draw_slice(uint_8 *src[], uint_32 slice_num)
 	return 0;
 }
 
-void 
+static void 
 flip_page(void) 
 {
 	//FIXME - update_target() should be called by event handler when window
