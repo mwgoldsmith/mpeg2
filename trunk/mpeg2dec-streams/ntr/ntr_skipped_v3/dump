@@ -1,4 +1,4 @@
-      9a S- --- --- - SEQUENCE MPEG2 SP@ML LOWDELAY 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15
+      9a S- --- --- - SEQUENCE MPEG2 SP@ML LOWDELAY 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15 guessed 59x54
       a2 SG --- --- - GOP  0: 0: 0: 0
       b3 SG AA- AA- ? PICTURE I fields 2 TFF time_ref 0 offset 0/0 0/0
    2785f SG aa- aa- ? SLICE
@@ -16,7 +16,7 @@
    a4859 SG gg- gg- f SLICE
    a486b SG HH- HH- g PICTURE P fields 2 TFF time_ref 7 offset 0/0 0/0
    b6d8c SG hh- hh- g SLICE
-   b6e22 S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML LOWDELAY 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15
+   b6e22 S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML LOWDELAY 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15 guessed 59x54
    b6e34 S- II- II- h PICTURE P fields 2 TFF time_ref 8 offset 0/0 0/0
    c95a6 S- ii- ii- h SLICE
    c95b8 S- JJ- JJ- i PICTURE P fields 2 TFF time_ref 9 offset 0/0 0/0
@@ -37,12 +37,12 @@
   15bd9b S- qq- qq- p SLICE
   15bdad S- RR- RR- q PICTURE P fields 2 TFF time_ref 17 offset 0/0 0/0
   16e047 S- rr- rr- q SLICE
-  16e0dd S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML LOWDELAY 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15
+  16e0dd S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML LOWDELAY 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15 guessed 59x54
   16e0ef S- SS- SS- r PICTURE P fields 2 TFF time_ref 18 offset 0/0 0/0
   17fc9b S- ss- ss- r SLICE
   17fcad S- TT- TT- s PICTURE P fields 2 TFF time_ref 19 offset 0/0 0/0
   192436 S- tt- tt- s SLICE
-  1924cc S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML LOWDELAY 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15
+  1924cc S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML LOWDELAY 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15 guessed 59x54
   1924d4 SG --- --- - GOP  0: 0: 0: 0
   1924e5 SG UU- UU- t PICTURE I fields 2 TFF time_ref 0 offset 0/0 0/0
   1b392d SG uu- uu- t SLICE
@@ -62,7 +62,7 @@
   234a45 SG bb- bb- a SLICE
   234a57 SG CC- CC- b PICTURE P fields 2 TFF time_ref 8 offset 0/0 0/0
   245dbd SG cc- cc- b SLICE
-  245e53 S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML LOWDELAY 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15
+  245e53 S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML LOWDELAY 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15 guessed 59x54
   245e65 S- DD- DD- c PICTURE P fields 2 TFF time_ref 9 offset 0/0 0/0
   259404 S- dd- dd- c SLICE
   259416 S- EE- EE- d PICTURE P fields 2 TFF time_ref 10 offset 0/0 0/0
@@ -83,12 +83,12 @@
   2ed0c6 S- ll- ll- k SLICE
   2ed0d8 S- MM- MM- l PICTURE P fields 2 TFF time_ref 18 offset 0/0 0/0
   2ff723 S- mm- mm- l SLICE
-  2ff7b9 S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML LOWDELAY 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15
+  2ff7b9 S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML LOWDELAY 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15 guessed 59x54
   2ff7cb S- NN- NN- m PICTURE P fields 2 TFF time_ref 19 offset 0/0 0/0
   311e70 S- nn- nn- m SLICE
   311e82 S- OO- OO- n PICTURE P fields 2 TFF time_ref 20 offset 0/0 0/0
   324509 S- oo- oo- n SLICE
-  32459f S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML LOWDELAY 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15
+  32459f S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML LOWDELAY 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15 guessed 59x54
   3245a7 SG --- --- - GOP  0: 0: 0: 0
   3245b8 SG PP- PP- o PICTURE I fields 2 TFF time_ref 0 offset 0/0 0/0
   34bd64 SG pp- pp- o SLICE
@@ -108,7 +108,7 @@
   3ca1ea SG ww- ww- v SLICE
   3ca1fc SG XX- XX- w PICTURE P fields 2 TFF time_ref 8 offset 0/0 0/0
   3dc58a SG xx- xx- w SLICE
-  3dc620 S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML LOWDELAY 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15
+  3dc620 S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML LOWDELAY 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15 guessed 59x54
   3dc632 S- YY- YY- x PICTURE P fields 2 TFF time_ref 9 offset 0/0 0/0
   3eede1 S- yy- yy- x SLICE
   3eedf3 S- ZZ- ZZ- y PICTURE P fields 2 TFF time_ref 10 offset 0/0 0/0

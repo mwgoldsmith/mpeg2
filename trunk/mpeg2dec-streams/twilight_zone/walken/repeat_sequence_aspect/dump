@@ -1,4 +1,4 @@
-      5a S- --- --- - SEQUENCE MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15
+      5a S- --- --- - SEQUENCE MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15 guessed 59x54
       62 SG --- --- - GOP  0: 0: 0: 0
       77 SG AA- --- ? PICTURE I fields 2 TFF time_ref 2 offset 0/0 0/0
     5d63 SG aa- --- ? SLICE
@@ -24,7 +24,7 @@
    4e8df SG kk- kk- k SLICE
    4e8f4 SG LL- LL- L PICTURE B fields 2 TFF time_ref 10 offset 0/0 0/0
    52160 SG ll- ll- l SLICE
-   521b6 S- --- --- - SEQUENCE_MODIFIED MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 64x45
+   521b6 S- --- --- - SEQUENCE_MODIFIED MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 64x45 guessed 118x81
    521be SG --- --- - GOP  0: 0: 0: 0
    521d3 SG MM- jj- g PICTURE I fields 2 TFF time_ref 2 offset 0/0 0/0
    5d55b SG mm- jj- g SLICE

@@ -1,4 +1,4 @@
-      9a S- --- --- - SEQUENCE MPEG2 MP@ML 704x480 chroma 352x240 fps 29.97 maxBps 1830500 vbv 229376 picture 704x480 display 704x480 pixel 10x11
+      9a S- --- --- - SEQUENCE MPEG2 MP@ML 704x480 chroma 352x240 fps 29.97 maxBps 1830500 vbv 229376 picture 704x480 display 704x480 pixel 10x11 guessed 10x11
       a2 SG --- --- - GOP 10: 0: 0: 0
       b3 SG AA- --- ? PICTURE I fields 2 TFF time_ref 0 offset 0/0 0/0
    270be SG aa- --- ? SLICE

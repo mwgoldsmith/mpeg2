@@ -1,4 +1,4 @@
-      53 S- --- --- - SEQUENCE MPEG2 422@ML COMPONENT BT.709 720x512 chroma 360x512 fps 29.97 maxBps 6250000 vbv 1179648 picture 720x486 display 720x486 pixel 9x10
+      53 S- --- --- - SEQUENCE MPEG2 422@ML COMPONENT BT.709 720x512 chroma 360x512 fps 29.97 maxBps 6250000 vbv 1179648 picture 720x486 display 720x486 pixel 9x10 guessed 10x11
          USER_DATA 41 bytes
          08 08 08 08 08 08 08 08 08 08 08 08 08 08 08 08                  
          08 08 08 08 08 08 00 54 65 6b 74 72 6f 6e 69 78         Tektronix
