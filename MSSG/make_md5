@@ -8,7 +8,7 @@ fi
 
 MPEG2DEC_STREAMS='../mpeg2dec-streams'
 
-streams=`find $MPEG2DEC_STREAMS -name stream|grep -v 422-profile`
+streams=`find $MPEG2DEC_STREAMS -name stream`
 
 for s in $streams; do
 	d=`dirname $s`

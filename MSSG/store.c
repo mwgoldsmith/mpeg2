@@ -183,12 +183,11 @@ int offset,incr,width,height;
   close(outfile);
 }
 
-static void store_pgm(outname,src,offset,incr,height)
+static void store_pgm(outname,src,offset,width,height)
 char *outname;
 unsigned char *src[];
-int offset,incr,height;
+int offset,width,height;
 {
-  int hsize;
   int i, j;
   unsigned char *p;
 
@@ -196,8 +195,6 @@ int offset,incr,height;
 
   if (!Quiet_Flag)
     fprintf(stderr,"saving %s\n",outname);
-
-  hsize = (horizontal_size + 15) & ~15;
 
   if ((outfile = open(outname,O_CREAT|O_TRUNC|O_WRONLY|O_BINARY,0666))==-1)
   {
@@ -207,23 +204,25 @@ int offset,incr,height;
 
   optr=obfr;
 
-  sprintf (header, "P5\n%d %d\n255\n", hsize, height*3/2);
-    for (j=0; header[j]; j++)
-      putbyte(header[j]);
+  sprintf (header, "P5\n%d %d\n255\n", 2*Chroma_Width, height+Chroma_Height);
+  for (j=0; header[j]; j++)
+    putbyte(header[j]);
 
   for (i=0; i<height; i++)
   {
-    p = src[0] + offset + incr*i;
-    for (j=0; j<hsize; j++)
+    p = src[0] + offset + width*i;
+    for (j=0; j<width; j++)
       putbyte(*p++);
+    for (; j<2*Chroma_Width; j++)
+      putbyte(0);
   }
-  for (i=0; i<height/2; i++)
+  for (i=0; i<Chroma_Height; i++)
   {
-    p = src[1] + offset/2 + incr*i/2;
-    for (j=0; j<hsize/2; j++)
+    p = src[1] + offset/2 + Chroma_Width*i;
+    for (j=0; j<Chroma_Width; j++)
       putbyte(*p++);
-    p = src[2] + offset/2 + incr*i/2;
-    for (j=0; j<hsize/2; j++)
+    p = src[2] + offset/2 + Chroma_Width*i;
+    for (j=0; j<Chroma_Width; j++)
       putbyte(*p++);
   }
 
