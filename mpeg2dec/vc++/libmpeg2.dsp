@@ -23,8 +23,8 @@ CFG=libmpeg2 - Win32 Debug
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
-# PROP Scc_ProjName ""
-# PROP Scc_LocalPath ""
+# PROP Scc_ProjName ""$/MPEG Decoding Accelerator/mpeg2dec-accel/libmpeg2", DACAAAAA"
+# PROP Scc_LocalPath "..\..\mpeg2dec-accel\libmpeg2"
 CPP=cl.exe
 RSC=rc.exe
 
@@ -83,6 +83,10 @@ LIB32=link.exe -lib
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
+# Begin Source File
+
+SOURCE=..\libmpeg2\alloc.c
+# End Source File
 # Begin Source File
 
 SOURCE=..\libmpeg2\cpu_state.c
