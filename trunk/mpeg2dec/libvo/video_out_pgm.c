@@ -82,9 +82,7 @@ static void pgm_draw_frame (vo_frame_t * frame)
     FILE * file;
 
     instance = (pgm_instance_t *) frame->instance;
-    if (++(instance->framenum) < 0)
-	return;
-    sprintf (instance->filename, "%d.pgm", instance->framenum);
+    sprintf (instance->filename, "%d.pgm", instance->framenum++);
     file = fopen (instance->filename, "wb");
     if (!file)
 	return;
@@ -106,7 +104,7 @@ vo_instance_t * vo_pgm_open (void)
         return NULL;
 
     instance->vo.setup = pgm_setup;
-    instance->framenum = -2;
+    instance->framenum = 0;
     return (vo_instance_t *) instance;
 }
 
@@ -115,8 +113,7 @@ static void pgmpipe_draw_frame (vo_frame_t * frame)
     pgm_instance_t * instance;
 
     instance = (pgm_instance_t *)frame->instance;
-    if (++(instance->framenum) >= 0)
-	internal_draw_frame (instance, stdout, frame);
+    internal_draw_frame (instance, stdout, frame);
 }
 
 static int pgmpipe_setup (vo_instance_t * instance, int width, int height)
@@ -133,7 +130,6 @@ vo_instance_t * vo_pgmpipe_open (void)
         return NULL;
 
     instance->vo.setup = pgmpipe_setup;
-    instance->framenum = -2;
     return (vo_instance_t *) instance;
 }
 
@@ -144,8 +140,6 @@ static void md5_draw_frame (vo_frame_t * frame)
 
     instance = (pgm_instance_t *) frame->instance;
     pgm_draw_frame (frame);
-    if (instance->framenum < 0)
-	return;
     sprintf (buf, "md5sum -b %s", instance->filename);
     system (buf);
     remove (instance->filename);
@@ -165,6 +159,6 @@ vo_instance_t * vo_md5_open (void)
         return NULL;
 
     instance->vo.setup = md5_setup;
-    instance->framenum = -2;
+    instance->framenum = 0;
     return (vo_instance_t *) instance;
 }
