@@ -26,11 +26,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#ifdef __OMS__
-#include <oms/plugin/output_video.h>
-#else
 #include "video_out.h"
-#endif
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 #include "mm_accel.h"
@@ -41,7 +37,7 @@
 mpeg2_config_t config;
 
 
-void mpeg2_init (mpeg2dec_t * mpeg2dec, plugin_output_video_t * output,
+void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output,
 		 void * user_data) 
 {
     
@@ -56,9 +52,9 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, plugin_output_video_t * output,
     // copy output structure into local mpeg2dec structure
     // FIXME this is ugly
     if (output != NULL) {
-	mpeg2dec->output=(plugin_output_video_t *) 
-	    malloc (sizeof (plugin_output_video_t));
-	memcpy(mpeg2dec->output,output,sizeof (plugin_output_video_t));
+	mpeg2dec->output=(vo_output_video_t *) 
+	    malloc (sizeof (vo_output_video_t));
+	memcpy(mpeg2dec->output,output,sizeof (vo_output_video_t));
     }
     
     // opaque user pointer (is passed to the output)
@@ -78,7 +74,6 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, plugin_output_video_t * output,
     idct_init ();
     motion_comp_init ();
 }
-
 
 static void decode_allocate_image_buffers (mpeg2dec_t * mpeg2dec)
 {
@@ -195,7 +190,7 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 	    mpeg2dec->in_slice = 1;
 
 	    if (!(mpeg2dec->is_display_initialized)) {
-		plugin_output_video_attr_t attr;
+		vo_output_video_attr_t attr;
 
 		attr.width = picture->coded_picture_width;
 		attr.height = picture->coded_picture_height;
@@ -248,7 +243,6 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
     return is_frame_done;
 }
 
-
 int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
 {
     uint32_t shift;
@@ -289,7 +283,6 @@ int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
     return ret;
 }
 
-
 void mpeg2_close (mpeg2dec_t * mpeg2dec)
 {
     static uint8_t finalizer[] = {0,0,1,0};
@@ -304,12 +297,10 @@ void mpeg2_close (mpeg2dec_t * mpeg2dec)
     mpeg2dec->output->free_image_buffer (mpeg2dec->throwaway_frame);
 }
 
-
 void mpeg2_drop (mpeg2dec_t * mpeg2dec, int flag)
 {
     mpeg2dec->drop_flag = flag;
 }
-
 
 void mpeg2_output_init (mpeg2dec_t * mpeg2dec,int flag)
 {
