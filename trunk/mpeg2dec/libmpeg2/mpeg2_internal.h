@@ -85,7 +85,7 @@ struct mpeg2_decoder_s {
     /* predictors */
     motion_t b_motion;
     motion_t f_motion;
-    motion_parser_t * motion_parser[4];
+    motion_parser_t * motion_parser[5];
 
     /* predictor for DC coefficients in intra blocks */
     int16_t dc_dct_pred[3];
