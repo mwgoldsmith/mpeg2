@@ -21,8 +21,6 @@
  *
  */
 
-
-#include <stdlib.h>
 #include <inttypes.h>
 
 #include "video_out.h"
@@ -30,45 +28,38 @@
 
 static int null_close (void * plugin)
 {
-	return 0;
+    return 0;
 }
-
 
 static int null_draw_slice (uint8_t * src[], int slice_num)
 {
-	return 0;
+    return 0;
 }
-
 
 static int null_draw_frame (frame_t * frame)
 {
-	return 0;
+    return 0;
 }
-
 
 static void null_flip_page (void)
 {
 }
 
-
 static int null_overlay (overlay_buf_t * overlay_buf, int id)
 {
-	return 0;
+    return 0;
 }
-
 
 static int null_setup (vo_output_video_attr_t *attr)
 {
-	return 0;
+    return 0;
 }
 
-
 static frame_t * null_allocate_image_buffer (int width, int height,
-					      uint32_t format)
+					     uint32_t format)
 {
     return libvo_common_alloc (width, height);
 }
-
 
 static void null_free_image_buffer (frame_t * frame)
 {
