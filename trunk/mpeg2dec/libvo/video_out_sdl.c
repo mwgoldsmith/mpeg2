@@ -92,6 +92,7 @@ static int sdl_alloc_frames (sdl_instance_t * instance, int width, int height)
 {
     int i;
 
+    instance->prediction_index = 1;
     for (i = 0; i < 3; i++) {
 	instance->frame[i].overlay =
 	    SDL_CreateYUVOverlay (width, height, SDL_YV12_OVERLAY,
