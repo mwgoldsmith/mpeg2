@@ -12,3 +12,4 @@ config.h.in
 stamp-h.in
 config.h
 stamp-h
+inttypes.h
