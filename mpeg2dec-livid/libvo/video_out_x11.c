@@ -265,7 +265,15 @@ static int x11_draw_slice (uint8_t * src[], int slice_num)
 }
 #endif
 
-extern vo_instance_t x11_vo_instance;
+static void x11_close (vo_instance_t * _this)
+{
+    x11_instance_t * this = (x11_instance_t *)_this;
+
+    libvo_common_free_frames ((vo_instance_t *)this);
+    if (this->ximage)
+	XDestroyImage (this->ximage);
+    common_close (this);
+}
 
 vo_instance_t * vo_x11_setup (vo_instance_t * _this, int width, int height)
 {
@@ -287,24 +295,12 @@ vo_instance_t * vo_x11_setup (vo_instance_t * _this, int width, int height)
 			  x11_draw_frame))
 	return NULL;
 
-    this->vo = x11_vo_instance;
+    this->vo.reinit = vo_x11_setup;
+    this->vo.close = x11_close;
+    this->vo.get_frame = libvo_common_get_frame;
 
     return (vo_instance_t *)this;
 }
-
-static void x11_close (vo_instance_t * _this)
-{
-    x11_instance_t * this = (x11_instance_t *)_this;
-
-    libvo_common_free_frames ((vo_instance_t *)this);
-    if (this->ximage)
-	XDestroyImage (this->ximage);
-    common_close (this);
-}
-
-static vo_instance_t x11_vo_instance = {
-    vo_x11_setup, x11_close, libvo_common_get_frame
-};
 
 #ifdef LIBVO_XSHM
 static int xshm_check_extension (x11_instance_t * this)
@@ -352,7 +348,7 @@ static void * xshm_create_shm (x11_instance_t * this, int size)
 
     this->shminfo.readOnly = True;
     if (! (XShmAttach (this->display, &(this->shminfo))))
-	return NULL;
+	shmerror = 1;
 
     XSync (this->display, False);
     XSetErrorHandler (NULL);
@@ -402,7 +398,17 @@ static void xshm_draw_frame (vo_frame_t * frame)
     XSync (this->display, False);
 }
 
-extern vo_instance_t xshm_vo_instance;
+static void xshm_close (vo_instance_t * _this)
+{
+    x11_instance_t * this = (x11_instance_t *)_this;
+
+    libvo_common_free_frames ((vo_instance_t *)this);
+    if (this->ximage) {
+	xshm_destroy_shm (this);
+	XDestroyImage (this->ximage);
+    }
+    common_close (this);
+}
 
 vo_instance_t * vo_xshm_setup (vo_instance_t * _this, int width, int height)
 {
@@ -429,26 +435,12 @@ vo_instance_t * vo_xshm_setup (vo_instance_t * _this, int width, int height)
 			  xshm_draw_frame))
 	return NULL;
 
-    this->vo = xshm_vo_instance;
+    this->vo.reinit = vo_xshm_setup;
+    this->vo.close = xshm_close;
+    this->vo.get_frame = libvo_common_get_frame;
 
     return (vo_instance_t *)this;
 }
-
-static void xshm_close (vo_instance_t * _this)
-{
-    x11_instance_t * this = (x11_instance_t *)_this;
-
-    libvo_common_free_frames ((vo_instance_t *)this);
-    if (this->ximage) {
-	xshm_destroy_shm (this);
-	XDestroyImage (this->ximage);
-    }
-    common_close (this);
-}
-
-static vo_instance_t xshm_vo_instance = {
-    vo_xshm_setup, xshm_close, libvo_common_get_frame
-};
 #endif
 
 #ifdef LIBVO_XV
@@ -599,32 +591,6 @@ static int xv_common_setup (x11_instance_t * this, int width, int height,
     return 0;
 }
 
-extern vo_instance_t xv_vo_instance;
-
-vo_instance_t * vo_xv_setup (vo_instance_t * _this, int width, int height)
-{
-    x11_instance_t * this;
-
-    if (_this != NULL)
-	return NULL;
-    this = malloc (sizeof (x11_instance_t));
-    if (this == NULL)
-	return NULL;
-
-    this->display = XOpenDisplay (NULL);
-    if (! (this->display)) {
-	fprintf (stderr, "Can not open display\n");
-	return NULL;
-    }
-
-    if (xv_common_setup (this, width, height, xv_alloc_frames))
-	return NULL;
-
-    this->vo = xv_vo_instance;
-
-    return (vo_instance_t *)this;
-}
-
 static void xv_close (vo_instance_t * _this)
 {
     x11_instance_t * this = (x11_instance_t *)_this;
@@ -665,9 +631,31 @@ vo_frame_t * xv_get_frame (vo_instance_t * _this, int prediction)
     }
 }
 
-static vo_instance_t xv_vo_instance = {
-    vo_xv_setup, xv_close, xv_get_frame
-};
+vo_instance_t * vo_xv_setup (vo_instance_t * _this, int width, int height)
+{
+    x11_instance_t * this;
+
+    if (_this != NULL)
+	return NULL;
+    this = malloc (sizeof (x11_instance_t));
+    if (this == NULL)
+	return NULL;
+
+    this->display = XOpenDisplay (NULL);
+    if (! (this->display)) {
+	fprintf (stderr, "Can not open display\n");
+	return NULL;
+    }
+
+    if (xv_common_setup (this, width, height, xv_alloc_frames))
+	return NULL;
+
+    this->vo.reinit = vo_xv_setup;
+    this->vo.close = xv_close;
+    this->vo.get_frame = xv_get_frame;
+
+    return (vo_instance_t *)this;
+}
 
 static void xvshm_draw_frame (vo_frame_t * _frame)
 {
@@ -723,7 +711,14 @@ static void xvshm_free_frames (x11_instance_t * this)
 	XFree (this->frame[i].xvimage);
 }
 
-extern vo_instance_t xvshm_vo_instance;
+static void xvshm_close (vo_instance_t * _this)
+{
+    x11_instance_t * this = (x11_instance_t *)_this;
+
+    xvshm_free_frames (this);
+    XvUngrabPort (this->display, this->port, 0);
+    common_close (this);
+}
 
 vo_instance_t * vo_xvshm_setup (vo_instance_t * _this, int width, int height)
 {
@@ -749,23 +744,12 @@ vo_instance_t * vo_xvshm_setup (vo_instance_t * _this, int width, int height)
     if (xv_common_setup (this, width, height, xvshm_alloc_frames))
 	return NULL;
 
-    this->vo = xvshm_vo_instance;
+    this->vo.reinit = vo_xvshm_setup;
+    this->vo.close = xvshm_close;
+    this->vo.get_frame = xv_get_frame;
 
     return (vo_instance_t *)this;
 }
-
-static void xvshm_close (vo_instance_t * _this)
-{
-    x11_instance_t * this = (x11_instance_t *)_this;
-
-    xvshm_free_frames (this);
-    XvUngrabPort (this->display, this->port, 0);
-    common_close (this);
-}
-
-static vo_instance_t xvshm_vo_instance = {
-    vo_xvshm_setup, xvshm_close, xv_get_frame
-};
 #endif
 
 #endif
