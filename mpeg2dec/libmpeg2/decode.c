@@ -301,8 +301,8 @@ mpeg2_state_t mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
 }
 
 void mpeg2_convert (mpeg2dec_t * mpeg2dec,
-		    void (* convert) (int, int, uint32_t, void *,
-				      struct convert_init_s *), void * arg)
+		    void convert (int, int, uint32_t, void *,
+				  struct convert_init_s *), void * arg)
 {
     convert_init_t convert_init;
     int size;

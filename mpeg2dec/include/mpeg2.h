@@ -132,8 +132,8 @@ typedef enum {
 
 struct convert_init_s;
 void mpeg2_convert (mpeg2dec_t * mpeg2dec,
-		    void (* convert) (int, int, uint32_t, void *,
-				      struct convert_init_s *), void * arg);
+		    void convert (int, int, uint32_t, void *,
+				  struct convert_init_s *), void * arg);
 void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id);
 void mpeg2_custom_fbuf (mpeg2dec_t * mpeg2dec, int custom_fbuf);
 
@@ -175,7 +175,7 @@ typedef enum {
 
 void * mpeg2_malloc (unsigned size, mpeg2_alloc_t reason);
 void mpeg2_free (void * buf);
-void mpeg2_malloc_hooks (void * (* malloc) (unsigned, mpeg2_alloc_t),
-			 int (* free) (void *));
+void mpeg2_malloc_hooks (void * malloc (unsigned, mpeg2_alloc_t),
+			 int free (void *));
 
 #endif /* MPEG2_H */
