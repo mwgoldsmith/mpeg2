@@ -1,3 +1,8 @@
+* decode.c:
+	* do not ignore parsing errors in headers
+	* error for "stream non demultiplexed"
+	* remove stats.c
+
 * things we dont implement yet
 	* export MC information (for XvMC or for error resilience)
 	* export quantizer information (for postprocessing filters)

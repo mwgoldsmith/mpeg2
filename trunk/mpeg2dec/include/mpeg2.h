@@ -89,10 +89,8 @@ typedef struct {
 
     uint32_t shift;
     int is_display_initialized;
+    int state;
     int is_sequence_needed;
-    int drop_flag;
-    int drop_frame;
-    int in_slice;
 
     /* the maximum chunk size is determined by vbv_buffer_size */
     /* which is 224K for MP@ML streams. */
@@ -140,7 +138,5 @@ int mpeg2_decode_data (mpeg2dec_t * mpeg2dec,
 		       uint8_t * data_start, uint8_t * data_end);
 
 void mpeg2_pts (mpeg2dec_t * mpeg2dec, uint32_t pts);
-
-void mpeg2_drop (mpeg2dec_t * mpeg2dec, int flag);
 
 #endif /* MPEG2_H */

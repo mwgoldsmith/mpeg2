@@ -42,6 +42,12 @@ void * memalign (size_t align, size_t size);
 
 #define BUFFER_SIZE (1194 * 1024)
 
+#define STATE_INVALID 0
+#define STATE_SEQUENCE 1
+#define STATE_GOP 2
+#define STATE_PICTURE 3
+#define STATE_SLICE 4
+
 void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
 		 vo_instance_t * output)
 {
@@ -59,9 +65,7 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
 
     mpeg2dec->shift = 0xffffff00;
     mpeg2dec->is_sequence_needed = 1;
-    mpeg2dec->drop_flag = 0;
-    mpeg2dec->drop_frame = 0;
-    mpeg2dec->in_slice = 0;
+    mpeg2dec->state = STATE_INVALID;
     mpeg2dec->output = output;
     mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
     mpeg2dec->code = 0xb4;
@@ -77,9 +81,8 @@ static inline int crap1 (mpeg2dec_t * mpeg2dec)
     decoder_t * decoder = mpeg2dec->decoder;
     int is_frame_done = 0;
 
-    if (((decoder->picture_structure == FRAME_PICTURE) ||
-	 (decoder->second_field)) &&
-	(!(mpeg2dec->drop_frame))) {
+    if ((decoder->picture_structure == FRAME_PICTURE) ||
+	(decoder->second_field)) {
 	is_frame_done = 1;
 	vo_draw ((decoder->coding_type == B_TYPE) ?
 		 decoder->current_frame :
@@ -111,25 +114,21 @@ static inline void crap3 (mpeg2dec_t * mpeg2dec)
 {
     decoder_t * decoder = mpeg2dec->decoder;
 
-    if (!(mpeg2dec->in_slice)) {
-	mpeg2dec->in_slice = 1;
-
-	if (decoder->second_field)
-	    vo_field (decoder->current_frame, decoder->picture_structure);
+    if (decoder->second_field)
+	vo_field (decoder->current_frame, decoder->picture_structure);
+    else {
+	if (decoder->coding_type == B_TYPE)
+	    decoder->current_frame =
+		vo_get_frame (mpeg2dec->output,
+			      decoder->picture_structure);
 	else {
-	    if (decoder->coding_type == B_TYPE)
-		decoder->current_frame =
-		    vo_get_frame (mpeg2dec->output,
-				  decoder->picture_structure);
-	    else {
-		decoder->current_frame =
-		    vo_get_frame (mpeg2dec->output,
-				  (VO_PREDICTION_FLAG |
-				   decoder->picture_structure));
-		decoder->forward_reference_frame =
-		    decoder->backward_reference_frame;
-		decoder->backward_reference_frame = decoder->current_frame;
-	    }
+	    decoder->current_frame =
+		vo_get_frame (mpeg2dec->output,
+			      (VO_PREDICTION_FLAG |
+			       decoder->picture_structure));
+	    decoder->forward_reference_frame =
+		decoder->backward_reference_frame;
+	    decoder->backward_reference_frame = decoder->current_frame;
 	}
     }
 }
@@ -203,56 +202,83 @@ int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
 	    return ret;
 
 	/* wait for sequence_header_code */
-	if (mpeg2dec->is_sequence_needed && (code != 0xb3))
+	if (mpeg2dec->state == STATE_INVALID && code != 0xb3)
 	    continue;
 
 	mpeg2_stats (code, mpeg2dec->chunk_buffer);
 
 	decoder = mpeg2dec->decoder;
 
-	if (mpeg2dec->in_slice && ((!code) || (code >= 0xb0))) {
-	    mpeg2dec->in_slice = 0;
-	    ret += crap1 (mpeg2dec);
-	}
-
 	switch (code) {
 	case 0x00:	/* picture_start_code */
-	    if (mpeg2_header_picture (mpeg2dec->chunk_buffer,
-				      &(mpeg2dec->info.picture), decoder)) {
-		fprintf (stderr, "bad picture header\n");
-		exit (1);
-	    }
-	    mpeg2dec->drop_frame =
-		mpeg2dec->drop_flag && (decoder->coding_type == B_TYPE);
+	    mpeg2_header_picture (mpeg2dec->chunk_buffer,
+				  &(mpeg2dec->info.picture), decoder);
 	    break;
-
 	case 0xb3:	/* sequence_header_code */
-	    if (mpeg2_header_sequence (mpeg2dec->chunk_buffer,
-				       &(mpeg2dec->info.sequence), decoder)) {
-		fprintf (stderr, "bad sequence header\n");
-		exit (1);
-	    }
-	    crap2 (mpeg2dec);
+	    mpeg2_header_sequence (mpeg2dec->chunk_buffer,
+				   &(mpeg2dec->info.sequence), decoder);
+	    mpeg2dec->state = STATE_SEQUENCE;
 	    break;
-
 	case 0xb5:	/* extension_start_code */
-	    if (mpeg2_header_extension (mpeg2dec->chunk_buffer,
-					&(mpeg2dec->info), decoder)) {
-		fprintf (stderr, "bad extension\n");
-		exit (1);
+	    mpeg2_header_extension (mpeg2dec->chunk_buffer,
+				    &(mpeg2dec->info), decoder);
+	    break;
+	default:
+	    if (code < 0xb0)
+		mpeg2_slice (decoder, code, mpeg2dec->chunk_buffer);
+	}
+
+#define RECEIVED(code,state) (((state) << 8) + (code))
+
+	switch (RECEIVED (mpeg2dec->code, mpeg2dec->state)) {
+
+	/* legal state transitions */
+	case RECEIVED (0x00, STATE_SEQUENCE):
+	case RECEIVED (0x00, STATE_GOP):
+	case RECEIVED (0x00, STATE_SLICE):
+	case RECEIVED (0xb3, STATE_SLICE):
+	case RECEIVED (0xb7, STATE_SLICE):
+	case RECEIVED (0xb8, STATE_SEQUENCE):
+	case RECEIVED (0xb8, STATE_SLICE):
+	    switch (mpeg2dec->state) {
+	    case STATE_SEQUENCE:
+		crap2 (mpeg2dec);		/* alloc picture buffers */
+		break;
+	    case STATE_SLICE:
+		ret += crap1 (mpeg2dec);	/* display picture, swap buf */
+		break;
 	    }
+	    switch (mpeg2dec->code) {
+	    case 0x00:	/* picture_start_code */
+		mpeg2dec->state = STATE_PICTURE;	break;
+	    case 0xb3:	/* sequence_header_code */
+		mpeg2dec->state = STATE_SEQUENCE;	break;
+	    case 0xb7:	/* sequence_end_code */
+		mpeg2dec->state = STATE_INVALID;	break;
+	    case 0xb8:	/* group_start_code */
+		mpeg2dec->state = STATE_GOP;		break;
+	    }
+
+	/* legal headers within a given state */
+	case RECEIVED (0xb2, STATE_SEQUENCE):
+	case RECEIVED (0xb2, STATE_GOP):
+	case RECEIVED (0xb2, STATE_PICTURE):
+	case RECEIVED (0xb5, STATE_SEQUENCE):
+	case RECEIVED (0xb5, STATE_PICTURE):
 	    break;
 
 	default:
-	    if (code >= 0xb9)
-		fprintf (stderr, "stream not demultiplexed ?\n");
-
-	    if (code >= 0xb0)
+	    if (mpeg2dec->code >= 0xb0) {
+	case RECEIVED (0x00, STATE_PICTURE):
+	illegal:
+		/* illegal codes (0x00 - 0xb8) or system codes (0xb9 - 0xff) */
 		break;
-
-	    crap3 (mpeg2dec);
-	    if (!(mpeg2dec->drop_frame))
-		mpeg2_slice (decoder, code, mpeg2dec->chunk_buffer);
+	    } else if (mpeg2dec->state == STATE_SLICE)
+		break;		/* second slice and later */
+	    else if (mpeg2dec->state != STATE_PICTURE)
+		goto illegal;	/* slice at unexpected place */
+	    mpeg2dec->state = STATE_SLICE;
+	    crap3 (mpeg2dec);	/* done decoding picture */
 	}
     }
     return ret;
@@ -277,9 +303,4 @@ void mpeg2_close (mpeg2dec_t * mpeg2dec)
 
     free (mpeg2dec->chunk_buffer);
     free (mpeg2dec->decoder);
-}
-
-void mpeg2_drop (mpeg2dec_t * mpeg2dec, int flag)
-{
-    mpeg2dec->drop_flag = flag;
 }
