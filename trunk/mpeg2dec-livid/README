@@ -3,6 +3,7 @@ mpeg2dec - a free MPEG-2 video stream decoder
 Written by Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
 
 Contributions by:
+	Bajusz Peter <hyp-x@inf.bme.hu> - motion comp fixes
 	Real Ouellet <realo@sympatico.ca> - g200 fixes
 	Brion Vibber <brion@gizmo.usc.edu> - x11 fixes
 	Franck SICARD <Franck.Sicard@miniruth.solsoft.fr> - x11 fixes

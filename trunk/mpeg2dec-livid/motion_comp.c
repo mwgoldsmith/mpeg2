@@ -240,13 +240,13 @@ motion_comp_c(picture_t *picture,mb_buffer_t *mb_buffer)
 				}
 			
 				if(mb->coded_block_pattern & 0x20)
-					soft_VideoAddBlock_U8_S16(dst_y,                 mb->y_blocks + 0 * 64, width);
+					soft_VideoAddBlock_U8_S16(dst_y,                 mb->y_blocks + 0 * 64, pitch);
 				if(mb->coded_block_pattern & 0x10)
-					soft_VideoAddBlock_U8_S16(dst_y + 8,             mb->y_blocks + 1 * 64, width);
+					soft_VideoAddBlock_U8_S16(dst_y + 8,             mb->y_blocks + 1 * 64, pitch);
 				if(mb->coded_block_pattern & 0x08)
-					soft_VideoAddBlock_U8_S16(dst_y + width * d,     mb->y_blocks + 2 * 64, width);
+					soft_VideoAddBlock_U8_S16(dst_y + width * d,     mb->y_blocks + 2 * 64, pitch);
 				if(mb->coded_block_pattern & 0x04)
-					soft_VideoAddBlock_U8_S16(dst_y + width * d + 8, mb->y_blocks + 3 * 64, width);
+					soft_VideoAddBlock_U8_S16(dst_y + width * d + 8, mb->y_blocks + 3 * 64, pitch);
 				
 				if(mb->coded_block_pattern & 0x02)
 					soft_VideoAddBlock_U8_S16(dst_cr, mb->cr_blocks, width/2);
