@@ -71,7 +71,7 @@ static void inline idct_row (int16_t * const block)
 
     /* shortcut */
     if (likely (!((l & ~0xffffUL) | r))) {
-	uint64_t tmp = (uint16_t) (l << 3);
+	uint64_t tmp = (uint16_t) (l >> 1);
 	tmp |= tmp << 16;
 	tmp |= tmp << 32;
 	((int32_t *)block)[0] = tmp;
@@ -81,7 +81,7 @@ static void inline idct_row (int16_t * const block)
 	return;
     }
 
-    d0 = (sextw (l) << 11) + 128;
+    d0 = (sextw (l) << 11) + 2048;
     d1 = sextw (extwl (l, 2));
     d2 = sextw (extwl (l, 4)) << 11;
     d3 = sextw (extwl (l, 6));
@@ -103,17 +103,17 @@ static void inline idct_row (int16_t * const block)
     b3 = t1 + t3;
     t0 -= t2;
     t1 -= t3;
-    b1 = ((t0 + t1) * 181) >> 8;
-    b2 = ((t0 - t1) * 181) >> 8;
+    b1 = ((t0 + t1) >> 8) * 181;
+    b2 = ((t0 - t1) >> 8) * 181;
 
-    block[0] = (a0 + b0) >> 8;
-    block[1] = (a1 + b1) >> 8;
-    block[2] = (a2 + b2) >> 8;
-    block[3] = (a3 + b3) >> 8;
-    block[4] = (a3 - b3) >> 8;
-    block[5] = (a2 - b2) >> 8;
-    block[6] = (a1 - b1) >> 8;
-    block[7] = (a0 - b0) >> 8;
+    block[0] = (a0 + b0) >> 12;
+    block[1] = (a1 + b1) >> 12;
+    block[2] = (a2 + b2) >> 12;
+    block[3] = (a3 + b3) >> 12;
+    block[4] = (a3 - b3) >> 12;
+    block[5] = (a2 - b2) >> 12;
+    block[6] = (a1 - b1) >> 12;
+    block[7] = (a0 - b0) >> 12;
 }
 
 static void inline idct_col (int16_t * const block)
@@ -142,10 +142,10 @@ static void inline idct_col (int16_t * const block)
     BUTTERFLY (t2, t3, W3, W5, d1, d2);
     b0 = t0 + t2;
     b3 = t1 + t3;
-    t0 = (t0 - t2) >> 8;
-    t1 = (t1 - t3) >> 8;
-    b1 = (t0 + t1) * 181;
-    b2 = (t0 - t1) * 181;
+    t0 -= t2;
+    t1 -= t3;
+    b1 = ((t0 + t1) >> 8) * 181;
+    b2 = ((t0 - t1) >> 8) * 181;
 
     block[8*0] = (a0 + b0) >> 17;
     block[8*1] = (a1 + b1) >> 17;
@@ -197,7 +197,7 @@ void mpeg2_idct_add_mvi (const int last, int16_t * block,
     uint64_t signmask;
     int i;
 
-    if (last != 129 || (block[0] & 7) == 4) {
+    if (last != 129 || (block[0] & (7 << 4)) == (4 << 4)) {
 	for (i = 0; i < 8; i++)
 	    idct_row (block + 8 * i);
 	for (i = 0; i < 8; i++)
@@ -245,7 +245,7 @@ void mpeg2_idct_add_mvi (const int last, int16_t * block,
 	uint64_t p0, p1, p2, p3, p4, p5, p6, p7;
 	uint64_t DCs;
 
-	DC = (block[0] + 4) >> 3;
+	DC = (block[0] + 64) >> 7;
 	block[0] = block[63] = 0;
 
 	p0 = ldq (dest + 0 * stride);
@@ -321,7 +321,7 @@ void mpeg2_idct_add_alpha (const int last, int16_t * block,
 {
     int i;
 
-    if (last != 129 || (block[0] & 7) == 4) {
+    if (last != 129 || (block[0] & (7 << 4)) == (4 << 4)) {
 	for (i = 0; i < 8; i++)
 	    idct_row (block + 8 * i);
 	for (i = 0; i < 8; i++)
@@ -345,7 +345,7 @@ void mpeg2_idct_add_alpha (const int last, int16_t * block,
     } else {
 	int DC;
 
-	DC = (block[0] + 4) >> 3;
+	DC = (block[0] + 64) >> 7;
 	block[0] = block[63] = 0;
 	i = 8;
 	do {

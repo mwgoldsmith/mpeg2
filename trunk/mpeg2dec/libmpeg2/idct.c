@@ -75,7 +75,7 @@ static void inline idct_row (int16_t * const block)
     /* shortcut */
     if (likely (!(block[1] | ((int32_t *)block)[1] | ((int32_t *)block)[2] |
 		  ((int32_t *)block)[3]))) {
-	uint32_t tmp = (uint16_t) (block[0] << 3);
+	uint32_t tmp = (uint16_t) (block[0] >> 1);
 	tmp |= tmp << 16;
 	((int32_t *)block)[0] = tmp;
 	((int32_t *)block)[1] = tmp;
@@ -84,7 +84,7 @@ static void inline idct_row (int16_t * const block)
 	return;
     }
 
-    d0 = (block[0] << 11) + 128;
+    d0 = (block[0] << 11) + 2048;
     d1 = block[1];
     d2 = block[2] << 11;
     d3 = block[3];
@@ -106,17 +106,17 @@ static void inline idct_row (int16_t * const block)
     b3 = t1 + t3;
     t0 -= t2;
     t1 -= t3;
-    b1 = ((t0 + t1) * 181) >> 8;
-    b2 = ((t0 - t1) * 181) >> 8;
+    b1 = ((t0 + t1) >> 8) * 181;
+    b2 = ((t0 - t1) >> 8) * 181;
 
-    block[0] = (a0 + b0) >> 8;
-    block[1] = (a1 + b1) >> 8;
-    block[2] = (a2 + b2) >> 8;
-    block[3] = (a3 + b3) >> 8;
-    block[4] = (a3 - b3) >> 8;
-    block[5] = (a2 - b2) >> 8;
-    block[6] = (a1 - b1) >> 8;
-    block[7] = (a0 - b0) >> 8;
+    block[0] = (a0 + b0) >> 12;
+    block[1] = (a1 + b1) >> 12;
+    block[2] = (a2 + b2) >> 12;
+    block[3] = (a3 + b3) >> 12;
+    block[4] = (a3 - b3) >> 12;
+    block[5] = (a2 - b2) >> 12;
+    block[6] = (a1 - b1) >> 12;
+    block[7] = (a0 - b0) >> 12;
 }
 
 static void inline idct_col (int16_t * const block)
@@ -145,10 +145,10 @@ static void inline idct_col (int16_t * const block)
     BUTTERFLY (t2, t3, W3, W5, d1, d2);
     b0 = t0 + t2;
     b3 = t1 + t3;
-    t0 = (t0 - t2) >> 8;
-    t1 = (t1 - t3) >> 8;
-    b1 = (t0 + t1) * 181;
-    b2 = (t0 - t1) * 181;
+    t0 -= t2;
+    t1 -= t3;
+    b1 = ((t0 + t1) >> 8) * 181;
+    b2 = ((t0 - t1) >> 8) * 181;
 
     block[8*0] = (a0 + b0) >> 17;
     block[8*1] = (a1 + b1) >> 17;
@@ -192,7 +192,7 @@ static void mpeg2_idct_add_c (const int last, int16_t * block,
 {
     int i;
 
-    if (last != 129 || (block[0] & 7) == 4) {
+    if (last != 129 || (block[0] & (7 << 4)) == (4 << 4)) {
 	for (i = 0; i < 8; i++)
 	    idct_row (block + 8 * i);
 	for (i = 0; i < 8; i++)
@@ -216,7 +216,7 @@ static void mpeg2_idct_add_c (const int last, int16_t * block,
     } else {
 	int DC;
 
-	DC = (block[0] + 4) >> 3;
+	DC = (block[0] + 64) >> 7;
 	block[0] = block[63] = 0;
 	i = 8;
 	do {
@@ -266,13 +266,6 @@ void mpeg2_idct_init (uint32_t accel)
 	mpeg2_idct_alpha_init ();
 	for (i = -3840; i < 3840 + 256; i++)
 	    CLIP(i) = (i < 0) ? 0 : ((i > 255) ? 255 : i);
-    } else
-#endif
-#ifdef LIBMPEG2_MLIB
-    if (accel & MPEG2_ACCEL_MLIB) {
-	mpeg2_idct_copy = mpeg2_idct_copy_mlib_non_ieee;
-	mpeg2_idct_add = (getenv ("MLIB_NON_IEEE") ?
-			  mpeg2_idct_add_mlib_non_ieee : mpeg2_idct_add_mlib);
     } else
 #endif
     {
