@@ -229,6 +229,30 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
     }
 }
 
+void mpeg2_convert (mpeg2dec_t * mpeg2dec, mpeg2_convert_init_t convert)
+{
+    int size;
+
+    convert (mpeg2dec->decoder.width, mpeg2dec->decoder.height,
+	     &size, mpeg2dec->convert_size,
+	     &(mpeg2dec->convert_start), &(mpeg2dec->convert_copy));
+    mpeg2dec->convert_id = mpeg2_malloc (size, ALLOC_CONVERT_ID);
+    mpeg2dec->convert_size[1] += mpeg2dec->convert_size[0];
+    mpeg2dec->convert_size[2] += mpeg2dec->convert_size[1];
+
+    size = mpeg2dec->decoder.width * mpeg2dec->decoder.height >> 2;
+    mpeg2dec->yuv_buf[0][0] = mpeg2_malloc (6 * size, ALLOC_YUV);
+    mpeg2dec->yuv_buf[0][1] = mpeg2dec->yuv_buf[0][0] + 4 * size;
+    mpeg2dec->yuv_buf[0][2] = mpeg2dec->yuv_buf[0][0] + 5 * size;
+    mpeg2dec->yuv_buf[1][0] = mpeg2_malloc (6 * size, ALLOC_YUV);
+    mpeg2dec->yuv_buf[1][1] = mpeg2dec->yuv_buf[1][0] + 4 * size;
+    mpeg2dec->yuv_buf[1][2] = mpeg2dec->yuv_buf[1][0] + 5 * size;
+    size = mpeg2dec->decoder.width * 8;
+    mpeg2dec->yuv_buf[2][0] = mpeg2_malloc (6 * size, ALLOC_YUV);
+    mpeg2dec->yuv_buf[2][1] = mpeg2dec->yuv_buf[2][0] + 4 * size;
+    mpeg2dec->yuv_buf[2][2] = mpeg2dec->yuv_buf[2][0] + 5 * size;
+}
+
 void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id)
 {
     mpeg2dec->fbuf->buf[0] = buf[0];

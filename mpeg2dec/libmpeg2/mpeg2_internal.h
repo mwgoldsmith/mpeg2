@@ -167,6 +167,13 @@ struct mpeg2dec_s {
     picture_t pictures[4];
     picture_t * picture;
     fbuf_t fbuf[3];	/* 0: current fbuf, 1-2: prediction fbufs */
+
+    uint8_t * yuv_buf[3][3]; 
+    int yuv_index; 
+    void * convert_id;
+    int convert_size[3];
+    mpeg2_convert_start_t convert_start;
+    mpeg2_convert_copy_t convert_copy;
 };
 
 typedef struct {
@@ -180,6 +187,8 @@ typedef struct {
 #define ALLOC_MPEG2DEC 0
 #define ALLOC_CHUNK 1
 #define ALLOC_YUV 2
+#define ALLOC_CONVERT_ID 3
+#define ALLOC_CONVERTED 4
 void * mpeg2_malloc (int size, int reason);
 void mpeg2_free (void * buf);
 

@@ -95,15 +95,24 @@ typedef struct {
 typedef struct mpeg2dec_s mpeg2dec_t;
 typedef struct decoder_s decoder_t;
 
-#define STATE_INVALID 0 
-#define STATE_SEQUENCE 1 
-#define STATE_GOP 2 
-#define STATE_PICTURE 3 
-#define STATE_SLICE_1ST 4 
-#define STATE_PICTURE_2ND 5 
-#define STATE_SLICE 6 
+typedef void (* mpeg2_convert_start_t) (void * id, int yuv_stride,
+uint8_t * dest[3], int flags);
+typedef void (* mpeg2_convert_copy_t) (void * id, uint8_t * src[3]);
+typedef void (* mpeg2_convert_init_t) (int width, int height,
+				       int * id_size, int buf_size[3],
+				       mpeg2_convert_start_t * start,
+				       mpeg2_convert_copy_t * copy);
+
+#define STATE_INVALID 0
+#define STATE_SEQUENCE 1
+#define STATE_GOP 2
+#define STATE_PICTURE 3
+#define STATE_SLICE_1ST 4
+#define STATE_PICTURE_2ND 5
+#define STATE_SLICE 6
 #define STATE_END 7
 
+void mpeg2_convert (mpeg2dec_t * mpeg2dec, mpeg2_convert_init_t convert);
 void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id);
 void mpeg2_init_fbuf (decoder_t * decoder, uint8_t * current_fbuf[3],
 		      uint8_t * forward_fbuf[3], uint8_t * backward_fbuf[3]);
