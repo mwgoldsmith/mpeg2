@@ -54,7 +54,7 @@ struct vo_instance_s {
     vo_frame_t * (* get_frame) (vo_instance_t * instance, int flags);
 };
 
-typedef struct vo_driver_s {
+typedef struct {
     char * name;
     vo_open_t * open;
 } vo_driver_t;

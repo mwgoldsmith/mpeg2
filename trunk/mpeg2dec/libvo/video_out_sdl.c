@@ -37,12 +37,12 @@
 #include "video_out.h"
 #include "video_out_internal.h"
 
-typedef struct sdl_frame_s {
+typedef struct {
     vo_frame_t vo;
     SDL_Overlay * overlay;
 } sdl_frame_t;
 
-typedef struct sdl_instance_s {
+typedef struct {
     vo_instance_t vo;
     int prediction_index;
     vo_frame_t * frame_ptr[3];

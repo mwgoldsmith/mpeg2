@@ -282,7 +282,7 @@ static int div_round (int dividend, int divisor)
 }
 
 static void yuv2rgb_c_init (int bpp, int mode)
-{  
+{
     int i;
     uint8_t table_Y[1024];
     uint32_t * table_32 = 0;
@@ -389,7 +389,7 @@ static void yuv2rgb_c_init (int bpp, int mode)
     yuv2rgb = yuv2rgb_c;
 }
 
-void yuv2rgb_init (int bpp, int mode) 
+void yuv2rgb_init (int bpp, int mode)
 {
     yuv2rgb = NULL;
 #ifdef ARCH_X86

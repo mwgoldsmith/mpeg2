@@ -35,7 +35,7 @@
 static void MC_put_o_16_mlib (uint8_t * dest, uint8_t * ref,
 			      int stride, int height)
 {
-    if (height == 16) 
+    if (height == 16)
 	mlib_VideoCopyRef_U8_U8_16x16 (dest, ref, stride);
     else
 	mlib_VideoCopyRef_U8_U8_16x8 (dest, ref, stride);
@@ -98,7 +98,7 @@ static void MC_put_y_8_mlib (uint8_t * dest, uint8_t * ref,
 static void MC_put_xy_8_mlib (uint8_t * dest, uint8_t * ref,
 			      int stride, int height)
 {
-    if (height == 8) 
+    if (height == 8)
 	mlib_VideoInterpXY_U8_U8_8x8 (dest, ref, stride, stride);
     else
 	mlib_VideoInterpXY_U8_U8_8x4 (dest, ref, stride, stride);

@@ -86,7 +86,7 @@ vo_driver_t * vo_drivers (void)
     return video_out_drivers;
 }
 
-typedef struct common_instance_s {
+typedef struct {
     vo_instance_t vo;
     int prediction_index;
     vo_frame_t * frame_ptr[3];
