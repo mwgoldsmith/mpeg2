@@ -137,7 +137,6 @@ struct decoder_s {
 
 typedef struct {
     fbuf_t fbuf;
-    int free;
 } fbuf_alloc_t;
 
 struct mpeg2dec_s {
@@ -150,9 +149,6 @@ struct mpeg2dec_s {
     int state;
     uint32_t ext_state;
 
-    /* the maximum chunk size is determined by vbv_buffer_size */
-    /* which is 224K for MP@ML streams. */
-    /* (we make no pretenses of decoding anything more than that) */
     /* allocated in init - gcc has problems allocating such big structures */
     uint8_t * chunk_buffer;
     /* pointer to current position in chunk_buffer */
@@ -170,7 +166,7 @@ struct mpeg2dec_s {
     sequence_t sequence;
     picture_t pictures[4];
     picture_t * picture;
-    fbuf_t fbuf[3];	/* 0: current fbuf, 1-2: prediction fbufs */
+    /*const*/ fbuf_t * fbuf[3];	/* 0: current fbuf, 1-2: prediction fbufs */
 
     fbuf_alloc_t fbuf_alloc[3];
     int custom_fbuf;
@@ -215,6 +211,7 @@ int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec);
 void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec);
 void mpeg2_header_slice (mpeg2dec_t * mpeg2dec);
 void mpeg2_header_end (mpeg2dec_t * mpeg2dec);
+void mpeg2_set_fbuf (mpeg2dec_t * mpeg2dec, int coding_type);
 
 /* idct.c */
 void mpeg2_idct_init (uint32_t mm_accel);
