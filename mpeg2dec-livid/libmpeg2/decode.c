@@ -110,6 +110,7 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 	    exit (1);
 	}
 	mpeg2dec->is_sequence_needed = 0;
+	mpeg2dec->frame_rate_code = picture->frame_rate_code;	/* FIXME */
 	break;
 
     case 0xb5:	/* extension_start_code */
