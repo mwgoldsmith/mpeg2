@@ -41,11 +41,92 @@ int XShmGetEventBase (Display *);
 #include <string.h>	/* strcmp */
 #include <X11/extensions/Xvlib.h>
 #define FOURCC_YV12 0x32315659
+#define FOURCC_UYVY 0x59565955
 #endif
 
 #include "mpeg2.h"
 #include "video_out.h"
 #include "convert.h"
+
+/*
+ * BEGINNING of the generic C code to convert 422 planar to UYVY. This will
+ * eventually move into its own file.
+ */
+typedef struct {
+    unsigned int width;
+    unsigned int height;
+    uint8_t * out;
+} convert_uyvy_t;
+
+static void uyvy_start (void * _id, const mpeg2_fbuf_t * fbuf,
+			const mpeg2_picture_t * picture,
+			const mpeg2_gop_t * gop,
+			const mpeg2_sequence_t * sequence)
+{
+    convert_uyvy_t * instance = (convert_uyvy_t *) _id;
+
+    instance->out = fbuf->buf[0];
+}
+
+static void uyvy_copy (void * _id, uint8_t * const * src,
+		       unsigned int v_offset)
+{
+    uint8_t const * y;
+    uint8_t const * u;
+    uint8_t const * v;
+    convert_uyvy_t const * instance = (convert_uyvy_t *) _id;
+    unsigned int const chroma_width = instance->width / 2;
+    uint32_t * out;
+    uint8_t const * u_end1;
+
+    y = src[0];
+    u = src[1];
+    v = src[2];
+    out = (uint32_t *) instance->out + chroma_width * v_offset;
+    // XXX Change the 8 into a 16 when the lib can deliver 422
+    for (u_end1 = u + 8 * chroma_width; u != u_end1; ) {
+	uint8_t const * u_end2;
+
+	for (u_end2 = u + chroma_width; u != u_end2; ) {
+	    *out = y[1] << 24 | v[0] << 16 | y[0] << 8 | u[0];
+	    y += 2;
+	    u++;
+	    v++;
+	    out++;
+	}
+	// XXX Remove the code until the end of the loop when the lib can
+	//     deliver 422
+	u -= chroma_width;
+	v -= chroma_width;
+	while (u < u_end2) {
+	    *out = y[1] << 24 | v[0] << 16 | y[0] << 8 | u[0];
+	    y += 2;
+	    u++;
+	    v++;
+	    out++;
+	}
+    }
+}
+
+void convert_uyvy (int width, int height, uint32_t accel, void * arg,
+		   convert_init_t * result)
+{
+    convert_uyvy_t * instance = (convert_uyvy_t *) result->id;
+
+    if (instance) {
+	instance->width = width;
+	instance->height = height;
+	result->buf_size[0] = width * height * 2;
+	result->buf_size[1] = result->buf_size[2] = 0;
+	result->start = uyvy_start;
+	result->copy = uyvy_copy;
+    } else {
+	result->id_size = sizeof (convert_uyvy_t);
+    }
+}
+/*
+ * END of the generic C code to convert 422 planar to UYVY.
+ */
 
 typedef struct {
     void * data;
@@ -70,6 +151,7 @@ typedef struct x11_instance_s {
     int completion_type;
 #ifdef LIBVO_XV
     XvPortID port;
+    int xv;
 #endif
     void (* teardown) (struct x11_instance_s * instance);
 } x11_instance_t;
@@ -340,7 +422,8 @@ static void xv_draw_frame (vo_instance_t * _instance,
     frame->wait_completion = 1;
 }
 
-static int xv_check_yv12 (x11_instance_t * instance, XvPortID port)
+static int xv_check_fourcc (x11_instance_t * instance, XvPortID port,
+			    uint32_t fourcc, const char * fourcc_str)
 {
     XvImageFormatValues * formatValues;
     int formats;
@@ -348,8 +431,8 @@ static int xv_check_yv12 (x11_instance_t * instance, XvPortID port)
 
     formatValues = XvListImageFormats (instance->display, port, &formats);
     for (i = 0; i < formats; i++)
-	if ((formatValues[i].id == FOURCC_YV12) &&
-	    (! (strcmp (formatValues[i].guid, "YV12")))) {
+	if ((formatValues[i].id == fourcc) &&
+	    (! (strcmp (formatValues[i].guid, fourcc_str)))) {
 	    XFree (formatValues);
 	    return 0;
 	}
@@ -357,7 +440,8 @@ static int xv_check_yv12 (x11_instance_t * instance, XvPortID port)
     return 1;
 }
 
-static int xv_check_extension (x11_instance_t * instance)
+static int xv_check_extension (x11_instance_t * instance,
+			       uint32_t fourcc, const char * fourcc_str)
 {
     unsigned int version;
     unsigned int release;
@@ -380,8 +464,8 @@ static int xv_check_extension (x11_instance_t * instance)
     for (i = 0; i < adaptors; i++)
 	if (adaptorInfo[i].type & XvImageMask)
 	    for (j = 0; j < adaptorInfo[i].num_ports; j++)
-		if ((! (xv_check_yv12 (instance,
-				       adaptorInfo[i].base_id + j))) &&
+		if ((! (xv_check_fourcc (instance, adaptorInfo[i].base_id + j,
+					 fourcc, fourcc_str))) &&
 		    (XvGrabPort (instance->display, adaptorInfo[i].base_id + j,
 				 0) == Success)) {
 		    instance->port = adaptorInfo[i].base_id + j;
@@ -394,30 +478,29 @@ static int xv_check_extension (x11_instance_t * instance)
     return 1;
 }
 
-static int xv_alloc_frames (x11_instance_t * instance)
+static int xv_alloc_frames (x11_instance_t * instance, int size,
+			    uint32_t fourcc)
 {
-    int size;
     char * alloc;
     int i;
 
-    size = instance->width * instance->height / 4;
-    alloc = (char *) create_shm (instance, 18 * size);
+    alloc = (char *) create_shm (instance, 3 * size);
     if (alloc == NULL)
 	return 1;
 
     for (i = 0; i < 3; i++) {
 	instance->frame[i].wait_completion = 0;
 	instance->frame[i].xvimage =
-	    XvShmCreateImage (instance->display, instance->port, FOURCC_YV12,
+	    XvShmCreateImage (instance->display, instance->port, fourcc,
 			      alloc, instance->width, instance->height,
 			      &(instance->shminfo));
 	if ((instance->frame[i].xvimage == NULL) ||
-	    (instance->frame[i].xvimage->data_size != 6 * size)) { /* FIXME */
+	    (instance->frame[i].xvimage->data_size != size)) {
 	    fprintf (stderr, "Cannot create xvimage\n");
 	    return 1;
 	}
 	instance->frame[i].data = alloc;
-	alloc += 6 * size;
+	alloc += size;
     }
 
     return 0;
@@ -437,11 +520,13 @@ static void xv_teardown (x11_instance_t * instance)
 }
 #endif
 
-static int common_setup (x11_instance_t * instance, unsigned int width,
+static int common_setup (vo_instance_t * _instance, unsigned int width,
 			 unsigned int height, unsigned int chroma_width,
 			 unsigned int chroma_height,
-			 vo_setup_result_t * result, int xv)
+			 vo_setup_result_t * result)
 {
+    x11_instance_t * instance = (x11_instance_t *) _instance;
+
     if (instance->vo.close) {
         /* Already setup, just adjust to the new size */
         instance->teardown (instance);
@@ -466,13 +551,23 @@ static int common_setup (x11_instance_t * instance, unsigned int width,
     instance->index = 0;
 
 #ifdef LIBVO_XV
-    if (xv && (! (xv_check_extension (instance)))) {
-	if (xv_alloc_frames (instance))
+    if (instance-> xv == 1 &&
+	(chroma_width == width >> 1) && (chroma_height == height >> 1) &&
+	(!xv_check_extension (instance, FOURCC_YV12, "YV12"))) {
+	if (xv_alloc_frames (instance, 3 * width * height / 2, FOURCC_YV12))
 	    return 1;
 	instance->vo.setup_fbuf = xv_setup_fbuf;
 	instance->vo.draw = xv_draw_frame;
 	instance->teardown = xv_teardown;
 	result->convert = NULL;
+    } else if (instance->xv && (chroma_width == width >> 1) &&
+	       (!xv_check_extension (instance, FOURCC_UYVY, "UYVY"))) {
+	if (xv_alloc_frames (instance, 2 * width * height, FOURCC_UYVY))
+	    return 1;
+	instance->vo.setup_fbuf = xv_setup_fbuf;
+	instance->vo.draw = xv_draw_frame;
+	instance->teardown = xv_teardown;
+	result->convert = convert_uyvy;
     } else
 #endif
     {
@@ -521,47 +616,36 @@ static int common_setup (x11_instance_t * instance, unsigned int width,
     return 0;
 }
 
-static int x11_setup (vo_instance_t * instance, unsigned int width,
-		      unsigned int height, unsigned int chroma_width,
-		      unsigned int chroma_height, vo_setup_result_t * result)
+static vo_instance_t * common_open (int xv)
 {
-    return common_setup ((x11_instance_t *) instance, width, height,
-			 chroma_width, chroma_height, result, 0);
+    x11_instance_t * instance;
+
+    instance = (x11_instance_t *) malloc (sizeof (x11_instance_t));
+    if (instance == NULL)
+	return NULL;
+
+    instance->vo.setup = common_setup;
+    instance->vo.close = NULL;
+#ifdef LIBVO_XV
+    instance->xv = xv;
+#endif
+    return (vo_instance_t *) instance;
 }
 
 vo_instance_t * vo_x11_open (void)
 {
-    x11_instance_t * instance;
-
-    instance = (x11_instance_t *) malloc (sizeof (x11_instance_t));
-    if (instance == NULL)
-	return NULL;
-
-    instance->vo.setup = x11_setup;
-    instance->vo.close = NULL;
-    return (vo_instance_t *) instance;
+    return common_open (0);
 }
 
 #ifdef LIBVO_XV
-static int xv_setup (vo_instance_t * instance, unsigned int width,
-		     unsigned int height, unsigned int chroma_width,
-		     unsigned int chroma_height, vo_setup_result_t * result)
-{
-    return common_setup ((x11_instance_t *) instance, width, height,
-			 chroma_width, chroma_height, result, 1);
-}
-
 vo_instance_t * vo_xv_open (void)
 {
-    x11_instance_t * instance;
+    return common_open (1);
+}
 
-    instance = (x11_instance_t *) malloc (sizeof (x11_instance_t));
-    if (instance == NULL)
-	return NULL;
-
-    instance->vo.setup = xv_setup;
-    instance->vo.close = NULL;
-    return (vo_instance_t *) instance;
+vo_instance_t * vo_xv2_open (void)
+{
+    return common_open (2);
 }
 #endif
 #endif

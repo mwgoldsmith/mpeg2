@@ -31,6 +31,7 @@
 /* Externally visible list of all vo drivers */
 
 extern vo_open_t vo_xv_open;
+extern vo_open_t vo_xv2_open;
 extern vo_open_t vo_x11_open;
 extern vo_open_t vo_dxrgb_open;
 extern vo_open_t vo_dx_open;
@@ -46,6 +47,7 @@ extern vo_open_t vo_md5_open;
 static vo_driver_t video_out_drivers[] = {
 #ifdef LIBVO_XV
     {"xv", vo_xv_open},
+    {"xv2", vo_xv2_open},
 #endif
 #ifdef LIBVO_X11
     {"x11", vo_x11_open},
