@@ -163,7 +163,7 @@ static void handle_args (int argc, char ** argv)
     char * s;
 
     drivers = vo_drivers ();
-    while ((c = getopt (argc, argv, "hs::t:pco:v")) != -1)
+    while ((c = getopt (argc, argv, "hs::t:pco:vb::")) != -1)
 	switch (c) {
 	case 'o':
 	    for (i = 0; drivers[i].name != NULL; i++)
@@ -210,10 +210,13 @@ static void handle_args (int argc, char ** argv)
 	    break;
 
 	case 'b':
-	    buffer_size = strtol (optarg, &s, 0);
-	    if (buffer_size < 1 || *s) {
-		fprintf (stderr, "Invalid buffer size: %s\n", optarg);
-		print_usage (argv);
+	    buffer_size = 1;
+	    if (optarg != NULL) {
+		buffer_size = strtol (optarg, &s, 0);
+		if (buffer_size < 1 || *s) {
+		    fprintf (stderr, "Invalid buffer size: %s\n", optarg);
+		    print_usage (argv);
+		}
 	    }
 	    break;
 
