@@ -75,107 +75,104 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output,
 
 static void decode_allocate_image_buffers (mpeg2dec_t * mpeg2dec)
 {
-#define picture (mpeg2dec->picture)
-#define output  (mpeg2dec->output)
-#define frame (mpeg2dec->frame)
+    picture_t * picture;
+    img_buf_t ** frame;
+    img_buf_t * (* allocate) (int, int, uint32_t);
     int frame_size;
 
+    picture = mpeg2dec->picture;
+    frame = mpeg2dec->frame;
+    allocate = mpeg2dec->output->allocate_image_buffer;
 
-    frame_size = picture->coded_picture_width * picture->coded_picture_height;
+    frame_size = (mpeg2dec->picture->coded_picture_width *
+		  mpeg2dec->picture->coded_picture_height);
 
     // allocate images in YV12 format
-    frame[0] = output->allocate_image_buffer (picture->coded_picture_width, 
-					      picture->coded_picture_height, 
-					      0x32315659);
-
+    frame[0] = allocate (picture->coded_picture_width,
+			 picture->coded_picture_height,
+			 0x32315659);
     picture->throwaway_frame[0] = frame[0]->base;
     picture->throwaway_frame[1] = frame[0]->base + frame_size * 5 / 4;
     picture->throwaway_frame[2] = frame[0]->base + frame_size;
 
-    frame[1] = output->allocate_image_buffer (picture->coded_picture_width, 
-					      picture->coded_picture_height, 
-					      0x32315659);
+    frame[1] = allocate (picture->coded_picture_width, 
+			 picture->coded_picture_height, 
+			 0x32315659);
     picture->backward_reference_frame[0] = frame[1]->base;
     picture->backward_reference_frame[1] = frame[1]->base + frame_size * 5 / 4;
     picture->backward_reference_frame[2] = frame[1]->base + frame_size;
     
-    frame[2] = output->allocate_image_buffer (picture->coded_picture_width, 
-					      picture->coded_picture_height, 
-					      0x32315659);
+    frame[2] = allocate (picture->coded_picture_width, 
+			 picture->coded_picture_height, 
+			 0x32315659);
     picture->forward_reference_frame[0] = frame[2]->base;
     picture->forward_reference_frame[1] = frame[2]->base + frame_size * 5 / 4;
     picture->forward_reference_frame[2] = frame[2]->base + frame_size;
-#undef picture
-#undef output
-#undef frame
 }
 
 
 static void decode_reorder_frames (mpeg2dec_t * mpeg2dec)
 {
-#define picture (*(mpeg2dec->picture))
-    if (picture.picture_coding_type != B_TYPE) {
+    picture_t * picture;
+
+    picture = mpeg2dec->picture;
+
+    if (picture->picture_coding_type != B_TYPE) {
 
 	//reuse the soon to be outdated forward reference frame
-	picture.current_frame[0] = picture.forward_reference_frame[0];
-	picture.current_frame[1] = picture.forward_reference_frame[1];
-	picture.current_frame[2] = picture.forward_reference_frame[2];
+	picture->current_frame[0] = picture->forward_reference_frame[0];
+	picture->current_frame[1] = picture->forward_reference_frame[1];
+	picture->current_frame[2] = picture->forward_reference_frame[2];
 
 	//make the backward reference frame the new forward reference frame
-	picture.forward_reference_frame[0] =
-	    picture.backward_reference_frame[0];
-	picture.forward_reference_frame[1] =
-	    picture.backward_reference_frame[1];
-	picture.forward_reference_frame[2] =
-	    picture.backward_reference_frame[2];
+	picture->forward_reference_frame[0] =
+	    picture->backward_reference_frame[0];
+	picture->forward_reference_frame[1] =
+	    picture->backward_reference_frame[1];
+	picture->forward_reference_frame[2] =
+	    picture->backward_reference_frame[2];
 
-	picture.backward_reference_frame[0] = picture.current_frame[0];
-	picture.backward_reference_frame[1] = picture.current_frame[1];
-	picture.backward_reference_frame[2] = picture.current_frame[2];
+	picture->backward_reference_frame[0] = picture->current_frame[0];
+	picture->backward_reference_frame[1] = picture->current_frame[1];
+	picture->backward_reference_frame[2] = picture->current_frame[2];
 
     } else {
 
-	picture.current_frame[0] = picture.throwaway_frame[0];
-	picture.current_frame[1] = picture.throwaway_frame[1];
-	picture.current_frame[2] = picture.throwaway_frame[2];
+	picture->current_frame[0] = picture->throwaway_frame[0];
+	picture->current_frame[1] = picture->throwaway_frame[1];
+	picture->current_frame[2] = picture->throwaway_frame[2];
 
     }
-#undef picture
 }
 
 
 static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 {
-#define picture ((*mpeg2dec->picture))
-#define output  (mpeg2dec->output)
-#define is_sequence_needed (mpeg2dec->is_sequence_needed)
-#define in_slice (mpeg2dec->in_slice)
-#define drop_frame (mpeg2dec->drop_frame)
-#define drop_flag (mpeg2dec->drop_flag)
-#define is_display_initialized (mpeg2dec->is_display_initialized)
-
+    picture_t * picture;
     int is_frame_done;
 
-    if (is_sequence_needed && (code != 0xb3))	/* b3 = sequence_header_code */
+    /* wait for sequence_header_code */
+    if (mpeg2dec->is_sequence_needed && (code != 0xb3))
 	return 0;
 
     stats_header (code, buffer);
 
-    is_frame_done = in_slice && ((!code) || (code >= 0xb0));
+    picture = mpeg2dec->picture;
+    is_frame_done = mpeg2dec->in_slice && ((!code) || (code >= 0xb0));
 
     if (is_frame_done) {
-	in_slice = 0;
+	mpeg2dec->in_slice = 0;
 
-	if (!drop_frame) {
-	    if (((HACK_MODE == 2) || (picture.mpeg1)) &&
-		((picture.picture_structure == FRAME_PICTURE) ||
-		 (picture.second_field))) {
-		if (picture.picture_coding_type == B_TYPE)
-		    output->draw_frame(picture.throwaway_frame);
+	if (!(mpeg2dec->drop_frame)) {
+	    if (((HACK_MODE == 2) || (picture->mpeg1)) &&
+		((picture->picture_structure == FRAME_PICTURE) ||
+		 (picture->second_field))) {
+		if (picture->picture_coding_type == B_TYPE)
+		    mpeg2dec->output->draw_frame (picture->throwaway_frame);
 		else
-		    output->draw_frame(picture.forward_reference_frame);
+		    mpeg2dec->output->draw_frame (picture->forward_reference_frame);
 	    }
-	    output->flip_page ();
+	    mpeg2dec->output->flip_page ();
 #ifdef ARCH_X86
 	    if (config.flags & MM_ACCEL_X86_MMX)
 		emms ();
@@ -185,23 +182,24 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 
     switch (code) {
     case 0x00:	/* picture_start_code */
-	if (header_process_picture_header (&picture, buffer)) {
+	if (header_process_picture_header (picture, buffer)) {
 	    printf ("bad picture header\n");
 	    exit (1);
 	}
-	drop_frame = drop_flag && (picture.picture_coding_type == B_TYPE);
+	mpeg2dec->drop_frame =
+	    mpeg2dec->drop_flag && (picture->picture_coding_type == B_TYPE);
 	break;
 
     case 0xb3:	/* sequence_header_code */
-	if (header_process_sequence_header (&picture, buffer)) {
+	if (header_process_sequence_header (picture, buffer)) {
 	    printf ("bad sequence header\n");
 	    exit (1);
 	}
-	is_sequence_needed = 0;
+	mpeg2dec->is_sequence_needed = 0;
 	break;
 
     case 0xb5:	/* extension_start_code */
-	if (header_process_extension (&picture, buffer)) {
+	if (header_process_extension (picture, buffer)) {
 	    printf ("bad extension\n");
 	    exit (1);
 	}
@@ -214,53 +212,51 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 	if (code >= 0xb0)
 	    break;
 
-	if (!(in_slice)) {
-	    in_slice = 1;
+	if (!(mpeg2dec->in_slice)) {
+	    mpeg2dec->in_slice = 1;
 
-	    if (!is_display_initialized) {
+	    if (!(mpeg2dec->is_display_initialized)) {
 		vo_output_video_attr_t attr;
 
-		attr.width = picture.coded_picture_width;
-		attr.height = picture.coded_picture_height;
+		attr.width = picture->coded_picture_width;
+		attr.height = picture->coded_picture_height;
 		attr.fullscreen = 0;
 		attr.title = NULL;
 
-		if (output->setup (&attr)) {
+		if (mpeg2dec->output->setup (&attr)) {
 		    printf ("display init failed\n");
 		    exit (1);
 		}
 
 		decode_allocate_image_buffers (mpeg2dec);
 		decode_reorder_frames (mpeg2dec);
-		is_display_initialized = 1;
-	    } else if (!picture.second_field) 
+		mpeg2dec->is_display_initialized = 1;
+	    } else if (!(picture->second_field) )
 		decode_reorder_frames (mpeg2dec);
 	}
 
-	drop_frame |= drop_flag && (picture.picture_coding_type == B_TYPE);
-	
-	if (!drop_frame) {
-	    slice_process (&picture, code, buffer);
+	if (!(mpeg2dec->drop_frame)) {
+	    slice_process (picture, code, buffer);
 
-	    if ((HACK_MODE < 2) && (!picture.mpeg1)) {
+	    if ((HACK_MODE < 2) && (!(picture->mpeg1))) {
 		uint8_t * foo[3];
 		uint8_t ** bar;
 		int offset;
 
-		if (picture.picture_coding_type == B_TYPE)
-		    bar = picture.throwaway_frame;
+		if (picture->picture_coding_type == B_TYPE)
+		    bar = picture->throwaway_frame;
 		else
-		    bar = picture.forward_reference_frame;
+		    bar = picture->forward_reference_frame;
 
-		offset = (code-1) * 4 * picture.coded_picture_width;
-		if ((! HACK_MODE) && (picture.picture_coding_type == B_TYPE))
+		offset = (code-1) * 4 * picture->coded_picture_width;
+		if ((! HACK_MODE) && (picture->picture_coding_type == B_TYPE))
 		    offset = 0;
 
 		foo[0] = bar[0] + 4 * offset;
 		foo[1] = bar[1] + offset;
 		foo[2] = bar[2] + offset;
 
-		output->draw_slice (foo, code-1);
+		mpeg2dec->output->draw_slice (foo, code-1);
 	    }
 
 #ifdef ARCH_X86
@@ -271,75 +267,60 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
     }
 
     return is_frame_done;
-#undef picture
-#undef output
-#undef is_sequence_needed
-#undef in_slice
-#undef drop_frame
-#undef drop_flag
-#undef is_display_initialized
 }
 
 int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
 {
-#define shift (mpeg2dec->shift)
-#define chunk_buffer (mpeg2dec->chunk_buffer)
-#define chunk_ptr (mpeg2dec->chunk_ptr)
-#define code (mpeg2dec->code)
-
+    uint32_t shift;
+    uint8_t * chunk_ptr;
     uint8_t byte;
     int ret = 0;
+
+    shift = mpeg2dec->shift;
+    chunk_ptr = mpeg2dec->chunk_ptr;
 
     while (current != end) {
 	while (1) {
 	    byte = *current++;
-	    if (shift == 0x00000100)
-		break;
-	    *chunk_ptr++ = byte;
-	    shift = (shift | byte) << 8;
-
-	    if (current == end)
+	    if (shift != 0x00000100) {
+		*chunk_ptr++ = byte;
+		shift = (shift | byte) << 8;
+		if (current != end)
+		    continue;
+		mpeg2dec->chunk_ptr = chunk_ptr;
+		mpeg2dec->shift = shift;
 		return ret;
+	    }
+	    break;
 	}
 
 	/* found start_code following chunk */
 
-	ret += parse_chunk (mpeg2dec, code, chunk_buffer);
+	ret += parse_chunk (mpeg2dec, mpeg2dec->code, mpeg2dec->chunk_buffer);
 
 	/* done with header or slice, prepare for next one */
 
-	code = byte;
-	chunk_ptr = chunk_buffer;
+	mpeg2dec->code = byte;
+	chunk_ptr = mpeg2dec->chunk_buffer;
 	shift = 0xffffff00;
     }
+    mpeg2dec->chunk_ptr = chunk_ptr;
+    mpeg2dec->shift = shift;
     return ret;
-#undef shift
-#undef chunk_buffer
-#undef chunk_ptr
-#undef code
 }
 
 void mpeg2_close (mpeg2dec_t * mpeg2dec)
 {
-#define output (mpeg2dec->output)
-#define is_display_initialized (mpeg2dec->is_display_initialized)
-#define picture (mpeg2dec->picture)
-#define frame (mpeg2dec->frame)
-
     static uint8_t finalizer[] = {0,0,1,0};
 
     mpeg2_decode_data (mpeg2dec, finalizer, finalizer+4);
 
-    if (is_display_initialized)
-	output->draw_frame (picture->backward_reference_frame);
+    if (mpeg2dec->is_display_initialized)
+	mpeg2dec->output->draw_frame (mpeg2dec->picture->backward_reference_frame);
 
-    output->free_image_buffer (frame[0]);
-    output->free_image_buffer (frame[1]);
-    output->free_image_buffer (frame[2]);
-#undef output
-#undef is_display_initialized
-#undef picture
-#undef frame
+    mpeg2dec->output->free_image_buffer (mpeg2dec->frame[0]);
+    mpeg2dec->output->free_image_buffer (mpeg2dec->frame[1]);
+    mpeg2dec->output->free_image_buffer (mpeg2dec->frame[2]);
 }
 
 void mpeg2_drop (mpeg2dec_t * mpeg2dec, int flag)
