@@ -45,10 +45,10 @@ static inline uint32_t arch_accel (void)
 	     : "cc")
 #else	/* PIC version : save ebx */
 #define cpuid(op,eax,ebx,ecx,edx)	\
-    __asm__ ("pushl %%ebx\n\t"		\
+    __asm__ ("push %%ebx\n\t"		\
 	     "cpuid\n\t"		\
 	     "movl %%ebx,%1\n\t"	\
-	     "popl %%ebx"		\
+	     "pop %%ebx"		\
 	     : "=a" (eax),		\
 	       "=r" (ebx),		\
 	       "=c" (ecx),		\
@@ -57,16 +57,16 @@ static inline uint32_t arch_accel (void)
 	     : "cc")
 #endif
 
-    __asm__ ("pushfl\n\t"
-	     "pushfl\n\t"
-	     "popl %0\n\t"
+    __asm__ ("pushf\n\t"
+	     "pushf\n\t"
+	     "pop %0\n\t"
 	     "movl %0,%1\n\t"
 	     "xorl $0x200000,%0\n\t"
-	     "pushl %0\n\t"
-	     "popfl\n\t"
-	     "pushfl\n\t"
-	     "popl %0\n\t"
-	     "popfl"
+	     "push %0\n\t"
+	     "popf\n\t"
+	     "pushf\n\t"
+	     "pop %0\n\t"
+	     "popf"
 	     : "=r" (eax),
 	       "=r" (ebx)
 	     :
