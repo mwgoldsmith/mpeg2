@@ -47,7 +47,7 @@ static char buf_code (const mpeg2_fbuf_t * fbuf)
     int i;
 
     if (fbuf == NULL)
-	return '0';
+	return '-';
     for (i = 0; i < 26; i++)
 	if (buf_code_list[i].ptr == fbuf &&
 	    !memcmp (fbuf, &buf_code_list[i].value, sizeof (mpeg2_fbuf_t)))
@@ -90,7 +90,7 @@ static char pic_code (const mpeg2_picture_t * pic)
     int i;
 
     if (pic == NULL)
-	return '0';
+	return '-';
     for (i = 0; i < 26; i++)
 	if (pic_code_list[i].ptr == pic &&
 	    !memcmp (pic, &pic_code_list[i].value, sizeof (mpeg2_picture_t)))
@@ -155,7 +155,7 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
 	    pic_code_add (info->current_picture, f);
 	} else if (state == STATE_PICTURE_2ND)
 	    pic_code_add (info->current_picture_2nd, f);
-	fprintf (f, " %c%c %c%c%c %c%c%c %c", seq ? 'S' : 's', gop ? 'G' : 'g',
+	fprintf (f, " %c%c %c%c%c %c%c%c %c", seq ? 'S' : '-', gop ? 'G' : '-',
 		 buf_code (info->current_fbuf),
 		 pic_code (info->current_picture),
 		 pic_code (info->current_picture_2nd),
