@@ -1,0 +1,83 @@
+Dear MPEG colleagues,
+
+tcela-11v2 is an MPEG-1 constrained bitstream that demonstrates that some
+perfectly legal and compliant bitstreams cannot be decoded properly by
+some perfectly compliant decoders.
+
+IMPORTANT: This bitstream is NOT intended to used for Video Conformance
+Testing.  However the information contained here may be relevant to the work
+of this AHG.
+
+The problem demonstrated here is that the domain for which an IEEE
+compliant IDCT is required to give correct results is not sufficient to
+decode all compliant MPEG (MPEG-1 or MPEG-2) bitstreams.
+
+Several steps that can occur in an encoder can cause the DCT coefficients
+reconstructed by the decoder (after inverse quantization) to be out of
+this domain: Inaccuracy of the FDCT, quantization of coefficients,
+coefficient clamping.
+
+This problem is addressed by one of the Video Technical Comments of the USNB.
+This problem exists both in MPEG-1 and MPEG-2.
+
+This example is an extreme case, in which the first P-frame was coded
+using a very inaccurate FDCT.  According to the MPEG-1 IS, this bitstream
+is perfectly compliant.
+
+You should be able to match the reconstructed frames perfectly if you use
+a software decoder implementation of IDCT that never overflows (e.g.
+floating point).
+
+However, the images reconstructed by a hardware decoder may have a very
+large mismatch (in the upper part of the frames).  Check with your
+hardware decoder, if you have one.
+
+Note: Not all software MPEG-1 decoder will decode this bitstream correctly (for
+example, the "mpeg_play" MPEG-1 X viewer from Berkeley University does not).
+
+
+Bit rate:               1.0 Mbit/sec 
+Sampling dimensions:    352  x 240 x 29.97 Hz 
+
+
+
+    Bitstream file             tcela-11v2.bits
+    Reconstructed frames*      tcela-11v2.decoded
+    Decoding trace **          tcela-11v2.trace
+    picture structure          I P P P P...
+
+     *frame format:
+
+                4:2:0 frame ("display" order) 8 bit
+
+                       width
+                +---------------+
+                |               |
+                |      Y0       | height
+                |width/2        |
+                +-------+-------+
+                |  Cb0  | height/2
+                +-------+
+                |  Cr0  | height/2
+                +-------+-------+
+                |               |
+                |      Y1       |
+                |               |
+                +-------+-------+
+                |       |
+                  etc...
+
+        ** Only the first row of MBs is traced.
+           More complete traces are available on special order.
+
+
+Best regards,
+
+Tristan
+
+-------------------------------------------------------------
+ Tristan Savatier                  E-mail: tristan@la.tce.com
+ THOMSON CONSUMER ELECTRONICS            TEL: +1 310 568 9003
+ Los Angeles Laboratory                  FAX: +1 310 568 9002
+ 5601 W. Slauson Ave., Suite 262, Culver City,  CA 90230, USA
+-------------------------------------------------------------

@@ -1,0 +1,158 @@
+Dear Video Conformance Testing AHG,
+
+This is the third short (4-frames) version of Conformance Bitstream ID #4 (All
+MB-type transitions).  It fixes the problems reported in earlier versions:
+
+   1) Negative DC coefficient in a B-picture intra block (thanks to Rajesh
+      Hingorani (AT&T)).
+      
+   2) The first P-picture consisted only of forward frame structured macroblocks
+      (thanks to Metin Uz (C-cube)).
+
+   3) VBV fullness was set to 0xFFFF (VBR, except in the first picture) due to
+      problems encountered trying to rate control a sequence with these
+      unusual characteristics (thanks to Jan De Lameillieure (HHI)).
+
+
+This sequence is generated with the following parameters:
+
+	1) input is "flower garden" test sequence
+	2) 15 Mbit/sec data rate
+	3) Maximum 1835008 bit VBV buffer
+	4) GOP parameters: M=3, N=15.
+	5) Picture size 704 by 480 luma pels
+	6) Frame rate 29.97 Hz
+	7) Double precision IDCT
+	8) Frame structured pictures.
+
+Instead of using normal macroblock typing, the test cycles thru all legal
+combination of:
+
+	1) Macroblock type (see tables B-2, B-3 and B-4 in DIS).
+	2) Skipped macroblock are generated.
+	3) All combinations of frame and field DCT for coded & intra MBs
+	4) All combinations of Frame-based and Field-based prediction
+		for motion compensated macroblocks.
+
+To be more specific, the following tables enumerate the generated macroblock
+"types".  The "type" is expanded to include skipped MBs, frame vs field DCT,
+and frame vs field motion type.
+
+For I-pictures:
+
+    Intra, no quantzer scale, frame DCT.
+    Intra, quantzer scale, frame DCT.
+    Intra, no quantzer scale, field DCT.
+    Intra, quantzer scale, field DCT.
+
+For P-pictures:
+
+    MC, coded, frame DCT, frame motion type.
+    MC, coded, field DCT, frame motion type,
+    MC, coded, frame DCT, field motion type.
+    MC, coded, field DCT, field motion type.
+    Coded, frame DCT.
+    Coded, field DCT.
+    MC, frame motion type.
+    MC, field motion type.
+    Intra, frame DCT.
+    Intra, field DCT.
+    MC, coded, Quant, frame DCT, frame motion type.
+    MC, coded, Quant, field DCT, frame motion type.
+    MC, coded, Quant, frame DCT, field motion type.
+    MC, coded, Quant, field DCT, field motion type.
+    Coded, Quant, frame DCT.
+    Coded, Quant, field DCT.
+    Intra, Quant, frame DCT.
+    Intra, Quant, field DCT.
+    Skipped macroblock.
+
+For B-pictures:
+
+    Interp, Not coded, Frame motion type.
+    Interp, Not coded, Field motion type.
+    Interp, Coded, Frame motion type, Frame DCT.
+    Interp, Coded, Frame motion type, Field DCT.
+    Interp, Coded, Field motion type, Frame DCT.
+    Interp, Coded, Field motion type, Field DCT.
+    Skipped macroblock.
+    Bak, Not coded, Frame motion type.
+    Bak, Not coded, Field motion type.
+    Bak, Coded, Frame motion type, Frame DCT.
+    Bak, Coded, Frame motion type, Field DCT.
+    Bak, Coded, Field motion type, Frame DCT.
+    Bak, Coded, Field motion type, Field DCT.
+    Fwd, Not coded, Frame motion type.
+    Fwd, Not coded, Field motion type.
+    Fwd, Coded, Frame Motion type Frame DCT.
+    Fwd, Coded, Frame Motion type, Field DCT.
+    Fwd, Coded, Field motion type, Frame DCT.
+    Fwd, Coded, Field motion type, Field DCT.
+    Intra, Frame DCT.
+    Intra, Field DCT.
+    Interp, Coded, Quant, Frame motion type, Frame DCT.
+    Interp, Coded, Quant, Frame motion type, Field DCT.
+    Interp, Coded, Quant, Field motion type, Frame DCT.
+    Interp, Coded, Quant, Field motion type, Field DCT.
+    Fwd, Coded, Quant, Frame motion type, Frame DCT.
+    Fwd, Coded, Quant, Frame motion type, Field DCT.
+    Fwd, Coded, Quant, Field motion type, Frame DCT.
+    Fwd, Coded, Quant, Field motion type, Field DCT.
+    Bak, Coded, Quant, Frame motion type, Frame DCT.
+    Bak, Coded, Quant, Frame motion type, Field DCT.
+    Bak, Coded, Quant, Field motion type, Frame DCT.
+    Bak, Coded, Quant, Field motion type, Field DCT.
+    Intra, Quant, Frame DCT.
+    Intra, Quant, Field DCT.
+
+To generate the test video, the picture is divided into pairs of macroblocks and
+all possible combinations of the enumerated type above are generated, except
+where such a combination would be explicitly illegal (e.g. skipped macroblock
+at the start of a slice or following an intra MB in a B-picture).  In the
+illegal cases, the skipped macrblock is replaced by an intra macroblock.
+
+In the case of B-picture the cycle requires 2*35*35 (or 2450) macroblocks to
+complete, (more than one B-picture).  In any case, the cycles continue 
+independently of picture boundaries.
+
+Skipped macroblock are generated; the target macroblock's motion vectors are
+replaced by the encoder's PMVs as required to make it "skipped".  This leaves
+horrible block missing artefacts, however the object is to match the decoded
+pictures.
+
+The bitstream is "conf4.bit" and the decoded pictures are in "conf4.420".
+The format of the decoded pictures is:
+
+	4:2:0 frame ("display" order) 8 bits/component
+
+	              width              
+                +---------------+       
+                |               |          
+                |      Y0       | height
+                |               |
+                | width/2       |
+                +-------+-------+
+                |  Cb0  | 
+                |       | height/2
+                +-------+
+                |  Cr0  | height/2
+                |       |
+                +-------+-------+        
+                |               |
+                |      Y1       |
+                |               |        
+                |               |        
+                +-------+-------+ 
+                |       |
+
+
+In order to make an appropriately "evil" bitstream let me know about any
+problems, errors or cases which are not covered by the test.  
+
+--------------------------------------------------------------------------------
+Bob Eifrig, M/S 50-370
+Communication Systems Research Lab       Tel:   +1 503 627 3762
+Tektronix Inc                            FAX:   +1 503 627 1736
+P. O. Box 500                            Email:  Bob.Eifrig@TEK.COM
+Beaverton, Oregon, 97077, USA     
+--------------------------------------------------------------------------------
