@@ -54,6 +54,13 @@ static void print_fps(uint_32 final)
 	int fps, tfps, frames;
 	frame_counter++;
 	
+	if (final) {
+		tfps = frame_counter * 10000 / total_elapsed;
+		fprintf(stderr,"\n%d frames decoded in %d.%02d "
+			"seconds (%d.%02d fps)\n", frame_counter,
+			total_elapsed / 100, total_elapsed % 100,
+			tfps / 100, tfps % 100);
+	}
 	gettimeofday(&tv_end, NULL);
 	elapsed = (tv_end.tv_sec - tv_beg.tv_sec) * 1000000 + 
 		  (tv_end.tv_usec - tv_beg.tv_usec);        
@@ -70,8 +77,6 @@ static void print_fps(uint_32 final)
 	fprintf(stderr, "%8d %8d.%02d %8d %8d.%02d\r", frame_counter,
 		fps / 100, fps %100, total_elapsed, tfps / 100, tfps % 100);
 	last_count = frame_counter;
-	if (final)
-		putchar('\n');
 }
  
 static void 
