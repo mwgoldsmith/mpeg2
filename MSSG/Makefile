@@ -41,14 +41,14 @@ VERBOSE = -DVERBOSE
 
 # uncomment the following two lines if you want to include X11 support
 
-#USE_DISP = -DDISPLAY
-#LIBS = -lX11
+USE_DISP = -DDISPLAY
+LIBS = -lX11
 
 # uncomment the following two lines if you want to use shared memory
 # (faster display if server and client run on the same machine)
 
-#USE_SHMEM = -DSH_MEM
-#LIBS = -lXext -lX11
+USE_SHMEM = -DSH_MEM
+LIBS = -L/usr/X11R6/lib -lXext -lX11 -lXv
 
 # if your X11 include files / libraries are in a non standard location:
 # set INCLUDEDIR to -I followed by the appropriate include file path and
@@ -63,7 +63,7 @@ VERBOSE = -DVERBOSE
 CC = gcc
 CFLAGS = -O2 $(USE_DISP) $(USE_SHMEM) $(INCLUDEDIR) $(TRACE) $(VERBOSE) $(VERIFY) $(WARNINGS)
 
-OBJ = mpeg2dec.o getpic.o motion.o getvlc.o gethdr.o getblk.o getbits.o store.o recon.o spatscal.o idct.o idctref.o display.o systems.o subspic.o verify.o
+OBJ = mpeg2dec.o getpic.o motion.o getvlc.o gethdr.o getblk.o getbits.o store.o recon.o spatscal.o idct.o idctref.o display_x11.o systems.o subspic.o verify.o yuv2rgb.o
 
 all: mpeg2decode
 

@@ -254,8 +254,7 @@ static void Initialize_Sequence()
 #ifdef DISPLAY
   if (Output_Type==T_X11)
   {
-    Initialize_Display_Process("");
-    Initialize_Dither_Matrix();
+    display_init (horizontal_size, vertical_size);
   }
 #endif /* DISPLAY */
 
@@ -299,7 +298,7 @@ Options: -b  file  main bitstream (base or spatial enhancement layer)\n\
          -in file  information & statistics report  (n: level)\n\
          -l  file  file name pattern for lower layer sequence\n\
                    (for spatial scalability)\n\
-         -on file  output format (0:YUV 1:SIF 2:TGA 3:PPM 4:X11 5:X11HiQ)\n\
+         -on file  output format (0:YUV 1:SIF 2:TGA 3:PPM 4:X11 5:X11HiQ 6:PGM)\n\
          -q        disable warnings to stderr\n\
          -r        use double precision reference IDCT\n\
          -t        enable low level tracing to stdout\n\
@@ -503,7 +502,7 @@ Example:       mpeg2decode -b bitstream.mpg -f -r -o0 rec%%d\n\
   }
 
   /* force display process to show frame pictures */
-  if((Output_Type==4 || Output_Type==5) && Frame_Store_Flag)
+  if((Output_Type==4 || Output_Type==5 || Output_Type==6) && Frame_Store_Flag)
     Display_Progressive_Flag = 1;
   else
     Display_Progressive_Flag = 0;
@@ -528,13 +527,13 @@ Example:       mpeg2decode -b bitstream.mpg -f -r -o0 rec%%d\n\
   /* no output type specified */
   if(Output_Type==-1)
   {
-    Output_Type = 9; 
-    Output_Picture_Filename = "";
+    Output_Type = 6; 
+    Output_Picture_Filename = "%d.pgm";
   }
 
 
 #ifdef DISPLAY
-  if (Output_Type==T_X11)
+  if (Output_Type==T_X11 || Output_Type==6)
   {
     if(Frame_Store_Flag)
       Display_Progressive_Flag = 1;
