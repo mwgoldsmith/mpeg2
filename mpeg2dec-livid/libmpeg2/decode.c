@@ -67,7 +67,11 @@ static int drop_frame = 0;
 void mpeg2_init (void)
 {
     //FIXME setup config properly
+#ifdef __OMS__
     config.flags = MPEG2_MMX_ENABLE | MPEG2_MLIB_ENABLE;
+#else
+    config.flags = oms_cpu_accel () | MPEG2_MLIB_ENABLE;
+#endif
     //config.flags = 0;
 
     //intialize the decoder state 

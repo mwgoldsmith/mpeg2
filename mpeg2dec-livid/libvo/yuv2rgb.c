@@ -33,6 +33,7 @@
 #include "config.h"
 #include "video_out.h"
 #include "yuv2rgb.h"
+#include "oms_accel.h"
 
 uint32_t matrix_coefficients = 6;
 
@@ -77,7 +78,7 @@ void yuv2rgb_init (int bpp, int mode)
 {
     yuv2rgb = NULL;
 #ifdef __i386__
-    if (yuv2rgb == NULL /*&& (config.flags & VO_MMX_ENABLE)*/) {
+    if (yuv2rgb == NULL && (oms_cpu_accel () & OMS_ACCEL_X86_MMX)) {
 	yuv2rgb = yuv2rgb_init_mmx (bpp, mode);
 	if (yuv2rgb != NULL)
 	    fprintf (stderr, "Using MMX for colorspace transform\n");
