@@ -49,10 +49,10 @@ bitstream_fill_next()
 }
 
 //
-// The fast paths for _show _flush and _get are in the
+// The fast paths for _show, _flush, and _get are in the
 // bitstream.h header file so they can be inlined.
 //
-// The "bottom half" of these routine are suffixed _bh
+// The "bottom half" of these routines are suffixed _bh
 //
 // -ah
 //

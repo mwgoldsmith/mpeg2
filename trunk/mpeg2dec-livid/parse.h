@@ -29,3 +29,4 @@ void parse_sequence_header(picture_t *picture);
 void parse_gop_header(picture_t *picture);
 void parse_extension(picture_t *picture);
 void parse_user_data(void);
+void parse_reset_pmv(slice_t *slice);

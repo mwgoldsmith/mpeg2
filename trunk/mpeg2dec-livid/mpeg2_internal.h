@@ -194,10 +194,12 @@ typedef struct picture_s
 	//pointer to the zigzag scan we're supposed to be using
 	uint_8 *scan;
 
-	//These are pointers to the planar frame buffers (Y,Cr,CB)
+	//Pointer to the current planar frame buffer (Y,Cr,CB)
 	uint_8 *current_frame[3];
+	//storage for reference frames plus a b-frame
 	uint_8 *forward_reference_frame[3];
 	uint_8 *backward_reference_frame[3];
+	uint_8 *throwaway_frame[3];
 } picture_t;
 
 typedef struct slice_s
@@ -209,9 +211,13 @@ typedef struct slice_s
   uint_32 extra_information_slice;
 
 	//Motion vectors
-	sint_32 pmv[2][2][2];
-	sint_32 dc_dct_pred[3];
-	uint_32 quantizer_scale;
+	//The f_ and b_ correspond to the forward and backward motion
+	//predictors
+	sint_16 f_pmv[2][2];
+	sint_16 b_pmv[2][2];
+
+	sint_16 dc_dct_pred[3];
+	uint_16 quantizer_scale;
 } slice_t;
 
 typedef struct macroblock_s
@@ -222,12 +228,20 @@ typedef struct macroblock_s
 
 	uint_16 mba;
 	uint_16 macroblock_type;
+
+	//Motion vector stuff
+	//The f_ and b_ correspond to the forward and backward motion
+	//predictors
 	uint_16 motion_type;
 	uint_16 motion_vector_count;
-	sint_16 motion_vertical_field_select[2][2];
+	sint_16 b_motion_vectors[2][2];
+	sint_16 f_motion_vectors[2][2];
+	sint_16 f_motion_vertical_field_select[2];
+	sint_16 b_motion_vertical_field_select[2];
 	sint_16 dmvector[2];
 	uint_16 mv_format;
 	uint_16 mvscale;
+
 	uint_16 dmv;
 	uint_16 dct_type;
 	uint_16 coded_block_pattern; 
