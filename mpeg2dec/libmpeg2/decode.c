@@ -38,7 +38,41 @@ const mpeg2_info_t * mpeg2_info (mpeg2dec_t * mpeg2dec)
     return &(mpeg2dec->info);
 }
 
-static inline int foo (mpeg2dec_t * mpeg2dec, int bytes)
+static inline int skip_chunk (mpeg2dec_t * mpeg2dec, int bytes)
+{
+    uint8_t * current;
+    uint32_t shift;
+    uint8_t * chunk_ptr;
+    uint8_t * limit;
+    uint8_t byte;
+
+    if (!bytes)
+	return 0;
+
+    current = mpeg2dec->buf_start;
+    shift = mpeg2dec->shift;
+    chunk_ptr = mpeg2dec->chunk_ptr;
+    limit = current + bytes;
+
+    do {
+	byte = *current++;
+	if (shift == 0x00000100) {
+	    int skipped;
+
+	    mpeg2dec->shift = 0xffffff00;
+	    skipped = current - mpeg2dec->buf_start;
+	    mpeg2dec->buf_start = current;
+	    return skipped;
+	}
+	shift = (shift | byte) << 8;
+    } while (current < limit);
+
+    mpeg2dec->shift = shift;
+    mpeg2dec->buf_start = current;
+    return 0;
+}
+
+static inline int copy_chunk (mpeg2dec_t * mpeg2dec, int bytes)
 {
     uint8_t * current;
     uint32_t shift;
@@ -60,9 +94,9 @@ static inline int foo (mpeg2dec_t * mpeg2dec, int bytes)
 	    int copied;
 
 	    mpeg2dec->shift = 0xffffff00;
-	    copied = chunk_ptr + 1 - mpeg2dec->chunk_ptr;
-	    mpeg2dec->chunk_ptr += copied;
-	    mpeg2dec->buf_start += copied;
+	    mpeg2dec->chunk_ptr = chunk_ptr + 1;
+	    copied = current - mpeg2dec->buf_start;
+	    mpeg2dec->buf_start = current;
 	    return copied;
 	}
 	shift = (shift | byte) << 8;
@@ -70,38 +104,7 @@ static inline int foo (mpeg2dec_t * mpeg2dec, int bytes)
     } while (current < limit);
 
     mpeg2dec->shift = shift;
-    return 0;
-}
-
-static inline int copy_chunk (mpeg2dec_t * mpeg2dec)
-{
-    int size_buffer, size_chunk, copied;
-
-    size_buffer = mpeg2dec->buf_end - mpeg2dec->buf_start;
-    size_chunk = mpeg2dec->chunk_buffer + BUFFER_SIZE - mpeg2dec->chunk_ptr;
-    if (size_buffer <= size_chunk) {
-	copied = foo (mpeg2dec, size_buffer);
-	if (!copied) {
-	    mpeg2dec->bytes_since_pts += size_buffer;
-	    mpeg2dec->buf_start += size_buffer;
-	    mpeg2dec->chunk_ptr += size_buffer;
-	    return 1;
-	}
-    } else {
-	copied = foo (mpeg2dec, size_chunk);
-	if (!copied) {
-	    /* we filled the chunk buffer without finding a start code */
-	    mpeg2dec->bytes_since_pts += size_chunk;
-	    mpeg2dec->buf_start += size_chunk;
-	    mpeg2dec->chunk_start = mpeg2dec->chunk_ptr =
-		mpeg2dec->chunk_buffer;
-	    mpeg2dec->code = 0xb4;	/* sequence_error_code */
-	    return 0;
-	}
-    }
-
-    mpeg2dec->bytes_since_pts += copied;
-    mpeg2dec->code = mpeg2dec->buf_start[-1];
+    mpeg2dec->buf_start = current;
     return 0;
 }
 
@@ -114,8 +117,16 @@ void mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t * start, uint8_t * end)
 int mpeg2_seek_sequence (mpeg2dec_t * mpeg2dec)
 {
     while (mpeg2dec->code != 0xb3) {
-	if (copy_chunk (mpeg2dec))
+	int size, skipped;
+
+	size = mpeg2dec->buf_end - mpeg2dec->buf_start;
+	skipped = skip_chunk (mpeg2dec, size);
+	if (!skipped) {
+	    mpeg2dec->bytes_since_pts += size;
 	    return -1;
+	}
+	mpeg2dec->bytes_since_pts += skipped;
+	mpeg2dec->code = mpeg2dec->buf_start[-1];
 	mpeg2dec->chunk_ptr = mpeg2dec->chunk_start;
     }
     mpeg2dec->state = STATE_INVALID;
@@ -128,6 +139,7 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	mpeg2_header_picture, mpeg2_header_extension, mpeg2_header_user_data,
 	mpeg2_header_sequence, NULL, NULL, NULL, NULL, mpeg2_header_gop
     };
+    int size_buffer, size_chunk, copied;
     uint8_t code;
 
     if (mpeg2dec->action) {
@@ -143,8 +155,27 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
     }
 
     code = mpeg2dec->code;
-    if (copy_chunk (mpeg2dec))
-	return -1;
+    size_buffer = mpeg2dec->buf_end - mpeg2dec->buf_start;
+    size_chunk = mpeg2dec->chunk_buffer + BUFFER_SIZE - mpeg2dec->chunk_ptr;
+    if (size_buffer <= size_chunk) {
+	copied = copy_chunk (mpeg2dec, size_buffer);
+	if (!copied) {
+	    mpeg2dec->bytes_since_pts += size_buffer;
+	    mpeg2dec->chunk_ptr += size_buffer;
+	    return -1;
+	}
+    } else {
+	copied = copy_chunk (mpeg2dec, size_chunk);
+	if (!copied) {
+	    /* we filled the chunk buffer without finding a start code */
+	    mpeg2dec->bytes_since_pts += size_chunk;
+	    mpeg2dec->action = mpeg2_seek_sequence;
+	    return STATE_INVALID;
+	}
+    }
+
+    mpeg2dec->bytes_since_pts += copied;
+    mpeg2dec->code = mpeg2dec->buf_start[-1];
 
     if ((unsigned) (code - 1) < 0xb0 - 1) {
 	if (! (mpeg2dec->picture->flags & PIC_FLAG_SKIP))
