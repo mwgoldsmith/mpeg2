@@ -25,7 +25,7 @@
 #include <inttypes.h>
 
 #include "mpeg2_internal.h"
-#include <mm_accel.h>
+#include "mm_accel.h"
 
 mc_functions_t mc_functions;
 
