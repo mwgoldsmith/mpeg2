@@ -417,24 +417,17 @@ static void convert_internal (int order, int bpp, int width, int height,
 #ifdef ARCH_X86
 	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_X86_MMXEXT)) {
 	    result->copy = yuv2rgb_init_mmxext (order, bpp);
-	    if (result->copy)
-		fprintf (stderr, "Using MMXEXT for colorspace transform\n");
 	}
 	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_X86_MMX)) {
 	    result->copy = yuv2rgb_init_mmx (order, bpp);
-	    if (result->copy)
-		fprintf (stderr, "Using MMX for colorspace transform\n");
 	}
 #endif
 #ifdef LIBVO_MLIB
 	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_MLIB)) {
 	    result->copy = yuv2rgb_init_mlib (order, bpp);
-	    if (result->copy)
-		fprintf (stderr, "Using mlib for colorspace transform\n");
 	}
 #endif
 	if (result->copy == NULL) {
-	    fprintf (stderr, "No accelerated colorspace conversion found\n");
 	    result->copy = convert_yuv2rgb_c;
 	    id->yuv2rgb = yuv2rgb_c_init (order, bpp);
 	}
