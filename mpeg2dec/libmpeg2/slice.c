@@ -1491,7 +1491,7 @@ void mpeg2_init_fbuf (decoder_t * decoder, uint8_t * current_fbuf[3],
     decoder->limit_y = height - 16;
 }
 
-static inline int slice_init (decoder_t * const decoder, const int code)
+static inline int slice_init (decoder_t * const decoder, int code)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -1507,6 +1507,10 @@ static inline int slice_init (decoder_t * const decoder, const int code)
     decoder->b_motion.pmv[0][0] = decoder->b_motion.pmv[0][1] = 0;
     decoder->b_motion.pmv[1][0] = decoder->b_motion.pmv[1][1] = 0;
 
+    if (decoder->vertical_position_extension) {
+	code += UBITS (bit_buf, 3) << 7;
+	DUMPBITS (bit_buf, bits, 3);
+    }
     decoder->v_offset = (code - 1) * 16;
     offset = 0;
     if (!(decoder->convert) || decoder->coding_type != B_TYPE)
