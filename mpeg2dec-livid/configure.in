@@ -53,6 +53,7 @@ sparc-*)
 	AC_DEFINE(__sparc__)
 	GLOBAL_CFLAGS="$GLOBAL_CFLAGS -mcpu=ultrasparc -mvis";;
 ppc-*) AC_DEFINE(__ppc__);;
+powerpc-*) AC_DEFINE(__ppc__);;
 *) echo "$host is not currently supported by mpeg2dec"; exit 1;;
 esac
 
