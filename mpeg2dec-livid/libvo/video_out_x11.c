@@ -174,8 +174,8 @@ static int x11_yuv2rgb_init (void)
     return 0;
 }
 
-static int common_setup (int width, int height,
-			 int (* create_image) (int, int))
+static int x11_common_setup (int width, int height,
+			     int (* create_image) (int, int))
 {
     struct x11_priv_s * priv = &x11_priv;
 
@@ -205,7 +205,6 @@ static int common_setup (int width, int height,
     priv->height = height;
     priv->imagedata = (unsigned char *) priv->ximage->data;
     priv->stride = priv->ximage->bytes_per_line;
-
     return 0;
 }
 
@@ -235,7 +234,7 @@ static int x11_setup (vo_output_video_attr_t * vo_attr)
 	return 1;
     }
 
-    return common_setup (width, height, x11_create_image);
+    return x11_common_setup (width, height, x11_create_image);
 }
 
 static int x11_close (void * dummy)
@@ -350,21 +349,11 @@ static int xshm_check_extension (void)
     return 0;
 }
 
-static int xshm_create_image (int width, int height)
+static int xshm_create_shm (int size)
 {
     struct x11_priv_s * priv = &x11_priv;
 
-    priv->ximage = XShmCreateImage (priv->display,
-				    priv->vinfo.visual, priv->vinfo.depth,
-				    ZPixmap, NULL /* data */,
-				    &(priv->shminfo), width, height);
-    if (priv->ximage == NULL)
-	return 1;
-
-    priv->shminfo.shmid =
-	shmget (IPC_PRIVATE,
-		priv->ximage->bytes_per_line * priv->ximage->height,
-		IPC_CREAT | 0777);
+    priv->shminfo.shmid = shmget (IPC_PRIVATE, size, IPC_CREAT | 0777);
     if (priv->shminfo.shmid == -1)
 	return 1;
 
@@ -376,23 +365,37 @@ static int xshm_create_image (int width, int height)
     if (! (XShmAttach (priv->display, &(priv->shminfo))))
 	return 1;
 
-    priv->ximage->data = priv->shminfo.shmaddr;
     return 0;
 }
 
-static void xshm_destroy_image (void)
+static void xshm_destroy_shm (void)
 {
     struct x11_priv_s * priv = &x11_priv;
 
-    if (priv->ximage) {
-	if (priv->shminfo.shmaddr != (char *)-1) {
-	    XShmDetach (priv->display, &(priv->shminfo));
-	    shmdt (priv->shminfo.shmaddr);
-	}
-	if (priv->shminfo.shmid != -1)
-	    shmctl (priv->shminfo.shmid, IPC_RMID, 0);
-	XDestroyImage (priv->ximage);
+    if (priv->shminfo.shmaddr != (char *)-1) {
+	XShmDetach (priv->display, &(priv->shminfo));
+	shmdt (priv->shminfo.shmaddr);
     }
+    if (priv->shminfo.shmid != -1)
+	shmctl (priv->shminfo.shmid, IPC_RMID, 0);
+}
+
+static int xshm_create_image (int width, int height)
+{
+    struct x11_priv_s * priv = &x11_priv;
+
+    priv->ximage = XShmCreateImage (priv->display,
+				    priv->vinfo.visual, priv->vinfo.depth,
+				    ZPixmap, NULL /* data */,
+				    &(priv->shminfo), width, height);
+    if (priv->ximage == NULL)
+	return 1;
+
+    if (xshm_create_shm (priv->ximage->bytes_per_line * priv->ximage->height))
+	return 1;
+
+    priv->ximage->data = priv->shminfo.shmaddr;
+    return 0;
 }
 
 static int xshm_setup (vo_output_video_attr_t * vo_attr)
@@ -419,12 +422,17 @@ static int xshm_setup (vo_output_video_attr_t * vo_attr)
 	return 1;
     }
 
-    return common_setup (width, height, xshm_create_image);
+    return x11_common_setup (width, height, xshm_create_image);
 }
 
 static int xshm_close (void * dummy)
 {
-    xshm_destroy_image ();
+    struct x11_priv_s * priv = &x11_priv;
+
+    if (priv->ximage) {
+	xshm_destroy_shm ();
+	XDestroyImage (priv->ximage);
+    }
     common_close ();
     return 0;
 }
@@ -523,19 +531,10 @@ static int xv_create_image (int width, int height)
     return 0;
 }
 
-static int xv_setup (vo_output_video_attr_t * vo_attr)
+static int xv_common_setup (int width, int height,
+			    int (* create_image) (int, int))
 {
     struct x11_priv_s * priv = &x11_priv;
-    int width, height;
-
-    width = vo_attr->width;
-    height = vo_attr->height;
-
-    priv->display = XOpenDisplay (NULL);
-    if (! (priv->display)) {
-	fprintf (stderr, "Can not open display\n");
-	return 1;
-    }
 
     if (xv_check_extension ()) {
 	fprintf (stderr, "No xv extension\n");
@@ -555,7 +554,7 @@ static int xv_setup (vo_output_video_attr_t * vo_attr)
 	return 1;
     }
 
-    if (xv_create_image (width, height)) {
+    if (create_image (width, height)) {
 	fprintf (stderr, "Cannot create xvimage\n");
 	return 1;
     }
@@ -566,8 +565,24 @@ static int xv_setup (vo_output_video_attr_t * vo_attr)
 
     priv->width = width;
     priv->height = height;
-
     return 0;
+}
+
+static int xv_setup (vo_output_video_attr_t * vo_attr)
+{
+    struct x11_priv_s * priv = &x11_priv;
+    int width, height;
+
+    width = vo_attr->width;
+    height = vo_attr->height;
+
+    priv->display = XOpenDisplay (NULL);
+    if (! (priv->display)) {
+	fprintf (stderr, "Can not open display\n");
+	return 1;
+    }
+
+    return xv_common_setup (width, height, xv_create_image);
 }
 
 static int xv_close (void * dummy)
@@ -621,6 +636,85 @@ vo_output_video_t video_out_xv = {
     setup: xv_setup,
     close: xv_close,
     flip_page: xv_flip_page,
+    draw_slice: xv_draw_slice,
+    draw_frame: xv_draw_frame,
+    allocate_image_buffer: x11_allocate_image_buffer,
+    free_image_buffer: x11_free_image_buffer
+};
+#endif
+
+#ifdef LIBVO_XVSHM
+static int xvshm_create_image (int width, int height)
+{
+    struct x11_priv_s * priv = &x11_priv;
+
+    priv->xvimage = XvShmCreateImage (priv->display, priv->port, 0x32315659,
+				      NULL /* data */, width, height,
+				      &(priv->shminfo));
+    if (priv->xvimage == NULL)
+	return 1;
+
+    if (xshm_create_shm (priv->xvimage->data_size))
+	return 1;
+
+    priv->xvimage->data = priv->shminfo.shmaddr;
+    return 0;
+}
+
+static int xvshm_setup (vo_output_video_attr_t * vo_attr)
+{
+    struct x11_priv_s * priv = &x11_priv;
+    int width, height;
+
+    width = vo_attr->width;
+    height = vo_attr->height;
+
+    priv->display = XOpenDisplay (NULL);
+    if (! (priv->display)) {
+	fprintf (stderr, "Can not open display\n");
+	return 1;
+    }
+
+    if (x11_check_local ()) {
+	fprintf (stderr, "Can not use xshm on a remote display\n");
+	return 1;
+    }
+
+    if (xshm_check_extension ()) {
+	fprintf (stderr, "No xshm extension\n");
+	return 1;
+    }
+
+    return xv_common_setup (width, height, xvshm_create_image);
+}
+
+static int xvshm_close (void * dummy)
+{
+    struct x11_priv_s * priv = &x11_priv;
+
+    if (priv->xvimage) {
+	xshm_destroy_shm ();
+	XFree (priv->xvimage);
+    }
+    common_close ();
+    return 0;
+}
+
+static void xvshm_flip_page (void)
+{
+    struct x11_priv_s * priv = &x11_priv;
+
+    XvShmPutImage (priv->display, priv->port, priv->window, priv->gc,
+		   priv->xvimage, 0, 0, priv->width, priv->height,
+		   0, 0, priv->width, priv->height, False);
+    XFlush (priv->display);
+}
+
+vo_output_video_t video_out_xvshm = {
+    name: "xvshm",
+    setup: xvshm_setup,
+    close: xvshm_close,
+    flip_page: xvshm_flip_page,
     draw_slice: xv_draw_slice,
     draw_frame: xv_draw_frame,
     allocate_image_buffer: x11_allocate_image_buffer,
