@@ -433,7 +433,7 @@ static void xshm_draw_frame (frame_t * frame)
 
     XShmPutImage (priv->display, priv->window, priv->gc, priv->ximage, 
 		  0, 0, 0, 0, priv->width, priv->height, False);
-    XFlush (priv->display);
+    XSync (priv->display, False);
 }
 
 vo_output_video_t video_out_xshm = {
@@ -702,7 +702,7 @@ static void xvshm_draw_frame (frame_t * frame)
     XvShmPutImage (priv->display, priv->port, priv->window, priv->gc,
 		   frame->private, 0, 0, priv->width, priv->height,
 		   0, 0, priv->width, priv->height, False);
-    XFlush (priv->display);
+    XSync (priv->display, False);
 }
 
 vo_output_video_t video_out_xvshm = {
