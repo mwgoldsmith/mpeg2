@@ -59,6 +59,7 @@ mpeg2dec_t * mpeg2_init (uint32_t mm_accel)
     mpeg2dec->state = STATE_INVALID;
     mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
     mpeg2dec->code = 0xb4;
+    mpeg2dec->skip = 0;
 
     /* initialize substructures */
     mpeg2_header_state_init (mpeg2dec);
@@ -207,7 +208,9 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	    if (mpeg2dec->state != STATE_SLICE &&
 		mpeg2dec->state != STATE_SLICE_1ST)
 		mpeg2_header_slice (mpeg2dec);
-	    mpeg2_slice (&(mpeg2dec->decoder), code, mpeg2dec->chunk_buffer);
+	    if (! (mpeg2dec->picture->flags & PIC_FLAG_SKIP))
+		mpeg2_slice (&(mpeg2dec->decoder), code,
+			     mpeg2dec->chunk_buffer);
 	}
 
 #define RECEIVED(code,state) (((state) << 8) + (code))
@@ -324,6 +327,11 @@ void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id)
 void mpeg2_custom_fbuf (mpeg2dec_t * mpeg2dec, int custom_fbuf)
 {
     mpeg2dec->custom_fbuf = custom_fbuf;
+}
+
+void mpeg2_skip (mpeg2dec_t * mpeg2dec, int skip)
+{
+    mpeg2dec->skip = skip;
 }
 
 void mpeg2_pts (mpeg2dec_t * mpeg2dec, uint32_t pts)

@@ -442,7 +442,6 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 
     picture->nb_fields = 2;
 
-
     return 0;
 }
 
@@ -561,7 +560,9 @@ void mpeg2_header_slice (mpeg2dec_t * mpeg2dec)
 			mpeg2dec->state == STATE_PICTURE_2ND) ?
 		       STATE_SLICE : STATE_SLICE_1ST);
 
-    if (mpeg2dec->convert_start) {
+    if (mpeg2dec->skip)
+	mpeg2dec->picture->flags |= PIC_FLAG_SKIP;
+    else if (mpeg2dec->convert_start) {
 	int flags;
 
 	switch (mpeg2dec->decoder.picture_structure) {
