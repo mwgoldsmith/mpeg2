@@ -35,7 +35,7 @@
 #include "libmpeg2/mpeg2.h"
 //#include "libvo/video_out.h"
 
-#define BUFFER_SIZE 2048
+#define BUFFER_SIZE 262144
 static uint8_t buffer[BUFFER_SIZE];
 static FILE *in_file;
 static uint32_t frame_counter = 0;
@@ -94,56 +94,6 @@ static void print_fps (int final)
     last_count = frame_counter;
 }
  
-static void fill_buffer (int num_bytes)
-{
-    int bytes_read;
-
-    bytes_read = fread (buffer, 1, num_bytes, in_file);
-
-    if (bytes_read < num_bytes) {
-	print_fps (1);
-	exit (0);
-    }
-}
-
-static void do_dvd_demux (uint8_t **buf_start, uint8_t **buf_end)
-{
-    uint8_t * start;
-    uint8_t * end;
-
-    while (1) {
-
-	//read in one sector
-	fill_buffer (2048);
-
-	// check pack start code
-	if (buffer[0] || buffer[1] ||
-	    (buffer[2] != 0x01) || (buffer[3] != 0xba)) {
-	    printf ("bad pack start code - not a .vob file ?\n");
-	    exit (1);
-	}
-
-	// skip pack header
-	start = buffer + 14 + (buffer[13] & 7);
-
-	//there should be exactly one PES packet per sector in DVD stream
-	end = start + (start[4] << 8) + start[5] + 6;
-
-	if (end > buffer + 2048) {
-	    printf ("PES too big ?\n");
-	    exit (1);
-	}
-
-	if (start[3] == 0xe0) // check for video ES bitstream
-	    break;
-    }
-
-    start += start[8] + 9; // skip PES header
-
-    *buf_start = start;
-    *buf_end = end;
-}
-
 static void signal_handler (int sig)
 {
     print_fps (1);
@@ -215,6 +165,121 @@ static void handle_args (int argc, char * argv[])
 	in_file = stdin;
 }
 
+static void ps_loop (void)
+{
+    static int mpeg1_skip_table[16] = {
+	     1, 0xffff,      5,     10, 0xffff, 0xffff, 0xffff, 0xffff,
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff
+    };
+
+    int num_frames;
+    uint8_t * buf;
+    uint8_t * end;
+    uint8_t * tmp1;
+    uint8_t * tmp2;
+
+    buf = buffer;
+
+    do {
+	end = buf + fread (buf, 1, buffer + BUFFER_SIZE - buf, in_file);
+	buf = buffer;
+
+	while (buf + 4 <= end) {
+	    // check start code
+	    if (buf[0] || buf[1] || (buf[2] != 0x01)) {
+		printf ("missing start code\n");
+		exit (1);
+	    }
+
+	    switch (buf[3]) {
+	    case 0xb9:	/* program end code */
+		return;
+	    case 0xba:	/* pack header */
+		/* skip */
+		if ((buf[4] & 0xc0) == 0x40)	/* mpeg2 */
+		    tmp1 = buf + 14 + (buf[13] & 7);
+		else if ((buf[4] & 0xf0) == 0x20)	/* mpeg1 */
+		    tmp1 = buf + 12;
+		else if (buf + 5 > end)
+		    goto copy;
+		else {
+		    printf ("weird pack header\n");
+		    exit (1);
+		}
+		if (tmp1 > end)
+		    goto copy;
+		buf = tmp1;
+		break;
+	    case 0xe0:	/* video */
+		tmp2 = buf + 6 + (buf[4] << 8) + buf[5];
+		if (tmp2 > end)
+		    goto copy;
+		if ((buf[6] & 0xc0) == 0x80)	/* mpeg2 */
+		    tmp1 = buf + 9 + buf[8];
+		else {	/* mpeg1 */
+		    for (tmp1 = buf + 6; *tmp1 == 0xff; tmp1++)
+			if (tmp1 == buf + 6 + 16) {
+			    printf ("too much stuffing\n");
+			    buf = tmp2;
+			    break;
+			}
+		    if ((*tmp1 & 0xc0) == 0x40)
+			tmp1 += 2;
+		    tmp1 += mpeg1_skip_table [*tmp1 >> 4];
+		}
+		if (tmp1 < tmp2) {
+		    /*
+		    printf ("decode %x %x %x\n",
+			    buf - buffer, tmp1 - buffer, tmp2 - buffer);
+		    */
+		    num_frames = mpeg2_decode_data (video_out, tmp1, tmp2);
+		    while (num_frames--)
+			print_fps (0);
+		}
+		buf = tmp2;
+		break;
+	    default:
+		if (buf[3] < 0xb9) {
+		    printf ("looks like a video stream, not system stream\n");
+		    exit (1);
+		}
+		/* skip */
+		tmp1 = buf + 6 + (buf[4] << 8) + buf[5];
+		if (tmp1 > end)
+		    goto copy;
+		buf = tmp1;
+		break;
+	    }
+	}
+
+	if (buf < end) {
+	copy:
+	    /* we only pass here for mpeg1 ps streams */
+	    memmove (buffer, buf, end - buf);
+	    /*  printf ("copy\n"); */
+	}
+	buf = buffer + (end - buf);
+
+    } while (end == buffer + BUFFER_SIZE);
+}
+
+static void es_loop (void)
+{
+    uint8_t * end;
+    int num_frames;
+		
+    do {
+	end = buffer + fread (buffer, 1, BUFFER_SIZE, in_file);
+
+	num_frames =
+	    mpeg2_decode_data (video_out, buffer, end);
+
+	while (num_frames--)
+	    print_fps (0);
+
+    } while (end == buffer + BUFFER_SIZE);
+}
+
 int main (int argc,char *argv[])
 {
     printf (PACKAGE"-"VERSION" (C) 2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>\n");
@@ -227,20 +292,11 @@ int main (int argc,char *argv[])
 
     gettimeofday (&tv_beg, NULL);
 
-    while (1) {
-	int num_frames;
-	uint8_t *buf_start = buffer;
-	uint8_t *buf_end = buffer + BUFFER_SIZE;
-		
-	if (demux_dvd)
-	    do_dvd_demux (&buf_start,&buf_end);
-	else
-	    fill_buffer (BUFFER_SIZE);
-		
-	num_frames = mpeg2_decode_data (video_out, buf_start, buf_end);
+    if (demux_dvd)
+	ps_loop ();
+    else
+	es_loop ();
 
-	while (num_frames--)
-	    print_fps (0);
-    }
+    print_fps (1);
     return 0;
 }
