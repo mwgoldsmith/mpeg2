@@ -239,7 +239,7 @@ void mpeg2_header_matrix_finalize (mpeg2dec_t * mpeg2dec);
 void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec);
 mpeg2_state_t mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec);
 mpeg2_state_t mpeg2_header_end (mpeg2dec_t * mpeg2dec);
-void mpeg2_set_fbuf (mpeg2dec_t * mpeg2dec, int coding_type);
+void mpeg2_set_fbuf (mpeg2dec_t * mpeg2dec, int b_type);
 
 /* idct.c */
 void mpeg2_idct_init (uint32_t accel);

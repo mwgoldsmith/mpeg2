@@ -101,6 +101,9 @@ void mpeg2_header_state_init (mpeg2dec_t * mpeg2dec)
     mpeg2dec->first_decode_slice = 1;
     mpeg2dec->nb_decode_slices = 0xb0 - 1;
     mpeg2dec->convert_id = NULL;
+    mpeg2dec->convert_start = NULL;
+    mpeg2dec->custom_fbuf = 0;
+    mpeg2dec->yuv_index = 0;
 }
 
 static void reset_info (mpeg2_info_t * info)
@@ -376,7 +379,7 @@ int mpeg2_header_gop (mpeg2dec_t * mpeg2dec)
     return 0;
 }
 
-void mpeg2_set_fbuf (mpeg2dec_t * mpeg2dec, int coding_type)
+void mpeg2_set_fbuf (mpeg2dec_t * mpeg2dec, int b_type)
 {
     int i;
 
@@ -385,9 +388,8 @@ void mpeg2_set_fbuf (mpeg2dec_t * mpeg2dec, int coding_type)
 	    mpeg2dec->fbuf[2] != &mpeg2dec->fbuf_alloc[i].fbuf) {
 	    mpeg2dec->fbuf[0] = &mpeg2dec->fbuf_alloc[i].fbuf;
 	    mpeg2dec->info.current_fbuf = mpeg2dec->fbuf[0];
-	    if ((coding_type == B_TYPE) ||
-		(mpeg2dec->sequence.flags & SEQ_FLAG_LOW_DELAY)) {
-		if ((coding_type == B_TYPE) || (mpeg2dec->convert_start))
+	    if (b_type || (mpeg2dec->sequence.flags & SEQ_FLAG_LOW_DELAY)) {
+		if (b_type || mpeg2dec->convert_start)
 		    mpeg2dec->info.discard_fbuf = mpeg2dec->fbuf[0];
 		mpeg2dec->info.display_fbuf = mpeg2dec->fbuf[0];
 	    }
@@ -493,7 +495,7 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 		    fbuf->buf[2] = fbuf->buf[1] + (size >> 2);
 		}
 	    }
-	    mpeg2_set_fbuf (mpeg2dec, type);
+	    mpeg2_set_fbuf (mpeg2dec, (type == PIC_FLAG_CODING_TYPE_B));
 	}
     } else {
 	decoder->second_field = 1;
