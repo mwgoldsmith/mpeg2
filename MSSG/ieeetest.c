@@ -71,7 +71,7 @@ main(int argc, char **argv)
 
     /* perform reference FDCT */
     memcpy(refcoefs, block, sizeof(DCTELEM)*DCTSIZE2);
-    ref_fdct(refcoefs);
+    ref_fdct((void *)refcoefs);
     /* clip */
     for (i = 0; i < DCTSIZE2; i++) {
       if (refcoefs[i] < -2048) refcoefs[i] = -2048;
@@ -80,7 +80,7 @@ main(int argc, char **argv)
 
     /* perform reference IDCT */
     memcpy(refout, refcoefs, sizeof(DCTELEM)*DCTSIZE2);
-    ref_idct(refout);
+    ref_idct((void *)refout);
     /* clip */
     for (i = 0; i < DCTSIZE2; i++) {
       if (refout[i] < -256) refout[i] = -256;
@@ -89,7 +89,7 @@ main(int argc, char **argv)
 
     /* perform test IDCT */
     memcpy(testout, refcoefs, sizeof(DCTELEM)*DCTSIZE2);
-    j_rev_dct(testout);
+    Fast_IDCT(testout,0);
     /* clip */
     for (i = 0; i < DCTSIZE2; i++) {
       if (testout[i] < -256) testout[i] = -256;
@@ -157,7 +157,7 @@ main(int argc, char **argv)
 
   /* test for 0 input giving 0 output */
   memset(testout, 0, sizeof(DCTELEM)*DCTSIZE2);
-  j_rev_dct(testout);
+  Fast_IDCT(testout,0);
   for (i = 0, j=0; i < DCTSIZE2; i++) {
     if (testout[i]) {
       printf("Position %d of IDCT(0) = %d (FAILS)\n", i, testout[i]);
