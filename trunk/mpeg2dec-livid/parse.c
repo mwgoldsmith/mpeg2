@@ -715,12 +715,6 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
   uint_32 quantizer_scale_code;
   uint_32 picture_structure = picture->picture_structure;
 
-	//Clear the skipped flag
-	mb->skipped = 0;
-	
-	//XXX we ignore the spatial_temporal weight code for now
-	
-
   // get macroblock_type 
   mb->macroblock_type = Get_macroblock_type(picture->picture_coding_type);
 
@@ -883,23 +877,17 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
     // non-intra mb without forward mv in a P picture 
     // 7.6.3.4 Resetting motion vector predictors 
 		parse_reset_pmv(slice);
+		mb->macroblock_type |= MACROBLOCK_MOTION_FORWARD;
 
     //6.3.17.1 Macroblock modes, frame_motion_type 
-    //if (picture_structure==FRAME_PICTURE)
-    //  *motion_type = MC_FRAME;
-    //else
-    //{
-    //  *motion_type = MC_FIELD;
-    //  /* predict from field of same parity */
-    //  motion_vertical_field_select[0][0] = (picture_structure==BOTTOM_FIELD);
-    //}
+    if (picture->picture_structure==FRAME_PICTURE)
+      mb->motion_type = MC_FRAME;
+    else
+    {
+      mb->motion_type = MC_FIELD;
+      // predict from field of same parity 
+      mb->f_motion_vertical_field_select[0]= (picture->picture_structure==BOTTOM_FIELD);
+    }
   }
-
-  //if (*stwclass==4)
-  //{
-  //  /* purely spatially predicted macroblock */
-  //  /* 7.7.5.1 Resetting motion vector predictions */
-	//  slice_reset_pmv(slice);
-  // }
 }
 
