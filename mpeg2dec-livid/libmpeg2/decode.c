@@ -162,12 +162,18 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 
     switch (code) {
     case 0x00:	/* picture_start_code */
-	header_process_picture_header (&picture, buffer);
+	if (header_process_picture_header (&picture, buffer)) {
+	    printf ("bad picture header\n");
+	    exit (1);
+	}
 	decode_reorder_frames ();
 	break;
 
     case 0xb3:	/* sequence_header_code */
-	header_process_sequence_header (&picture, buffer);
+	if (header_process_sequence_header (&picture, buffer)) {
+	    printf ("bad sequence header\n");
+	    exit (1);
+	}
 	is_sequence_needed = 0;
 
 	if (!is_display_initialized) {
@@ -188,7 +194,10 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 	break;
 
     case 0xb5:	/* extension_start_code */
-	header_process_extension (&picture, buffer);
+	if (header_process_extension (&picture, buffer)) {
+	    printf ("bad extension\n");
+	    exit (1);
+	}
 	break;
 
     default:

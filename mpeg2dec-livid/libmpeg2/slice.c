@@ -1249,6 +1249,10 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		MOTION (motion_zero, MACROBLOCK_MOTION_FORWARD,
 			slice, dest, offset, width);
 		break;
+
+	    case MC_DMV:
+		printf ("DMV\n");
+		break;
 	    }
 
 	    //6.3.17.4 Coded block pattern
