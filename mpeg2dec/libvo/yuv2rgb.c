@@ -337,8 +337,7 @@ static yuv2rgb_c_internal * yuv2rgb_c_init (int order, int bpp)
 	break;
 
     default:
-	fprintf (stderr, "%ibpp not supported by yuv2rgb\n", bpp);
-	exit (1);
+	yuv2rgb = NULL;	/* just to keep gcc happy */
     }
 
     for (i = 0; i < 256; i++) {
@@ -491,5 +490,6 @@ convert_t * convert_rgb (int order, int bpp)
 	case 16: return (order == CONVERT_RGB) ? convert_rgb16 : convert_bgr16;
 	case 15: return (order == CONVERT_RGB) ? convert_rgb15 : convert_bgr15;
 	}
-    return NULL;
+    fprintf (stderr, "%dbpp not supported by yuv2rgb\n", bpp);
+    exit (1);
 }
