@@ -1,5 +1,5 @@
 /*
- * slice.c
+ * header.c
  * Copyright (C) 1999-2001 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
