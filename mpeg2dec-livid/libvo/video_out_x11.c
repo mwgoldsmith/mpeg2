@@ -612,7 +612,8 @@ static int xv_draw_slice (uint8_t *src[], int slice_num)
 	    src[0], priv->width * 16);
     memcpy (priv->xvimage->data + priv->width * (priv->height + 4 * slice_num),
 	    src[2], priv->width * 4);
-    memcpy (priv->xvimage->data + priv->width * (priv->height * 5 / 4 + 4 * slice_num),
+    memcpy (priv->xvimage->data +
+	    priv->width * (priv->height * 5 / 4 + 4 * slice_num),
 	    src[1], priv->width * 4);
 
     return 0;
