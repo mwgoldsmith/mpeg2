@@ -1,7 +1,7 @@
 AM_CFLAGS = $(OPT_CFLAGS) $(LIBMPEG2_CFLAGS)
 
 lib_LTLIBRARIES = libmpeg2convert.la
-libmpeg2convert_la_SOURCES = rgb.c
+libmpeg2convert_la_SOURCES = rgb.c uyvy.c
 libmpeg2convert_la_LIBADD = libmpeg2convertarch.la
 libmpeg2convert_la_LDFLAGS = -no-undefined
 

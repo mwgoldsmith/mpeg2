@@ -293,8 +293,11 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 		fprintf (stderr, "display setup failed\n");
 		exit (1);
 	    }
-	    if (setup_result.convert)
-		mpeg2_convert (mpeg2dec, setup_result.convert, NULL);
+	    if (setup_result.convert &&
+		mpeg2_convert (mpeg2dec, setup_result.convert, NULL)) {
+		fprintf (stderr, "color conversion setup failed\n");
+		exit (1);
+	    }
 	    if (output->set_fbuf) {
 		uint8_t * buf[3];
 		void * id;
