@@ -318,8 +318,8 @@ do {				\
 	val = -2048;		\
 } while (0)
 
-static void slice_get_intra_block_B14 (picture_t * picture, slice_t * slice,
-				       int16_t * dest)
+static void get_intra_block_B14 (picture_t * picture, slice_t * slice,
+				 int16_t * dest)
 {
     int i;
     int j;
@@ -428,8 +428,8 @@ static void slice_get_intra_block_B14 (picture_t * picture, slice_t * slice,
     bitstream_bits = bits;
 }
 
-static void slice_get_intra_block_B15 (picture_t * picture, slice_t * slice,
-				       int16_t * dest)
+static void get_intra_block_B15 (picture_t * picture, slice_t * slice,
+				 int16_t * dest)
 {
     int i;
     int j;
@@ -537,8 +537,8 @@ static void slice_get_intra_block_B15 (picture_t * picture, slice_t * slice,
     bitstream_bits = bits;
 }
 
-static void slice_get_non_intra_block (picture_t * picture, slice_t * slice,
-				       int16_t * dest)
+static void get_non_intra_block (picture_t * picture, slice_t * slice,
+				 int16_t * dest)
 {
     int i;
     int j;
@@ -656,6 +656,234 @@ static void slice_get_non_intra_block (picture_t * picture, slice_t * slice,
     bitstream_bits = bits;
 }
 
+static void get_mpeg1_intra_block (picture_t * picture, slice_t * slice,
+				   int16_t * dest)
+{
+    int i;
+    int j;
+    int val;
+    uint8_t * scan = picture->scan;
+    uint8_t * quant_matrix = picture->intra_quantizer_matrix;
+    int quantizer_scale = slice->quantizer_scale;
+    DCTtab * tab;
+    uint32_t bit_buf;
+    int bits;
+
+    i = 0;
+
+    bit_buf = bitstream_buf;
+    bits = bitstream_bits;
+
+    NEEDBITS (bit_buf, bits);
+
+    while (1) {
+	if (bit_buf >= 0x28000000) {
+
+	    tab = DCT_B14AC_5 - 5 + UBITS (bit_buf, 5);
+
+	    i += tab->run;
+	    if (i >= 64)
+		break;	// end of block
+
+	normal_code:
+	    j = scan[i];
+	    bit_buf <<= tab->len;
+	    bits += tab->len + 1;
+	    val = (tab->level * quantizer_scale * quant_matrix[j]) >> 4;
+
+	    // if (bitstream_get (1)) val = -val;
+	    val = (val ^ SBITS (bit_buf, 1)) - SBITS (bit_buf, 1);
+
+	    SATURATE (val);
+	    dest[j] = val;
+
+	    bit_buf <<= 1;
+	    NEEDBITS (bit_buf, bits);
+
+	    continue;
+
+	} else if (bit_buf >= 0x04000000) {
+
+	    tab = DCT_B14_8 - 4 + UBITS (bit_buf, 8);
+
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+
+	    // escape code
+
+	    i += UBITS (bit_buf << 6, 6) - 64;
+	    if (i >= 64)
+		break;	// illegal, but check needed to avoid buffer overflow
+
+	    j = scan[i];
+
+	    DUMPBITS (bit_buf, bits, 12);
+	    NEEDBITS (bit_buf, bits);
+	    val = SBITS (bit_buf, 8);
+	    if (! (val & 0x7f)) {
+		DUMPBITS (bit_buf, bits, 8);
+		val = UBITS (bit_buf, 8) + 2 * val;
+	    }
+	    val = (val * quantizer_scale * quant_matrix[j]) / 16;
+
+	    SATURATE (val);
+	    dest[j] = val;
+
+	    DUMPBITS (bit_buf, bits, 8);
+	    NEEDBITS (bit_buf, bits);
+
+	    continue;
+
+	} else if (bit_buf >= 0x02000000) {
+	    tab = DCT_B14_10 - 8 + UBITS (bit_buf, 10);
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+	} else if (bit_buf >= 0x00800000) {
+	    tab = DCT_13 - 16 + UBITS (bit_buf, 13);
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+	} else if (bit_buf >= 0x00200000) {
+	    tab = DCT_15 - 16 + UBITS (bit_buf, 15);
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+	} else {
+	    tab = DCT_16 + UBITS (bit_buf, 16);
+	    bit_buf <<= 16;
+	    bit_buf |= getword () << (bits + 16);
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+	}
+	break;	// illegal, but check needed to avoid buffer overflow
+    }
+    DUMPBITS (bit_buf, bits, 2);	// dump end of block code
+    bitstream_buf = bit_buf;
+    bitstream_bits = bits;
+}
+
+static void get_mpeg1_non_intra_block (picture_t * picture, slice_t * slice,
+				       int16_t * dest)
+{
+    int i;
+    int j;
+    int val;
+    uint8_t * scan = picture->scan;
+    uint8_t * quant_matrix = picture->non_intra_quantizer_matrix;
+    int quantizer_scale = slice->quantizer_scale;
+    DCTtab * tab;
+    uint32_t bit_buf;
+    int bits;
+
+    i = -1;
+
+    bit_buf = bitstream_buf;
+    bits = bitstream_bits;
+
+    NEEDBITS (bit_buf, bits);
+    if (bit_buf >= 0x28000000) {
+	tab = DCT_B14DC_5 - 5 + UBITS (bit_buf, 5);
+	goto entry_1;
+    } else
+	goto entry_2;
+
+    while (1) {
+	if (bit_buf >= 0x28000000) {
+
+	    tab = DCT_B14AC_5 - 5 + UBITS (bit_buf, 5);
+
+	entry_1:
+	    i += tab->run;
+	    if (i >= 64)
+		break;	// end of block
+
+	normal_code:
+	    j = scan[i];
+	    bit_buf <<= tab->len;
+	    bits += tab->len + 1;
+	    val = ((2*tab->level+1) * quantizer_scale * quant_matrix[j]) >> 5;
+
+	    // if (bitstream_get (1)) val = -val;
+	    val = (val ^ SBITS (bit_buf, 1)) - SBITS (bit_buf, 1);
+
+	    SATURATE (val);
+	    dest[j] = val;
+
+	    bit_buf <<= 1;
+	    NEEDBITS (bit_buf, bits);
+
+	    continue;
+
+	}
+
+    entry_2:
+	if (bit_buf >= 0x04000000) {
+
+	    tab = DCT_B14_8 - 4 + UBITS (bit_buf, 8);
+
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+
+	    // escape code
+
+	    i += UBITS (bit_buf << 6, 6) - 64;
+	    if (i >= 64)
+		break;	// illegal, but check needed to avoid buffer overflow
+
+	    j = scan[i];
+
+	    DUMPBITS (bit_buf, bits, 12);
+	    NEEDBITS (bit_buf, bits);
+	    val = SBITS (bit_buf, 8);
+	    if (! (val & 0x7f)) {
+		DUMPBITS (bit_buf, bits, 8);
+		val = UBITS (bit_buf, 8) + 2 * val;
+	    }
+	    val = 2 * (val + SBITS (val, 1)) + 1;
+	    val = (val * quantizer_scale * quant_matrix[j]) / 32;
+
+	    SATURATE (val);
+	    dest[j] = val;
+
+	    DUMPBITS (bit_buf, bits, 8);
+	    NEEDBITS (bit_buf, bits);
+
+	    continue;
+
+	} else if (bit_buf >= 0x02000000) {
+	    tab = DCT_B14_10 - 8 + UBITS (bit_buf, 10);
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+	} else if (bit_buf >= 0x00800000) {
+	    tab = DCT_13 - 16 + UBITS (bit_buf, 13);
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+	} else if (bit_buf >= 0x00200000) {
+	    tab = DCT_15 - 16 + UBITS (bit_buf, 15);
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+	} else {
+	    tab = DCT_16 + UBITS (bit_buf, 16);
+	    bit_buf <<= 16;
+	    bit_buf |= getword () << (bits + 16);
+	    i += tab->run;
+	    if (i < 64)
+		goto normal_code;
+	}
+	break;	// illegal, but check needed to avoid buffer overflow
+    }
+    DUMPBITS (bit_buf, bits, 2);	// dump end of block code
+    bitstream_buf = bit_buf;
+    bitstream_bits = bits;
+}
+
 static inline int get_macroblock_address_increment (void)
 {
 #define bit_buf bitstream_buf
@@ -705,10 +933,12 @@ static inline void slice_intra_DCT (picture_t * picture, slice_t * slice,
 	slice->dc_dct_pred[cc] += get_chroma_dc_dct_diff ();
     DCTblock[0] = slice->dc_dct_pred[cc] << (3 - picture->intra_dc_precision);
 
-    if (picture->intra_vlc_format)
-	slice_get_intra_block_B15 (picture, slice, DCTblock);
+    if (picture->mpeg1)
+	get_mpeg1_intra_block (picture, slice, DCTblock);
+    else if (picture->intra_vlc_format)
+	get_intra_block_B15 (picture, slice, DCTblock);
     else
-	slice_get_intra_block_B14 (picture, slice, DCTblock);
+	get_intra_block_B14 (picture, slice, DCTblock);
     idct_block_copy (DCTblock, dest, stride);
     memset (DCTblock, 0, sizeof (DCTblock));
 #undef bit_buf
@@ -718,7 +948,10 @@ static inline void slice_intra_DCT (picture_t * picture, slice_t * slice,
 static inline void slice_non_intra_DCT (picture_t * picture, slice_t * slice,
 					uint8_t * dest, int stride)
 {
-    slice_get_non_intra_block (picture, slice, DCTblock);
+    if (picture->mpeg1)
+	get_mpeg1_non_intra_block (picture, slice, DCTblock);
+    else
+	get_non_intra_block (picture, slice, DCTblock);
     idct_block_add (DCTblock, dest, stride);
     memset (DCTblock, 0, sizeof (DCTblock));
 }
@@ -836,6 +1069,22 @@ do {								\
 	routine (& ((slice).b_motion), dest, offset, stride,	\
 		 ((direction) & MACROBLOCK_MOTION_FORWARD ?	\
 		  mc_functions.avg : mc_functions.put));	\
+} while (0)
+
+#define CHECK_DISPLAY					\
+do {							\
+    if (offset == width) {				\
+	slice.f_motion.ref_frame[0] += 16 * offset;	\
+	slice.f_motion.ref_frame[1] += 4 * offset;	\
+	slice.f_motion.ref_frame[2] += 4 * offset;	\
+	slice.b_motion.ref_frame[0] += 16 * offset;	\
+	slice.b_motion.ref_frame[1] += 4 * offset;	\
+	slice.b_motion.ref_frame[2] += 4 * offset;	\
+	dest[0] += 16 * offset;				\
+	dest[1] += 4 * offset;				\
+	dest[2] += 4 * offset;				\
+	offset = 0;					\
+    }							\
 } while (0)
 
 int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
@@ -1017,6 +1266,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 
 	mba++;
 	offset += 16;
+	CHECK_DISPLAY;
 
 	NEEDBITS (bit_buf, bits);
 
@@ -1045,6 +1295,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 
 		    mba++;
 		    offset += 16;
+		    CHECK_DISPLAY;
 		} while (--mba_inc);
 	    } else {
 		do {
@@ -1053,6 +1304,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 
 		    mba++;
 		    offset += 16;
+		    CHECK_DISPLAY;
 		} while (--mba_inc);
 	    }
 	}

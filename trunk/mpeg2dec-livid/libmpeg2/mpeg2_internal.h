@@ -106,6 +106,9 @@ typedef struct picture_s {
     uint8_t * backward_reference_frame[3];
     uint8_t * throwaway_frame[3];
 
+    // MPEG1 - testing
+    uint8_t mpeg1;
+
     //these things are not needed by the decoder
     //NOTICE : this is a temporary interface, we will build a better one later.
     int aspect_ratio_information;

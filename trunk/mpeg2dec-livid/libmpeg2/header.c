@@ -170,6 +170,14 @@ void header_process_sequence_header (picture_t * picture, uint8_t * buffer)
 	    picture->non_intra_quantizer_matrix[i] = 16;
     }
 
+    // MPEG1 - for testing only
+    picture->mpeg1 = 1;
+    picture->intra_dc_precision = 0;
+    picture->frame_pred_frame_dct = 1;
+    picture->q_scale_type = 0;
+    picture->concealment_motion_vectors = 0;
+    //picture->alternate_scan = 0;
+ 
     //return 0;
 }
 
@@ -178,11 +186,14 @@ static int header_process_sequence_extension (picture_t * picture,
 {
     // check chroma format, size extensions, marker bit
     if (((buffer[1] & 0x07) != 0x02) || (buffer[2] & 0xe0) ||
-	((buffer[4] & 0x40) != 0x40))
+	((buffer[3] & 0x01) != 0x01))
 	return 1;
 
     // this is not used by the decoder
     picture->progressive_sequence = (buffer[1] >> 3) & 1;
+
+    // MPEG1 - for testing only
+    picture->mpeg1 = 0;
 
     return 0;
 }
@@ -244,6 +255,12 @@ void header_process_extension (picture_t * picture, uint8_t * buffer)
 void header_process_picture_header (picture_t *picture, uint8_t * buffer)
 {
     picture->picture_coding_type = (buffer [1] >> 3) & 7;
+
+    // forward_f_code and backward_f_code - used in mpeg1 only
+    picture->f_code[0][0] = picture->f_code[0][1] =
+	(((buffer[3] << 1) | (buffer[4] >> 7)) & 7) - 1;
+    picture->f_code[1][0] = picture->f_code[1][1] =
+	((buffer[4] >> 3) & 7) - 1;
 
     //return 0;
 }
