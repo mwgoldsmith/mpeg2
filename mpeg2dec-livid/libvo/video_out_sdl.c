@@ -129,20 +129,40 @@ static void sdl_close (vo_instance_t * _instance)
     SDL_QuitSubSystem (SDL_INIT_VIDEO);
 }
 
-vo_instance_t * vo_sdl_setup (vo_instance_t * _instance, int width, int height)
+static int sdl_setup (vo_instance_t * _instance, int width, int height)
+{
+    sdl_instance_t * instance;
+
+    instance = (sdl_instance_t *) _instance;
+
+    instance->surface = SDL_SetVideoMode (width, height, instance->bpp,
+					  instance->sdlflags);
+    if (! (instance->surface)) {
+	fprintf (stderr, "sdl could not set the desired video mode\n");
+	return 1;
+    }
+
+    if (sdl_alloc_frames (instance, width, height)) {
+	fprintf (stderr, "sdl could not allocate frame buffers\n");
+	return 1;
+    }
+
+    return 0;
+}
+
+vo_instance_t * vo_sdl_open (void)
 {
     sdl_instance_t * instance;
     const SDL_VideoInfo * vidInfo;
 
-    if (_instance != NULL)
-	return NULL;
     instance = malloc (sizeof (sdl_instance_t));
     if (instance == NULL)
 	return NULL;
 
-    instance->vo.reinit = vo_sdl_setup; 
-    instance->vo.close = sdl_close; 
-    instance->vo.get_frame = sdl_get_frame; 
+    instance->vo.setup = sdl_setup;
+    instance->vo.close = sdl_close;
+    instance->vo.get_frame = sdl_get_frame;
+
     instance->surface = NULL;
     instance->sdlflags = SDL_HWSURFACE | SDL_RESIZABLE;
 
@@ -164,20 +184,9 @@ vo_instance_t * vo_sdl_setup (vo_instance_t * _instance, int width, int height)
     }
     instance->bpp = vidInfo->vfmt->BitsPerPixel;
     if (instance->bpp < 16) {
-	fprintf(stderr, "sdl has to emulate a 16 bit surfaces, that will slow things down.\n");
+	fprintf(stderr, "sdl has to emulate a 16 bit surfaces, "
+		"that will slow things down.\n");
 	instance->bpp = 16;
-    }
-
-    instance->surface = SDL_SetVideoMode (width, height, instance->bpp,
-					  instance->sdlflags);
-    if (! (instance->surface)) {
-	fprintf (stderr, "sdl could not set the desired video mode\n");
-	return NULL;
-    }
-
-    if (sdl_alloc_frames (instance, width, height)) {
-	fprintf (stderr, "sdl could not allocate frame buffers\n");
-	return NULL;
     }
 
     return (vo_instance_t *) instance;
