@@ -143,8 +143,7 @@ mpeg2_state_t mpeg2_seek_header (mpeg2dec_t * mpeg2dec)
 	    return STATE_BUFFER;
     mpeg2dec->chunk_start = mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
     mpeg2dec->user_data_len = 0;
-    return (mpeg2dec->code ? mpeg2_parse_header (mpeg2dec) :
-	    mpeg2_header_picture_start (mpeg2dec));
+    return mpeg2_parse_header (mpeg2dec);
 }
 
 #define RECEIVED(code,state) (((state) << 8) + (code))
@@ -198,7 +197,7 @@ mpeg2_state_t mpeg2_parse (mpeg2dec_t * mpeg2dec)
 
     switch (mpeg2dec->code) {
     case 0x00:
-	mpeg2dec->action = mpeg2_header_picture_start;
+	mpeg2dec->action = mpeg2_parse_header;
 	return mpeg2dec->state;
     case 0xb7:
 	mpeg2dec->action = mpeg2_header_end;
@@ -258,7 +257,6 @@ mpeg2_state_t mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
 
 	/* state transition after a sequence header */
 	case RECEIVED (0x00, STATE_SEQUENCE):
-	    mpeg2dec->action = mpeg2_header_picture_start;
 	case RECEIVED (0xb8, STATE_SEQUENCE):
 	    mpeg2_header_sequence_finalize (mpeg2dec);
 	    break;
@@ -266,7 +264,6 @@ mpeg2_state_t mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
 	/* other legal state transitions */
 	case RECEIVED (0x00, STATE_GOP):
 	    mpeg2_header_gop_finalize (mpeg2dec);
-	    mpeg2dec->action = mpeg2_header_picture_start;
 	    break;
 	case RECEIVED (0x01, STATE_PICTURE):
 	case RECEIVED (0x01, STATE_PICTURE_2ND):
