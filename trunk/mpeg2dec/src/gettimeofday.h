@@ -22,10 +22,12 @@
  */
 
 #if defined(HAVE_STRUCT_TIMEVAL) && defined(HAVE_GETTIMEOFDAY)
-#ifdef HAVE_SYS_TIME_H
+#if defined(TIME_WITH_SYS_TIME)
 #include <sys/time.h>
-#endif
-#ifdef HAVE_TIME_H
+#include <time.h>
+#elif defined(HAVE_SYS_TIME_H)
+#include <sys/time.h>
+#else
 #include <time.h>
 #endif
 #elif defined(HAVE_SYS_TIMEB_H) && defined(HAVE_FTIME)
