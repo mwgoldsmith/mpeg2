@@ -4,7 +4,7 @@
 /* #undef ARCH_PPC */
 
 /* x86 architecture */
-/* #undef ARCH_X86 */
+#define ARCH_X86
 
 /* maximum supported data alignment */
 /* #undef ATTRIBUTE_ALIGNED_MAX */
