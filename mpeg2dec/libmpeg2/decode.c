@@ -30,7 +30,6 @@
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 #include "convert.h"
-#include "attributes.h"
 
 #define BUFFER_SIZE (1194 * 1024)
 
