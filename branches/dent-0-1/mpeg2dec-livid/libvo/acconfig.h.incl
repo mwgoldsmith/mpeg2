@@ -1,0 +1,15 @@
+/* Have X11 unstalled on this system */
+#undef HAVE_X11
+
+/* Have Xv extension */
+#undef HAVE_XV
+
+/* Have SDL */
+#undef HAVE_SDL
+
+/* Have 3DFX card */
+#undef HAVE_3DFX
+
+/* Have Matrox GX00 */
+#undef HAVE_MGA
+
