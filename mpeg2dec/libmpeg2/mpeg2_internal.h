@@ -167,6 +167,7 @@ void idct_mmx_init (void);
 /* idct_altivec.c */
 void idct_block_copy_altivec (int16_t * block, uint8_t * dest, int stride);
 void idct_block_add_altivec (int16_t * block, uint8_t * dest, int stride);
+void idct_altivec_init (void);
 
 /* motion_comp.c */
 void motion_comp_init (void);
