@@ -115,18 +115,6 @@ startcode:
     mpeg2dec->chunk_ptr = chunk_ptr + 1;
     mpeg2dec->shift = 0xffffff00;
     mpeg2dec->code = byte;
-    if (!byte) {
-	if (!mpeg2dec->num_pts)
-	    mpeg2dec->pts = 0;	/* none */
-	else if (mpeg2dec->bytes_since_pts >= 4) {
-	    mpeg2dec->num_pts = 0;
-	    mpeg2dec->pts = mpeg2dec->pts_current;
-	} else if (mpeg2dec->num_pts > 1) {
-	    mpeg2dec->num_pts = 1;
-	    mpeg2dec->pts = mpeg2dec->pts_previous;
-	} else
-	    mpeg2dec->pts = 0;	/* none */
-    }
     mpeg2dec->buf_start = current;
     return 0;
 }
@@ -152,17 +140,26 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	mpeg2_header_end (mpeg2dec);
 	return STATE_END;
 
+    case RECEIVED (0x00, STATE_SEQUENCE):
+    case RECEIVED (0x00, STATE_SEQUENCE_REPEATED):
+    case RECEIVED (0x00, STATE_GOP):
+    case RECEIVED (0x00, STATE_SLICE_1ST):
+    case RECEIVED (0x00, STATE_SLICE):
+	mpeg2_header_picture_start (mpeg2dec);
+	break;
+
     case RECEIVED (0x01, STATE_PICTURE):
     case RECEIVED (0x01, STATE_PICTURE_2ND):
-	mpeg2_header_slice (mpeg2dec);
+	mpeg2_header_slice_start (mpeg2dec);
+	break;
 
     next_chunk:
 	mpeg2dec->chunk_ptr = mpeg2dec->chunk_start;
-    default:
-	code = mpeg2dec->code;
-	if (copy_chunk (mpeg2dec))
-	    return -1;
     }
+
+    code = mpeg2dec->code;
+    if (copy_chunk (mpeg2dec))
+	return -1;
 
     /* wait for sequence_header_code */
     if (mpeg2dec->state == STATE_INVALID && code != 0xb3)
