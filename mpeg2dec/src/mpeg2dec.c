@@ -27,14 +27,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <signal.h>
 #include <getopt.h>
 #ifdef HAVE_IO_H
 #include <fcntl.h>
 #include <io.h>
-#endif
-#if defined(HAVE_SYS_TIME_H) && defined(HAVE_GETTIMEOFDAY)
-#include <sys/time.h>
-#include <signal.h>
 #endif
 #include <inttypes.h>
 
@@ -42,6 +39,7 @@
 #include "video_out.h"
 #include "convert.h"
 #include "mm_accel.h"
+#include "gettimeofday.h"
 
 #define BUFFER_SIZE 4096
 static uint8_t buffer[BUFFER_SIZE];
@@ -53,7 +51,7 @@ static mpeg2dec_t * mpeg2dec;
 static vo_open_t * output_open = NULL;
 static vo_instance_t * output;
 
-#if defined(HAVE_SYS_TIME_H) && defined(HAVE_GETTIMEOFDAY) 
+#ifdef HAVE_GETTIMEOFDAY
 
 static void print_fps (int final);
 
@@ -116,7 +114,7 @@ static void print_fps (int final)
     last_count = frame_counter;
 }
 
-#else /* !HAVE_SYS_TIME_H || !HAVE_GETTIMEOFDAY */
+#else /* !HAVE_GETTIMEOFDAY */
 
 static void print_fps (int final)
 {
