@@ -1,5 +1,8 @@
 /* vc++/config.h - manually adapted from include/config.h.in */
 
+/* Suppress warnings relating to mismatched declarations */
+#pragma warning (disable:4028)
+
 /* autodetect accelerations */
 #define ACCEL_DETECT
 
