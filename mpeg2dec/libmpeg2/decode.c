@@ -174,6 +174,7 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	if (!copied) {
 	    /* we filled the chunk buffer without finding a start code */
 	    mpeg2dec->bytes_since_pts += size_chunk;
+	    mpeg2dec->code = 0xb4;
 	    mpeg2dec->action = mpeg2_seek_header;
 	    return STATE_INVALID;
 	}
