@@ -76,11 +76,12 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
     if (is_frame_done) {
 	mpeg2dec->in_slice = 0;
 
-	if ((picture->picture_coding_type == B_TYPE) &&
-	    ((picture->picture_structure == FRAME_PICTURE) ||
+	if (((picture->picture_structure == FRAME_PICTURE) ||
 	     (picture->second_field)) &&
 	    (!(mpeg2dec->drop_frame))) {
-	    mpeg2dec->output->draw_frame (picture->current_frame);
+	    mpeg2dec->output->draw_frame
+		((picture->picture_coding_type == B_TYPE) ?
+		 picture->current_frame : picture->forward_reference_frame);
 #ifdef ARCH_X86
 	    if (config.flags & MM_ACCEL_X86_MMX)
 		emms ();
@@ -139,8 +140,6 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 		if (picture->picture_coding_type == B_TYPE)
 		    picture->current_frame = mpeg2dec->output->get_frame (0);
 		else {
-		    mpeg2dec->output->draw_frame
-			(picture->backward_reference_frame);
 		    picture->current_frame = mpeg2dec->output->get_frame (1);
 		    picture->forward_reference_frame =
 			picture->backward_reference_frame;
