@@ -192,120 +192,97 @@ static inline void mmx_unpack_32rgb (uint8_t * image, const int cpu)
     movntq (mm4, *(image+24));
 }
 
-static inline void yuv420_rgb16 (uint8_t * image,
-				 uint8_t * py, uint8_t * pu, uint8_t * pv,
-				 int width, int height,
-				 int rgb_stride, int y_stride, int uv_stride,
-				 int chroma420, const int cpu)
+static inline void yuv420_rgb16 (void * const _id, uint8_t * const * src,
+				 const unsigned int v_offset, const int cpu)
 {
-    int i;
+    convert_rgb_t * const id = (convert_rgb_t *) _id;
+    uint8_t * dst;
+    uint8_t * py, * pu, * pv;
+    int i, j;
 
-    rgb_stride -= 2 * width;
-    y_stride -= width;
-    uv_stride -= width >> 1;
-    width >>= 3;
+    dst = id->rgb_ptr + id->rgb_stride * v_offset;
+    py = src[0];	pu = src[1];	pv = src[2];
 
+    i = 16;
     do {
-	i = width;
+	j = id->width;
 	do {
 	    mmx_yuv2rgb (py, pu, pv);
-	    mmx_unpack_16rgb (image, cpu);
+	    mmx_unpack_16rgb (dst, cpu);
 	    py += 8;
 	    pu += 4;
 	    pv += 4;
-	    image += 16;
-	} while (--i);
+	    dst += 16;
+	} while (--j);
 
-	py += y_stride;
-	image += rgb_stride;
-	if (! (--height & chroma420)) {
-	    pu += uv_stride;
-	    pv += uv_stride;
+	dst += id->rgb_increm;
+	py += id->y_increm;
+	if (! (--i & id->chroma420)) {
+	    pu += id->uv_increm;
+	    pv += id->uv_increm;
 	} else {
-	    pu -= 4 * width;
-	    pv -= 4 * width;
+	    pu -= id->uv_stride_frame;
+	    pv -= id->uv_stride_frame;
 	}
-    } while (height);
+    } while (i);
 }
 
-static inline void yuv420_argb32 (uint8_t * image, uint8_t * py,
-				  uint8_t * pu, uint8_t * pv,
-				  int width, int height,
-				  int rgb_stride, int y_stride, int uv_stride,
-				  int chroma420, const int cpu)
+static inline void yuv420_argb32 (void * const _id, uint8_t * const * src,
+				  const unsigned int v_offset, const int cpu)
 {
-    int i;
+    convert_rgb_t * const id = (convert_rgb_t *) _id;
+    uint8_t * dst;
+    uint8_t * py, * pu, * pv;
+    int i, j;
 
-    rgb_stride -= 4 * width;
-    y_stride -= width;
-    uv_stride -= width >> 1;
-    width >>= 3;
+    dst = id->rgb_ptr + id->rgb_stride * v_offset;
+    py = src[0];	pu = src[1];	pv = src[2];
 
+    i = 16;
     do {
-	i = width;
+	j = id->width;
 	do {
 	    mmx_yuv2rgb (py, pu, pv);
-	    mmx_unpack_32rgb (image, cpu);
+	    mmx_unpack_32rgb (dst, cpu);
 	    py += 8;
 	    pu += 4;
 	    pv += 4;
-	    image += 32;
-	} while (--i);
+	    dst += 32;
+	} while (--j);
 
-	py += y_stride;
-	image += rgb_stride;
-	if (! (--height & chroma420)) {
-	    pu += uv_stride;
-	    pv += uv_stride;
+	dst += id->rgb_increm;
+	py += id->y_increm;
+	if (! (--i & id->chroma420)) {
+	    pu += id->uv_increm;
+	    pv += id->uv_increm;
 	} else {
-	    pu -= 4 * width;
-	    pv -= 4 * width;
+	    pu -= id->uv_stride_frame;
+	    pv -= id->uv_stride_frame;
 	}
-    } while (height);
+    } while (i);
 }
 
-static void mmxext_rgb16 (void * _id, uint8_t * const * src,
+static void mmxext_rgb16 (void * id, uint8_t * const * src,
 			  unsigned int v_offset)
 {
-    convert_rgb_t * id = (convert_rgb_t *) _id;
-
-    yuv420_rgb16 (id->rgb_ptr + id->rgb_stride * v_offset,
-		  src[0], src[1], src[2], id->width, 16,
-		  id->rgb_stride, id->uv_stride << 1, id->uv_stride,
-		  id->chroma420, CPU_MMXEXT);
+    yuv420_rgb16 (id, src, v_offset, CPU_MMXEXT);
 }
 
-static void mmxext_argb32 (void * _id, uint8_t * const * src,
+static void mmxext_argb32 (void * id, uint8_t * const * src,
 			   unsigned int v_offset)
 {
-    convert_rgb_t * id = (convert_rgb_t *) _id;
-
-    yuv420_argb32 (id->rgb_ptr + id->rgb_stride * v_offset,
-		   src[0], src[1], src[2], id->width, 16,
-		   id->rgb_stride, id->uv_stride << 1, id->uv_stride,
-		   id->chroma420, CPU_MMXEXT);
+    yuv420_argb32 (id, src, v_offset, CPU_MMXEXT);
 }
 
-static void mmx_rgb16 (void * _id, uint8_t * const * src,
-		       unsigned int v_offset)
+static void mmx_rgb16 (void * id, uint8_t * const * src, unsigned int v_offset)
 {
-    convert_rgb_t * id = (convert_rgb_t *) _id;
-
-    yuv420_rgb16 (id->rgb_ptr + id->rgb_stride * v_offset,
-		  src[0], src[1], src[2], id->width, 16,
-		  id->rgb_stride, id->uv_stride << 1, id->uv_stride,
-		  id->chroma420, CPU_MMX);
+    yuv420_rgb16 (id, src, v_offset, CPU_MMX);
 }
 
-static void mmx_argb32 (void * _id, uint8_t * const * src,
+static void mmx_argb32 (void * id, uint8_t * const * src,
 			unsigned int v_offset)
 {
-    convert_rgb_t * id = (convert_rgb_t *) _id;
-
-    yuv420_argb32 (id->rgb_ptr + id->rgb_stride * v_offset,
-		   src[0], src[1], src[2], id->width, 16,
-		   id->rgb_stride, id->uv_stride << 1, id->uv_stride,
-		   id->chroma420, CPU_MMX);
+    yuv420_argb32 (id, src, v_offset, CPU_MMX);
 }
 
 yuv2rgb_copy * yuv2rgb_init_mmxext (int order, int bpp,

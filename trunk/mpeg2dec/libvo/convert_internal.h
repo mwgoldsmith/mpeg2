@@ -24,10 +24,10 @@
 typedef struct {
     uint8_t * rgb_ptr;
     int width;
-    int uv_stride, uv_stride_frame;
-    int rgb_stride, rgb_stride_frame;
-    int dither_offset, dither_stride;
+    int y_stride, rgb_stride, y_increm, uv_increm, rgb_increm;
     int chroma420;
+    int dither_offset, dither_stride;
+    int y_stride_frame, uv_stride_frame, rgb_stride_frame, convert420;
 } convert_rgb_t;
 
 typedef void yuv2rgb_copy (void * id, uint8_t * const * src,
