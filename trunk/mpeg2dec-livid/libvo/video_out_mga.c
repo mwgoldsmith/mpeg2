@@ -214,7 +214,7 @@ draw_frame(uint8_t *src[])
 }
 
 static uint32_t
-init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
+init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title, uint32_t format)
 {
 	char *frame_mem;
 	uint32_t frame_size;
@@ -264,10 +264,10 @@ get_info(void)
 //FIXME this should allocate AGP memory via agpgart and then we
 //can use AGP transfers to the framebuffer
 static vo_image_buffer_t* 
-allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format)
+allocate_image_buffer()
 {
 	//use the generic fallback
-	return allocate_image_buffer_common(height,width,format);
+	return allocate_image_buffer_common(mga_vid_config.dest_height, mga_vid_config.dest_width, 0x32315659);
 }
 
 static void	

@@ -310,7 +310,7 @@ update_target(void)
 }
 
 static uint32_t 
-init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title) 
+init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title, uint32_t format) 
 {
 	int fd;
 	char *name = ":0.0";
@@ -459,10 +459,10 @@ flip_page(void)
 }
 
 static vo_image_buffer_t* 
-allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format)
+allocate_image_buffer()
 {
 	//use the generic fallback
-	return allocate_image_buffer_common(height,width,format);
+	return allocate_image_buffer_common(vidheight,vidwidth,0x32315659);
 }
 
 static void	
