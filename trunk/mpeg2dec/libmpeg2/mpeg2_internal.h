@@ -187,6 +187,8 @@ struct mpeg2dec_s {
 
     uint8_t * buf_start;
     uint8_t * buf_end;
+
+    int16_t display_offset_x, display_offset_y;
 };
 
 typedef struct {

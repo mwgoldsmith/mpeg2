@@ -74,6 +74,9 @@ typedef struct {
     unsigned int nb_fields;
     uint32_t pts;
     uint32_t flags;
+    struct {
+	int x, y;
+    } display_offset[3];
 } picture_t;
 
 typedef struct {
