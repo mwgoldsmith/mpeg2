@@ -160,33 +160,39 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	    return state;
     }
 
-    while ((unsigned) (mpeg2dec->code - 1) < 0xb0 - 1) {
-	size_buffer = mpeg2dec->buf_end - mpeg2dec->buf_start;
-	size_chunk = (mpeg2dec->chunk_buffer + BUFFER_SIZE -
-		      mpeg2dec->chunk_ptr);
-	if (size_buffer <= size_chunk) {
-	    copied = copy_chunk (mpeg2dec, size_buffer);
-	    if (!copied) {
-		mpeg2dec->bytes_since_pts += size_buffer;
-		mpeg2dec->chunk_ptr += size_buffer;
-		return -1;
+    while (1) {
+	while ((unsigned) (mpeg2dec->code - mpeg2dec->first_decode_slice) <
+	       mpeg2dec->nb_decode_slices) {
+	    size_buffer = mpeg2dec->buf_end - mpeg2dec->buf_start;
+	    size_chunk = (mpeg2dec->chunk_buffer + BUFFER_SIZE -
+			  mpeg2dec->chunk_ptr);
+	    if (size_buffer <= size_chunk) {
+		copied = copy_chunk (mpeg2dec, size_buffer);
+		if (!copied) {
+		    mpeg2dec->bytes_since_pts += size_buffer;
+		    mpeg2dec->chunk_ptr += size_buffer;
+		    return -1;
+		}
+	    } else {
+		copied = copy_chunk (mpeg2dec, size_chunk);
+		if (!copied) {
+		    /* filled the chunk buffer without finding a start code */
+		    mpeg2dec->bytes_since_pts += size_chunk;
+		    mpeg2dec->action = seek_chunk;
+		    return STATE_INVALID;
+		}
 	    }
-	} else {
-	    copied = copy_chunk (mpeg2dec, size_chunk);
-	    if (!copied) {
-		/* filled the chunk buffer without finding a start code */
-		mpeg2dec->bytes_since_pts += size_chunk;
-		mpeg2dec->action = seek_chunk;
-		return STATE_INVALID;
-	    }
-	}
-	mpeg2dec->bytes_since_pts += copied;
+	    mpeg2dec->bytes_since_pts += copied;
 
-	if (! (mpeg2dec->picture->flags & PIC_FLAG_SKIP))
 	    mpeg2_slice (&(mpeg2dec->decoder), mpeg2dec->code,
 			 mpeg2dec->chunk_start);
-	mpeg2dec->code = mpeg2dec->buf_start[-1];
-	mpeg2dec->chunk_ptr = mpeg2dec->chunk_start;
+	    mpeg2dec->code = mpeg2dec->buf_start[-1];
+	    mpeg2dec->chunk_ptr = mpeg2dec->chunk_start;
+	}
+	if ((unsigned) (mpeg2dec->code - 1) >= 0xb0 - 1)
+	    break;
+	if (seek_chunk (mpeg2dec))
+	    return -1;
     }
 
     switch (RECEIVED (mpeg2dec->code, mpeg2dec->state)) {
@@ -347,7 +353,16 @@ void mpeg2_custom_fbuf (mpeg2dec_t * mpeg2dec, int custom_fbuf)
 
 void mpeg2_skip (mpeg2dec_t * mpeg2dec, int skip)
 {
-    mpeg2dec->skip = skip;
+    mpeg2dec->first_decode_slice = 1;
+    mpeg2dec->nb_decode_slices = skip ? 0 : (0xb0 - 1);
+}
+
+void mpeg2_slice_region (mpeg2dec_t * mpeg2dec, int start, int end)
+{
+    start = (start < 1) ? 1 : (start > 0xb0) ? 0xb0 : start;
+    end = (end < start) ? start : (end > 0xb0) ? 0xb0 : end;
+    mpeg2dec->first_decode_slice = start;
+    mpeg2dec->nb_decode_slices = end - start;
 }
 
 void mpeg2_pts (mpeg2dec_t * mpeg2dec, uint32_t pts)
@@ -383,7 +398,8 @@ mpeg2dec_t * mpeg2_init (uint32_t mm_accel)
     mpeg2dec->shift = 0xffffff00;
     mpeg2dec->action = mpeg2_seek_sequence;
     mpeg2dec->code = 0xb4;
-    mpeg2dec->skip = 0;
+    mpeg2dec->first_decode_slice = 1;
+    mpeg2dec->nb_decode_slices = 0xb0 - 1;
 
     /* initialize substructures */
     mpeg2_header_state_init (mpeg2dec);

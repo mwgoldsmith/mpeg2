@@ -619,7 +619,7 @@ int mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec)
 			mpeg2dec->state == STATE_PICTURE_2ND) ?
 		       STATE_SLICE : STATE_SLICE_1ST);
 
-    if (mpeg2dec->skip)
+    if (!(mpeg2dec->nb_decode_slices))
 	mpeg2dec->picture->flags |= PIC_FLAG_SKIP;
     else if (mpeg2dec->convert_start) {
 	int flags;
