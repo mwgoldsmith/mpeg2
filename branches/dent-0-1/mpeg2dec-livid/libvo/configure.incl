@@ -147,6 +147,7 @@ dnl
 dnl fill in all libraries which should be built
 dnl
 
+AC_SUBST(X_LIBS)
 AC_SUBST(LIBS_VIDEO_OUTPUT)
 
 echo "
