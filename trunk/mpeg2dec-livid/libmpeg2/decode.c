@@ -283,12 +283,12 @@ void mpeg2_close (mpeg2dec_t * mpeg2dec)
 
     mpeg2_decode_data (mpeg2dec, finalizer, finalizer+4);
 
-    if (mpeg2dec->is_display_initialized)
+    if (mpeg2dec->is_display_initialized) {
 	mpeg2dec->output->draw_frame (mpeg2dec->backward_reference_frame);
-
-    mpeg2dec->output->free_image_buffer (mpeg2dec->backward_reference_frame);
-    mpeg2dec->output->free_image_buffer (mpeg2dec->forward_reference_frame);
-    mpeg2dec->output->free_image_buffer (mpeg2dec->throwaway_frame);
+	mpeg2dec->output->free_image_buffer (mpeg2dec->backward_reference_frame);
+	mpeg2dec->output->free_image_buffer (mpeg2dec->forward_reference_frame);
+	mpeg2dec->output->free_image_buffer (mpeg2dec->throwaway_frame);
+    }
 }
 
 void mpeg2_drop (mpeg2dec_t * mpeg2dec, int flag)

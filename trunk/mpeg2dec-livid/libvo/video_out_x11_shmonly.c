@@ -1,3 +1,5 @@
+// fix event handling first. wait for unmap before close display.
+
 /* 
  * video_out_x11.c, X11 interface
  *
@@ -130,7 +132,8 @@ static int x11_open (void)
     xswa.background_pixel = 0;
     xswa.border_pixel     = 1;
     xswa.colormap         = theCmap;
-    xswamask = CWBackPixel | CWBorderPixel | CWColormap;
+    xswa.event_mask = 0;
+    xswamask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
 
     priv->window =
 	XCreateWindow (priv->display,
@@ -139,16 +142,12 @@ static int x11_open (void)
 		       4, priv->depth, CopyFromParent, priv->vinfo.visual,
 		       xswamask, &xswa);
 
-    XSelectInput (priv->display, priv->window, StructureNotifyMask);
-
     // Tell other applications about this window
     XSetStandardProperties(priv->display, priv->window,
 			   "Open Media System", "OMS", None, NULL, 0, &hint);
 
     // Map window
     XMapWindow (priv->display, priv->window);
-
-    XSelectInput (priv->display, priv->window, NoEventMask);
 
     XFlush (priv->display);
     XSync (priv->display, False);
@@ -165,7 +164,7 @@ static int x11_open (void)
     priv->X_already_started++;
 
     // catch window resizes
-    XSelectInput (priv->display, priv->window, StructureNotifyMask);
+    //XSelectInput (priv->display, priv->window, StructureNotifyMask);
 
     LOG (LOG_DEBUG, "Open Called\n");
     return 0;
@@ -276,7 +275,7 @@ static int x11_close(void *plugin)
     struct x11_priv_s *priv = &x11_priv;
 
     LOG (LOG_INFO, "Closing video plugin");
-	
+
     if (priv->Shminfo.shmaddr) {
 	_xshm_destroy(&priv->Shminfo);
 	LOG (LOG_INFO, "destroying shm segment");
@@ -293,22 +292,12 @@ static int x11_close(void *plugin)
     return 0;
 }
 
-static inline int _check_event (void)
-{
-    struct x11_priv_s *priv = &x11_priv;
-    XEvent event;
-    XCheckWindowEvent(priv->display, priv->window, StructureNotifyMask, &event);
-    return 0;
-}
-
 static void x11_flip_page (void)
 {
     struct x11_priv_s *priv = &x11_priv;
 
-    _check_event ();
-
     XShmPutImage (priv->display, priv->window, priv->gc, priv->ximage, 
-		  0, 0, 0, 0, priv->ximage->width, priv->ximage->height, True); 
+		  0, 0, 0, 0, priv->ximage->width, priv->ximage->height, False); 
     XFlush (priv->display);
 }
 
@@ -365,7 +354,7 @@ static frame_t* x11_allocate_image_buffer (int width, int height, uint32_t forma
 
 void x11_free_image_buffer (frame_t* frame)
 {
-    free (frame->base);
+    free (frame->private);
     free (frame);
 }
 
