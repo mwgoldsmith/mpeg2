@@ -79,8 +79,8 @@ void mpeg2_mc_init (uint32_t mm_accel)
 /* mc function template */
 
 #define MC_FUNC(op,xy)							\
-static void MC_##op##_##xy##_16_c (uint8_t * dest, uint8_t * ref,	\
-				 int stride, int height)		\
+static void MC_##op##_##xy##_16_c (uint8_t * dest, const uint8_t * ref,	\
+				   const int stride, int height)	\
 {									\
     do {								\
 	op (predict_##xy, 0);						\
@@ -103,8 +103,8 @@ static void MC_##op##_##xy##_16_c (uint8_t * dest, uint8_t * ref,	\
 	dest += stride;							\
     } while (--height);							\
 }									\
-static void MC_##op##_##xy##_8_c (uint8_t * dest, uint8_t * ref,	\
-				int stride, int height)			\
+static void MC_##op##_##xy##_8_c (uint8_t * dest, const uint8_t * ref,	\
+				  const int stride, int height)		\
 {									\
     do {								\
 	op (predict_##xy, 0);						\

@@ -40,7 +40,7 @@
 #define USER_DATA 0x10000
 
 /* default intra quant matrix, in zig-zag order */
-static uint8_t default_intra_quantizer_matrix[64] ATTR_ALIGN(16) = {
+static const uint8_t default_intra_quantizer_matrix[64] ATTR_ALIGN(16) = {
     8,
     16, 16,
     19, 16, 19,
