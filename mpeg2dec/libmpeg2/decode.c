@@ -133,6 +133,26 @@ int mpeg2_seek_sequence (mpeg2dec_t * mpeg2dec)
     return 0;
 }
 
+int mpeg2_seek_header (mpeg2dec_t * mpeg2dec)
+{
+    while (mpeg2dec->code != 0xb3 && mpeg2dec->code != 0xb7 &&
+	   mpeg2dec->code != 0xb8 && mpeg2dec->code) {
+	int size, skipped;
+
+	size = mpeg2dec->buf_end - mpeg2dec->buf_start;
+	skipped = skip_chunk (mpeg2dec, size);
+	if (!skipped) {
+	    mpeg2dec->bytes_since_pts += size;
+	    return -1;
+	}
+	mpeg2dec->bytes_since_pts += skipped;
+	mpeg2dec->code = mpeg2dec->buf_start[-1];
+    }
+    mpeg2dec->chunk_start = mpeg2dec->chunk_buffer;
+    mpeg2dec->sequence.width = -1;
+    return 0;
+}
+
 int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 {
     static int (* process_header[]) (mpeg2dec_t * mpeg2dec) = {
@@ -167,7 +187,7 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	if (!copied) {
 	    /* we filled the chunk buffer without finding a start code */
 	    mpeg2dec->bytes_since_pts += size_chunk;
-	    mpeg2dec->action = mpeg2_seek_sequence;
+	    mpeg2dec->action = mpeg2_seek_header;
 	    return STATE_INVALID;
 	}
     }
@@ -180,8 +200,10 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	mpeg2dec->code = mpeg2dec->buf_start[-1];
 	if ((unsigned) (mpeg2dec->code - 1) < 0xb0 - 1)
 	    goto next_chunk;
-    } else if (process_header[mpeg2dec->code & 0x0b] (mpeg2dec))
+    } else if (process_header[mpeg2dec->code & 0x0b] (mpeg2dec)) {
+	mpeg2dec->code = mpeg2dec->buf_start[-1];
 	return STATE_INVALID;
+    }
 
 #define RECEIVED(code,state) (((state) << 8) + (code))
 
@@ -223,7 +245,7 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	goto next_chunk;
 
     default:
-	mpeg2dec->action = mpeg2_seek_sequence;
+	mpeg2dec->action = mpeg2_seek_header;
 	mpeg2dec->state = STATE_INVALID;
     }
 
