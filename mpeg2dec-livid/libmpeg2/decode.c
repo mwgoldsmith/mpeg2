@@ -87,29 +87,38 @@ static void decode_allocate_image_buffers (plugin_output_video_t *output, pictur
 static void decode_allocate_image_buffers (vo_functions_t * output, picture_t * picture)
 #endif
 {
-    int frame_size;
-    vo_image_buffer_t *tmp = NULL;
+	int frame_size;
+	vo_image_buffer_t *tmp = NULL;
 
-    frame_size = picture->coded_picture_width * picture->coded_picture_height;
+	frame_size = picture->coded_picture_width * picture->coded_picture_height;
 
-    // allocate images in YV12 format
-    tmp = output->allocate_image_buffer (picture->coded_picture_height,
-					    picture->coded_picture_width, 0x32315659);
-    picture->throwaway_frame[0] = tmp->y;
-    picture->throwaway_frame[1] = tmp->u;
-    picture->throwaway_frame[2] = tmp->v;
+	// allocate images in YV12 format
+#ifdef __OMS__
+	tmp = output->allocate_image_buffer(picture->coded_picture_width, picture_coded_picture_height, 0x32315659);
+#else
+	tmp = output->allocate_image_buffer();
+#endif
+	picture->throwaway_frame[0] = tmp->base;
+	picture->throwaway_frame[1] = tmp->base + frame_size * 5 / 4;
+	picture->throwaway_frame[2] = tmp->base + frame_size;
 
-    tmp = output->allocate_image_buffer (picture->coded_picture_height,
-					    picture->coded_picture_width, 0x32315659);
-    picture->backward_reference_frame[0] = tmp->y;
-    picture->backward_reference_frame[1] = tmp->u;
-    picture->backward_reference_frame[2] = tmp->v;
+#ifdef __OMS__
+	tmp = output->allocate_image_buffer(picture->coded_picture_width, picture_coded_picture_height, 0x32315659);
+#else
+	tmp = output->allocate_image_buffer();
+#endif
+	picture->backward_reference_frame[0] = tmp->base;
+	picture->backward_reference_frame[1] = tmp->base + frame_size * 5 / 4;
+	picture->backward_reference_frame[2] = tmp->base + frame_size;
     
-    tmp = output->allocate_image_buffer (picture->coded_picture_height,
-					    picture->coded_picture_width, 0x32315659);
-    picture->forward_reference_frame[0] = tmp->y;
-    picture->forward_reference_frame[1] = tmp->u;
-    picture->forward_reference_frame[2] = tmp->v;
+#ifdef __OMS__
+	tmp = output->allocate_image_buffer(picture->coded_picture_width, picture_coded_picture_height, 0x32315659);
+#else
+	tmp = output->allocate_image_buffer();
+#endif
+	picture->forward_reference_frame[0] = tmp->base;
+	picture->forward_reference_frame[1] = tmp->base + frame_size * 5 / 4;
+	picture->forward_reference_frame[2] = tmp->base + frame_size;
 }
 
 
@@ -183,7 +192,7 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 
 		output->setup (&attr);
 #else
-		output->init (picture.coded_picture_width,picture.coded_picture_height,0,0);
+		output->init (picture.coded_picture_width,picture.coded_picture_height,0,0,0x32315659);
 #endif
 		decode_allocate_image_buffers (output, &picture);
 		is_display_initialized = 1;
