@@ -45,20 +45,14 @@ static void null_flip_page (void)
 {
 }
 
-static int null_setup (vo_output_video_attr_t *attr)
+static int null_setup (int width, int height)
 {
     return 0;
 }
 
-static frame_t * null_allocate_image_buffer (int width, int height,
-					     uint32_t format)
-{
-    return libvo_common_alloc (width, height);
-}
-
-static void null_free_image_buffer (frame_t * frame)
-{
-    libvo_common_free (frame);
-}
-
-LIBVO_EXTERN (null, "null")
+vo_output_video_t video_out_null = {
+    "null",
+    null_setup, null_close,
+    null_flip_page, null_draw_slice, null_draw_frame,
+    libvo_common_alloc, libvo_common_free
+};

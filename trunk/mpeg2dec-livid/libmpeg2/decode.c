@@ -73,16 +73,16 @@ static void decode_allocate_image_buffers (mpeg2dec_t * mpeg2dec)
 {
     int width;
     int height;
-    frame_t * (* allocate) (int, int, uint32_t);
+    frame_t * (* allocate) (int, int);
 
     width = mpeg2dec->picture->coded_picture_width;
     height = mpeg2dec->picture->coded_picture_height;
     allocate = mpeg2dec->output->allocate_image_buffer;
 
     // allocate images in YV12 format
-    mpeg2dec->throwaway_frame = allocate (width, height, 0x32315659);
-    mpeg2dec->backward_reference_frame = allocate (width, height, 0x32315659);
-    mpeg2dec->forward_reference_frame = allocate (width, height, 0x32315659);
+    mpeg2dec->throwaway_frame = allocate (width, height);
+    mpeg2dec->backward_reference_frame = allocate (width, height);
+    mpeg2dec->forward_reference_frame = allocate (width, height);
 }
 
 
@@ -184,14 +184,8 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 	    mpeg2dec->in_slice = 1;
 
 	    if (!(mpeg2dec->is_display_initialized)) {
-		vo_output_video_attr_t attr;
-
-		attr.width = picture->coded_picture_width;
-		attr.height = picture->coded_picture_height;
-		attr.fullscreen = 0;
-		attr.title = NULL;
-
-		if (mpeg2dec->output->setup (&attr)) {
+		if (mpeg2dec->output->setup (picture->coded_picture_width,
+					     picture->coded_picture_height)) {
 		    printf ("display init failed\n");
 		    exit (1);
 		}

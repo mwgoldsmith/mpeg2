@@ -71,24 +71,19 @@ static void pgm_flip_page (void)
 {
 }
 
-static int pgm_setup (vo_output_video_attr_t *attr)
+static int pgm_setup (int width, int height)
 {
-    image_width = attr->width;
-    image_height = attr->height;
+    image_width = width;
+    image_height = height;
 
-    sprintf (header, "P5\n\n%d %d\n255\n", attr->width, attr->height*3/2);
+    sprintf (header, "P5\n\n%d %d\n255\n", width, height * 3 / 2);
 
     return 0;
 }
 
-static frame_t * pgm_allocate_image_buffer (int width, int height, uint32_t format)
-{
-    return libvo_common_alloc (width, height);
-}
-
-static void pgm_free_image_buffer (frame_t* frame)
-{
-    libvo_common_free (frame);
-}
-
-LIBVO_EXTERN (pgm, "pgm")
+vo_output_video_t video_out_pgm = {
+    "pgm",
+    pgm_setup, pgm_close,
+    pgm_flip_page, pgm_draw_slice, pgm_draw_frame,
+    libvo_common_alloc, libvo_common_free
+};
