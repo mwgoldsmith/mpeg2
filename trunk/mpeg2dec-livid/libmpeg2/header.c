@@ -74,29 +74,27 @@ void header_state_init (picture_t * picture)
 
 int header_process_sequence_header (picture_t * picture, uint8_t * buffer)
 {
-    unsigned int h_size;
-    unsigned int v_size;
+    int width, height;
     int i;
 
     if ((buffer[6] & 0x20) != 0x20)
 	return 1;	/* missing marker_bit */
 
-    v_size = (buffer[0] << 16) | (buffer[1] << 8) | buffer[2];
+    height = (buffer[0] << 16) | (buffer[1] << 8) | buffer[2];
 
-    h_size = ((v_size >> 12) + 15) & ~15;
-    v_size = ((v_size & 0xfff) + 15) & ~15;
+    width = ((height >> 12) + 15) & ~15;
+    height = ((height & 0xfff) + 15) & ~15;
 
-    if ((h_size > 768) || (v_size > 576))
+    if ((width > 768) || (height > 576))
 	return 1;	/* size restrictions for MP@ML or MPEG1 */
 
-    /* XXX this needs field fixups */
-    picture->coded_picture_width = h_size;
-    picture->coded_picture_height = v_size;
-    picture->last_mba = ((h_size * v_size) >> 8) - 1;
+    picture->coded_picture_width = width;
+    picture->coded_picture_height = height;
 
     /* this is not used by the decoder */
     picture->aspect_ratio_information = buffer[3] >> 4;
     picture->frame_rate_code = buffer[3] & 15;
+    picture->bitrate = (buffer[4]<<10)|(buffer[5]<<2)|(buffer[6]>>6);
 
     if (buffer[7] & 2) {
 	for (i = 0; i < 64; i++)
