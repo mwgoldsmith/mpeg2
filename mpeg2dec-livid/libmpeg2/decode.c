@@ -245,7 +245,7 @@ int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
 
 void mpeg2_close (mpeg2dec_t * mpeg2dec)
 {
-    static uint8_t finalizer[] = {0,0,1,0};
+    static uint8_t finalizer[] = {0,0,1,0xb4};
 
     mpeg2_decode_data (mpeg2dec, finalizer, finalizer+4);
 

@@ -48,6 +48,7 @@ tcela/tcela-15-stuffing		# OK - huge amounts of stuffing
 #the twilight zone streams are not part of the official mpeg2 test suite
 
 twilight_zone/walken/mpeg1_full_pix		# OK - mpeg1 full pixel MC
+twilight_zone/walken/mpeg1_stuffing		# OK - mpeg1 macroblk stuffing
 twilight_zone/anonymous/anonymous		# OK
 twilight_zone/chromatic/chroma_dct_type-1	# OK
 #twilight_zone/mei/MEI.stream17.long		# FAIL - different img sizes

@@ -158,10 +158,10 @@ void idct_block_copy_mlib (int16_t * block, uint8_t * dest, int stride);
 void idct_block_add_mlib (int16_t * block, uint8_t * dest, int stride);
 
 /* idct_mmx.c */
-void idct_block_copy_mmxext (int16_t *block, uint8_t * dest, int stride);
-void idct_block_add_mmxext (int16_t *block, uint8_t * dest, int stride);
-void idct_block_copy_mmx (int16_t *block, uint8_t * dest, int stride);
-void idct_block_add_mmx (int16_t *block, uint8_t * dest, int stride);
+void idct_block_copy_mmxext (int16_t * block, uint8_t * dest, int stride);
+void idct_block_add_mmxext (int16_t * block, uint8_t * dest, int stride);
+void idct_block_copy_mmx (int16_t * block, uint8_t * dest, int stride);
+void idct_block_add_mmx (int16_t * block, uint8_t * dest, int stride);
 void idct_mmx_init (void);
 
 /* motion_comp.c */
@@ -169,8 +169,8 @@ void motion_comp_init (void);
 
 typedef struct mc_functions_s
 {
-    void (* put [8]) (uint8_t *dst, uint8_t *, int32_t, int32_t);
-    void (* avg [8]) (uint8_t *dst, uint8_t *, int32_t, int32_t);
+    void (* put [8]) (uint8_t * dst, uint8_t *, int32_t, int32_t);
+    void (* avg [8]) (uint8_t * dst, uint8_t *, int32_t, int32_t);
 } mc_functions_t;
 
 #define MOTION_COMP_EXTERN(x) mc_functions_t mc_functions_##x =		\
@@ -188,7 +188,7 @@ extern mc_functions_t mc_functions_3dnow;
 extern mc_functions_t mc_functions_mlib;
 
 /* slice.c */
-int slice_process (picture_t *picture, uint8_t code, uint8_t * buffer);
+void slice_process (picture_t * picture, uint8_t code, uint8_t * buffer);
 
 /* stats.c */
 void stats_header (uint8_t code, uint8_t * buffer);
