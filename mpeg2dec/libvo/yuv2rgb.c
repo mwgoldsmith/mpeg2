@@ -475,6 +475,7 @@ static void convert_internal (int order, int bpp, const mpeg2_sequence_t * seq,
 	id->width = seq->width;
 	id->uv_stride_frame = seq->width >> 1;
 	id->rgb_stride_frame = ((bpp + 7) >> 3) * seq->width;
+	id->chroma420 = (seq->chroma_height < seq->height);
 
 	result->buf_size[0] = id->rgb_stride_frame * seq->height;
 	result->buf_size[1] = result->buf_size[2] = 0;
@@ -483,13 +484,13 @@ static void convert_internal (int order, int bpp, const mpeg2_sequence_t * seq,
 	result->copy = NULL;
 #ifdef ARCH_X86
 	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_X86_MMXEXT))
-	    result->copy = yuv2rgb_init_mmxext (order, bpp);
+	    result->copy = yuv2rgb_init_mmxext (order, bpp, seq);
 	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_X86_MMX))
-	    result->copy = yuv2rgb_init_mmx (order, bpp);
+	    result->copy = yuv2rgb_init_mmx (order, bpp, seq);
 #endif
 #ifdef ARCH_SPARC
 	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_SPARC_VIS))
-	    result->copy = yuv2rgb_init_vis (order, bpp);
+	    result->copy = yuv2rgb_init_vis (order, bpp, seq);
 #endif
 	if (result->copy == NULL) {
 	    int src, dest;
