@@ -81,7 +81,7 @@ static void print_fps(uint_32 final)
 	tfps = frame_counter * 10000 / total_elapsed;	/* 100x */
 
 	fprintf(stderr, "%d frames in %d.%02d sec (%d.%02d fps), "
-		"%d last %d.%02d sec (%d.%02d fps)\r", frame_counter,
+		"%d last %d.%02d sec (%d.%02d fps)\033[K\r", frame_counter,
 		total_elapsed / 100, total_elapsed % 100,
 		tfps / 100, tfps % 100, frames, elapsed / 100, elapsed % 100,
 		fps / 100, fps % 100);
