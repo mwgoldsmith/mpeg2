@@ -34,7 +34,7 @@
 #include <inttypes.h>
 
 #include "mpeg2.h"
-#include "convert.h"
+#include "mpeg2convert.h"
 
 static void save_ppm (int width, int height, uint8_t * buf, int num)
 {
@@ -99,7 +99,7 @@ static void sample6 (FILE * mpgfile)
 	    mpeg2_buffer (decoder, buffer, buffer + size);
 	    break;
 	case STATE_SEQUENCE:
-	    mpeg2_convert (decoder, convert_rgb24, NULL);
+	    mpeg2_convert (decoder, mpeg2convert_rgb24, NULL);
 	    mpeg2_custom_fbuf (decoder, 1);
 	    pixels = info->sequence->width * info->sequence->height;
 	    for (i = 0; i < 3; i++) {

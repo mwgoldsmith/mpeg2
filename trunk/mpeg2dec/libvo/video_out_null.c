@@ -28,7 +28,7 @@
 
 #include "mpeg2.h"
 #include "video_out.h"
-#include "convert.h"
+#include "mpeg2convert.h"
 
 static void null_draw_frame (vo_instance_t * instance,
 			     uint8_t * const * buf, void * id)
@@ -116,7 +116,7 @@ static int nullrgb16_setup (vo_instance_t * instance, unsigned int width,
 			    unsigned int chroma_height,
 			    vo_setup_result_t * result)
 {
-    result->convert = convert_rgb16;
+    result->convert = mpeg2convert_rgb16;
     return 0;
 }
 
@@ -125,7 +125,7 @@ static int nullrgb32_setup (vo_instance_t * instance, unsigned int width,
 			    unsigned int chroma_height,
 			    vo_setup_result_t * result)
 {
-    result->convert = convert_rgb32;
+    result->convert = mpeg2convert_rgb32;
     return 0;
 }
 
