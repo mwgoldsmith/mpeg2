@@ -96,7 +96,7 @@ static void sample5 (FILE * mpgfile)
     }
     info = mpeg2_info (decoder);
 
-    size = -1;
+    size = (size_t)-1;
     do {
 	state = mpeg2_parse (decoder);
 	switch (state) {
