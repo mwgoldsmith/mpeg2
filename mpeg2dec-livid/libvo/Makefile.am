@@ -7,5 +7,4 @@ libvo_la_SOURCES = video_out.c video_out_x11.c video_out_sdl.c \
 libvo_la_LIBADD = @LIBVO_LIBS@
 libvo_la_LDFLAGS = -no-undefined
 
-EXTRA_DIST = configure.incl video_out_internal.h yuv2rgb.h yuv2rgb_mmx.h \
-	     hw_bes.h
+EXTRA_DIST = configure.incl video_out_internal.h yuv2rgb.h hw_bes.h
