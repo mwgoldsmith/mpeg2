@@ -9,8 +9,8 @@
 /* ppc architecture */
 /* #undef ARCH_PPC */
 
-/* alpha architecture */
-/* #undef ARCH_ALPHA */
+/* sparc architecture */
+/* #undef ARCH_SPARC */
 
 /* x86 architecture */
 #define ARCH_X86
@@ -44,9 +44,6 @@
 
 /* Define to 1 if you have the <io.h> header file. */
 #define HAVE_IO_H 1
-
-/* Define to 1 if you have the `memalign' function. */
-/* #undef HAVE_MEMALIGN */
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -148,12 +145,20 @@
 /* Define to 1 if the X Window System is missing or not being used. */
 #define X_DISPLAY_MISSING 1
 
+/* Number of bits in a file offset, on hosts where this is settable. */
+/* #undef _FILE_OFFSET_BITS */
+
+/* Define for large files, on AIX-style hosts. */
+/* #undef _LARGE_FILES */
+
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */
 
-/* Define as `__inline' if that's what the C compiler calls it, or to nothing
-   if it is not supported. */
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
 #define inline __inline
+#endif
 
 /* Define as `__restrict' if that's what the C compiler calls it, or to
    nothing if it is not supported. */
