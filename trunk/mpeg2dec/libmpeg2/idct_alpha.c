@@ -39,8 +39,8 @@
 #define W6 1108 /* 2048 * sqrt (2) * cos (6 * pi / 16) */
 #define W7 565  /* 2048 * sqrt (2) * cos (7 * pi / 16) */
 
-extern uint8_t mpeg2_clip[14 * 1024 + 256];
-#define CLIP(i) ((mpeg2_clip + 7 * 1024)[i])
+extern uint8_t mpeg2_clip[3840 * 2 + 256];
+#define CLIP(i) ((mpeg2_clip + 3840)[i])
 
 #if 0
 #define BUTTERFLY(t0,t1,W0,W1,d0,d1)	\
