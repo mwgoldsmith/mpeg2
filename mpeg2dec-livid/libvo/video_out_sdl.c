@@ -292,10 +292,10 @@ flip_page(void)
 } // display_flip_page
 
 static vo_image_buffer_t* 
-allocate_image_buffer(uint_32 width, uint_32 height, uint_32 format)
+allocate_image_buffer(uint_32 height, uint_32 width, uint_32 format)
 {
 	//use the generic fallback
-	return allocate_image_buffer_common(width,height,format);
+	return allocate_image_buffer_common(height,width,format);
 }
 
 static void	
