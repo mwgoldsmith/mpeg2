@@ -33,8 +33,8 @@ typedef struct convert_init_s {
     void * id;
     int id_size;
     int buf_size[3];
-    void (* start) (void * id, uint8_t * dest[3], int flags);
-    void (* copy) (void * id, uint8_t * src[3]);
+    void (* start) (void * id, uint8_t * const * dest, int flags);
+    void (* copy) (void * id, uint8_t * const * src);
 } convert_init_t;
 
 typedef void convert_t (int width, int height, void * arg,

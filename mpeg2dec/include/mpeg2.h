@@ -85,11 +85,11 @@ typedef struct {
     sequence_t * sequence;
     picture_t * current_picture;
     picture_t * current_picture_2nd;
-    fbuf_t * current_fbuf;
+    const fbuf_t * current_fbuf;
     picture_t * display_picture;
     picture_t * display_picture_2nd;
-    fbuf_t * display_fbuf;
-    fbuf_t * discard_fbuf;
+    const fbuf_t * display_fbuf;
+    const fbuf_t * discard_fbuf;
 } mpeg2_info_t;
 
 typedef struct mpeg2dec_s mpeg2dec_t;

@@ -68,7 +68,7 @@ struct decoder_s {
 
     uint8_t * dest[3];
     uint8_t * picture_dest[3];
-    void (* convert) (void * fbuf_id, uint8_t ** src);
+    void (* convert) (void * fbuf_id, uint8_t * const * src);
     void * fbuf_id;
 
     int offset;
@@ -177,12 +177,12 @@ struct mpeg2dec_s {
     fbuf_alloc_t fbuf_alloc[3];
     int custom_fbuf;
 
-    uint8_t * yuv_buf[3][3]; 
-    int yuv_index; 
+    uint8_t * yuv_buf[3][3];
+    int yuv_index;
     void * convert_id;
     int convert_size[3];
-    void (* convert_start) (void * id, uint8_t * dest[3], int flags);
-    void (* convert_copy) (void * id, uint8_t * src[3]);
+    void (* convert_start) (void * id, uint8_t * const * dest, int flags);
+    void (* convert_copy) (void * id, uint8_t * const * src);
 };
 
 typedef struct {

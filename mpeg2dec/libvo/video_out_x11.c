@@ -211,7 +211,7 @@ static void x11_event (x11_instance_t * instance)	/* XXXXXXXXXXX */
 }
 
 static void x11_start_fbuf (vo_instance_t * _instance,
-			    uint8_t * buf[3], void * id)
+			    uint8_t * const * buf, void * id)
 {
     x11_instance_t * instance = (x11_instance_t *) _instance;
     x11_frame_t * frame = (x11_frame_t *) id;
@@ -221,7 +221,7 @@ static void x11_start_fbuf (vo_instance_t * _instance,
 }
 
 static void x11_setup_fbuf (vo_instance_t * _instance,
-			    uint8_t * buf[3], void ** id)
+			    uint8_t ** buf, void ** id)
 {
     x11_instance_t * instance = (x11_instance_t *) _instance;
 
@@ -231,7 +231,7 @@ static void x11_setup_fbuf (vo_instance_t * _instance,
 }
 
 static void x11_draw_frame (vo_instance_t * _instance,
-			    uint8_t * buf[3], void * id)
+			    uint8_t * const * buf, void * id)
 {
     x11_frame_t * frame;
     x11_instance_t * instance;
@@ -301,11 +301,11 @@ static void x11_close (vo_instance_t * _instance)
 
 #ifdef LIBVO_XV
 static void xv_setup_fbuf (vo_instance_t * _instance,
-			   uint8_t * buf[3], void ** id)
+			   uint8_t ** buf, void ** id)
 {
     x11_instance_t * instance = (x11_instance_t *) _instance;
     uint8_t * data;
-    
+
     data = instance->frame[instance->index].xvimage->data;
     buf[0] = data + instance->frame[instance->index].xvimage->offsets[0];
     buf[1] = data + instance->frame[instance->index].xvimage->offsets[2];
@@ -314,7 +314,7 @@ static void xv_setup_fbuf (vo_instance_t * _instance,
 }
 
 static void xv_draw_frame (vo_instance_t * _instance,
-			   uint8_t * buf[3], void * id)
+			   uint8_t * const * buf, void * id)
 {
     x11_frame_t * frame = (x11_frame_t *) id;
     x11_instance_t * instance = (x11_instance_t *) _instance;

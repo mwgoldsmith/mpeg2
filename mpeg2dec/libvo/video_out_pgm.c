@@ -40,7 +40,7 @@ typedef struct {
 } pgm_instance_t;
 
 static void internal_draw_frame (pgm_instance_t * instance,
-				 FILE * file, uint8_t * buf[3])
+				 FILE * file, uint8_t * const * buf)
 {
     int i;
 
@@ -55,7 +55,7 @@ static void internal_draw_frame (pgm_instance_t * instance,
 }
 
 static void pgm_draw_frame (vo_instance_t * _instance,
-			    uint8_t * buf[3], void * id)
+			    uint8_t * const * buf, void * id)
 {
     pgm_instance_t * instance;
     FILE * file;
@@ -84,7 +84,7 @@ static int pgm_setup (vo_instance_t * _instance, int width, int height,
 }
 
 static vo_instance_t * internal_open (void draw (vo_instance_t *,
-						 uint8_t * [3], void *))
+						 uint8_t * const *, void *))
 {
     pgm_instance_t * instance;
 
@@ -110,7 +110,7 @@ vo_instance_t * vo_pgm_open (void)
 }
 
 static void pgmpipe_draw_frame (vo_instance_t * _instance,
-				uint8_t * buf[3], void * id)
+				uint8_t * const * buf, void * id)
 {
     pgm_instance_t * instance;
 
@@ -124,7 +124,7 @@ vo_instance_t * vo_pgmpipe_open (void)
 }
 
 static void md5_draw_frame (vo_instance_t * _instance,
-			    uint8_t * buf[3], void * id)
+			    uint8_t * const * buf, void * id)
 {
     pgm_instance_t * instance;
     char command[100];

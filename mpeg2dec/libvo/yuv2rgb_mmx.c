@@ -263,7 +263,7 @@ static inline void yuv420_argb32 (uint8_t * image, uint8_t * py,
     } while (--height);
 }
 
-static void mmxext_rgb16 (void * _id, uint8_t * src[3])
+static void mmxext_rgb16 (void * _id, uint8_t * const * src)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
 
@@ -273,7 +273,7 @@ static void mmxext_rgb16 (void * _id, uint8_t * src[3])
     id->rgb_ptr += id->rgb_stride << 4;
 }
 
-static void mmxext_argb32 (void * _id, uint8_t * src[3])
+static void mmxext_argb32 (void * _id, uint8_t * const * src)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
 
@@ -283,7 +283,7 @@ static void mmxext_argb32 (void * _id, uint8_t * src[3])
     id->rgb_ptr += id->rgb_stride << 4;
 }
 
-static void mmx_rgb16 (void * _id, uint8_t * src[3])
+static void mmx_rgb16 (void * _id, uint8_t * const * src)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
 
@@ -292,7 +292,7 @@ static void mmx_rgb16 (void * _id, uint8_t * src[3])
     id->rgb_ptr += id->rgb_stride << 4;
 }
 
-static void mmx_argb32 (void * _id, uint8_t * src[3])
+static void mmx_argb32 (void * _id, uint8_t * const * src)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
 
