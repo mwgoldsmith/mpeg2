@@ -137,6 +137,11 @@ struct decoder_s {
     int progressive_sequence;	/* only for decoding picture coding ext */
 };
 
+typedef struct {
+    fbuf_t fbuf;
+    int free;
+} fbuf_alloc_t;
+
 struct mpeg2dec_s {
     decoder_t decoder;
 
@@ -168,6 +173,8 @@ struct mpeg2dec_s {
     picture_t pictures[4];
     picture_t * picture;
     fbuf_t fbuf[3];	/* 0: current fbuf, 1-2: prediction fbufs */
+
+    fbuf_alloc_t fbuf_alloc[3];
 
     uint8_t * yuv_buf[3][3]; 
     int yuv_index; 
