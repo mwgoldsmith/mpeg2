@@ -9,7 +9,7 @@ EXTRA_mga_vid_SOURCES = mga_vid.c
 EXTRA_mga_vid_test_SOURCES = mga_vid_test.c
 
 INCLUDES = $(KERNEL_INCLUDES)
-CFLAGS = -Werror -g -O2  -Wall -D__KERNEL__  -DMODULE @MOD_CFLAGS@\
+CFLAGS = -g -O2  -Wall -D__KERNEL__  -DMODULE @MOD_CFLAGS@\
 	 -include /usr/src/linux/include/linux/modversions.h
 
 
