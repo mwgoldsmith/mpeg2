@@ -83,27 +83,22 @@ static void md5_flip_page (void)
 {
 }
 
-static int md5_setup (vo_output_video_attr_t * attr)
+static int md5_setup (int width, int height)
 {
     if (!(md5_file = fopen ("md5", "w")))
 	return -1;
 
-    image_width = attr->width;
-    image_height = attr->height;
+    image_width = width;
+    image_height = height;
 
-    sprintf (header, "P5\n\n%d %d\n255\n", image_width, image_height*3/2);
+    sprintf (header, "P5\n\n%d %d\n255\n", width, height * 3 / 2);
 
     return 0;
 }
 
-static frame_t * md5_allocate_image_buffer (int width, int height, uint32_t format)
-{
-    return libvo_common_alloc (width, height);
-}
-
-static void md5_free_image_buffer (frame_t* frame)
-{
-    libvo_common_free (frame);
-}
-
-LIBVO_EXTERN (md5, "md5")
+vo_output_video_t video_out_md5 = {
+    "md5",
+    md5_setup, md5_close,
+    md5_flip_page, md5_draw_slice, md5_draw_frame,
+    libvo_common_alloc, libvo_common_free
+};

@@ -222,13 +222,9 @@ static void common_close (void)
 	XCloseDisplay (priv->display);
 }
 
-static int x11_setup (vo_output_video_attr_t * vo_attr)
+static int x11_setup (int width, int height)
 {
     struct x11_priv_s * priv = &x11_priv;
-    int width, height;
-
-    width = vo_attr->width;
-    height = vo_attr->height;
 
     priv->display = XOpenDisplay (NULL);
     if (! (priv->display)) {
@@ -280,26 +276,11 @@ static int x11_draw_frame (frame_t *frame)
     return 0;
 }
 
-static frame_t * x11_allocate_image_buffer (int width, int height,
-					    uint32_t format)
-{
-    return libvo_common_alloc (width, height);
-}
-
-void x11_free_image_buffer (frame_t* frame)
-{
-    libvo_common_free (frame);
-}
-
 vo_output_video_t video_out_x11 = {
-    name: "x11",
-    setup: x11_setup,
-    close: x11_close,
-    flip_page: x11_flip_page,
-    draw_slice: x11_draw_slice,
-    draw_frame: x11_draw_frame,
-    allocate_image_buffer: x11_allocate_image_buffer,
-    free_image_buffer: x11_free_image_buffer
+    "x11",
+    x11_setup, x11_close,
+    x11_flip_page, x11_draw_slice, x11_draw_frame,
+    libvo_common_alloc, libvo_common_free
 };
 
 #ifdef LIBVO_XSHM
@@ -401,13 +382,9 @@ static int xshm_create_image (int width, int height)
     return 0;
 }
 
-static int xshm_setup (vo_output_video_attr_t * vo_attr)
+static int xshm_setup (int width, int height)
 {
     struct x11_priv_s * priv = &x11_priv;
-    int width, height;
-
-    width = vo_attr->width;
-    height = vo_attr->height;
 
     priv->display = XOpenDisplay (NULL);
     if (! (priv->display)) {
@@ -450,14 +427,10 @@ static void xshm_flip_page (void)
 }
 
 vo_output_video_t video_out_xshm = {
-    name: "xshm",
-    setup: xshm_setup,
-    close: xshm_close,
-    flip_page: xshm_flip_page,
-    draw_slice: x11_draw_slice,
-    draw_frame: x11_draw_frame,
-    allocate_image_buffer: x11_allocate_image_buffer,
-    free_image_buffer: x11_free_image_buffer
+    "xshm",
+    xshm_setup, xshm_close,
+    xshm_flip_page, x11_draw_slice, x11_draw_frame,
+    libvo_common_alloc, libvo_common_free
 };
 #endif
 
@@ -573,13 +546,9 @@ static int xv_common_setup (int width, int height,
     return 0;
 }
 
-static int xv_setup (vo_output_video_attr_t * vo_attr)
+static int xv_setup (int width, int height)
 {
     struct x11_priv_s * priv = &x11_priv;
-    int width, height;
-
-    width = vo_attr->width;
-    height = vo_attr->height;
 
     priv->display = XOpenDisplay (NULL);
     if (! (priv->display)) {
@@ -640,14 +609,10 @@ static int xv_draw_frame (frame_t *frame)
 }
 
 vo_output_video_t video_out_xv = {
-    name: "xv",
-    setup: xv_setup,
-    close: xv_close,
-    flip_page: xv_flip_page,
-    draw_slice: xv_draw_slice,
-    draw_frame: xv_draw_frame,
-    allocate_image_buffer: x11_allocate_image_buffer,
-    free_image_buffer: x11_free_image_buffer
+    "xv",
+    xv_setup, xv_close,
+    xv_flip_page, xv_draw_slice, xv_draw_frame,
+    libvo_common_alloc, libvo_common_free
 };
 #endif
 
@@ -669,13 +634,9 @@ static int xvshm_create_image (int width, int height)
     return 0;
 }
 
-static int xvshm_setup (vo_output_video_attr_t * vo_attr)
+static int xvshm_setup (int width, int height)
 {
     struct x11_priv_s * priv = &x11_priv;
-    int width, height;
-
-    width = vo_attr->width;
-    height = vo_attr->height;
 
     priv->display = XOpenDisplay (NULL);
     if (! (priv->display)) {
@@ -720,14 +681,10 @@ static void xvshm_flip_page (void)
 }
 
 vo_output_video_t video_out_xvshm = {
-    name: "xvshm",
-    setup: xvshm_setup,
-    close: xvshm_close,
-    flip_page: xvshm_flip_page,
-    draw_slice: xv_draw_slice,
-    draw_frame: xv_draw_frame,
-    allocate_image_buffer: x11_allocate_image_buffer,
-    free_image_buffer: x11_free_image_buffer
+    "xvshm",
+    xvshm_setup, xvshm_close,
+    xvshm_flip_page, xv_draw_slice, xv_draw_frame,
+    libvo_common_alloc, libvo_common_free
 };
 #endif
 

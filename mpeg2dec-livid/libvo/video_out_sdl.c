@@ -240,48 +240,31 @@ static int sdl_close (void *plugin)
  *   returns : non-zero on success, zero on error.
  **/
 
-static int sdl_setup (vo_output_video_attr_t *attr)
+static int sdl_setup (int width, int height)
 {
 	struct sdl_priv_s *priv = &sdl_priv;
 
 	sdl_open (NULL, NULL);
 
-	/* Set window title of our output window */
-	if (attr->title)
-		SDL_WM_SetCaption (attr->title, "oms");
-	else
-		SDL_WM_SetCaption ("SDL: RETURN/ESCAPE = Toggle Fullscreen/Window; PLUS = Cycle Fullscreen Resolutions", "oms");
-
-	/* Set the video mode via SDL & check for Fullscreen first */
-	if ((attr->fullscreen) && priv->fullmodes) {
-		if (!(priv->surface = SDL_SetVideoMode (priv->fullmodes[0]->w, priv->fullmodes[0]->h, priv->bpp, priv->sdlfullflags))) {
-			LOG (LOG_ERROR, "SDL video out: Could not set the desired fullscreen mode (SDL_SetVideoMode). Will try windowed mode next.");
-
-			/* disable fullscreen mode and free memory */
-			attr->fullscreen = 0;
-		}
+	/* Initialize the windowed SDL Window per default */
+	if (!(priv->surface = SDL_SetVideoMode (attr->width, attr->height, priv->bpp, priv->sdlflags))) {
+		LOG (LOG_ERROR, "SDL video out: Could not set the desired video mode (SDL_SetVideoMode)");
+		return -1;
 	}
 
-	/* Initialize the windowed SDL Window per default */
-	if (!attr->fullscreen)
-		if (!(priv->surface = SDL_SetVideoMode (attr->width, attr->height, priv->bpp, priv->sdlflags))) {
-			LOG (LOG_ERROR, "SDL video out: Could not set the desired video mode (SDL_SetVideoMode)");
-			return -1;
-		}
-
 	/* Initialize and create the YUV Overlay used for video out */
-	if (!(priv->overlay = SDL_CreateYUVOverlay (attr->width, attr->height, SDL_IYUV_OVERLAY, priv->surface))) {
+	if (!(priv->overlay = SDL_CreateYUVOverlay (width, height, SDL_IYUV_OVERLAY, priv->surface))) {
 		LOG (LOG_ERROR, "SDL video out: Couldn't create an SDL-based YUV overlay");
 		return -1;
 	}
-	priv->framePlaneY = (attr->width * attr->height);
-	priv->framePlaneUV = ((attr->width / 2) * (attr->height / 2));
-	priv->slicePlaneY = ((attr->width) * 16);
-	priv->slicePlaneUV = ((attr->width / 2) * (8));
+	priv->framePlaneY = width * height;
+	priv->framePlaneUV = (width * height) >> 2;
+	priv->slicePlaneY = width << 4;
+	priv->slicePlaneUV = width << 2;
 	
 	/* Save the original Image size */
-	priv->windowsize.w = attr->width;
-	priv->windowsize.h = attr->height;
+	priv->windowsize.w = width;
+	priv->windowsize.h = height;
 	
 	return 0;
 }
@@ -452,7 +435,7 @@ static void sdl_flip_page (void)
 	SDL_LockYUVOverlay (priv->current_frame);
 }
 
-static frame_t* sdl_allocate_image_buffer(int width, int height, uint32_t format)
+static frame_t* sdl_allocate_image_buffer(int width, int height)
 {
 	struct sdl_priv_s *priv = &sdl_priv;
 	frame_t	*frame;
