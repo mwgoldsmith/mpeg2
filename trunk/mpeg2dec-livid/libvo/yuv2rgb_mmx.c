@@ -61,8 +61,6 @@ static void yuv420_rgb16_mmx (uint8_t * image, uint8_t * py,
     int even = 1;
     int x = 0, y = 0;
 
-    py = pu; 
-
     /* load data for first scan line */
     __asm__ (
 	     "movd (%1), %%mm0 # Load 4 Cb 00 00 00 00 u3 u2 u1 u0\n\t"
