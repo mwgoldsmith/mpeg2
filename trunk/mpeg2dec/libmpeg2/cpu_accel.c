@@ -1,6 +1,6 @@
 /*
  * cpu_accel.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * Copyright (C) 2000-2004 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
@@ -34,6 +34,12 @@ static inline uint32_t arch_accel (uint32_t accel)
 {
     if (accel & (MPEG2_ACCEL_X86_3DNOW | MPEG2_ACCEL_X86_MMXEXT))
 	accel |= MPEG2_ACCEL_X86_MMX;
+	
+    if (accel & (MPEG2_ACCEL_X86_SSE2 | MPEG2_ACCEL_X86_SSE3))
+	accel |= MPEG2_ACCEL_X86_MMXEXT;
+	
+    if (accel & (MPEG2_ACCEL_X86_SSE3))
+	accel |= MPEG2_ACCEL_X86_SSE2;
 
 #ifdef ACCEL_DETECT
     if (accel & MPEG2_ACCEL_DETECT) {
@@ -95,6 +101,12 @@ static inline uint32_t arch_accel (uint32_t accel)
 	if (edx & 0x02000000)	/* SSE - identical to AMD MMX extensions */
 	    accel |= MPEG2_ACCEL_X86_MMXEXT;
 
+	if (edx & 0x04000000)	/* SSE2 */
+	    accel |= MPEG2_ACCEL_X86_SSE2;
+	    
+	if (ecx & 0x00000001)	/* SSE3 */
+	    accel |= MPEG2_ACCEL_X86_SSE3;
+	    
 	cpuid (0x80000000, eax, ebx, ecx, edx);
 	if (eax < 0x80000001)		/* no extended capabilities */
 	    return accel;
