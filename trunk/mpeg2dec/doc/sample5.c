@@ -108,9 +108,9 @@ static void sample5 (FILE * mpgfile)
 	    mpeg2_custom_fbuf (decoder, 1);
 	    pixels = info->sequence->width * info->sequence->height;
 	    for (i = 0; i < 3; i++) {
-		fbuf[i].yuv[0] = malloc (pixels);
-		fbuf[i].yuv[1] = malloc (pixels / 4);
-		fbuf[i].yuv[2] = malloc (pixels / 4);
+		fbuf[i].yuv[0] = (uint8_t *) malloc (pixels);
+		fbuf[i].yuv[1] = (uint8_t *) malloc (pixels / 4);
+		fbuf[i].yuv[2] = (uint8_t *) malloc (pixels / 4);
 		if (!fbuf[i].yuv[0] || !fbuf[i].yuv[1] || !fbuf[i].yuv[2]) {
 		    fprintf (stderr, "Could not allocate an output buffer.\n");
 		    exit (1);
