@@ -121,6 +121,11 @@ static inline int get_macroblock_modes (int picture_coding_type,
 	    return macroblock_modes;
 	}
 
+    case D_TYPE:
+
+	DUMPBITS (bit_buf, bits, 1);
+	return MACROBLOCK_INTRA;
+
     default:
 	return 0;
     }
@@ -959,9 +964,10 @@ static inline void slice_intra_DCT (picture_t * picture, slice_t * slice,
 	slice->dc_dct_pred[cc] += get_chroma_dc_dct_diff ();
     DCTblock[0] = slice->dc_dct_pred[cc] << (3 - picture->intra_dc_precision);
 
-    if (picture->mpeg1)
-	get_mpeg1_intra_block (picture, slice, DCTblock);
-    else if (picture->intra_vlc_format)
+    if (picture->mpeg1) {
+	if (picture->picture_coding_type != D_TYPE)
+	    get_mpeg1_intra_block (picture, slice, DCTblock);
+    } else if (picture->intra_vlc_format)
 	get_intra_block_B15 (picture, slice, DCTblock);
     else
 	get_intra_block_B14 (picture, slice, DCTblock);
@@ -1299,6 +1305,10 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	    slice_intra_DCT (picture, &slice, 2,
 			     dest[2] + (offset>>1), width>>1);
 
+	    if (picture->picture_coding_type == D_TYPE) {
+		NEEDBITS (bit_buf, bits);
+		DUMPBITS (bit_buf, bits, 1);
+	    }
 	} else {
 
 	    switch (macroblock_modes & MOTION_TYPE_MASK) {
