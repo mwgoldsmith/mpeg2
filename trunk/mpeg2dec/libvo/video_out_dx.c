@@ -211,7 +211,7 @@ static int dx_init (dx_instance_t *instance)
 	fprintf (stderr, "Can not load DDRAW.DLL\n");
 	return 1;
     }
-    
+
     ddraw = NULL;
     OurDirectDrawCreate = (void *) GetProcAddress (instance->hddraw_dll,
 						   "DirectDrawCreate");
@@ -220,7 +220,7 @@ static int dx_init (dx_instance_t *instance)
 	DD_OK != IDirectDraw_QueryInterface (ddraw, &IID_IDirectDraw2,
 					     (LPVOID *) &instance->ddraw) ||
 	DD_OK != IDirectDraw_SetCooperativeLevel (instance->ddraw,
-						  instance->window, 
+						  instance->window,
 						  DDSCL_NORMAL)) {
 	fprintf (stderr, "Can not initialize directDraw interface\n");
 	return 1;
@@ -312,7 +312,7 @@ static void * surface_addr (LPDIRECTDRAWSURFACE2 surface, int * stride)
 }
 
 static void dx_setup_fbuf (vo_instance_t * _instance,
-			   uint8_t * buf[3], void ** id)
+			   uint8_t ** buf, void ** id)
 {
     dx_instance_t * instance = (dx_instance_t *) _instance;
     int stride;
@@ -323,7 +323,7 @@ static void dx_setup_fbuf (vo_instance_t * _instance,
 }
 
 static void dxrgb_draw_frame (vo_instance_t * _instance,
-			      uint8_t * buf[3], void * id)
+			      uint8_t * const * buf, void * id)
 {
     dx_instance_t * instance = (dx_instance_t *) _instance;
     LPDIRECTDRAWSURFACE2 surface = (LPDIRECTDRAWSURFACE2) id;
@@ -345,11 +345,12 @@ static void dxrgb_draw_frame (vo_instance_t * _instance,
 }
 
 static vo_instance_t * common_open (int (* setup) (vo_instance_t *, int, int,
-						   vo_setup_result_t *), 
+						   vo_setup_result_t *),
 				    void (* setup_fbuf) (vo_instance_t *,
 							 uint8_t **, void **),
 				    void (* draw) (vo_instance_t *,
-						   uint8_t **, void * id))
+						   uint8_t * const *,
+						   void * id))
 {
     dx_instance_t * instance;
 
@@ -436,7 +437,7 @@ static int dx_setup (vo_instance_t * _instance, int width, int height,
 }
 
 static void copy_yuv_picture (dx_instance_t * instance,
-			      uint8_t * buf[3], void * id)
+			      uint8_t * const * buf, void * id)
 {
     uint8_t * dest[3];
     int width, i;
@@ -459,7 +460,7 @@ static void copy_yuv_picture (dx_instance_t * instance,
 }
 
 static void dx_draw_frame (vo_instance_t * _instance,
-			   uint8_t * buf[3], void * id)
+			   uint8_t * const * buf, void * id)
 {
     dx_instance_t * instance = (dx_instance_t *) _instance;
 

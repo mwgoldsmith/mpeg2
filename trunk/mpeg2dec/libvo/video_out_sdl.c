@@ -46,7 +46,7 @@ typedef struct {
 } sdl_instance_t;
 
 static void sdl_setup_fbuf (vo_instance_t * _instance,
-			    uint8_t * buf[3], void ** id)
+			    uint8_t ** buf, void ** id)
 {
     sdl_instance_t * instance = (sdl_instance_t *) _instance;
     SDL_Overlay * overlay;
@@ -59,13 +59,13 @@ static void sdl_setup_fbuf (vo_instance_t * _instance,
 }
 
 static void sdl_start_fbuf (vo_instance_t * instance,
-			    uint8_t * buf[3], void * id)
+			    uint8_t * const * buf, void * id)
 {
     SDL_LockYUVOverlay ((SDL_Overlay *) id);
 }
 
 static void sdl_draw_frame (vo_instance_t * _instance,
-			    uint8_t * buf[3], void * id)
+			    uint8_t * const * buf, void * id)
 {
     sdl_instance_t * instance = (sdl_instance_t *) _instance;
     SDL_Overlay * overlay = (SDL_Overlay *) id;
@@ -80,7 +80,7 @@ static void sdl_draw_frame (vo_instance_t * _instance,
 }
 
 static void sdl_discard (vo_instance_t * _instance,
-			 uint8_t * buf[3], void * id)
+			 uint8_t * const * buf, void * id)
 {
     SDL_UnlockYUVOverlay ((SDL_Overlay *) id);
 }

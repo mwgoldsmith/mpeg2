@@ -30,11 +30,11 @@
 #include "convert.h"
 
 static void null_draw_frame (vo_instance_t * instance,
-			     uint8_t * buf[3], void * id)
+			     uint8_t * const * buf, void * id)
 {
 }
 
-static vo_instance_t * internal_open (int setup (vo_instance_t *, int, int, 
+static vo_instance_t * internal_open (int setup (vo_instance_t *, int, int,
 						 vo_setup_result_t *))
 {
     vo_instance_t * instance;
@@ -66,15 +66,15 @@ vo_instance_t * vo_null_open (void)
     return internal_open (null_setup);
 }
 
-static void nullslice_start (void * id, uint8_t * dest[3], int flags)
+static void nullslice_start (void * id, uint8_t * const * dest, int flags)
 {
 }
 
-static void nullslice_copy (void * id, uint8_t * src[3])
+static void nullslice_copy (void * id, uint8_t * const * src)
 {
 }
 
-static void nullslice_convert (int width, int height, void * arg, 
+static void nullslice_convert (int width, int height, void * arg,
 			       convert_init_t * result)
 {
     result->id_size = 0;

@@ -33,14 +33,13 @@ typedef struct vo_instance_s vo_instance_t;
 struct vo_instance_s {
     int (* setup) (vo_instance_t * instance, int width, int height,
 		   vo_setup_result_t * result);
-    void (* setup_fbuf) (vo_instance_t * instance, uint8_t * buf[3],
-			 void ** id);
-    void (* set_fbuf) (vo_instance_t * instance, uint8_t * buf[3],
-		       void ** id);
-    void (* start_fbuf) (vo_instance_t * instance, uint8_t * buf[3],
-			 void * id);
-    void (* draw) (vo_instance_t * instance, uint8_t * buf[3], void * id);
-    void (* discard) (vo_instance_t * instance, uint8_t * buf[3], void * id);
+    void (* setup_fbuf) (vo_instance_t * instance, uint8_t ** buf, void ** id);
+    void (* set_fbuf) (vo_instance_t * instance, uint8_t ** buf, void ** id);
+    void (* start_fbuf) (vo_instance_t * instance,
+			 uint8_t * const * buf, void * id);
+    void (* draw) (vo_instance_t * instance, uint8_t * const * buf, void * id);
+    void (* discard) (vo_instance_t * instance,
+		      uint8_t * const * buf, void * id);
     void (* close) (vo_instance_t * instance);
 };
 

@@ -30,7 +30,7 @@ typedef struct {
 		      void *, void *, int);
 } convert_rgb_t;
 
-typedef void yuv2rgb_copy (void * id, uint8_t * src[3]);
+typedef void yuv2rgb_copy (void * id, uint8_t * const * src);
 
 yuv2rgb_copy * yuv2rgb_init_mmxext (int bpp, int mode);
 yuv2rgb_copy * yuv2rgb_init_mmx (int bpp, int mode);

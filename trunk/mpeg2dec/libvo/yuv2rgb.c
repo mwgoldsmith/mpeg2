@@ -353,7 +353,7 @@ static yuv2rgb_c_internal * yuv2rgb_c_init (int order, int bpp)
     return yuv2rgb;
 }
 
-static void convert_yuv2rgb_c (void * _id, uint8_t * src[3])
+static void convert_yuv2rgb_c (void * _id, uint8_t * const * src)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
     uint8_t * dst;
@@ -377,7 +377,7 @@ static void convert_yuv2rgb_c (void * _id, uint8_t * src[3])
     id->rgb_ptr = dst;
 }
 
-static void convert_start (void * _id, uint8_t * dest[3], int flags)
+static void convert_start (void * _id, uint8_t * const * dest, int flags)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
     id->rgb_ptr = dest[0];

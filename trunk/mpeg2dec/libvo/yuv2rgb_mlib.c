@@ -34,7 +34,7 @@
 #include "convert.h"
 #include "convert_internal.h"
 
-static void mlib_YUV2ARGB420_32 (void * _id, uint8_t * src[3]) 
+static void mlib_YUV2ARGB420_32 (void * _id, uint8_t * const * src)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
 
@@ -44,7 +44,7 @@ static void mlib_YUV2ARGB420_32 (void * _id, uint8_t * src[3])
     id->rgb_ptr += id->rgb_stride << 4;
 }
 
-static void mlib_YUV2ABGR420_32 (void * _id, uint8_t * src[3]) 
+static void mlib_YUV2ABGR420_32 (void * _id, uint8_t * const * src)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
 
@@ -54,7 +54,7 @@ static void mlib_YUV2ABGR420_32 (void * _id, uint8_t * src[3])
     id->rgb_ptr += id->rgb_stride << 4;
 }
 
-static void mlib_YUV2RGB420_24 (void * _id, uint8_t * src[3]) 
+static void mlib_YUV2RGB420_24 (void * _id, uint8_t * const * src)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
 
