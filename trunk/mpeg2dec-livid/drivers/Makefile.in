@@ -60,18 +60,17 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_alias = @host_alias@
 host_triplet = @host@
+CONFIG_OBJS = @CONFIG_OBJS@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
+MOD_CFLAGS = @MOD_CFLAGS@
 PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
 VERSION = @VERSION@
 
 EXTRA_DIST = mga_vid.c mga_vid_test.c mga_vid.h
 
-CFLAGS = -Werror -g -O2  -Wall -D__KERNEL__  -DMODULE 	 -include /usr/src/linux/include/linux/modversions.h
-
-
-SMP_CFLAGS = -Werror -g -O2  -Wall -D__SMP__ -D__KERNEL__  -DMODULE 	 -include /usr/src/linux/include/linux/modversions.h
+CFLAGS = -Werror -g -O2  -Wall -D__KERNEL__  -DMODULE @MOD_CFLAGS@ 	 -include /usr/src/linux/include/linux/modversions.h
 
 
 CC = gcc

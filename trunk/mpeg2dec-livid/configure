@@ -726,7 +726,7 @@ fi
 
 PACKAGE=mpeg2dec
 
-VERSION=0.1.4
+VERSION=0.1.5
 
 if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status; then
   { echo "configure: error: source directory already configured; run "make distclean" there first" 1>&2; exit 1; }
@@ -1213,15 +1213,27 @@ fi
 
 
 
+
 echo $ac_n "checking for /dev/mga_vid""... $ac_c" 1>&6
-echo "configure:1218: checking for /dev/mga_vid" >&5
+echo "configure:1219: checking for /dev/mga_vid" >&5
 if test -c "/dev/mga_vid"; then
 	echo "$ac_t""found /dev/mga_vid" 1>&6
-	rm -f display.c;ln -s display_mga_vid.c display.c
+	CONFIG_OBJS="$CONFIG_OBJS display_mga_vid.o";
 else
 	echo "$ac_t""/dev/mga_vid not found -> X11 fallback configured" 1>&6
-	rm -f display.c;ln -s display_x11.c display.c
+	CONFIG_OBJS="$CONFIG_OBJS display_x11.o"
 fi
+
+echo $ac_n "checking for SMP""... $ac_c" 1>&6
+echo "configure:1229: checking for SMP" >&5
+
+if uname -a | grep SMP >/dev/null; then
+	echo "$ac_t""yes" 1>&6
+	MOD_CFLAGS=-D__SMP__
+else
+	echo "$ac_t""no" 1>&6
+fi
+
 
 case "$host" in
 *-linux*) ;;
@@ -1230,11 +1242,13 @@ case "$host" in
 esac
 
 case "$host" in
-i?86-*) cat >> confdefs.h <<\EOF
+i?86-*)
+	cat >> confdefs.h <<\EOF
 #define __i386__ 1
 EOF
-;;
-alpha-*) cat >> confdefs.h <<\EOF
+ 
+	CONFIG_OBJS="$CONFIG_OBJS idct_mmx.o idct_block_mmx.o motion_comp_mmx.o";;
+alpha*-*) cat >> confdefs.h <<\EOF
 #define __alpha__ 1
 EOF
 ;;
@@ -1404,6 +1418,8 @@ s%@MAINT@%$MAINT%g
 s%@CC@%$CC%g
 s%@CPP@%$CPP%g
 s%@RANLIB@%$RANLIB%g
+s%@CONFIG_OBJS@%$CONFIG_OBJS%g
+s%@MOD_CFLAGS@%$MOD_CFLAGS%g
 
 CEOF
 EOF

@@ -1,5 +1,5 @@
 /*
- *  motion_comp.c
+ *  motion_comp.h
  *
  *  Copyright (C) Aaron Holtzman <aholtzma@ess.engr.uvic.ca> - Nov 1999
  *
@@ -21,5 +21,5 @@
  *
  */
 
-void motion_comp(picture_t *picture,mb_buffer_t *mb_buffer);
+extern void (*motion_comp)(picture_t *picture,mb_buffer_t *mb_buffer);
 void motion_comp_init(void);

@@ -21,17 +21,6 @@
  *
  */
 
-#ifndef AARONS_TYPES
-#define AARONS_TYPES
-//typedef to appropriate type for your architecture
-typedef unsigned char uint_8;
-typedef unsigned short uint_16;
-typedef unsigned int uint_32;
-typedef signed int sint_32;
-typedef signed short sint_16;
-typedef signed char sint_8;
-#endif
-
 //header start codes
 #define PICTURE_START_CODE      0x100
 #define SLICE_START_CODE_MIN    0x101
@@ -235,6 +224,8 @@ typedef struct macroblock_s
 	uint_16 macroblock_type;
 	uint_16 motion_type;
 	uint_16 motion_vector_count;
+	sint_16 motion_vertical_field_select[2][2];
+	sint_16 dmvector[2];
 	uint_16 mv_format;
 	uint_16 mvscale;
 	uint_16 dmv;
@@ -244,3 +235,7 @@ typedef struct macroblock_s
 
 	uint_16 skipped;
 } macroblock_t;
+
+//The only global variable,
+//the config struct
+extern mpeg2_config_t config;

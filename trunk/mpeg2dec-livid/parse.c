@@ -23,7 +23,10 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include "config.h"
+#include "mpeg2.h"
 #include "mpeg2_internal.h"
+
 #include "bitstream.h"
 #include "stats.h"
 #include "parse.h"
@@ -120,6 +123,8 @@ parse_state_init(picture_t *picture)
 {
 	picture->intra_quantizer_matrix = default_intra_quantization_matrix;
 	picture->non_intra_quantizer_matrix = default_non_intra_quantization_matrix;
+	//FIXME we should set pointers to the real scan matrices
+	//here (mmx vs normal) instead of the ifdefs in parse_picture_coding_extension
 	picture->scan = scan_norm;
 }
 
@@ -290,8 +295,19 @@ parse_picture_coding_extension(picture_t *picture)
   picture->q_scale_type               = Get_Bits(1);
   picture->intra_vlc_format           = Get_Bits(1);
   picture->alternate_scan             = Get_Bits(1);
+
+#ifdef __i386__
+	if(picture->alternate_scan)
+		picture->scan = scan_alt_mmx;
+	else
+		picture->scan = scan_norm_mmx;
+#else
 	if(picture->alternate_scan)
 		picture->scan = scan_alt;
+	else
+		picture->scan = scan_norm;
+#endif
+
   picture->repeat_first_field         = Get_Bits(1);
 	/*chroma_420_type isn't used */       Get_Bits(1);
   picture->progressive_frame          = Get_Bits(1);
@@ -456,7 +472,6 @@ vlc_get_block_coeff(uint_16 non_intra_dc,uint_16 intra_vlc_format)
 }
 
 
-
 void
 parse_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint_32 cc)
 {
@@ -479,6 +494,11 @@ parse_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint_32 
   else 
     dest[0] = (slice->dc_dct_pred[cc]+= Get_Chroma_DC_dct_diff()) << (3 - picture->intra_dc_precision);
 
+	//FIXME convert the cross platform IDCT to use 11.4 fixed point
+#ifdef __i386__
+	dest[0] <<= 4;
+#endif
+
 	i = 1;
 	while((coeff = vlc_get_block_coeff(0,picture->intra_vlc_format)))
 	{
@@ -488,7 +508,12 @@ parse_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint_32 
 		i += run;
     j = scan[i++];
 
+		//FIXME convert the cross platform IDCT to use 11.4 fixed point
+#ifdef __i386__
+    dest[j] = (val * quantizer_scale * quant_matrix[j]);
+#else
     dest[j] = (val * quantizer_scale * quant_matrix[j]) >> 4;
+#endif
 
 #if 0
 		sint_32 sum = 0;
@@ -498,9 +523,6 @@ parse_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint_32 
 			dest[j] = -2048;
 
 		sum += dest[j];
-    //dest[j] = (val * slice->quantizer_scale * quant_matrix[j]) >> 5;
-    //dest[j] = val * slice->quantizer_scale;
-    //dest[j] = val ;
 #endif
 	}
 
@@ -538,9 +560,13 @@ parse_non_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint
 		
 		i += run;
     j = scan[i++];
-		//FIXME fix qmat ref
+		//FIXME mmx
+		//FIXME convert the cross platform IDCT to use 11.4 fixed point
+#ifdef __i386__
+    dest[j] = (((val<<1) + (val>>15))* quantizer_scale * quant_matrix[j]) >> 1;
+#else
     dest[j] = (((val<<1) + (val>>15))* quantizer_scale * quant_matrix[j]) >> 5;
-    //dest[j] = ((val<<1) + (val>>15))* slice->quantizer_scale;
+#endif
 	}
 
 	if(i > 64)
@@ -635,16 +661,17 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
 			((mb->macroblock_type & MACROBLOCK_INTRA) && picture->concealment_motion_vectors))
   {
 		//Field pictures are definately broken here
-      motion_vectors(slice->pmv,NULL,0,
-        0,mb->motion_vector_count,mb->mv_format,0,0,0
-				,mb->mvscale);
+		//FIXME this could be faster too
+      motion_vectors(slice->pmv,(int*)mb->dmvector,mb->motion_vertical_field_select,
+        0,mb->motion_vector_count,mb->mv_format,0,0,mb->dmv,
+				mb->mvscale);
   }
 
   // decode backward motion vectors 
   if (mb->macroblock_type & MACROBLOCK_MOTION_BACKWARD)
   {
-      motion_vectors(slice->pmv,NULL,0,
-        1,mb->motion_vector_count,mb->mv_format,0,0,0,
+      motion_vectors(slice->pmv,(int*)mb->dmvector,mb->motion_vertical_field_select,
+        1,mb->motion_vector_count,mb->mv_format,0,0,mb->dmv,
         mb->mvscale);
   }
 

@@ -24,5 +24,5 @@
  */
 
 
-void idct(mb_buffer_t *mb_buffer);
+extern void (*idct)(mb_buffer_t *mb_buffer);
 void idct_init(void);

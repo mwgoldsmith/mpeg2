@@ -31,7 +31,9 @@
 
 #include "config.h"
 #include "old_crap.h"
+#include "mpeg2.h"
 #include "mpeg2_internal.h"
+
 #include "mb_buffer.h"
 #include "motion_comp.h"
 #include "bitstream.h"
@@ -45,6 +47,8 @@ static picture_t picture;
 static slice_t slice;
 static macroblock_t *mb;
 
+//global config struct
+mpeg2_config_t config;
 static uint_32 is_display_initialized = 0;
 static uint_32 is_sequence_needed = 1;
 
@@ -105,17 +109,23 @@ decode_find_header(uint_32 type,picture_t *picture)
 	}
 }
 
+static void decode_flush_buffer(void)
+{
+	mb_buffer_t mb_buffer;
+
+	mb_buffer_flush(&mb_buffer);
+
+	idct(&mb_buffer);
+	motion_comp(&picture,&mb_buffer);
+
+	//reset mb pointer for next slice
+	mb = mb_buffer.macroblocks;
+}
 
 void
 mpeg2_init(void)
 {
 	uint_32 frame_size;
-
-	//intialize the decoder state (ie the parser knows best)
-	parse_state_init(&picture);
-	idct_init();
-	motion_comp_init();
-	mb = mb_buffer_init(CHROMA_420);
 
 	//FIXME this should go somewhere after we discover how big
 	//the frame is, or size it so that it will be big enough for
@@ -124,8 +134,19 @@ mpeg2_init(void)
 	picture.current_frame[0] = malloc(frame_size);
 	picture.current_frame[1] = malloc(frame_size / 4);
 	picture.current_frame[2] = malloc(frame_size / 4);
+
+	//FIXME setup config properly
+	config.flags = MPEG2_MMX_ENABLE;
+
+	//intialize the decoder state (ie the parser knows best)
+	parse_state_init(&picture);
+	idct_init();
+	motion_comp_init();
+	mb = mb_buffer_init(CHROMA_420);
+
 }
 
+uint_32 frame_counter = 0;
 void
 mpeg2_decode(void) 
 {
@@ -135,7 +156,6 @@ mpeg2_decode(void)
 	uint_32 mb_width;
 	uint_32 code;
 	uint_32 i;
-	mb_buffer_t mb_buffer;
 
 	//
 	//decode one frame
@@ -153,7 +173,7 @@ mpeg2_decode(void)
 	parse_picture_header(&picture);
 
 	//XXX We only do I-frames now
-	if(picture.picture_coding_type != I_TYPE)
+	if( picture.picture_coding_type != I_TYPE) 
 		return;
 
 	last_mba = ((picture.coded_picture_height * picture.coded_picture_width) >> 8) - 1;
@@ -192,20 +212,21 @@ mpeg2_decode(void)
 
 			parse_macroblock(&picture,&slice,mb);
 			mb = mb_buffer_increment();
+
+			if(!mb)
+				decode_flush_buffer();
 		}
 		while(bitstream_show(23));
 	}
 	while(mba < last_mba);
 	
-	mb_buffer_flush(&mb_buffer);
-	idct(&mb_buffer);
-	motion_comp(&picture,&mb_buffer);
+	decode_flush_buffer();
 	display_frame(picture.current_frame);
-	//reset mb pointer for next slice
-	mb = mb_buffer.macroblocks;
 
 	if(bitstream_show(32) == SEQUENCE_END_CODE)
 		is_sequence_needed = 1;
+
+	printf("frame_counter = %d\n",frame_counter++);
 }
 
 uint_32 buf[2048/4];

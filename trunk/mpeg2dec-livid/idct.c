@@ -41,9 +41,13 @@
 /* right shift: (-2)>>1 == -1 , (-3)>>1 == -2               */
 
 #include <stdio.h>
+#include "config.h"
+#include "mpeg2.h"
 #include "mpeg2_internal.h"
+
 #include "mb_buffer.h"
 #include "idct.h"
+#include "idct_mmx.h"
 
 
 #define W1 2841 /* 2048*sqrt(2)*cos(1*pi/16) */
@@ -54,19 +58,18 @@
 #define W7 565  /* 2048*sqrt(2)*cos(7*pi/16) */
 
 
+// idct main entry point 
+void (*idct)(mb_buffer_t *mb_buffer);
+
+// private prototypes 
+static void idct_row(sint_16 *blk);
+static void idct_col(sint_16 *blk);
+static void idct_c(mb_buffer_t *mb_buffer);
+
+
 // Clamp to [-256,255]
 static sint_16 clip_tbl[1024]; /* clipping table */
 static sint_16 *clip;
-
-/* private prototypes */
-static void idct_row (sint_16 *blk);
-static void idct_col (sint_16 *blk);
-
-//FIXME remove this crap
-void Initialize_Reference_IDCT(void);
-void Reference_IDCT(sint_16 *block);
-//FIXME remove this crap
-
 
 void 
 idct_init(void)
@@ -77,6 +80,13 @@ idct_init(void)
 
   for (i= -512; i< 512; i++)
     clip[i] = (i < -256) ? -256 : ((i > 255) ? 255 : i);
+
+#ifdef __i386__
+	if(config.flags & MPEG2_MMX_ENABLE)
+		idct = idct_mmx;
+	else
+#endif
+		idct = idct_c;
 }
 
 /* row (horizontal) IDCT
@@ -227,15 +237,19 @@ static void idct_col(sint_16 *blk)
 
  
 void
-idct(mb_buffer_t *mb_buffer)
+idct_c(mb_buffer_t *mb_buffer)
 {
 	uint_32 i,j,k;
 	sint_16 *blk;
 	macroblock_t *mb = mb_buffer->macroblocks;
 	uint_32 num_blocks = mb_buffer->num_blocks;
+
 	
 	for(k=0;k<num_blocks;k++)
 	{
+		if(mb[k].skipped)
+			continue;
+
 		//XXX only 4:2:0 supported here
 		for(i=0;i<4;i++)
 		{

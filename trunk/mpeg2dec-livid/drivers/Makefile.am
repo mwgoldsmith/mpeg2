@@ -1,11 +1,7 @@
 EXTRA_DIST = mga_vid.c mga_vid_test.c mga_vid.h
 
-CFLAGS = -Werror -g -O2  -Wall -D__KERNEL__  -DMODULE \
+CFLAGS = -Werror -g -O2  -Wall -D__KERNEL__  -DMODULE @MOD_CFLAGS@\
 	 -include /usr/src/linux/include/linux/modversions.h
-
-SMP_CFLAGS = -Werror -g -O2  -Wall -D__SMP__ -D__KERNEL__  -DMODULE \
-	 -include /usr/src/linux/include/linux/modversions.h
-
 
 all: mga_vid.o mga_vid_test_g400
 
