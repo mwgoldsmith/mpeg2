@@ -72,7 +72,13 @@ static inline int get_macroblock_modes (slice_t * slice, int picture_structure,
 	DUMPBITS (bit_buf, bits, tab->len);
 	macroblock_modes = tab->modes;
 
-	if (frame_pred_frame_dct) {
+	if (picture_structure != FRAME_PICTURE) {
+	    if (macroblock_modes & MACROBLOCK_MOTION_FORWARD) {
+		macroblock_modes |= UBITS (bit_buf, 2) * MOTION_TYPE_BASE;
+		DUMPBITS (bit_buf, bits, 2);
+	    }
+	    return macroblock_modes;
+	} else if (frame_pred_frame_dct) {
 	    if (macroblock_modes & MACROBLOCK_MOTION_FORWARD)
 		macroblock_modes |= MC_FRAME;
 	    return macroblock_modes;
@@ -94,7 +100,13 @@ static inline int get_macroblock_modes (slice_t * slice, int picture_structure,
 	DUMPBITS (bit_buf, bits, tab->len);
 	macroblock_modes = tab->modes;
 
-	if (frame_pred_frame_dct) {
+	if (picture_structure != FRAME_PICTURE) {
+	    if (! (macroblock_modes & MACROBLOCK_INTRA)) {
+		macroblock_modes |= UBITS (bit_buf, 2) * MOTION_TYPE_BASE;
+		DUMPBITS (bit_buf, bits, 2);
+	    }
+	    return macroblock_modes;
+	} else if (frame_pred_frame_dct) {
 	    //if (! (macroblock_modes & MACROBLOCK_INTRA))
 	    macroblock_modes |= MC_FRAME;
 	    return macroblock_modes;
@@ -1015,7 +1027,7 @@ static inline void motion_block (void (** table) (uint8_t *, uint8_t *,
 				 int x_pred, int y_pred,
 				 uint8_t * dest[3], int dest_offset,
 				 uint8_t * src[3], int src_offset,
-				 int stride, int height)
+				 int stride, int height, int second_half)
 {
     int xy_half;
     uint8_t * src1;
@@ -1023,9 +1035,11 @@ static inline void motion_block (void (** table) (uint8_t *, uint8_t *,
 
     xy_half = ((y_pred & 1) << 1) | (x_pred & 1);
 
-    src1 = src[0] + src_offset + (x_pred >> 1) + (y_pred >> 1) * stride;
+    src1 = src[0] + src_offset + (x_pred >> 1) + (y_pred >> 1) * stride +
+	second_half * (stride << 3);
 
-    table[xy_half] (dest[0] + dest_offset, src1, stride, height);
+    table[xy_half] (dest[0] + dest_offset + second_half * (stride << 3),
+		    src1, stride, height);
 
     x_pred /= 2;
     y_pred /= 2;
@@ -1033,8 +1047,8 @@ static inline void motion_block (void (** table) (uint8_t *, uint8_t *,
     xy_half = ((y_pred & 1) << 1) | (x_pred & 1);
     stride >>= 1;
     height >>= 1;
-    src_offset >>= 1;
-    dest_offset >>= 1;
+    src_offset >>= 1;	src_offset += second_half * (stride << 2);
+    dest_offset >>= 1;	dest_offset += second_half * (stride << 2);
 
     src1 = src[1] + src_offset + (x_pred >> 1) + (y_pred >> 1) * stride;
     src2 = src[2] + src_offset + (x_pred >> 1) + (y_pred >> 1) * stride;
@@ -1044,9 +1058,9 @@ static inline void motion_block (void (** table) (uint8_t *, uint8_t *,
 }
 
 
-static void motion_frame (slice_t * slice, motion_t * motion,
-			  uint8_t * dest[3], int offset, int width,
-			  void (** table) (uint8_t *, uint8_t *, int, int))
+static void motion_fr_frame (slice_t * slice, motion_t * motion,
+			     uint8_t * dest[3], int offset, int width,
+			     void (** table) (uint8_t *, uint8_t *, int, int))
 {
 #define bit_buf (slice->bitstream_buf)
 #define bits (slice->bitstream_bits)
@@ -1064,22 +1078,21 @@ static void motion_frame (slice_t * slice, motion_t * motion,
     motion->pmv[1][1] = motion->pmv[0][1] = motion_y;
 
     motion_block (table, motion_x, motion_y, dest, offset,
-		  motion->ref[0], offset, width, 16);
+		  motion->ref[0], offset, width, 16, 0);
 #undef bit_buf
 #undef bits
 #undef bit_ptr
 }
 
-static void motion_field (slice_t * slice, motion_t * motion,
-			  uint8_t * dest[3], int offset, int width,
-			  void (** table) (uint8_t *, uint8_t *, int, int))
+static void motion_fr_field (slice_t * slice, motion_t * motion,
+			     uint8_t * dest[3], int offset, int width,
+			     void (** table) (uint8_t *, uint8_t *, int, int))
 {
 #define bit_buf (slice->bitstream_buf)
 #define bits (slice->bitstream_bits)
 #define bit_ptr (slice->bitstream_ptr)
-
-    int field_select;
     int motion_x, motion_y;
+    int field_select;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
     field_select = SBITS (bit_buf, 1);
@@ -1097,7 +1110,7 @@ static void motion_field (slice_t * slice, motion_t * motion,
 
     motion_block (table, motion_x, motion_y, dest, offset,
 		  motion->ref[0], offset + (field_select & width),
-		  width * 2, 8);
+		  width * 2, 8, 0);
 
     NEEDBITS (bit_buf, bits, bit_ptr);
     field_select = SBITS (bit_buf, 1);
@@ -1115,16 +1128,16 @@ static void motion_field (slice_t * slice, motion_t * motion,
 
     motion_block (table, motion_x, motion_y, dest, offset + width,
 		  motion->ref[0], offset + (field_select & width),
-		  width * 2, 8);
+		  width * 2, 8, 0);
 #undef bit_buf
 #undef bits
 #undef bit_ptr
 }
 
 static int motion_dmv_top_field_first;
-static void motion_dmv (slice_t * slice, motion_t * motion,
-			uint8_t * dest[3], int offset, int width,
-			void (** table) (uint8_t *, uint8_t *, int, int))
+static void motion_fr_dmv (slice_t * slice, motion_t * motion,
+			   uint8_t * dest[3], int offset, int width,
+			   void (** table) (uint8_t *, uint8_t *, int, int))
 {
 #define bit_buf (slice->bitstream_buf)
 #define bits (slice->bitstream_bits)
@@ -1152,59 +1165,213 @@ static void motion_dmv (slice_t * slice, motion_t * motion,
     dmv_y = get_dmv (slice);
 
     motion_block (mc_functions.put, motion_x, motion_y, dest, offset,
-		  motion->ref[0], offset, width * 2, 8);
+		  motion->ref[0], offset, width * 2, 8, 0);
 
     m = motion_dmv_top_field_first ? 1 : 3;
     other_x = ((motion_x * m + (motion_x > 0)) >> 1) + dmv_x;
     other_y = ((motion_y * m + (motion_y > 0)) >> 1) + dmv_y - 1;
     motion_block (mc_functions.avg, other_x, other_y, dest, offset,
-		  motion->ref[0], offset + width, width * 2, 8);
+		  motion->ref[0], offset + width, width * 2, 8, 0);
 
     motion_block (mc_functions.put, motion_x, motion_y, dest, offset + width,
-		  motion->ref[0], offset + width, width * 2, 8);
+		  motion->ref[0], offset + width, width * 2, 8, 0);
 
     m = motion_dmv_top_field_first ? 3 : 1;
     other_x = ((motion_x * m + (motion_x > 0)) >> 1) + dmv_x;
     other_y = ((motion_y * m + (motion_y > 0)) >> 1) + dmv_y + 1;
     motion_block (mc_functions.avg, other_x, other_y, dest, offset + width,
-		  motion->ref[0], offset, width * 2, 8);
+		  motion->ref[0], offset, width * 2, 8, 0);
 #undef bit_buf
 #undef bits
 #undef bit_ptr
 }
 
 // like motion_frame, but reuse previous motion vectors
-static void motion_reuse (slice_t * slice, motion_t * motion,
-			  uint8_t * dest[3], int offset, int width,
-			  void (** table) (uint8_t *, uint8_t *, int, int))
+static void motion_fr_reuse (slice_t * slice, motion_t * motion,
+			     uint8_t * dest[3], int offset, int width,
+			     void (** table) (uint8_t *, uint8_t *, int, int))
 {
     motion_block (table, motion->pmv[0][0], motion->pmv[0][1], dest, offset,
-		  motion->ref[0], offset, width, 16);
+		  motion->ref[0], offset, width, 16, 0);
 }
 
 // like motion_frame, but use null motion vectors
-static void motion_zero (slice_t * slice, motion_t * motion,
-			 uint8_t * dest[3], int offset, int width,
-			 void (** table) (uint8_t *, uint8_t *, int, int))
+static void motion_fr_zero (slice_t * slice, motion_t * motion,
+			    uint8_t * dest[3], int offset, int width,
+			    void (** table) (uint8_t *, uint8_t *, int, int))
 {
     motion_block (table, 0, 0, dest, offset,
-		  motion->ref[0], offset, width, 16);
+		  motion->ref[0], offset, width, 16, 0);
 }
 
-static int field_picture_flag = 0;
-
 // like motion_frame, but parsing without actual motion compensation
-static void motion_conceal (slice_t * slice, motion_t * motion)
+static void motion_fr_conceal (slice_t * slice, motion_t * motion)
 {
 #define bit_buf (slice->bitstream_buf)
 #define bits (slice->bitstream_bits)
 #define bit_ptr (slice->bitstream_ptr)
     int tmp;
 
-    if (field_picture_flag) {
-	NEEDBITS (bit_buf, bits, bit_ptr);
-	DUMPBITS (bit_buf, bits, 1); // vertical_field_select
-    }
+    NEEDBITS (bit_buf, bits, bit_ptr);
+    tmp = motion->pmv[0][0] + get_motion_delta (slice, motion->f_code[0]);
+    tmp = bound_motion_vector (tmp, motion->f_code[0]);
+    motion->pmv[1][0] = motion->pmv[0][0] = tmp;
+
+    NEEDBITS (bit_buf, bits, bit_ptr);
+    tmp = motion->pmv[0][1] + get_motion_delta (slice, motion->f_code[1]);
+    tmp = bound_motion_vector (tmp, motion->f_code[1]);
+    motion->pmv[1][1] = motion->pmv[0][1] = tmp;
+
+    DUMPBITS (bit_buf, bits, 1); // remove marker_bit
+#undef bit_buf
+#undef bits
+#undef bit_ptr
+}
+
+static void motion_fi_field (slice_t * slice, motion_t * motion,
+			     uint8_t * dest[3], int offset, int width,
+			     void (** table) (uint8_t *, uint8_t *, int, int))
+{
+#define bit_buf (slice->bitstream_buf)
+#define bits (slice->bitstream_bits)
+#define bit_ptr (slice->bitstream_ptr)
+    int motion_x, motion_y;
+    int field_select;
+
+    NEEDBITS (bit_buf, bits, bit_ptr);
+    field_select = UBITS (bit_buf, 1);
+    DUMPBITS (bit_buf, bits, 1);
+
+    NEEDBITS (bit_buf, bits, bit_ptr);
+    motion_x = motion->pmv[0][0] + get_motion_delta (slice, motion->f_code[0]);
+    motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
+    motion->pmv[1][0] = motion->pmv[0][0] = motion_x;
+
+    NEEDBITS (bit_buf, bits, bit_ptr);
+    motion_y = motion->pmv[0][1] + get_motion_delta (slice, motion->f_code[1]);
+    motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
+    motion->pmv[1][1] = motion->pmv[0][1] = motion_y;
+
+    motion_block (table, motion_x, motion_y, dest, offset,
+		  motion->ref[field_select], offset, width, 16, 0);
+#undef bit_buf
+#undef bits
+#undef bit_ptr
+}
+
+static void motion_fi_16x8 (slice_t * slice, motion_t * motion,
+			    uint8_t * dest[3], int offset, int width,
+			    void (** table) (uint8_t *, uint8_t *, int, int))
+{
+#define bit_buf (slice->bitstream_buf)
+#define bits (slice->bitstream_bits)
+#define bit_ptr (slice->bitstream_ptr)
+    int motion_x, motion_y;
+    int field_select;
+
+    NEEDBITS (bit_buf, bits, bit_ptr);
+    field_select = UBITS (bit_buf, 1);
+    DUMPBITS (bit_buf, bits, 1);
+
+    NEEDBITS (bit_buf, bits, bit_ptr);
+    motion_x = motion->pmv[0][0] + get_motion_delta (slice, motion->f_code[0]);
+    motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
+    motion->pmv[0][0] = motion_x;
+
+    NEEDBITS (bit_buf, bits, bit_ptr);
+    motion_y = motion->pmv[0][1] + get_motion_delta (slice, motion->f_code[1]);
+    motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
+    motion->pmv[0][1] = motion_y;
+
+    motion_block (table, motion_x, motion_y, dest, offset,
+		  motion->ref[field_select], offset, width, 8, 0);
+
+    NEEDBITS (bit_buf, bits, bit_ptr);
+    field_select = UBITS (bit_buf, 1);
+    DUMPBITS (bit_buf, bits, 1);
+
+    NEEDBITS (bit_buf, bits, bit_ptr);
+    motion_x = motion->pmv[1][0] + get_motion_delta (slice, motion->f_code[0]);
+    motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
+    motion->pmv[1][0] = motion_x;
+
+    NEEDBITS (bit_buf, bits, bit_ptr);
+    motion_y = motion->pmv[1][1] + get_motion_delta (slice, motion->f_code[1]);
+    motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
+    motion->pmv[1][1] = motion_y;
+
+    motion_block (table, motion_x, motion_y, dest, offset,
+		  motion->ref[field_select], offset, width, 8, 1);
+#undef bit_buf
+#undef bits
+#undef bit_ptr
+}
+
+static int current_field = 0;
+static void motion_fi_dmv (slice_t * slice, motion_t * motion,
+			   uint8_t * dest[3], int offset, int width,
+			   void (** table) (uint8_t *, uint8_t *, int, int))
+{
+#define bit_buf (slice->bitstream_buf)
+#define bits (slice->bitstream_bits)
+#define bit_ptr (slice->bitstream_ptr)
+    int motion_x, motion_y;
+    int dmv_x, dmv_y;
+
+    NEEDBITS (bit_buf, bits, bit_ptr);
+    motion_x = motion->pmv[0][0] + get_motion_delta (slice, motion->f_code[0]);
+    motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
+    motion->pmv[1][0] = motion->pmv[0][0] = motion_x;
+
+    NEEDBITS (bit_buf, bits, bit_ptr);
+    dmv_x = get_dmv (slice);
+
+    NEEDBITS (bit_buf, bits, bit_ptr);
+    motion_y = motion->pmv[0][1] + get_motion_delta (slice, motion->f_code[1]);
+    motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
+    motion->pmv[1][1] = motion->pmv[0][1] = motion_y;
+
+    NEEDBITS (bit_buf, bits, bit_ptr);
+    dmv_y = get_dmv (slice);
+
+    motion_block (mc_functions.put, motion_x, motion_y, dest, offset,
+		  motion->ref[current_field], offset, width, 16, 0);
+
+    motion_x = ((motion_x + (motion_x > 0)) >> 1) + dmv_x;
+    motion_y = ((motion_y + (motion_y > 0)) >> 1) + dmv_y +
+	2 * current_field - 1;
+    motion_block (mc_functions.avg, motion_x, motion_y, dest, offset,
+		  motion->ref[!current_field], offset, width, 16, 0);
+#undef bit_buf
+#undef bits
+#undef bit_ptr
+}
+
+static void motion_fi_reuse (slice_t * slice, motion_t * motion,
+			     uint8_t * dest[3], int offset, int width,
+			     void (** table) (uint8_t *, uint8_t *, int, int))
+{
+    motion_block (table, motion->pmv[0][0], motion->pmv[0][1], dest, offset,
+		  motion->ref[current_field], offset, width, 16, 0);
+}
+
+static void motion_fi_zero (slice_t * slice, motion_t * motion,
+			    uint8_t * dest[3], int offset, int width,
+			    void (** table) (uint8_t *, uint8_t *, int, int))
+{
+    motion_block (table, 0, 0, dest, offset,
+		  motion->ref[current_field], offset, width, 16, 0);
+}
+
+static void motion_fi_conceal (slice_t * slice, motion_t * motion)
+{
+#define bit_buf (slice->bitstream_buf)
+#define bits (slice->bitstream_bits)
+#define bit_ptr (slice->bitstream_ptr)
+    int tmp;
+
+    NEEDBITS (bit_buf, bits, bit_ptr);
+    DUMPBITS (bit_buf, bits, 1); // remove field_select
 
     NEEDBITS (bit_buf, bits, bit_ptr);
     tmp = motion->pmv[0][0] + get_motion_delta (slice, motion->f_code[0]);
@@ -1259,17 +1426,34 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     int width;
     uint8_t * dest[3];
     int offset;
+    uint8_t ** forward_ref[2];
 
     width = picture->coded_picture_width;
     offset = (code - 1) * width * 4;
 
-    if (picture->picture_structure != FRAME_PICTURE)
+    forward_ref[0] = picture->forward_reference_frame;
+    if (picture->picture_structure != FRAME_PICTURE) {
 	offset <<= 1;
+	forward_ref[1] = picture->forward_reference_frame;
+	current_field = (picture->picture_structure == BOTTOM_FIELD);
+	if ((picture->second_field) &&
+	    (picture->picture_coding_type != B_TYPE))
+	    forward_ref[picture->picture_structure == TOP_FIELD] =
+		picture->current_frame;
+	slice.f_motion.ref[1][0] = forward_ref[1][0] + offset * 4 + width;
+	slice.f_motion.ref[1][1] = forward_ref[1][1] + offset + (width >> 1);
+	slice.f_motion.ref[1][2] = forward_ref[1][2] + offset + (width >> 1);
+	slice.b_motion.ref[1][0] =
+	    picture->backward_reference_frame[0] + offset * 4 + width;
+	slice.b_motion.ref[1][1] =
+	    picture->backward_reference_frame[1] + offset + (width >> 1);
+	slice.b_motion.ref[1][2] =
+	    picture->backward_reference_frame[2] + offset + (width >> 1);
+    }
 
-    slice.f_motion.ref[0][0] =
-	picture->forward_reference_frame[0] + offset * 4;
-    slice.f_motion.ref[0][1] = picture->forward_reference_frame[1] + offset;
-    slice.f_motion.ref[0][2] = picture->forward_reference_frame[2] + offset;
+    slice.f_motion.ref[0][0] = forward_ref[0][0] + offset * 4;
+    slice.f_motion.ref[0][1] = forward_ref[0][1] + offset;
+    slice.f_motion.ref[0][2] = forward_ref[0][2] + offset;
     slice.f_motion.f_code[0] = picture->f_code[0][0];
     slice.f_motion.f_code[1] = picture->f_code[0][1];
     slice.f_motion.pmv[0][0] = slice.f_motion.pmv[0][1] = 0;
@@ -1301,22 +1485,6 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	// follow thru
     case TOP_FIELD:
 	width <<= 1;
-	field_picture_flag = 1;
-	if (picture->picture_coding_type != I_TYPE) {
-	    // we do not support P or B field pictures, clear them
-	    int i;
-	    for (i = 0; i < 16; i++) {
-		memset (dest[0], 0, width >> 1);	dest[0] += width;
-	    }
-	    for (i = 0; i < 8; i++) {
-		memset (dest[1], 0, width >> 2);	dest[1] += width >> 1;
-		memset (dest[2], 0, width >> 2);	dest[2] += width >> 1;
-	    }
-	    return 0;
-	}
-	break;
-    default:
-	field_picture_flag = 0;
     }
 
     //reset intra dc predictor
@@ -1355,9 +1523,12 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 
 	    int DCT_offset, DCT_stride;
 
-	    if (picture->concealment_motion_vectors)
-		motion_conceal (&slice, &slice.f_motion);
-	    else {
+	    if (picture->concealment_motion_vectors) {
+		if (picture->picture_structure == FRAME_PICTURE)
+		    motion_fr_conceal (&slice, &slice.f_motion);
+		else
+		    motion_fi_conceal (&slice, &slice.f_motion);
+	    } else {
 		slice.f_motion.pmv[0][0] = slice.f_motion.pmv[0][1] = 0;
 		slice.f_motion.pmv[1][0] = slice.f_motion.pmv[1][1] = 0;
 		slice.b_motion.pmv[0][0] = slice.b_motion.pmv[0][1] = 0;
@@ -1394,32 +1565,60 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	    }
 	} else {
 
-	    switch (macroblock_modes & MOTION_TYPE_MASK) {
-	    case MC_FRAME:
-		MOTION (motion_frame, macroblock_modes, slice, dest,
-			offset, width);
-		break;
+	    if (picture->picture_structure == FRAME_PICTURE)
+		switch (macroblock_modes & MOTION_TYPE_MASK) {
+		case MC_FRAME:
+		    MOTION (motion_fr_frame, macroblock_modes, slice,
+			    dest, offset, width);
+		    break;
 
-	    case MC_FIELD:
-		MOTION (motion_field, macroblock_modes, slice, dest,
-			offset, width);
-		break;
+		case MC_FIELD:
+		    MOTION (motion_fr_field, macroblock_modes, slice,
+			    dest, offset, width);
+		    break;
 
-	    case MC_DMV:
-		motion_dmv_top_field_first = picture->top_field_first;
-		MOTION (motion_dmv, MACROBLOCK_MOTION_FORWARD, slice, dest,
-			offset, width);
-		break;
+		case MC_DMV:
+		    motion_dmv_top_field_first = picture->top_field_first;
+		    MOTION (motion_fr_dmv, MACROBLOCK_MOTION_FORWARD, slice,
+			    dest, offset, width);
+		    break;
 
-	    case 0:
-		// non-intra mb without forward mv in a P picture
-		slice.f_motion.pmv[0][0] = slice.f_motion.pmv[0][1] = 0;
-		slice.f_motion.pmv[1][0] = slice.f_motion.pmv[1][1] = 0;
+		case 0:
+		    // non-intra mb without forward mv in a P picture
+		    slice.f_motion.pmv[0][0] = slice.f_motion.pmv[0][1] = 0;
+		    slice.f_motion.pmv[1][0] = slice.f_motion.pmv[1][1] = 0;
 
-		MOTION (motion_zero, MACROBLOCK_MOTION_FORWARD,
-			slice, dest, offset, width);
-		break;
-	    }
+		    MOTION (motion_fr_zero, MACROBLOCK_MOTION_FORWARD, slice,
+			    dest, offset, width);
+		    break;
+		}
+	    else
+		switch (macroblock_modes & MOTION_TYPE_MASK) {
+		case MC_FIELD:
+		    MOTION (motion_fi_field, macroblock_modes, slice,
+			    dest, offset, width);
+		    break;
+
+		case MC_16X8:
+		    MOTION (motion_fi_16x8, macroblock_modes, slice,
+			    dest, offset, width);
+		    break;
+
+		case MC_DMV:
+		    motion_dmv_top_field_first = picture->top_field_first;
+		    MOTION (motion_fi_dmv, MACROBLOCK_MOTION_FORWARD, slice,
+			    dest, offset, width);
+		    break;
+
+		case 0:
+		    // non-intra mb without forward mv in a P picture
+		    slice.f_motion.pmv[0][0] = slice.f_motion.pmv[0][1] = 0;
+		    slice.f_motion.pmv[1][0] = slice.f_motion.pmv[1][1] = 0;
+
+		    MOTION (motion_fi_zero, MACROBLOCK_MOTION_FORWARD, slice,
+			    dest, offset, width);
+		    break;
+		}
 
 	    //6.3.17.4 Coded block pattern
 	    if (macroblock_modes & MACROBLOCK_PATTERN) {
@@ -1492,16 +1691,24 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		slice.f_motion.pmv[1][0] = slice.f_motion.pmv[1][1] = 0;
 
 		do {
-		    MOTION (motion_zero, MACROBLOCK_MOTION_FORWARD,
-			    slice, dest, offset, width);
+		    if (picture->picture_structure == FRAME_PICTURE)
+			MOTION (motion_fr_zero, MACROBLOCK_MOTION_FORWARD,
+				slice, dest, offset, width);
+		    else
+			MOTION (motion_fi_zero, MACROBLOCK_MOTION_FORWARD,
+				slice, dest, offset, width);
 
 		    offset += 16;
 		    CHECK_DISPLAY;
 		} while (--mba_inc);
 	    } else {
 		do {
-		    MOTION (motion_reuse, macroblock_modes,
-			    slice, dest, offset, width);
+		    if (picture->picture_structure == FRAME_PICTURE)
+			MOTION (motion_fr_reuse, macroblock_modes,
+				slice, dest, offset, width);
+		    else
+			MOTION (motion_fi_reuse, macroblock_modes,
+				slice, dest, offset, width);
 
 		    offset += 16;
 		    CHECK_DISPLAY;
