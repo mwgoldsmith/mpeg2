@@ -31,7 +31,9 @@
 #include "libmpeg2/mpeg2.h"
 #include "display.h"
 
-uint_8 buf[2048];
+
+#define BUF_SIZE 2048
+uint_8 buf[BUF_SIZE];
 FILE *in_file;
 static uint_32 frame_counter = 0;
 
@@ -132,14 +134,14 @@ int main(int argc,char *argv[])
 		uint_32 bytes_read;
 		uint_32 num_frames;
 		
-		bytes_read = fread(buf,1,2048,in_file);
+		bytes_read = fread(buf,1,BUF_SIZE,in_file);
 		
 		num_frames = mpeg2_decode_data(buf, buf + bytes_read);
 
 		while(num_frames--)
 			print_fps(0);
 
-		if(bytes_read < 2048)
+		if(bytes_read < BUF_SIZE)
 		{
 			print_fps(1);
 			exit(0);
