@@ -29,26 +29,27 @@
 #include <stddef.h>
 #include <inttypes.h>
 
-#include "mmx.h"
 #include "yuv2rgb.h"
+#include "attributes.h"
+#include "mmx.h"
 
 /* hope these constant values are cache line aligned */
-uint64_t mmx_80w = 0x0080008000800080;
-uint64_t mmx_10w = 0x1010101010101010;
-uint64_t mmx_00ffw = 0x00ff00ff00ff00ff;
-uint64_t mmx_Y_coeff = 0x253f253f253f253f;
+uint64_t mmx_80w = 0x0080008000800080LL;
+uint64_t mmx_10w = 0x1010101010101010LL;
+uint64_t mmx_00ffw = 0x00ff00ff00ff00ffLL;
+uint64_t mmx_Y_coeff = 0x253f253f253f253fLL;
 
 /* hope these constant values are cache line aligned */
-uint64_t mmx_U_green = 0xf37df37df37df37d;
-uint64_t mmx_U_blue = 0x4093409340934093;
-uint64_t mmx_V_red = 0x3312331233123312;
-uint64_t mmx_V_green = 0xe5fce5fce5fce5fc;
+uint64_t mmx_U_green = 0xf37df37df37df37dLL;
+uint64_t mmx_U_blue = 0x4093409340934093LL;
+uint64_t mmx_V_red = 0x3312331233123312LL;
+uint64_t mmx_V_green = 0xe5fce5fce5fce5fcLL;
 
 /* hope these constant values are cache line aligned */
-uint64_t mmx_redmask = 0xf8f8f8f8f8f8f8f8;
-uint64_t mmx_grnmask = 0xfcfcfcfcfcfcfcfc;
-uint64_t mmx_grnshift = 0x03;
-uint64_t mmx_blueshift = 0x03;
+uint64_t mmx_redmask = 0xf8f8f8f8f8f8f8f8LL;
+uint64_t mmx_grnmask = 0xfcfcfcfcfcfcfcfcLL;
+uint64_t mmx_grnshift = 0x03LL;
+uint64_t mmx_blueshift = 0x03LL;
 
 #define movntq "movq" // for MMX-only processors
 //#define movntq "movntq" // use this for processors that have SSE or 3Dnow

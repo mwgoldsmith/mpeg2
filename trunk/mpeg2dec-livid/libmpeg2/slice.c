@@ -25,6 +25,7 @@
 #include <inttypes.h>
 
 #include "mpeg2_internal.h"
+#include "attributes.h"
 
 extern mc_functions_t mc_functions;
 extern void (* idct_block_copy) (int16_t * block, uint8_t * dest, int stride);

@@ -22,7 +22,7 @@
 
 typedef	union {
 	float			sf[4];	/* Single-precision (32-bit) value */
-} __attribute__ ((aligned (16))) sse_t;	/* On a 16 byte (128-bit) boundary */
+} ATTR_ALIGN(16) sse_t;	/* On a 16 byte (128-bit) boundary */
 
 
 #define	sse_i2r(op, imm, reg) \

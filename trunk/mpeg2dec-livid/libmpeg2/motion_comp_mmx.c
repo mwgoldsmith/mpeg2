@@ -26,6 +26,7 @@
 #include <inttypes.h>
 
 #include "mpeg2_internal.h"
+#include "attributes.h"
 #include "mmx.h"
 
 // some rounding constants
