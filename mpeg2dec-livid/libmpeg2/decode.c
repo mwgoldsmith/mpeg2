@@ -59,9 +59,9 @@ mpeg2_config_t config;
 static uint8_t chunk_buffer[224 * 1024 + 4];
 static uint32_t shift = 0;
 
-static uint32_t is_display_initialized = 0;
-static uint32_t is_sequence_needed = 1;
-
+static int is_display_initialized = 0;
+static int is_sequence_needed = 1;
+static int drop_flag = 0;
 
 void mpeg2_init (void)
 {
@@ -204,7 +204,10 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 	break;
 
     default:
-	if ((code < 0xb0) && code) {
+	if ((code >= 0xb0) || (!code))
+	    break;
+
+	if ((!drop_flag) || (picture.picture_coding_type != B_TYPE)) {
 	    uint8_t ** bar;
 
 	    is_frame_done = slice_process (&picture, code, buffer);
@@ -234,6 +237,11 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 
 	    if (is_frame_done)
 		output->flip_page ();
+
+#ifdef __i386__
+	    if (config.flags & MPEG2_MMX_ENABLE)
+		emms ();
+#endif
 	}
     }
 
@@ -289,4 +297,9 @@ void mpeg2_close (vo_functions_t * output)
 {
     if (is_display_initialized)
 	output->draw_frame (picture.backward_reference_frame);
+}
+
+void mpeg2_drop (int flag)
+{
+    drop_flag = flag;
 }
