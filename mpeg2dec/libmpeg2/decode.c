@@ -180,8 +180,8 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	mpeg2dec->code = mpeg2dec->buf_start[-1];
 	if ((unsigned) (mpeg2dec->code - 1) < 0xb0 - 1)
 	    goto next_chunk;
-    } else
-	process_header[mpeg2dec->code & 0x0b] (mpeg2dec);
+    } else if (process_header[mpeg2dec->code & 0x0b] (mpeg2dec))
+	return STATE_INVALID;
 
 #define RECEIVED(code,state) (((state) << 8) + (code))
 
