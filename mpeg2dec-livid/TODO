@@ -3,8 +3,7 @@
 
 * things we dont implement yet
 	* field pictures
-	* missing MC modes
-	* mpeg1 - do oddification, full-pixel MC, D pictures
+	* mpeg1 - full-pixel MC, D pictures, have to find test streams
 	* dont crash on bad streams, make sure we can resync after a while
 		* possible chunk buffer overflow (writing or reading back)
 		* destination macroblock overflow
@@ -15,6 +14,7 @@
 	* integrate idct_add and idct_copy into the main idct routine
 	* get rid of slice structure, put it into picture
 	* do yuv per sub-slice (probably big speed boost)
+	* pass pictures to libvo in decoding order not display order
 	* try different memory arrangements for pictures (yuyv, pitch, ...)
 
 * local optimizations
@@ -22,8 +22,10 @@
 	* improve MMX motion comp inner routines
 	* optimize DCT for very sparse input matrixes ?
 	* optimize startcode search loop ?
+	* bit parsing / DCT parsing optimizations
 
 * clean up
 	* clean up header file usage
+	* clean up DMV code
 
 * synchronization stuff 

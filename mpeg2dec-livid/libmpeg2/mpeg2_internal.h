@@ -114,7 +114,7 @@ typedef struct picture_s {
     int aspect_ratio_information;
     int frame_rate_code;
     int progressive_sequence;
-    int top_field_first;
+    int top_field_first; // this one is actually used for DMV MC
     int repeat_first_field;
     int progressive_frame;
 } picture_t;
