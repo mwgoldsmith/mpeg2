@@ -14,14 +14,17 @@ CFLAGS = -g -O2  -Wall -D__KERNEL__  -DMODULE @MOD_CFLAGS@\
 noinst_HEADERS = mga_vid.h
 
 if HAVE_MGA
-all: mga_vid.o mga_vid_test
+all: sis_vid.o mga_vid.o mga_vid_test
 endif
 
-mga_vid.o:
+mga_vid.o: mga_vid.c mga_vid.h
+	$(CC) $(CFLAGS) $(INCLUDES) -c $(basename $@).c
+
+sis_vid.o: sis_vid.c sis_vid.h
 	$(CC) $(CFLAGS) $(INCLUDES) -c $(basename $@).c
 
 
-mga_vid_test:
+mga_vid_test: mga_vid_test.c
 	$(CC) -g -O -Wall $(INCLUDES) -o $@ $@.c
 
 clean: 
