@@ -53,12 +53,12 @@ void * table_gU[256];
 int table_gV[256];
 void * table_bU[256];
 
-#define RGB(i)							\
+#define RGB(type,i)						\
 	U = pu[i];						\
 	V = pv[i];						\
-	r = table_rV[V];					\
-	g = (void *) (((uint8_t *)table_gU[U]) + table_gV[V]);	\
-	b = table_bU[U];
+	r = (type *) table_rV[V];				\
+	g = (type *) (((uint8_t *)table_gU[U]) + table_gV[V]);	\
+	b = (type *) table_bU[U];
 
 #define DST(py,dst,i)				\
 	Y = py[2*i];				\
@@ -87,23 +87,23 @@ static void yuv2rgb_c_32 (uint8_t * py_1, uint8_t * py_2,
     uint32_t * dst_1, * dst_2;
 
     width >>= 3;
-    dst_1 = _dst_1;
-    dst_2 = _dst_2;
+    dst_1 = (uint32_t *) _dst_1;
+    dst_2 = (uint32_t *) _dst_2;
 
     do {
-	RGB (0);
+	RGB (uint32_t, 0);
 	DST (py_1, dst_1, 0);
 	DST (py_2, dst_2, 0);
 
-	RGB (1);
+	RGB (uint32_t, 1);
 	DST (py_2, dst_2, 1);
 	DST (py_1, dst_1, 1);
 
-	RGB (2);
+	RGB (uint32_t, 2);
 	DST (py_1, dst_1, 2);
 	DST (py_2, dst_2, 2);
 
-	RGB (3);
+	RGB (uint32_t, 3);
 	DST (py_2, dst_2, 3);
 	DST (py_1, dst_1, 3);
 
@@ -126,23 +126,23 @@ static void yuv2rgb_c_24_rgb (uint8_t * py_1, uint8_t * py_2,
     uint8_t * dst_1, * dst_2;
 
     width >>= 3;
-    dst_1 = _dst_1;
-    dst_2 = _dst_2;
+    dst_1 = (uint8_t *) _dst_1;
+    dst_2 = (uint8_t *) _dst_2;
 
     do {
-	RGB (0);
+	RGB (uint8_t, 0);
 	DSTRGB (py_1, dst_1, 0);
 	DSTRGB (py_2, dst_2, 0);
 
-	RGB (1);
+	RGB (uint8_t, 1);
 	DSTRGB (py_2, dst_2, 1);
 	DSTRGB (py_1, dst_1, 1);
 
-	RGB (2);
+	RGB (uint8_t, 2);
 	DSTRGB (py_1, dst_1, 2);
 	DSTRGB (py_2, dst_2, 2);
 
-	RGB (3);
+	RGB (uint8_t, 3);
 	DSTRGB (py_2, dst_2, 3);
 	DSTRGB (py_1, dst_1, 3);
 
@@ -165,23 +165,23 @@ static void yuv2rgb_c_24_bgr (uint8_t * py_1, uint8_t * py_2,
     uint8_t * dst_1, * dst_2;
 
     width >>= 3;
-    dst_1 = _dst_1;
-    dst_2 = _dst_2;
+    dst_1 = (uint8_t *) _dst_1;
+    dst_2 = (uint8_t *) _dst_2;
 
     do {
-	RGB (0);
+	RGB (uint8_t, 0);
 	DSTBGR (py_1, dst_1, 0);
 	DSTBGR (py_2, dst_2, 0);
 
-	RGB (1);
+	RGB (uint8_t, 1);
 	DSTBGR (py_2, dst_2, 1);
 	DSTBGR (py_1, dst_1, 1);
 
-	RGB (2);
+	RGB (uint8_t, 2);
 	DSTBGR (py_1, dst_1, 2);
 	DSTBGR (py_2, dst_2, 2);
 
-	RGB (3);
+	RGB (uint8_t, 3);
 	DSTBGR (py_2, dst_2, 3);
 	DSTBGR (py_1, dst_1, 3);
 
@@ -205,23 +205,23 @@ static void yuv2rgb_c_16 (uint8_t * py_1, uint8_t * py_2,
     uint16_t * dst_1, * dst_2;
 
     width >>= 3;
-    dst_1 = _dst_1;
-    dst_2 = _dst_2;
+    dst_1 = (uint16_t *) _dst_1;
+    dst_2 = (uint16_t *) _dst_2;
 
     do {
-	RGB (0);
+	RGB (uint16_t, 0);
 	DST (py_1, dst_1, 0);
 	DST (py_2, dst_2, 0);
 
-	RGB (1);
+	RGB (uint16_t, 1);
 	DST (py_2, dst_2, 1);
 	DST (py_1, dst_1, 1);
 
-	RGB (2);
+	RGB (uint16_t, 2);
 	DST (py_1, dst_1, 2);
 	DST (py_2, dst_2, 2);
 
-	RGB (3);
+	RGB (uint16_t, 3);
 	DST (py_2, dst_2, 3);
 	DST (py_1, dst_1, 3);
 
@@ -272,7 +272,8 @@ static yuv2rgb_c_internal * yuv2rgb_c_init (int order, int bpp)
     case 32:
 	yuv2rgb = yuv2rgb_c_32;
 
-	table_32 = malloc ((197 + 2*682 + 256 + 132) * sizeof (uint32_t));
+	table_32 = (uint32_t *) malloc ((197 + 2*682 + 256 + 132) *
+					sizeof (uint32_t));
 
 	entry_size = sizeof (uint32_t);
 	table_r = table_32 + 197;
@@ -292,7 +293,7 @@ static yuv2rgb_c_internal * yuv2rgb_c_init (int order, int bpp)
     case 24:
 	yuv2rgb = (order == CONVERT_RGB) ? yuv2rgb_c_24_rgb : yuv2rgb_c_24_bgr;
 
-	table_8 = malloc ((256 + 2*232) * sizeof (uint8_t));
+	table_8 = (uint8_t *) malloc ((256 + 2*232) * sizeof (uint8_t));
 
 	entry_size = sizeof (uint8_t);
 	table_r = table_g = table_b = table_8 + 232;
@@ -305,7 +306,8 @@ static yuv2rgb_c_internal * yuv2rgb_c_init (int order, int bpp)
     case 16:
 	yuv2rgb = yuv2rgb_c_16;
 
-	table_16 = malloc ((197 + 2*682 + 256 + 132) * sizeof (uint16_t));
+	table_16 = (uint16_t *) malloc ((197 + 2*682 + 256 + 132) *
+					sizeof (uint16_t));
 
 	entry_size = sizeof (uint16_t);
 	table_r = table_16 + 197;

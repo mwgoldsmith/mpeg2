@@ -39,7 +39,7 @@ static vo_instance_t * internal_open (int setup (vo_instance_t *, int, int,
 {
     vo_instance_t * instance;
 
-    instance = malloc (sizeof (vo_instance_t));
+    instance = (vo_instance_t *) malloc (sizeof (vo_instance_t));
     if (instance == NULL)
 	return NULL;
 

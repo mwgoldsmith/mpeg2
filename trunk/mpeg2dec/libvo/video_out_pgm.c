@@ -88,7 +88,7 @@ static vo_instance_t * internal_open (void draw (vo_instance_t *,
 {
     pgm_instance_t * instance;
 
-    instance = malloc (sizeof (pgm_instance_t));
+    instance = (pgm_instance_t *) malloc (sizeof (pgm_instance_t));
     if (instance == NULL)
         return NULL;
 
