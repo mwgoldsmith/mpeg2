@@ -38,11 +38,15 @@ static uint_32 frame_counter = 0;
 static void sighandler(int sig) 
 {
 	struct timeval tv_end;
+	float elapsed;
 	
 	gettimeofday(&tv_end, NULL);
-	printf("Caught sig %d, %u frame in %ld seconds done ( %ld/sec. )\n", 
-		sig, frame_counter, tv_end.tv_sec - tv_beg.tv_sec, 
-		frame_counter / (tv_end.tv_sec - tv_beg.tv_sec));
+	
+	elapsed = (float)(1000000 * (tv_end.tv_sec - tv_beg.tv_sec)
+													+ (tv_end.tv_usec - tv_beg.tv_usec))/1000000.0;
+	
+	printf("\n %u frames in %5.2f seconds ( %5.3f fps )\n", 
+				 frame_counter, elapsed, (float)frame_counter / elapsed );
 
 	signal(sig, SIG_DFL);
 	raise(sig);
@@ -106,6 +110,7 @@ int main(int argc,char *argv[])
 		}
 	}
 
+	sighandler(0);
   return 0;
 }
 

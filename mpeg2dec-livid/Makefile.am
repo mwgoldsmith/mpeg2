@@ -18,12 +18,13 @@ mpeg2dec_DEPENDENCIES = libmpeg2.a @CONFIG_OBJS@
 
 EXTRA_mpeg2dec_SOURCES = display_gatos.c display_mga_vid.c display_x11.c\
 	display_xil.c idct_mmx.c idct_block_mmx.S idct_mlib.c\
-	motion_comp_mmx.c yuv2rgb.c yuv2rgb_mlib.c
+	motion_comp_mmx.c motion_comp_mlib.c yuv2rgb.c yuv2rgb_mlib.c
 
 noinst_HEADERS = config.h getvlc.h stats.h parse.h slice.h mb_buffer.h\
 	motion_comp.h inv_quantize.h mpeg2.h mpeg2_internal.h display.h idct.h\
 	old_config.h global.h old_crap.h mpeg2dec.h debug.h bitstream.h\
-	idct_mmx.h idct_mlib.h motion_comp_mmx.h yuv2rgb.h yuv2rgb_mlib.h
+	idct_mmx.h idct_mlib.h motion_comp_mmx.h motion_comp_mlib.h\
+	yuv2rgb.h yuv2rgb_mlib.h
 
 EXTRA_DIST = README Changelog 
 

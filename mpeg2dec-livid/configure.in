@@ -63,7 +63,7 @@ AC_ARG_ENABLE(mlib,
   enable_mlib=no, enable_mlib=yes)
 if test x$enable_mlib = xyes; then
   AC_CHECK_LIB(mlib, main,
-    [ EXTENSION_DRIVER="$EXTENSION_DRIVER yuv2rgb_mlib.o"
+    [ EXTENSION_DRIVER="$EXTENSION_DRIVER yuv2rgb_mlib.o motion_comp_mlib.o"
       LIB_CONFIG_OBJS="$LIB_CONFIG_OBJS idct_mlib.o"
       LIBS="$LIBS -L/opt/SUNWmlib/lib -R/opt/SUNWmlib/lib -lmlib"
       CFLAGS="$CFLAGS -I/opt/SUNWmlib/include"
