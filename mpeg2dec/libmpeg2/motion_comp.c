@@ -46,6 +46,11 @@ void mpeg2_mc_init (uint32_t accel)
 	mpeg2_mc = mpeg2_mc_altivec;
     else
 #endif
+#ifdef ARCH_ALPHA
+    if (accel & MPEG2_ACCEL_ALPHA)
+	mpeg2_mc = mpeg2_mc_alpha;
+    else
+#endif
 #ifdef LIBMPEG2_MLIB
     if (accel & MPEG2_ACCEL_MLIB)
 	mpeg2_mc = mpeg2_mc_mlib;

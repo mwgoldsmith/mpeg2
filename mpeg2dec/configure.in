@@ -57,6 +57,8 @@ elif test x"$GCC" = x"yes"; then
     sparc-* | sparc64-*)
 	OPT_CFLAGS="$CFLAGS -mcpu=ultrasparc -mvis -Wa,-Av9"
 	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
+    alpha*)
+	AC_DEFINE([ARCH_ALPHA],,[alpha architecture]);;
     esac
 elif test x"$CC" = x"tcc" -a x"`$CC -version 2>&1 | grep TenDRA`" != x""; then
     dnl TenDRA portability checking compiler
@@ -74,6 +76,8 @@ else
     sparc-sun-solaris*)
 	OPT_CFLAGS="$CFLAGS -xCC -fast -xO5"
 	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
+    alpha*)
+	AC_DEFINE([ARCH_ALPHA],,[alpha architecture]);;
     esac
 fi
 
