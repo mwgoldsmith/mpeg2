@@ -58,9 +58,7 @@ vo_functions_t video_out;
 //slice we will see in MP@ML streams.
 //(we make no pretenses ofdecoding anything more than that)
 static uint_8 chunk_buffer[65536 + 4];
-static uint_8 *chunk_end = chunk_buffer;
 static uint_32 shift = 0;
-static uint_32 has_sync = 0;
 
 static uint_32 is_display_initialized = 0;
 static uint_32 is_sequence_needed = 1;
@@ -77,7 +75,6 @@ mpeg2_init(vo_functions_t *foo)
 
 	//intialize the decoder state 
 	shift = 0;
-	has_sync = 0;
 	is_sequence_needed = 1;
 
 	header_state_init(&picture);
@@ -113,55 +110,6 @@ decode_allocate_image_buffers(picture_t *picture)
 	picture->forward_reference_frame[2] = picture->forward_reference_frame[1] + frame_size/4;
 }
 
-//
-// Buffer up to one the next start code. We process data one
-// "start code chunk" at a time
-//
-uint_32
-decode_buffer_chunk(uint_8 **start,uint_8 *end)
-{
-	uint_8 *cur;
-	uint_32 ret = 0;
-
-	cur = *start;
-
-	//Find an initial start code if we need to
-	if(!has_sync)
-	{
-		while((shift & 0xffffff) != 0x000001)
-		{
-			shift = (shift << 8) + *cur++;
-
-			if(cur >= end)
-				goto done;
-		}
-		has_sync = 1;
-
-		chunk_end = chunk_buffer;	
-		shift = 0;
-	}
-
-	do
-	{
-		if(cur >= end)
-			goto done;
-
-		*chunk_end++ = *cur;
-		shift = (shift << 8) + *cur++;
-	}
-	while((shift & 0xffffff) != 0x000001);
-	 
-	//FIXME remove
-	//printf("done chunk %d bytes\n",chunk_end - &chunk_buffer[0]);
-	chunk_end = chunk_buffer;	
-	ret = 1;
-
-done:
-	*start = cur;
-
-	return ret;
-}
-
 void
 decode_reorder_frames(void)
 {
@@ -188,89 +136,112 @@ decode_reorder_frames(void)
 	}
 }
 
-
-
-uint_32
-mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end) 
+int parse_chunk (int code, uint_8 * buffer)
 {
-	uint_32 code;
-	uint_32 ret = 0;
-	uint_32 is_frame_done = 0;
+	int is_frame_done = 0;
 
-	while(!(is_frame_done) && decode_buffer_chunk(&data_start,data_end))
+	if (is_sequence_needed && code != 0xb3)	/* b3 = sequence_header_code */
+		return 0;
+
+	stats_header (code, buffer);
+
+	switch (code)
 	{
-		code = chunk_buffer[0];
+	case 0x00:	/* picture_start_code */
+		header_process_picture_header (&picture, buffer);
+		decode_reorder_frames();
+		break;
 
-		if(is_sequence_needed && code != SEQUENCE_HEADER_CODE)
-			continue;
+	case 0xb3:	/* sequence_header_code */
+		header_process_sequence_header (&picture, buffer);
+		is_sequence_needed = 0;
 
-		stats_header (code, chunk_buffer + 1);
-
-		//deal with the header otherwise
-		if (code == SEQUENCE_HEADER_CODE)
+		if(!is_display_initialized)
 		{
-			header_process_sequence_header (&picture, chunk_buffer + 1);
-			is_sequence_needed = 0;
-
-			if(!is_display_initialized)
-			{
-				video_out.init(picture.coded_picture_width,picture.coded_picture_height,0,0);
-				decode_allocate_image_buffers(&picture);
-				is_display_initialized = 1;
-			}
+			video_out.init(picture.coded_picture_width,picture.coded_picture_height,0,0);
+			decode_allocate_image_buffers (&picture);
+			is_display_initialized = 1;
 		}
-		else if (code == PICTURE_START_CODE)
+		break;
+
+	case 0xb5:	/* extension_start_code */
+		header_process_extension (&picture, buffer);
+		break;
+
+	default:
+		if ((code < 0xb0) && code)
 		{
-			header_process_picture_header (&picture, chunk_buffer + 1);
-			decode_reorder_frames();
-		}
-		else if (code == EXTENSION_START_CODE)
-			header_process_extension (&picture, chunk_buffer + 1);
-		else if (code >= SLICE_START_CODE_MIN && code <= SLICE_START_CODE_MAX)
-		{
-			is_frame_done = slice_process (&picture, code, chunk_buffer + 1);
+			is_frame_done = slice_process (&picture, code, buffer);
 
 			if(picture.picture_coding_type == B_TYPE)
 			{
-				video_out.draw_slice(picture.throwaway_frame,chunk_buffer[0] - 1);
+				video_out.draw_slice (picture.throwaway_frame, code - 1);
 
-				picture.current_frame[0] = picture.throwaway_frame[0] - 
-					(chunk_buffer[0]) * 16 * picture.coded_picture_width;
-				picture.current_frame[1] = picture.throwaway_frame[1] - 
-					(chunk_buffer[0]) * 8 * picture.coded_picture_width/2;
-				picture.current_frame[2] = picture.throwaway_frame[2] - 
-					(chunk_buffer[0]) * 8 * picture.coded_picture_width/2;
+				picture.current_frame[0] = picture.throwaway_frame[0] -
+					code * 16 * picture.coded_picture_width;
+				picture.current_frame[1] = picture.throwaway_frame[1] -
+					code * 8 * picture.coded_picture_width/2;
+				picture.current_frame[2] = picture.throwaway_frame[2] -
+					code * 8 * picture.coded_picture_width/2;
 			}
 			else
 			{
 				uint_8 *foo[3];
 
-				foo[0] = picture.forward_reference_frame[0] + (chunk_buffer[0]-1) * 16 *
+				foo[0] = picture.forward_reference_frame[0] + (code-1) * 16 *
 					picture.coded_picture_width;
-				foo[1] = picture.forward_reference_frame[1] + (chunk_buffer[0]-1) * 8 *
+				foo[1] = picture.forward_reference_frame[1] + (code-1) * 8 *
 					picture.coded_picture_width/2;
-				foo[2] = picture.forward_reference_frame[2] + (chunk_buffer[0]-1) * 8 *
+				foo[2] = picture.forward_reference_frame[2] + (code-1) * 8 *
 					picture.coded_picture_width/2;
-				video_out.draw_slice(foo,chunk_buffer[0]-1);
+				video_out.draw_slice (foo, code-1);
 				//video_out.draw_frame(picture.forward_reference_frame);
 			}
-		}
 
-		//FIXME blah
-#if 0 //#ifdef __i386__
-		if (config.flags & MPEG2_MMX_ENABLE)
-			emms();
-#endif
-
-		if(is_frame_done)
-		{
-			video_out.flip_page();
-
-			is_frame_done = 0;
-
-			ret++;
+			if (is_frame_done)
+				video_out.flip_page();
 		}
 	}
 
-	return ret;
+	return is_frame_done;
 }
+
+uint_32 mpeg2_decode_data (uint_8 * current, uint_8 * end) 
+{
+	static uint_8 code = 0xff;
+	//static uint_8 chunk_buffer[65536];
+	static uint_8 *chunk_ptr = chunk_buffer;
+	//static uint_32 shift = 0;
+
+	uint_8 byte;
+	int ret = 0;
+
+	while (1)
+	{
+		if (current == end)
+			return ret;
+
+		while (1)
+		{
+			byte = *current++;
+			if (shift == 0x00000100)
+				break;
+			*chunk_ptr++ = byte;
+			shift = (shift | byte) << 8;
+
+			if (current == end)
+				return ret;
+		}
+
+		/* found start_code following chunk */
+
+		ret += parse_chunk (code, chunk_buffer);
+
+		/* done with header or slice, prepare for next one */
+
+		code = byte;
+		chunk_ptr = chunk_buffer;
+		shift = 0xffffff00;
+	}
+}
+
