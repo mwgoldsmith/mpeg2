@@ -1,5 +1,7 @@
+#define DISP
+
 /* 
- * video_out_x11.c, X11 interface                                               
+ * video_out_x11.c, X11 interface
  *
  *
  * Copyright (C) 1996, MPEG Software Simulation Group. All Rights Reserved. 
@@ -449,6 +451,7 @@ Terminate_Display_Process(void)
 static void 
 Display_Image(XImage *myximage, uint_8 *ImageData)
 {
+#ifdef DISP
 #ifdef SH_MEM
 	if (Shmem_Flag) 
 	{
@@ -462,6 +465,7 @@ Display_Image(XImage *myximage, uint_8 *ImageData)
 		XPutImage(mydisplay, mywindow, mygc, myximage, 0, 0, 0, 0, 
 				myximage->width, myximage->height);
 	}
+#endif
 }
 
 #ifdef HAVE_XV
@@ -483,11 +487,13 @@ flip_page_xv(void)
 			fprintf(stderr,"win resize: %dx%d\n",win_width,win_height);                
 		}
 
+#ifdef DISP
 		XvShmPutImage(mydisplay, xv_port, mywindow, mygc, xvimage1,
 		0, 0,  image_width, image_height,
 		0, 0,  win_width, win_height,
 		False);
 		XFlush(mydisplay);
+#endif
 		return;
 	}
 }
@@ -584,11 +590,13 @@ draw_frame_xv(uint_8 *src[])
 		src[2],image_width*image_height/4);
 		memcpy(xvimage1->data+image_width*image_height*5/4,
 		src[1],image_width*image_height/4);
+#ifdef DISP
 		XvShmPutImage(mydisplay, xv_port, mywindow, mygc, xvimage1,
 		0, 0,  image_width, image_height,
 		0, 0,  win_width, win_height,
 		False);
 		XFlush(mydisplay);
+#endif
 		return 0;  
 	}
 }

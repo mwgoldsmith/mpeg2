@@ -21,25 +21,6 @@
  *
  */
 
-//header start codes
-#define PICTURE_START_CODE      0x00
-#define SLICE_START_CODE_MIN    0x01
-#define SLICE_START_CODE_MAX    0xAF
-#define USER_DATA_START_CODE    0xB2
-#define SEQUENCE_HEADER_CODE    0xB3
-#define SEQUENCE_ERROR_CODE     0xB4
-#define EXTENSION_START_CODE    0xB5
-#define SEQUENCE_END_CODE       0xB7
-#define GROUP_START_CODE        0xB8
-#define SYSTEM_START_CODE_MIN   0xB9
-#define SYSTEM_START_CODE_MAX   0xFF
-
-#define ISO_END_CODE            0xB9
-#define PACK_START_CODE         0xBA
-#define SYSTEM_START_CODE       0xBB
-
-#define VIDEO_ELEMENTARY_STREAM 0xe0
-
 // macroblock type 
 #define MACROBLOCK_INTRA                        1
 #define MACROBLOCK_PATTERN                      2
