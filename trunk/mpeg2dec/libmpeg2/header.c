@@ -116,7 +116,8 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
     sequence->chroma_width = sequence->width >> 1;
     sequence->chroma_height = sequence->height >> 1;
 
-    sequence->flags = SEQ_FLAG_PROGRESSIVE_SEQUENCE;
+    sequence->flags = (SEQ_FLAG_PROGRESSIVE_SEQUENCE |
+		       SEQ_VIDEO_FORMAT_UNSPECIFIED);
 
     sequence->pixel_width = buffer[3] >> 4;	/* aspect ratio */
     sequence->frame_period = 0;
