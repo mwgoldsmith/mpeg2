@@ -46,7 +46,7 @@ static struct timeval tv_end;
 static float elapsed = 0;
 static float total_elapsed = 0;
 static uint_32 demux_dvd = 0;
-static vo_functions_t video_out;
+static vo_functions_t *video_out;
 
 static void print_fps(uint_32 final) 
 {
@@ -161,9 +161,13 @@ print_usage(char *argv[])
 	fprintf(stderr,"usage: %s [-o mode] [-s] file\n"
 	               "\t-s\tsystem stream (.vob file)\n"
 	               "\t-o\tvideo_output mode\n",argv[0]);
-	while (video_out_drivers[i++] != NULL) 
+
+	while (video_out_drivers[i] != NULL)
 	{
-		const vo_info_t *info = video_out_drivers[i]->get_info();
+		const vo_info_t *info;
+		
+		info = video_out_drivers[i++]->get_info();
+
 		fprintf(stderr, "\t\t\t%s\t%s\n", info->short_name, info->name);
 	}
 
@@ -174,33 +178,24 @@ static void
 handle_args (int argc, char *argv[])
 {
 	char c;
-
-	//default to standard xll output
-	video_out = video_out_x11;
+	uint_32 i;
 
 	while((c = getopt(argc,argv,"so:")) != EOF)
 	{
 		switch (c)
 		{
 			case 'o':
-				switch(optarg[0])
+				for (i=0; video_out_drivers[i] != NULL; i++)
 				{
-					case 'x':
-					 video_out = video_out_x11;
-					break;
-					case 'm':
-					 video_out = video_out_mga;
-					break;
-					case 's':
-					 video_out = video_out_sdl;
-					break;
-					case '3':
-					 video_out = video_out_3dfx;
-					break;
+					const vo_info_t *info = video_out_drivers[i]->get_info();
 
-					default:
-						fprintf(stderr,"Invalid video output mode");
-						print_usage(argv);
+					if (strcmp(info->short_name,optarg) == 0)
+						video_out = video_out_drivers[i];
+				}
+				if (video_out == NULL)
+ 				{
+					fprintf(stderr,"Invalid video driver: %s\n", optarg);
+					print_usage(argv);
 				}
 			break;
 
@@ -211,6 +206,12 @@ handle_args (int argc, char *argv[])
 			default:
 				print_usage(argv);
 		}
+	}
+
+	// -o not specified, use a default driver 
+	if (video_out == NULL)
+	{
+		video_out = video_out_drivers[0];
 	}
 
 	if (optind < argc)
@@ -237,7 +238,7 @@ int main(int argc,char *argv[])
 
 	signal(SIGINT, signal_handler);
 
-	mpeg2_init(&video_out);
+	mpeg2_init(video_out);
 
 	gettimeofday(&tv_beg, NULL);
 
