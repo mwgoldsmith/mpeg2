@@ -39,6 +39,8 @@ if test x"$GCC" = x"yes"; then
 	k6-*)   OPT_CFLAGS="$CFLAGS -mcpu=k6";;
 	esac
 	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
+    ppc-* | powerpc-*)
+	AC_DEFINE([ARCH_PPC],,[ppc architecture]);;
     sparc-*)
 	OPT_CFLAGS="$CFLAGS -mcpu=ultrasparc -mvis"
 	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
