@@ -30,7 +30,7 @@
    5f704 SG nn- nn- n SLICE
    5f744 SG OO- OO- O PICTURE B fields 2 TFF time_ref 13 offset 0/0 0/0
    655c4 SG oo- oo- o SLICE
-   6561c S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 943500 vbv 229376 picture 720x576 display 720x576 pixel 16x15
+   6561c S- --- --- - SEQUENCE_MODIFIED MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 943500 vbv 229376 picture 720x576 display 720x576 pixel 16x15
    65624 SG --- --- - GOP  2:14:43: 4
    65644 SG PP- mm- j PICTURE I fields 2 TFF time_ref 2 offset 0/0 0/0
    7ecc4 SG pp- mm- j SLICE
