@@ -218,7 +218,7 @@ static void x11_event (x11_instance_t * instance)
     }
 }
 
-static vo_frame_t * x11_get_frame (vo_instance_t * _instance, int flags)
+static void x11_set_frame (vo_instance_t * _instance, int flags)
 {
     x11_instance_t * instance;
     x11_frame_t * frame;
@@ -239,8 +239,6 @@ static vo_frame_t * x11_get_frame (vo_instance_t * _instance, int flags)
 	frame->rgb_stride <<= 1;
 	frame->yuv_stride <<= 1;
     }
-
-    return (vo_frame_t *) frame;
 }
 
 static void x11_copy_slice (vo_frame_t * _frame, uint8_t ** src)
@@ -392,7 +390,7 @@ static void xv_event (x11_instance_t * instance)
     }
 }
 
-static vo_frame_t * xv_get_frame (vo_instance_t * _instance, int flags)
+static void xv_set_frame (vo_instance_t * _instance, int flags)
 {
     x11_instance_t * instance;
     x11_frame_t * frame;
@@ -403,8 +401,6 @@ static vo_frame_t * xv_get_frame (vo_instance_t * _instance, int flags)
 
     while (frame->wait_completion)
 	xv_event (instance);
-
-    return (vo_frame_t *) frame;
 }
 
 static void xv_draw_frame (vo_frame_t * _frame)
@@ -545,14 +541,14 @@ static int common_setup (x11_instance_t * instance, int width, int height,
 	if (xv_alloc_frames (instance))
 	    return 1;
 	instance->vo.close = xv_close;
-	instance->vo.get_frame = xv_get_frame;
+	instance->vo.set_frame = xv_set_frame;
     } else
 #endif
     {
 	if (x11_alloc_frames (instance))
 	    return 1;
 	instance->vo.close = x11_close;
-	instance->vo.get_frame = x11_get_frame;
+	instance->vo.set_frame = x11_set_frame;
     }
 
     XMapWindow (instance->display, instance->window);
