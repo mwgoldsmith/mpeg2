@@ -14,9 +14,9 @@ AC_PROG_GCC_TRADITIONAL
 dnl GCC-specific flags
 if test x"$GCC" = x"yes"; then
 
-    dnl compiler warnings
-    OPT_CFLAGS="$CFLAGS -Wall -Werror"
-    AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS])
+    dnl compiler warnings (disabled to not confuse autoconf, test at the end)
+    dnl OPT_CFLAGS="$CFLAGS -Wall -Werror"
+    dnl AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS])
 
     dnl -O3
     changequote(<<,>>)
@@ -54,7 +54,7 @@ else
     mips-sgi-irix6.*)
 	OPT_CFLAGS="$CFLAGS -64"
 	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
-    sparc-solaris-*)
+    sparc-sun-solaris-*)
 	OPT_CFLAGS="$CFLAGS -xCC -fast -xO5"
 	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
     esac
@@ -82,5 +82,12 @@ dnl Checks for library functions.
 
 builtin([include],[libmpeg2/configure.incl])
 builtin([include],[libvo/configure.incl])
+
+
+if test x"$GCC" = x"yes"; then
+    dnl compiler warnings
+    OPT_CFLAGS="$CFLAGS -Wall -Werror"
+    AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS])
+fi
 
 AC_OUTPUT(Makefile autotools/Makefile include/Makefile test/Makefile doc/Makefile src/Makefile libmpeg2/Makefile libvo/Makefile)
