@@ -170,7 +170,7 @@ struct mpeg2dec_s {
     int alloc_index;
     int skip;
 
-    sequence_t last_sequence;
+    sequence_t new_sequence;
     sequence_t sequence;
     picture_t pictures[4];
     picture_t * picture;

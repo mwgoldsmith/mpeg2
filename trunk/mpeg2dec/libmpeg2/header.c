@@ -25,6 +25,7 @@
 
 #include <inttypes.h>
 #include <stdlib.h>	/* defines NULL */
+#include <string.h>	/* memcmp */
 
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
@@ -95,7 +96,7 @@ static void reset_info (mpeg2_info_t * info)
 int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
 {
     uint8_t * buffer = mpeg2dec->chunk_start;
-    sequence_t * sequence = &(mpeg2dec->sequence);
+    sequence_t * sequence = &(mpeg2dec->new_sequence);
     decoder_t * decoder = &(mpeg2dec->decoder);
     static unsigned int frame_period[9] = {
 	0, 1126125, 1125000, 1080000, 900900, 900000, 540000, 450450, 450000
@@ -105,10 +106,6 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
 
     if ((buffer[6] & 0x20) != 0x20)
 	return 1;	/* missing marker_bit */
-
-    mpeg2dec->last_sequence.width = -1;
-    if (mpeg2dec->state != STATE_INVALID)
-	mpeg2dec->last_sequence = mpeg2dec->sequence;
 
     i = (buffer[0] << 16) | (buffer[1] << 8) | buffer[2];
     sequence->display_width = sequence->picture_width = width = i >> 12;
@@ -168,16 +165,13 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
     mpeg2dec->state = STATE_SEQUENCE;
     mpeg2dec->display_offset_x = mpeg2dec->display_offset_y = 0;
 
-    mpeg2dec->info.sequence = sequence;
-    reset_info (&(mpeg2dec->info));
-
     return 0;
 }
 
 static int sequence_ext (mpeg2dec_t * mpeg2dec)
 {
     uint8_t * buffer = mpeg2dec->chunk_start;
-    sequence_t * sequence = &(mpeg2dec->sequence);
+    sequence_t * sequence = &(mpeg2dec->new_sequence);
     decoder_t * decoder = &(mpeg2dec->decoder);
     int width, height;
     uint32_t flags;
@@ -230,7 +224,7 @@ static int sequence_ext (mpeg2dec_t * mpeg2dec)
 static int sequence_display_ext (mpeg2dec_t * mpeg2dec)
 {
     uint8_t * buffer = mpeg2dec->chunk_start;
-    sequence_t * sequence = &(mpeg2dec->sequence);
+    sequence_t * sequence = &(mpeg2dec->new_sequence);
     uint32_t flags;
 
     if ((buffer[0] & 0xf0) != 0x20)
@@ -256,50 +250,28 @@ static int sequence_display_ext (mpeg2dec_t * mpeg2dec)
     return 0;
 }
 
-static void simplify (unsigned int * num, unsigned int * denum)
+static inline void finalize_sequence (sequence_t * sequence)
 {
-    int a, b, tmp;
-
-    a = *num;
-    b = *denum;
-    while (a) {
-	tmp = a;
-	a = b % tmp;
-	b = tmp;
-    }
-    *num /= b;
-    *denum /= b;
-}
-
-void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
-{
-    sequence_t * sequence = &(mpeg2dec->sequence);
+    int width;
+    int height;
 
     sequence->byte_rate *= 50;
 
     if (sequence->flags & SEQ_FLAG_MPEG2) {
-	int width;
-	int height;
-
 	switch (sequence->pixel_width) {
 	case 1:		/* square pixels */
-	    sequence->pixel_width = sequence->pixel_height = 1;
-	    return;
+	    sequence->pixel_width = sequence->pixel_height = 1;	return;
 	case 2:		/* 4:3 aspect ratio */
-	    width = 4; height = 3;
-	    break;
+	    width = 4; height = 3;	break;
 	case 3:		/* 16:9 aspect ratio */
-	    width = 16; height = 9;
-	    break;
+	    width = 16; height = 9;	break;
 	case 4:		/* 2.21:1 aspect ratio */
-	    width = 221; height = 100;
-	    break;
+	    width = 221; height = 100;	break;
 	default:	/* illegal */
-	    sequence->pixel_width = sequence->pixel_height = 0;
-	    return;
+	    sequence->pixel_width = sequence->pixel_height = 0;	return;
 	}
-	sequence->pixel_width = width * sequence->display_height;
-	sequence->pixel_height = height * sequence->display_width;
+	width *= sequence->display_height;
+	height *= sequence->display_width;
 
     } else {
 	if (sequence->byte_rate == 50 * 0x3ffff) 
@@ -307,22 +279,52 @@ void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
 
 	switch (sequence->pixel_width) {
 	case 0:	case 15:	/* illegal */
-	    sequence->pixel_width = sequence->pixel_height = 0;		break;
+	    sequence->pixel_width = sequence->pixel_height = 0;		return;
 	case 1:	/* square pixels */
-	    sequence->pixel_width = sequence->pixel_height = 1;		break;
+	    sequence->pixel_width = sequence->pixel_height = 1;		return;
 	case 3:	/* 720x576 16:9 */
-	    sequence->pixel_width = 64;	sequence->pixel_height = 45;	break;
+	    sequence->pixel_width = 64;	sequence->pixel_height = 45;	return;
 	case 6:	/* 720x480 16:9 */
-	    sequence->pixel_width = 32;	sequence->pixel_height = 27;	break;
+	    sequence->pixel_width = 32;	sequence->pixel_height = 27;	return;
 	case 12:	/* 720*480 4:3 */
-	    sequence->pixel_width = 8;	sequence->pixel_height = 9;	break;
+	    sequence->pixel_width = 8;	sequence->pixel_height = 9;	return;
 	default:
-	    sequence->pixel_height = 88 * sequence->pixel_width + 1171;
-	    sequence->pixel_width = 2000;
+	    height = 88 * sequence->pixel_width + 1171;
+	    width = 2000;
 	}
     }
 
-    simplify (&(sequence->pixel_width), &(sequence->pixel_height));
+    sequence->pixel_width = width;
+    sequence->pixel_height = height;
+    while (width) {	/* find greatest common divisor */
+	int tmp = width;
+	width = height % tmp;
+	height = tmp;
+    }
+    sequence->pixel_width /= height;
+    sequence->pixel_height /= height;
+}
+
+void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
+{
+    sequence_t * sequence = &(mpeg2dec->new_sequence);
+
+    finalize_sequence (sequence);
+
+    /*
+     * according to 6.1.1.6, repeat sequence headers should be
+     * identical to the original. However some DVDs dont respect that
+     * and have different bitrates in the repeat sequence headers. So
+     * we'll ignore that in the comparison and still consider these as
+     * repeat sequence headers.
+     */
+    mpeg2dec->sequence.byte_rate = sequence->byte_rate;
+    if (!memcmp (&(mpeg2dec->sequence), sequence, sizeof (sequence_t)))
+	mpeg2dec->state = STATE_SEQUENCE_REPEATED;
+    mpeg2dec->sequence = *sequence;
+
+    mpeg2dec->info.sequence = &(mpeg2dec->sequence);
+    reset_info (&(mpeg2dec->info));
 }
 
 int mpeg2_header_gop (mpeg2dec_t * mpeg2dec)
