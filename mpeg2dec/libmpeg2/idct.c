@@ -179,8 +179,8 @@ static void mpeg2_idct_copy_c (int16_t * block, uint8_t * dest,
 	dest[6] = CLIP (block[6]);
 	dest[7] = CLIP (block[7]);
 
-	block[0] = 0;	block[1] = 0;	block[2] = 0;	block[3] = 0;
-	block[4] = 0;	block[5] = 0;	block[6] = 0;	block[7] = 0;
+	((int32_t *)block)[0] = 0;	((int32_t *)block)[1] = 0;
+	((int32_t *)block)[2] = 0;	((int32_t *)block)[3] = 0;
 
 	dest += stride;
 	block += 8;
@@ -207,8 +207,8 @@ static void mpeg2_idct_add_c (const int last, int16_t * block,
 	    dest[6] = CLIP (block[6] + dest[6]);
 	    dest[7] = CLIP (block[7] + dest[7]);
 
-	    block[0] = 0;	block[1] = 0;	block[2] = 0;	block[3] = 0;
-	    block[4] = 0;	block[5] = 0;	block[6] = 0;	block[7] = 0;
+	    ((int32_t *)block)[0] = 0;	((int32_t *)block)[1] = 0;
+	    ((int32_t *)block)[2] = 0;	((int32_t *)block)[3] = 0;
 
 	    dest += stride;
 	    block += 8;
