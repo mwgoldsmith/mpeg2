@@ -239,6 +239,33 @@ static void handle_args (int argc, char ** argv)
 	in_file = stdin;
 }
 
+static void * malloc_hook (unsigned size, mpeg2_alloc_t reason)
+{
+    void * buf;
+
+    /*
+     * Invalid streams can refer to fbufs that have not been
+     * initialized yet. For example the stream could start with a
+     * picture type onther than I. Or it could have a B picture before
+     * it gets two reference frames. Or, some slices could be missing.
+     *
+     * Consequently, the output depends on the content 2 output
+     * buffers have when the sequence begins. In release builds, this
+     * does not matter (garbage in, garbage out), but in test code, we
+     * always zero all our output buffers to:
+     * - make our test produce deterministic outputs
+     * - hint checkergcc that it is fine to read from all our output
+     *   buffers at any time
+     */
+    if ((int)reason < 0) {
+        return NULL;
+    }
+    buf = mpeg2_malloc (size, (mpeg2_alloc_t)-1);
+    if (buf && (reason == MPEG2_ALLOC_YUV || reason == MPEG2_ALLOC_CONVERTED))
+        memset (buf, 0, size);
+    return buf;
+}
+
 static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 {
     const mpeg2_info_t * info;
@@ -735,6 +762,7 @@ int main (int argc, char ** argv)
     mpeg2dec = mpeg2_init ();
     if (mpeg2dec == NULL)
 	exit (1);
+    mpeg2_malloc_hooks (malloc_hook, NULL);
 
     if (demux_pva)
 	pva_loop ();
