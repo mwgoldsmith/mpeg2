@@ -4,7 +4,6 @@
 	* put back slice handling
 	* interlaced slices
 	* clean up frame_t declaration and usage (libvo/libmpeg2)
-	* libvo reentrancy
 	* libmpeg2 reentrancy
 	* x11auto output module
 
