@@ -65,6 +65,10 @@ typedef struct picture_s {
     int bitstream_bits;		/* used bits in working set */
     uint8_t * bitstream_ptr;	/* buffer with stream data */
 
+    uint8_t * dest[3];
+    int offset;
+    int stride;
+
     /* Motion vectors */
     /* The f_ and b_ correspond to the forward and backward motion */
     /* predictors */
