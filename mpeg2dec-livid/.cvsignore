@@ -2,7 +2,10 @@
 *~
 *.diff
 *.patch
+*.lo
+acinclude.m4
 mpeg2dec
+libmpeg2.la
 Makefile
 Makefile.in
 config.cache
@@ -20,3 +23,7 @@ stamp-h.in
 .deps
 aclocal.m4
 config.h.in
+ltconfig
+ltmain.sh
+libtool
+.libs
