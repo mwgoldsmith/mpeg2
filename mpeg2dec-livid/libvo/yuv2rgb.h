@@ -35,18 +35,22 @@ extern uint_32 matrix_coefficients;
 
 extern const sint_32 Inverse_Table_6_9[8][4];
 
-typedef void (*yuv2rgb_fun) (uint_8* image,
-			    const uint_8* py,
-			    const uint_8* pu,
-			    const uint_8* pv,
-			    const uint_32 h_size,
-			    const uint_32 v_size,
-			    const uint_32 rgb_stride,
-			    const uint_32 y_stride,
-			    const uint_32 uv_stride);
+typedef void (*yuv2rgb_fun) 
+(
+				uint_8* image,
+	const uint_8* py,
+	const uint_8* pu,
+	const uint_8* pv,
+	const uint_32 h_size,
+	const uint_32 v_size,
+	const uint_32 rgb_stride,
+	const uint_32 y_stride,
+	const uint_32 uv_stride
+);
 
 extern yuv2rgb_fun yuv2rgb;
 
 void yuv2rgb_init(uint_32 bpp, uint_32 mode);
+yuv2rgb_fun yuv2rgb_init_mmx(uint_32 bpp, uint_32 mode);
 
 

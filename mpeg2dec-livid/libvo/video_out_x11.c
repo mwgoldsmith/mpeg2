@@ -520,6 +520,8 @@ draw_slice_x11(uint_8 *src[], uint_32 slice_num)
 			image_width, 16, 
 			image_width*(bpp/8), image_width, image_width/2 );
 
+	//Display_Image(myximage, ImageData);
+	//getchar();
 	return 0;
 }
 

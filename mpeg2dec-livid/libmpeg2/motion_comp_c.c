@@ -124,9 +124,6 @@ MC_FUNC(avg,_y)
 MC_FUNC(put,_xy)
 MC_FUNC(avg,_xy)
 
-//#define copy(dest,src) dest = CLip (src)
-//#define add(dest,src) dest = clip (src+dest)
-     
 // idct copy/add functions
 
 static void motion_comp_idct_copy_c (uint_8 * dst, sint_16 * block, uint_32 stride)

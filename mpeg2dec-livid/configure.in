@@ -26,6 +26,7 @@ AC_SUBST(LIBMPEG2_CONFIG_OBJS)
 AC_SUBST(TOOLS_CFLAGS)
 AC_SUBST(LIBVO_CFLAGS)
 AC_SUBST(LIBVO_CONFIG_LIBS)
+AC_SUBST(LIBVO_CONFIG_OBJS)
 
 dnl 
 dnl Display driver probing...
@@ -129,7 +130,10 @@ case "$host_alias" in
 i?86-* | k?-*) dnl catch i386,i486,i586,i686,k6,k7
 	AC_DEFINE(__i386__) 
 	LIBMPEG2_CONFIG_OBJS="idct_mmx.lo idct_block_mmx.lo motion_comp_mmx.lo"
+	LIBVO_CONFIG_OBJS="yuv2rgb_mmx.lo" 
 	case "$host_alias" in
+		i386-*) dnl who are we kidding?
+			GLOBAL_CFLAGS="$GLOBAL_CFLAGS -march=m386";;
 		i486-*)
 			GLOBAL_CFLAGS="$GLOBAL_CFLAGS -march=m486";;
 		i586-*)
