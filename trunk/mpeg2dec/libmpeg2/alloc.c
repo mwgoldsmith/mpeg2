@@ -26,10 +26,10 @@
 
 #include "mpeg2.h"
 
-static void * (* malloc_hook) (unsigned size, int reason) = NULL;
+static void * (* malloc_hook) (unsigned size, mpeg2_alloc_t reason) = NULL;
 static int (* free_hook) (void * buf) = NULL;
 
-void * mpeg2_malloc (unsigned size, int reason)
+void * mpeg2_malloc (unsigned size, mpeg2_alloc_t reason)
 {
     char * buf;
 
@@ -59,7 +59,7 @@ void mpeg2_free (void * buf)
     free (*(((void **)buf) - 1));
 }
 
-void mpeg2_malloc_hooks (void * (* malloc) (unsigned, int), 
+void mpeg2_malloc_hooks (void * (* malloc) (unsigned, mpeg2_alloc_t),
                          int (* free) (void *))
 {
     malloc_hook = malloc;
