@@ -103,9 +103,8 @@ static void uyvy_copy (void * id, uint8_t * const * src, unsigned int v_offset)
     } while (height);
 }
 
-int mpeg2convert_uyvy (mpeg2_convert_stage_t stage, void * _id,
-		       const mpeg2_sequence_t * seq, int stride,
-		       uint32_t accel, void * arg,
+int mpeg2convert_uyvy (int stage, void * _id, const mpeg2_sequence_t * seq,
+		       int stride, uint32_t accel, void * arg,
 		       mpeg2_convert_init_t * result)
 {
     convert_uyvy_t * instance = (convert_uyvy_t *) _id;

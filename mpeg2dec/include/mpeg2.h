@@ -142,7 +142,7 @@ typedef enum {
     MPEG2_CONVERT_STRIDE = 1,
     MPEG2_CONVERT_START = 2
 } mpeg2_convert_stage_t;
-typedef int mpeg2_convert_t (mpeg2_convert_stage_t stage, void * id,
+typedef int mpeg2_convert_t (int stage, void * id,
 			     const mpeg2_sequence_t * sequence, int stride,
 			     uint32_t accel, void * arg,
 			     mpeg2_convert_init_t * result);
