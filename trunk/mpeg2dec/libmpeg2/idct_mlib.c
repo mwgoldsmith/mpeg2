@@ -32,6 +32,7 @@
 #include <inttypes.h>
 
 #include "mpeg2.h"
+#include "attributes.h"
 #include "mpeg2_internal.h"
 
 void mpeg2_idct_add_mlib (const int last, int16_t * const block,
