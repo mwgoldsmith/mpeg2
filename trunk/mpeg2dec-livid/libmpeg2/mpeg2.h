@@ -55,7 +55,11 @@ typedef struct mpeg2_frame_s
 	uint_8  *frame[3];
 } mpeg2_frame_t;
 
-//mpeg2_frame_t* mpeg2_decode_frame (char *new_data, u_int new_data_len) 
-//void mpeg2_init(mpeg2_config_t *config);
-void mpeg2_init(void);
-mpeg2_frame_t *mpeg2_decode_frame(void);
+typedef struct mpeg2_display_s
+{
+	void (*init)(uint_32 width, uint_32 height);
+	void (*draw_frame)(uint_8 *src[]);
+} mpeg2_display_t;
+
+void mpeg2_init(mpeg2_display_t*);
+uint_32 mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end);

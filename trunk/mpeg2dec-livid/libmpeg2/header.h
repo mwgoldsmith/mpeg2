@@ -21,5 +21,9 @@
  *
  */
  
-uint_32 slice_process(picture_t *picture,uint_8 *slice_data);
-void slice_init(void);
+void header_state_init(picture_t *picture);
+void header_process_picture_header(picture_t *picture);
+void header_process_sequence_header(picture_t *picture);
+void header_process_gop_header(picture_t *picture);
+void header_process_extension(picture_t *picture);
+void header_process_user_data(void);

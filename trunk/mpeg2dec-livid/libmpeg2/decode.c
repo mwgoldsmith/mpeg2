@@ -36,7 +36,8 @@
 #include "motion_comp.h"
 #include "bitstream.h"
 #include "idct.h"
-#include "parse.h"
+#include "header.h"
+#include "slice.h"
 #include "display.h"
 
 #ifdef __i386__
@@ -45,113 +46,114 @@
 
 //this is where we keep the state of the decoder
 static picture_t picture;
-static slice_t slice;
-static macroblock_t mb;
-//storage for dct coded blocks plus one row and column of overshoot
-static sint_16 y_blocks[4 * 64 + 16];
-static sint_16 cr_blocks[64 + 16];
-static sint_16 cb_blocks[64 + 16];
 
 //global config struct
 mpeg2_config_t config;
-//frame structure to pass back to caller
-mpeg2_frame_t mpeg2_frame;
 
+//pointers to the display interface functions
+static mpeg2_display_t mpeg2_display;
+
+//the current start code chunk we are working on
+uint_8 chunk_buffer[65536 + 4];
+uint_8 *chunk_end = chunk_buffer;
+uint_32 shift = 0;
+uint_32 has_sync = 0;
+
+static uint_32 is_display_initialized = 0;
 static uint_32 is_sequence_needed = 1;
 
-static void find_next_start_code()
-{
-	uint_32 code;
-
-	bitstream_byte_align();
-  while ((code = bitstream_show(24))!=0x01L)
-	{
-		//fprintf(stderr,"tried %08x\n",code);
-    bitstream_flush(8);
-	}
-}
-
-//find a picture header and parse anything else we happen to find 
-//on the way
-//FIXME this is crap
-uint_32
-decode_find_header(uint_32 type,picture_t *picture)
-{
-	uint_32 code;
-
-	while(1)
-	{
-
-		//printf("looking for %08x\n",type);
-		// look for next_start_code 
-		find_next_start_code();
-		code = bitstream_get(32);
-	
-		//we found the header we're looking for
-		if(code == type)
-			return code;
-
-		//we're looking for a slice header 
-		if(code <= SLICE_START_CODE_MAX && code >= SLICE_START_CODE_MIN &&
-				type == SLICE_START_CODE_MIN)
-			return code;
-		
-		//deal with the header otherwise
-		switch (code)
-		{
-			case GROUP_START_CODE:
-				parse_gop_header(picture);
-				break;
-			case USER_DATA_START_CODE:
-				parse_user_data();
-				break;
-			case EXTENSION_START_CODE:
-				parse_extension(picture);
-				break;
-			case SEQUENCE_HEADER_CODE: 
-				parse_sequence_header(picture); 
-			break;
-
-			//FIXME add in the other strange extension headers
-			default:
-			//	fprintf(stderr,"Unsupported header 0x%08x\n",code);
-		}
-	}
-}
+//FIXME obsolete need to clean up
+//frame structure to pass back to caller
+static mpeg2_frame_t mpeg2_frame;
 
 void
-mpeg2_init(void)
+mpeg2_init(mpeg2_display_t *foo)
 {
 	uint_32 frame_size;
+
 
 	//FIXME this should go somewhere after we discover how big
 	//the frame is, or size it so that it will be big enough for
 	//all cases
+
+	// We also make sure the frames are 16 byte aligned
 	frame_size = 720 * 576;
-	picture.throwaway_frame[0] = malloc(frame_size);
-	picture.throwaway_frame[1] = malloc(frame_size / 4);
-	picture.throwaway_frame[2] = malloc(frame_size / 4);
-	picture.backward_reference_frame[0] = malloc(frame_size);
-	picture.backward_reference_frame[1] = malloc(frame_size / 4);
-	picture.backward_reference_frame[2] = malloc(frame_size / 4);
-	picture.forward_reference_frame[0] = malloc(frame_size);
-	picture.forward_reference_frame[1] = malloc(frame_size / 4);
-	picture.forward_reference_frame[2] = malloc(frame_size / 4);
+
+	picture.throwaway_frame[0] = 
+		(uint_8*)(((uint_32)malloc(frame_size  + frame_size/2 + 16) + 15) & ~0xf);
+	picture.throwaway_frame[1] = picture.throwaway_frame[0] + frame_size;
+	picture.throwaway_frame[2] = picture.throwaway_frame[1] + frame_size/4;
+
+	picture.backward_reference_frame[0] = 
+		(uint_8*)(((uint_32)malloc(3 * frame_size + 16) + 15) & ~0xf);
+	picture.backward_reference_frame[1] = picture.backward_reference_frame[0] + frame_size;
+	picture.backward_reference_frame[2] = picture.backward_reference_frame[1] + frame_size/4;
+	picture.forward_reference_frame[0] = picture.backward_reference_frame[2] + frame_size/4;
+	picture.forward_reference_frame[1] = picture.forward_reference_frame[0] + frame_size;
+	picture.forward_reference_frame[2] = picture.forward_reference_frame[1] + frame_size/4;
 
 	//FIXME setup config properly
 	config.flags = MPEG2_MMX_ENABLE;
 	//config.flags = 0;
 
-	mb.y_blocks = y_blocks;
-	mb.cr_blocks = cr_blocks;
-	mb.cb_blocks = cb_blocks;
+	//copy the display interface function pointers
+	mpeg2_display = *foo;
 
-	//intialize the decoder state (ie the parser knows best)
-	parse_state_init(&picture);
+	//intialize the decoder state 
+	header_state_init(&picture);
+	slice_init();
 	idct_init();
 	motion_comp_init();
 }
 
+//
+// Buffer up to one the next start code. We process data one
+// "start code chunk" at a time
+//
+uint_32
+decode_buffer_chunk(uint_8 **start,uint_8 *end)
+{
+	uint_8 *cur;
+	uint_32 ret = 0;
+
+	cur = *start;
+
+	//Find an initial start code if we need to
+	if(!has_sync)
+	{
+		while((shift & 0xffffff) != 0x000001)
+		{
+			shift = (shift << 8) + *cur++;
+
+			if(cur >= end)
+				goto done;
+		}
+		has_sync = 1;
+
+		chunk_end = chunk_buffer;	
+		shift = 0;
+	}
+
+	do
+	{
+		if(cur >= end)
+			goto done;
+
+		*chunk_end++ = *cur;
+		shift = (shift << 8) + *cur++;
+	}
+	while((shift & 0xffffff) != 0x000001);
+	 
+	//FIXME remove
+	//printf("done chunk %d bytes\n",chunk_end - &chunk_buffer[0]);
+	chunk_end = chunk_buffer;	
+	ret = 1;
+
+done:
+	*start = cur;
+
+	return ret;
+}
 
 void
 decode_reorder_frames(void)
@@ -185,132 +187,85 @@ decode_reorder_frames(void)
 }
 
 
-
-mpeg2_frame_t*
-mpeg2_decode_frame (void) 
+uint_32
+mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end) 
 {
-	uint_32 mba;      //macroblock address
-	uint_32 last_mba; //last macroblock in frame
-	uint_32 prev_macroblock_type = 0; 
-	uint_32 mba_inc;
-	uint_32 mb_width;
 	uint_32 code;
-	uint_32 i;
+	uint_32 ret = 0;
+	uint_32 is_frame_done = 0;
 
-	//
-	//decode one frame
-	//
-	//
-	if(is_sequence_needed)
+	while(!(is_frame_done) && decode_buffer_chunk(&data_start,data_end))
 	{
-		decode_find_header(SEQUENCE_HEADER_CODE,&picture);
-		parse_sequence_header(&picture);
-		is_sequence_needed = 0;
-	}
+		code = chunk_buffer[0];
 
-	
-	decode_find_header(PICTURE_START_CODE,&picture);
-	parse_picture_header(&picture);
+		if(is_sequence_needed && code != SEQUENCE_HEADER_CODE)
+			continue;
 
-	decode_reorder_frames();
+		bitstream_init(chunk_buffer);
+		bitstream_get(8);
 
-	last_mba = ((picture.coded_picture_height * picture.coded_picture_width) >> 8) - 1;
-	mb_width = picture.coded_picture_width >> 4;
-
-
-	do
-	{
-		//find a slice start
-		code = decode_find_header(SLICE_START_CODE_MIN,&picture);
-
-		mba = ((code &0xff) - 1) * mb_width - 1;
-		
-		parse_reset_pmv(&slice);
-		parse_slice_header(&picture,&slice);
-		do
+		//deal with the header otherwise
+		if (code == SEQUENCE_HEADER_CODE)
 		{
-			mba_inc = Get_macroblock_address_increment();
-
-			if(mba_inc > 1)
-			{
-				//FIXME: this should be a function in parse.c instead
-				//reset intra dc predictor on skipped block
-				slice.dc_dct_pred[0]=slice.dc_dct_pred[1]=slice.dc_dct_pred[2]=
-					1<<(picture.intra_dc_precision + 7);
-
-				mb.coded_block_pattern = 0;
-				mb.skipped = 1;
-
-				//handling of skipped mb's differs between P_TYPE and B_TYPE
-				//pictures
-				if(picture.picture_coding_type == P_TYPE)
-				{
-					parse_reset_pmv(&slice);
-					memset(mb.f_motion_vectors[0],0,8);
-					mb.macroblock_type = MACROBLOCK_MOTION_FORWARD;
-
-					for(i=0; i< mba_inc - 1; i++)
-					{
-						mb.mba = ++mba;
-						motion_comp(&picture,&mb);
-					}
-				}
-				else
-				{
-					memcpy(mb.f_motion_vectors[0],slice.f_pmv,8);
-					memcpy(mb.b_motion_vectors[0],slice.b_pmv,8);
-					mb.macroblock_type = prev_macroblock_type;
-
-					for(i=0; i< mba_inc - 1; i++)
-					{
-						mb.mba = ++mba;
-						motion_comp(&picture,&mb);
-					}
-				}
-				mb.skipped = 0;
-			}
-			
-			mb.mba = ++mba; 
-
-			parse_macroblock(&picture,&slice,&mb);
-
-			//we store the last macroblock mv flags, as skipped b-frame blocks
-			//inherit them
-			prev_macroblock_type = mb.macroblock_type & (MACROBLOCK_MOTION_FORWARD | MACROBLOCK_MOTION_BACKWARD);
-
-			idct(&mb);
-			motion_comp(&picture,&mb);
-
+			header_process_sequence_header(&picture); 
+			is_sequence_needed = 0;
 		}
-		while(bitstream_show(23));
-	}
-	while(mba < last_mba);
-	
-	//FIXME blah
+		else if (code == PICTURE_START_CODE)
+		{
+			header_process_picture_header(&picture);
+			decode_reorder_frames();
+		}
+		else if (code == EXTENSION_START_CODE)
+			header_process_extension(&picture);
+		else if (code == GROUP_START_CODE)
+			header_process_gop_header(&picture);
+		else if (code == USER_DATA_START_CODE)
+			header_process_user_data();
+		else if (code >= SLICE_START_CODE_MIN && code <= SLICE_START_CODE_MAX)
+			is_frame_done = slice_process(&picture,chunk_buffer);
+
+		//FIXME blah
 #ifdef __i386__
-	emms();
+		emms();
 #endif
 
-	//decide which frame to send to the display
-	if(picture.picture_coding_type == B_TYPE)
-	{
-		mpeg2_frame.frame[0] = picture.throwaway_frame[0];
-		mpeg2_frame.frame[1] = picture.throwaway_frame[1];
-		mpeg2_frame.frame[2] = picture.throwaway_frame[2];
+		if(is_frame_done)
+		{
+			//decide which frame to send to the display
+			if(picture.picture_coding_type == B_TYPE)
+			{
+				mpeg2_frame.frame[0] = picture.throwaway_frame[0];
+				mpeg2_frame.frame[1] = picture.throwaway_frame[1];
+				mpeg2_frame.frame[2] = picture.throwaway_frame[2];
+			}
+			else
+			{
+				mpeg2_frame.frame[0] = picture.forward_reference_frame[0];
+				mpeg2_frame.frame[1] = picture.forward_reference_frame[1];
+				mpeg2_frame.frame[2] = picture.forward_reference_frame[2];
+			}
+
+			mpeg2_frame.width = picture.coded_picture_width;
+			mpeg2_frame.height = picture.coded_picture_height;
+
+			if(bitstream_show(32) == SEQUENCE_END_CODE)
+				is_sequence_needed = 1;
+
+			is_frame_done = 0;
+
+			//FIXME
+			//we can't initialize the display until we know how big the picture is
+			if(!is_display_initialized)
+			{
+				mpeg2_display.init(mpeg2_frame.width,mpeg2_frame.height);
+				is_display_initialized = 1;
+			}
+			mpeg2_display.draw_frame(mpeg2_frame.frame);
+			ret++;
+		}
 	}
-	else
-	{
-		mpeg2_frame.frame[0] = picture.forward_reference_frame[0];
-		mpeg2_frame.frame[1] = picture.forward_reference_frame[1];
-		mpeg2_frame.frame[2] = picture.forward_reference_frame[2];
-	}
 
-	mpeg2_frame.width = picture.coded_picture_width;
-	mpeg2_frame.height = picture.coded_picture_height;
-
-	if(bitstream_show(32) == SEQUENCE_END_CODE)
-		is_sequence_needed = 1;
-
-	return &mpeg2_frame;
+	return ret;
 }
+
 
