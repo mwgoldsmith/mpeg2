@@ -30,201 +30,129 @@
 #include <stdlib.h>
 
 #include "alpha_asm.h"
+#include "attributes.h"
 
 #define W1 2841 /* 2048*sqrt (2)*cos (1*pi/16) */
 #define W2 2676 /* 2048*sqrt (2)*cos (2*pi/16) */
 #define W3 2408 /* 2048*sqrt (2)*cos (3*pi/16) */
-#define W4 2048 /* 2048*sqrt (2)*cos (4*pi/16) */
 #define W5 1609 /* 2048*sqrt (2)*cos (5*pi/16) */
 #define W6 1108 /* 2048*sqrt (2)*cos (6*pi/16) */
-#define W7 565	/* 2048*sqrt (2)*cos (7*pi/16) */
-#define ROW_SHIFT 8
-#define COL_SHIFT 17
+#define W7 565  /* 2048*sqrt (2)*cos (7*pi/16) */
 
 static uint8_t clip_lut[1024];
 #define CLIP(i) ((clip_lut+384)[(i)])
 
-/* 0: all entries 0, 1: only first entry nonzero, 2: otherwise	*/
-static inline int idct_row(int16_t *row)
+#if 0
+#define BUTTERFLY(t0,t1,W0,W1,d0,d1)	\
+do {					\
+    t0 = W0*d0 + W1*d1;			\
+    t1 = W0*d1 - W1*d0;			\
+} while (0)
+#else
+#define BUTTERFLY(t0,t1,W0,W1,d0,d1)	\
+do {					\
+    int tmp = W0 * (d0 + d1);		\
+    t0 = tmp + (W1 - W0) * d1;		\
+    t1 = tmp - (W1 + W0) * d0;		\
+} while (0)
+#endif
+
+static void inline idct_row (int16_t * const block)
 {
-    int_fast32_t a0, a1, a2, a3, b0, b1, b2, b3, t;
     uint64_t l, r;
-    l = ldq(row);
-    r = ldq(row + 4);
+    int_fast32_t d0, d1, d2, d3;
+    int_fast32_t a0, a1, a2, a3, b0, b1, b2, b3;
+    int_fast32_t t0, t1, t2, t3;
 
-    if (l == 0 && r == 0)
-	return 0;
+    l = ldq (block);
+    r = ldq (block + 4);
 
-    a0 = 1 << (ROW_SHIFT - 1);
-
-    t = sextw(l);
-    if (t)
-	a0 += W4 * t;
-
-    if (((l & ~0xffffUL) | r) == 0) {
-	a0 >>= ROW_SHIFT;
-	a0 = (uint16_t) a0;
-	a0 |= a0 << 16;
-	a0 |= a0 << 32;
-	
-	stq(a0, row);
-	stq(a0, row + 4);
-	return 1;
+    /* shortcut */
+    if (likely (!((l & ~0xffffUL) | r))) {
+	uint64_t tmp = (uint16_t) (l << 3);
+	tmp |= tmp << 16;
+	tmp |= tmp << 32;
+	((int32_t *)block)[0] = tmp;
+	((int32_t *)block)[1] = tmp;
+	((int32_t *)block)[2] = tmp;
+	((int32_t *)block)[3] = tmp;
+	return;
     }
 
-    a1 = a0;
-    a2 = a0;
-    a3 = a0;
+    d0 = (sextw (l) << 11) + 128;
+    d1 = sextw (extwl (l, 2));
+    d2 = sextw (extwl (l, 4)) << 11;
+    d3 = sextw (extwl (l, 6));
+    t0 = d0 + d2;
+    t1 = d0 - d2;
+    BUTTERFLY (t2, t3, W6, W2, d3, d1);
+    a0 = t0 + t2;
+    a1 = t1 + t3;
+    a2 = t1 - t3;
+    a3 = t0 - t2;
 
-    t = extwl(l, 4);		/* row[2] */
-    if (t) {
-	t = sextw(t);
-	a0 += W2 * t;
-	a1 += W6 * t;
-	a2 -= W6 * t;
-	a3 -= W2 * t;
-    }
+    d0 = sextw (r);
+    d1 = sextw (extwl (r, 2));
+    d2 = sextw (extwl (r, 4));
+    d3 = sextw (extwl (r, 6));
+    BUTTERFLY (t0, t1, W7, W1, d3, d0);
+    BUTTERFLY (t2, t3, W3, W5, d1, d2);
+    b0 = t0 + t2;
+    b3 = t1 + t3;
+    t0 -= t2;
+    t1 -= t3;
+    b1 = ((t0 + t1) * 181) >> 8;
+    b2 = ((t0 - t1) * 181) >> 8;
 
-    t = extwl(r, 0);		/* row[4] */
-    if (t) {
-	t = sextw(t);
-	a0 += W4 * t;
-	a1 -= W4 * t;
-	a2 -= W4 * t;
-	a3 += W4 * t;
-    }
-
-    t = extwl(r, 4);		/* row[6] */
-    if (t) {
-	t = sextw(t);
-	a0 += W6 * t;
-	a1 -= W2 * t;
-	a2 += W2 * t;
-	a3 -= W6 * t;
-    }
-
-    t = extwl(l, 2);		/* row[1] */
-    if (t) {
-	t = sextw(t);
-	b0 = W1 * t;
-	b1 = W3 * t;
-	b2 = W5 * t;
-	b3 = W7 * t;
-    } else {
-	b0 = 0;
-	b1 = 0;
-	b2 = 0;
-	b3 = 0;
-    }
-
-    t = extwl(l, 6);		/* row[3] */
-    if (t) {
-	t = sextw(t);
-	b0 += W3 * t;
-	b1 -= W7 * t;
-	b2 -= W1 * t;
-	b3 -= W5 * t;
-    }
-
-    
-    t = extwl(r, 2);		/* row[5] */
-    if (t) {
-	t = sextw(t);
-	b0 += W5 * t;
-	b1 -= W1 * t;
-	b2 += W7 * t;
-	b3 += W3 * t;
-    }
-
-    t = extwl(r, 6);		/* row[7] */
-    if (t) {
-	t = sextw(t);
-	b0 += W7 * t;
-	b1 -= W5 * t;
-	b2 += W3 * t;
-	b3 -= W1 * t;
-    }
-
-    row[0] = (a0 + b0) >> ROW_SHIFT;
-    row[1] = (a1 + b1) >> ROW_SHIFT;
-    row[2] = (a2 + b2) >> ROW_SHIFT;
-    row[3] = (a3 + b3) >> ROW_SHIFT;
-    row[4] = (a3 - b3) >> ROW_SHIFT;
-    row[5] = (a2 - b2) >> ROW_SHIFT;
-    row[6] = (a1 - b1) >> ROW_SHIFT;
-    row[7] = (a0 - b0) >> ROW_SHIFT;
-
-    return 2;
+    block[0] = (a0 + b0) >> 8;
+    block[1] = (a1 + b1) >> 8;
+    block[2] = (a2 + b2) >> 8;
+    block[3] = (a3 + b3) >> 8;
+    block[4] = (a3 - b3) >> 8;
+    block[5] = (a2 - b2) >> 8;
+    block[6] = (a1 - b1) >> 8;
+    block[7] = (a0 - b0) >> 8;
 }
 
-static inline void idct_col(int16_t *col)
+static void inline idct_col (int16_t * const block)
 {
+    int_fast32_t d0, d1, d2, d3;
     int_fast32_t a0, a1, a2, a3, b0, b1, b2, b3;
+    int_fast32_t t0, t1, t2, t3;
 
-    a0 = a1 = a2 = a3 = W4 * col[8 * 0] + (1 << (COL_SHIFT - 1));
+    d0 = (block[8*0] << 11) + 65536;
+    d1 = block[8*1];
+    d2 = block[8*2] << 11;
+    d3 = block[8*3];
+    t0 = d0 + d2;
+    t1 = d0 - d2;
+    BUTTERFLY (t2, t3, W6, W2, d3, d1);
+    a0 = t0 + t2;
+    a1 = t1 + t3;
+    a2 = t1 - t3;
+    a3 = t0 - t2;
 
-    if (col[8 * 2]) {
-	a0 += W2 * col[8 * 2];
-	a1 += W6 * col[8 * 2];
-	a2 -= W6 * col[8 * 2];
-	a3 -= W2 * col[8 * 2];
-    }
+    d0 = block[8*4];
+    d1 = block[8*5];
+    d2 = block[8*6];
+    d3 = block[8*7];
+    BUTTERFLY (t0, t1, W7, W1, d3, d0);
+    BUTTERFLY (t2, t3, W3, W5, d1, d2);
+    b0 = t0 + t2;
+    b3 = t1 + t3;
+    t0 = (t0 - t2) >> 3;
+    t1 = (t1 - t3) >> 3;
+    b1 = ((t0 + t1) * 181) >> 5;
+    b2 = ((t0 - t1) * 181) >> 5;
 
-    if (col[8 * 4]) {
-	a0 += W4 * col[8 * 4];
-	a1 -= W4 * col[8 * 4];
-	a2 -= W4 * col[8 * 4];
-	a3 += W4 * col[8 * 4];
-    }
-
-    if (col[8 * 6]) {
-	a0 += W6 * col[8 * 6];
-	a1 -= W2 * col[8 * 6];
-	a2 += W2 * col[8 * 6];
-	a3 -= W6 * col[8 * 6];
-    }
-
-    if (col[8 * 1]) {
-	b0 = W1 * col[8 * 1];
-	b1 = W3 * col[8 * 1];
-	b2 = W5 * col[8 * 1];
-	b3 = W7 * col[8 * 1];
-    } else {
-	b0 = 0;
-	b1 = 0;
-	b2 = 0;
-	b3 = 0;
-    }
-
-    if (col[8 * 3]) {
-	b0 += W3 * col[8 * 3];
-	b1 -= W7 * col[8 * 3];
-	b2 -= W1 * col[8 * 3];
-	b3 -= W5 * col[8 * 3];
-    }
-
-    if (col[8 * 5]) {
-	b0 += W5 * col[8 * 5];
-	b1 -= W1 * col[8 * 5];
-	b2 += W7 * col[8 * 5];
-	b3 += W3 * col[8 * 5];
-    }
-
-    if (col[8 * 7]) {
-	b0 += W7 * col[8 * 7];
-	b1 -= W5 * col[8 * 7];
-	b2 += W3 * col[8 * 7];
-	b3 -= W1 * col[8 * 7];
-    }
-
-    col[8 * 0] = (a0 + b0) >> COL_SHIFT;
-    col[8 * 7] = (a0 - b0) >> COL_SHIFT;
-    col[8 * 1] = (a1 + b1) >> COL_SHIFT;
-    col[8 * 6] = (a1 - b1) >> COL_SHIFT;
-    col[8 * 2] = (a2 + b2) >> COL_SHIFT;
-    col[8 * 5] = (a2 - b2) >> COL_SHIFT;
-    col[8 * 3] = (a3 + b3) >> COL_SHIFT;
-    col[8 * 4] = (a3 - b3) >> COL_SHIFT;
+    block[8*0] = (a0 + b0) >> 17;
+    block[8*1] = (a1 + b1) >> 17;
+    block[8*2] = (a2 + b2) >> 17;
+    block[8*3] = (a3 + b3) >> 17;
+    block[8*4] = (a3 - b3) >> 17;
+    block[8*5] = (a2 - b2) >> 17;
+    block[8*6] = (a1 - b1) >> 17;
+    block[8*7] = (a0 - b0) >> 17;
 }
 
 void mpeg2_idct_copy_alpha (int16_t *restrict block, uint8_t *restrict dest,
@@ -238,25 +166,25 @@ void mpeg2_idct_copy_alpha (int16_t *restrict block, uint8_t *restrict dest,
     for (i = 0; i < 8; i++)
 	idct_col (block + i);
 
-    if (HAVE_MVI()) {
+    if (HAVE_MVI ()) {
 	int i = 8;
-	uint64_t clampmask = zap(-1, 0xaa); /* 0x00ff00ff00ff00ff */
+	uint64_t clampmask = zap (-1, 0xaa); /* 0x00ff00ff00ff00ff */
 
 	do {
 	    uint64_t shorts0, shorts1;
 
-	    shorts0 = ldq(block);
-	    shorts0 = maxsw4(shorts0, 0);
-	    shorts0 = minsw4(shorts0, clampmask);
-	    stl(pkwb(shorts0), dest);
+	    shorts0 = ldq (block);
+	    shorts0 = maxsw4 (shorts0, 0);
+	    shorts0 = minsw4 (shorts0, clampmask);
+	    stl (pkwb (shorts0), dest);
 
-	    shorts1 = ldq(block + 4);
-	    shorts1 = maxsw4(shorts1, 0);
-	    shorts1 = minsw4(shorts1, clampmask);
-	    stl(pkwb(shorts1), dest + 4);
+	    shorts1 = ldq (block + 4);
+	    shorts1 = maxsw4 (shorts1, 0);
+	    shorts1 = minsw4 (shorts1, clampmask);
+	    stl (pkwb (shorts1), dest + 4);
 
-	    stq(0, block);
-	    stq(0, block + 4);
+	    stq (0, block);
+	    stq (0, block + 4);
 
 	    dest += stride;
 	    block += 8;
@@ -294,41 +222,41 @@ void mpeg2_idct_add_alpha (const int last, int16_t *restrict block,
 	for (i = 0; i < 8; i++)
 	    idct_col (block + i);
 
-	if (HAVE_MVI()) {
-	    uint64_t clampmask = zap(-1, 0xaa); /* 0x00ff00ff00ff00ff */
-	    uint64_t signmask  = zap(-1, 0x33);
+	if (HAVE_MVI ()) {
+	    uint64_t clampmask = zap (-1, 0xaa); /* 0x00ff00ff00ff00ff */
+	    uint64_t signmask  = zap (-1, 0x33);
 	    signmask ^= signmask >> 1;	/* 0x8000800080008000 */
 
 	    do {
 		uint64_t shorts0, pix0, signs0;
 		uint64_t shorts1, pix1, signs1;
 
-		shorts0 = ldq(block);
-		shorts1 = ldq(block + 4);
+		shorts0 = ldq (block);
+		shorts1 = ldq (block + 4);
 
-		pix0	= unpkbw(ldl(dest));
+		pix0	= unpkbw (ldl (dest));
 		/* Signed subword add (MMX paddw).  */
 		signs0	= shorts0 & signmask;
 		shorts0 &= ~signmask;
 		shorts0 += pix0;
 		shorts0 ^= signs0;
 		/* Clamp. */
-		shorts0 = maxsw4(shorts0, 0);
-		shorts0 = minsw4(shorts0, clampmask);	
+		shorts0 = maxsw4 (shorts0, 0);
+		shorts0 = minsw4 (shorts0, clampmask);	
 
 		/* Next 4.  */
-		pix1	= unpkbw(ldl(dest + 4));
+		pix1	= unpkbw (ldl (dest + 4));
 		signs1	= shorts1 & signmask;
 		shorts1 &= ~signmask;
 		shorts1 += pix1;
 		shorts1 ^= signs1;
-		shorts1 = maxsw4(shorts1, 0);
-		shorts1 = minsw4(shorts1, clampmask);
+		shorts1 = maxsw4 (shorts1, 0);
+		shorts1 = minsw4 (shorts1, clampmask);
 
-		stl(pkwb(shorts0), dest);
-		stl(pkwb(shorts1), dest + 4);
-		stq(0, block);
-		stq(0, block + 4);
+		stl (pkwb (shorts0), dest);
+		stl (pkwb (shorts1), dest + 4);
+		stq (0, block);
+		stq (0, block + 4);
 
 		dest += stride;
 		block += 8;
@@ -361,45 +289,47 @@ void mpeg2_idct_add_alpha (const int last, int16_t *restrict block,
 
 	if (HAVE_MVI()) {
 	    uint64_t p0, p1, p2, p3, p4, p5, p6, p7;
-	    uint64_t DCs = BYTE_VEC(abs(DC));
+	    uint64_t DCs;
 
-	    p0 = ldq(dest + 0 * stride);
-	    p1 = ldq(dest + 1 * stride);
-	    p2 = ldq(dest + 2 * stride);
-	    p3 = ldq(dest + 3 * stride);
-	    p4 = ldq(dest + 4 * stride);
-	    p5 = ldq(dest + 5 * stride);
-	    p6 = ldq(dest + 6 * stride);
-	    p7 = ldq(dest + 7 * stride);
+	    p0 = ldq (dest + 0 * stride);
+	    p1 = ldq (dest + 1 * stride);
+	    p2 = ldq (dest + 2 * stride);
+	    p3 = ldq (dest + 3 * stride);
+	    p4 = ldq (dest + 4 * stride);
+	    p5 = ldq (dest + 5 * stride);
+	    p6 = ldq (dest + 6 * stride);
+	    p7 = ldq (dest + 7 * stride);
 
 	    if (DC > 0) {
-		p0 += minub8(DCs, ~p0);
-		p1 += minub8(DCs, ~p1);
-		p2 += minub8(DCs, ~p2);
-		p3 += minub8(DCs, ~p3);
-		p4 += minub8(DCs, ~p4);
-		p5 += minub8(DCs, ~p5);
-		p6 += minub8(DCs, ~p6);
-		p7 += minub8(DCs, ~p7);
+		DCs = BYTE_VEC (DC);
+		p0 += minub8 (DCs, ~p0);
+		p1 += minub8 (DCs, ~p1);
+		p2 += minub8 (DCs, ~p2);
+		p3 += minub8 (DCs, ~p3);
+		p4 += minub8 (DCs, ~p4);
+		p5 += minub8 (DCs, ~p5);
+		p6 += minub8 (DCs, ~p6);
+		p7 += minub8 (DCs, ~p7);
 	    } else {
-		p0 -= minub8(DCs, p0);
-		p1 -= minub8(DCs, p1);
-		p2 -= minub8(DCs, p2);
-		p3 -= minub8(DCs, p3);
-		p4 -= minub8(DCs, p4);
-		p5 -= minub8(DCs, p5);
-		p6 -= minub8(DCs, p6);
-		p7 -= minub8(DCs, p7);
+		DCs = BYTE_VEC (-DC);
+		p0 -= minub8 (DCs, p0);
+		p1 -= minub8 (DCs, p1);
+		p2 -= minub8 (DCs, p2);
+		p3 -= minub8 (DCs, p3);
+		p4 -= minub8 (DCs, p4);
+		p5 -= minub8 (DCs, p5);
+		p6 -= minub8 (DCs, p6);
+		p7 -= minub8 (DCs, p7);
 	    }
 
-	    stq(p0, dest + 0 * stride);
-	    stq(p1, dest + 1 * stride);
-	    stq(p2, dest + 2 * stride);
-	    stq(p3, dest + 3 * stride);
-	    stq(p4, dest + 4 * stride);
-	    stq(p5, dest + 5 * stride);
-	    stq(p6, dest + 6 * stride);
-	    stq(p7, dest + 7 * stride);
+	    stq (p0, dest + 0 * stride);
+	    stq (p1, dest + 1 * stride);
+	    stq (p2, dest + 2 * stride);
+	    stq (p3, dest + 3 * stride);
+	    stq (p4, dest + 4 * stride);
+	    stq (p5, dest + 5 * stride);
+	    stq (p6, dest + 6 * stride);
+	    stq (p7, dest + 7 * stride);
 	} else {
 	    i = 8;
 	    do {
@@ -419,10 +349,18 @@ void mpeg2_idct_add_alpha (const int last, int16_t *restrict block,
 
 void mpeg2_idct_alpha_init(void)
 {
-    int i;
+    extern uint8_t mpeg2_scan_norm[64];
+    extern uint8_t mpeg2_scan_alt[64];
+    int i, j;
 
     for (i = -384; i < 640; i++)
 	clip_lut[i + 384] = (i < 0) ? 0 : ((i > 255) ? 255 : i);
+    for (i = 0; i < 64; i++) {
+	j = mpeg2_scan_norm[i];
+	mpeg2_scan_norm[i] = ((j & 0x36) >> 1) | ((j & 0x09) << 2);
+	j = mpeg2_scan_alt[i];
+	mpeg2_scan_alt[i] = ((j & 0x36) >> 1) | ((j & 0x09) << 2);
+    }
 }
 
 #endif /* ARCH_ALPHA */
