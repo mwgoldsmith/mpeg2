@@ -54,6 +54,9 @@ else
     mips-sgi-irix6.*)
 	OPT_CFLAGS="$CFLAGS -64"
 	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
+    sparc-solaris-*)
+	OPT_CFLAGS="$CFLAGS -xCC -fast -xO5"
+	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
     esac
 fi
 
