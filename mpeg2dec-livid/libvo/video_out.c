@@ -31,6 +31,7 @@
 // Externally visible list of all vo drivers
 //
 
+extern vo_output_video_t video_out_xv;
 extern vo_output_video_t video_out_xshm;
 extern vo_output_video_t video_out_x11;
 extern vo_output_video_t video_out_sdl;
@@ -40,6 +41,9 @@ extern vo_output_video_t video_out_md5;
 
 vo_output_video_t* video_out_drivers[] = 
 {
+#ifdef LIBVO_XV
+	&video_out_xv,
+#endif
 #ifdef LIBVO_XSHM
 	&video_out_xshm,
 #endif
