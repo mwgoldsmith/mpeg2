@@ -121,7 +121,8 @@ mpeg2dec_t * mpeg2_init (uint32_t mm_accel);
 const mpeg2_info_t * mpeg2_info (mpeg2dec_t * mpeg2dec);
 void mpeg2_close (mpeg2dec_t * mpeg2dec);
 
-int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end);
+void mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t * start, uint8_t * end);
+int mpeg2_parse (mpeg2dec_t * mpeg2dec);
 
 void mpeg2_pts (mpeg2dec_t * mpeg2dec, uint32_t pts);
 

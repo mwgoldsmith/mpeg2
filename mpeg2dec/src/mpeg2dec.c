@@ -212,9 +212,11 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
     int state;
     vo_setup_result_t setup_result;
 
+    mpeg2_buffer (mpeg2dec, current, end);
+
     info = mpeg2_info (mpeg2dec);
     while (1) {
-	state = mpeg2_buffer (mpeg2dec, &current, end);
+	state = mpeg2_parse (mpeg2dec);
 	switch (state) {
 	case -1:
 	    return;
