@@ -24,8 +24,8 @@
 typedef struct {
     uint8_t * rgb_ptr;
     int width;
-    int uv_stride;
-    int rgb_stride;
+    int uv_stride, uv_stride_frame;
+    int rgb_stride, rgb_stride_frame;
     void (* yuv2rgb) (uint8_t *, uint8_t *, uint8_t *, uint8_t *,
 		      void *, void *, int);
 } convert_rgb_t;
