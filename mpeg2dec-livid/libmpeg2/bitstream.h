@@ -24,15 +24,8 @@
 // common variables - they are shared between getvlc.c and slice.c
 // they should be put elsewhere !
 uint32_t bitstream_buffer;
-int32_t bitstream_avail_bits;
+int bitstream_avail_bits;
 uint8_t * bitstream_ptr;
-
-static inline void bitstream_init (uint8_t * start)
-{
-    bitstream_ptr = start;
-    bitstream_avail_bits = 16;
-    bitstream_buffer = 0; 
-}
 
 static inline uint32_t getword (void)
 {
@@ -43,6 +36,13 @@ static inline uint32_t getword (void)
     return value;
 }
 
+static inline void bitstream_init (uint8_t * start)
+{
+    bitstream_ptr = start;
+    bitstream_avail_bits = 0;
+    bitstream_buffer = getword () << 16;
+}
+
 static inline void needbits (void)
 {
     if (bitstream_avail_bits > 0) {
@@ -51,21 +51,18 @@ static inline void needbits (void)
     }
 }
 
-static inline void dumpbits (uint32_t num_bits)
+static inline void dumpbits (int num_bits)
 {
     bitstream_buffer <<= num_bits;
     bitstream_avail_bits += num_bits;
 }
 
-static inline uint32_t 
-bitstream_show (uint32_t num_bits)
+static inline uint32_t bitstream_show (void)
 {
-    //needbits ();
-    return bitstream_buffer >> (32 - num_bits);
+    return bitstream_buffer;
 }
 
-static inline uint32_t 
-bitstream_get (uint32_t num_bits)
+static inline uint32_t bitstream_get (int num_bits)
 {
     uint32_t result;
 
@@ -76,8 +73,7 @@ bitstream_get (uint32_t num_bits)
     return result;
 }
 
-static inline void 
-bitstream_flush (uint32_t num_bits)
+static inline void bitstream_flush (int num_bits)
 {
     dumpbits (num_bits);
 }

@@ -47,10 +47,6 @@ typedef struct {
     char run, level, len;
 } DCTtab;
 
-//extern DCTtab DCTtabfirst[],DCTtabnext[],DCTtab0[],DCTtab1[];
-//extern DCTtab DCTtab2[],DCTtab3[],DCTtab4[],DCTtab5[],DCTtab6[];
-//extern DCTtab DCTtab0a[],DCTtab1a[];
-
 DCTtab DCT_16 [] = {
     { 1,18,16}, { 1,17,16}, { 1,16,16}, { 1,15,16},
     { 6, 3,16}, {16, 2,16}, {15, 2,16}, {14, 2,16},
@@ -222,7 +218,6 @@ static void slice_get_intra_block (const picture_t * picture,
 {
     int i = 1;
     int j;
-    int run;
     int val;
     const uint8_t * scan = picture->scan;
     uint8_t * quant_matrix = picture->intra_quantizer_matrix;
@@ -234,30 +229,29 @@ static void slice_get_intra_block (const picture_t * picture,
     needbits ();
     //Get the intra DC coefficient and inverse quantize it
     if (cc == 0)
-	dest[0] = (slice->dc_dct_pred[0] += Get_Luma_DC_dct_diff ()) <<
-	    (3 - picture->intra_dc_precision);
+	slice->dc_dct_pred[0] += Get_Luma_DC_dct_diff ();
     else
-	dest[0] = (slice->dc_dct_pred[cc]+= Get_Chroma_DC_dct_diff ()) <<
-	    (3 - picture->intra_dc_precision);
+	slice->dc_dct_pred[cc] += Get_Chroma_DC_dct_diff ();
+    dest[0] = slice->dc_dct_pred[cc] << (3 - picture->intra_dc_precision);
 
     i = 1;
     mismatch = ~dest[0];
 
     while (1) {
 	needbits ();
-	code = bitstream_show (16);
+	code = bitstream_show ();
 
 	if (picture->intra_vlc_format) {
-	    if (code >= 0x0400)
-		tab = DCT_B15_8 - 4 + (code >> 8);
-	    else if (code >= 0x0200)
-		tab = DCT_B15_10 - 8 + (code >> 6);
-	    else if (code >= 0x0080)
-		tab = DCT_13 - 16 + (code >> 3);
-	    else if (code >= 0x0020)
-		tab = DCT_15 - 16 + (code >> 1);
-	    else if (code >= 0x0010)
-		tab = DCT_16 - 16 + code;
+	    if (code >= 0x04000000)
+		tab = DCT_B15_8 - 4 + (code >> 24);
+	    else if (code >= 0x02000000)
+		tab = DCT_B15_10 - 8 + (code >> 22);
+	    else if (code >= 0x00800000)
+		tab = DCT_13 - 16 + (code >> 19);
+	    else if (code >= 0x00200000)
+		tab = DCT_15 - 16 + (code >> 17);
+	    else if (code >= 0x00100000)
+		tab = DCT_16 - 16 + (code >> 16);
 	    else {
 		fprintf (stderr,
 			 "(vlc) invalid huffman code 0x%x in vlc_get_block_coeff ()\n",
@@ -266,18 +260,18 @@ static void slice_get_intra_block (const picture_t * picture,
 		break;
 	    }
 	} else {
-	    if (code >= 0x2800)
-		tab = DCT_B14AC_5 - 5 + (code >> 11);
-	    else if (code >= 0x0400)
-		tab = DCT_B14_8 - 4 + (code >> 8);
-	    else if (code >= 0x0200)
-		tab = DCT_B14_10 - 8 + (code >> 6);
-	    else if (code >= 0x0080)
-		tab = DCT_13 - 16 + (code >> 3);
-	    else if (code >= 0x0020)
-		tab = DCT_15 - 16 + (code >> 1);
-	    else if (code >= 0x0010)
-		tab = DCT_16 - 16 + code;
+	    if (code >= 0x28000000)
+		tab = DCT_B14AC_5 - 5 + (code >> 27);
+	    else if (code >= 0x04000000)
+		tab = DCT_B14_8 - 4 + (code >> 24);
+	    else if (code >= 0x02000000)
+		tab = DCT_B14_10 - 8 + (code >> 22);
+	    else if (code >= 0x00800000)
+		tab = DCT_13 - 16 + (code >> 19);
+	    else if (code >= 0x00200000)
+		tab = DCT_15 - 16 + (code >> 17);
+	    else if (code >= 0x00100000)
+		tab = DCT_16 - 16 + (code >> 16);
 	    else {
 		fprintf (stderr,
 			 "(vlc) invalid huffman code 0x%x in vlc_get_block_coeff ()\n",
@@ -293,24 +287,28 @@ static void slice_get_intra_block (const picture_t * picture,
 	    break;
 
 	if (tab->run==65) /* escape */ {
-	    run = bitstream_get (6);
+	    i += bitstream_get (6);
 
 	    needbits ();
 	    val = bitstream_get (12);
 	    if (val >= 2048)
 		val = val - 4096;
-	} else {
-	    run = tab->run;
 
-	    val = tab->level;
+	    j = scan[i++];
+	    val = (val * quantizer_scale * quant_matrix[j]) / 16;
+
+	    mismatch ^= dest[j] = val;
+	} else {
+	    i += tab->run;
+	    j = scan[i++];
+	    val = (tab->level * quantizer_scale * quant_matrix[j]) >> 4;
+
 	    needbits ();	// FIXME get rid of this one
 	    if (bitstream_get (1)) //sign bit
 		val = -val;
-	}
 
-	i += run;
-	j = scan[i++];
-	mismatch ^= dest[j] = (val * quantizer_scale * quant_matrix[j]) / 16;
+	    mismatch ^= dest[j] = val;
+	}
     }
     dest[63] ^= mismatch & 1;
 }
@@ -320,12 +318,10 @@ static void slice_get_non_intra_block (const picture_t * picture,
 {
     int i;
     int j;
-    int run;
     int val;
     const uint8_t * scan = picture->scan;
     uint8_t * quant_matrix = picture->non_intra_quantizer_matrix;
     int quantizer_scale = slice->quantizer_scale;
-    int k;
     int mismatch;
     uint32_t code;
     DCTtab * tab;
@@ -334,20 +330,20 @@ static void slice_get_non_intra_block (const picture_t * picture,
     mismatch = 1;
 
     needbits ();
-    code = bitstream_show (16);
+    code = bitstream_show ();
 
-    if (code >= 0x2800)
-	tab = DCT_B14DC_5 - 5 + (code >> 11);
-    else if (code >= 0x0400)
-	tab = DCT_B14_8 - 4 + (code >> 8);
-    else if (code >= 0x0200)
-	tab = DCT_B14_10 - 8 + (code >> 6);
-    else if (code >= 0x0080)
-	tab = DCT_13 - 16 + (code >> 3);
-    else if (code >= 0x0020)
-	tab = DCT_15 - 16 + (code >> 1);
-    else if (code >= 0x0010)
-	tab = DCT_16 - 16 + code;
+    if (code >= 0x28000000)
+	tab = DCT_B14DC_5 - 5 + (code >> 27);
+    else if (code >= 0x04000000)
+	tab = DCT_B14_8 - 4 + (code >> 24);
+    else if (code >= 0x02000000)
+	tab = DCT_B14_10 - 8 + (code >> 22);
+    else if (code >= 0x00800000)
+	tab = DCT_13 - 16 + (code >> 19);
+    else if (code >= 0x00200000)
+	tab = DCT_15 - 16 + (code >> 17);
+    else if (code >= 0x00100000)
+	tab = DCT_16 - 16 + (code >> 16);
     else {
 	fprintf (stderr,
 		 "(vlc) invalid huffman code 0x%x in vlc_get_block_coeff ()\n",
@@ -360,20 +356,20 @@ static void slice_get_non_intra_block (const picture_t * picture,
  
     while (1) {
 	needbits ();
-	code = bitstream_show (16);
+	code = bitstream_show ();
 
-	if (code >= 0x2800)
-	    tab = DCT_B14AC_5 - 5 + (code >> 11);
-	else if (code >= 0x0400)
-	    tab = DCT_B14_8 - 4 + (code >> 8);
-	else if (code >= 0x0200)
-	    tab = DCT_B14_10 - 8 + (code >> 6);
-	else if (code >= 0x0080)
-	    tab = DCT_13 - 16 + (code >> 3);
-	else if (code >= 0x0020)
-	    tab = DCT_15 - 16 + (code >> 1);
-	else if (code >= 0x0010)
-	    tab = DCT_16 - 16 + code;
+	if (code >= 0x28000000)
+	    tab = DCT_B14AC_5 - 5 + (code >> 27);
+	else if (code >= 0x04000000)
+	    tab = DCT_B14_8 - 4 + (code >> 24);
+	else if (code >= 0x02000000)
+	    tab = DCT_B14_10 - 8 + (code >> 22);
+	else if (code >= 0x00800000)
+	    tab = DCT_13 - 16 + (code >> 19);
+	else if (code >= 0x00200000)
+	    tab = DCT_15 - 16 + (code >> 17);
+	else if (code >= 0x00100000)
+	    tab = DCT_16 - 16 + (code >> 16);
 	else {
 	    fprintf (stderr,
 		     "(vlc) invalid huffman code 0x%x in vlc_get_block_coeff ()\n",
@@ -390,26 +386,31 @@ static void slice_get_non_intra_block (const picture_t * picture,
 	    break;
 
 	if (tab->run==65) /* escape */ {
-	    run = bitstream_get (6);
+	    int k;
+
+	    i += bitstream_get (6);
 
 	    needbits ();
 	    val = bitstream_get (12);
 	    if (val >= 2048)
 		val = val - 4096;
-	} else {
-	    run = tab->run;
 
-	    val = tab->level;
+	    j = scan[i++];
+	    k = (val > 0) ? 1 : ((val < 0) ? -1 : 0);
+	    val = ((2 * val + k) * quantizer_scale * quant_matrix[j]) / 32;
+
+	    mismatch ^= dest[j] = val;
+	} else {
+	    i += tab->run;
+	    j = scan[i++];
+	    val = ((2*tab->level+1) * quantizer_scale * quant_matrix[j]) >> 5;
+
 	    needbits ();	// FIXME get rid of this one
 	    if (bitstream_get (1)) //sign bit
 		val = -val;
-	}
 
-	i += run;
-	j = scan[i++];
-	k = (val > 0) ? 1 : ((val < 0) ? -1 : 0);
-	mismatch ^= dest[j] =
-	    ((2 * val + k) * quantizer_scale * quant_matrix[j]) / 32;
+	    mismatch ^= dest[j] = val;
+	}
     }
     dest[63] ^= mismatch & 1;
 }
@@ -640,7 +641,6 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 
     bitstream_init (buffer);
 
-    needbits ();
     slice.quantizer_scale = get_quantizer_scale (picture->q_scale_type);
 
     //Ignore intra_slice and all the extra data
@@ -775,7 +775,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	offset += 16;
 
 	needbits ();
-	if (! bitstream_show (11))
+	if (! (bitstream_show () & 0xffe00000))
 	    break;
 
 	mba_inc = Get_macroblock_address_increment () - 1;

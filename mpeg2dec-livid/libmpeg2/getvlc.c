@@ -31,7 +31,7 @@ static int Get_P_macroblock_type (void)
 {
     int code;
 
-    code = bitstream_show (6);
+    code = bitstream_show () >> 26;
 
     if (code >= 8) {
 	code >>= 3;
@@ -54,7 +54,7 @@ static int Get_B_macroblock_type (void)
 {
     int code;
 
-    code = bitstream_show (6);
+    code = bitstream_show () >> 26;
 
     if (code >= 8) {
 	code >>= 2;
@@ -116,7 +116,7 @@ int Get_motion_code (void)
     if (bitstream_get (1))
 	return 0;
 
-    code = bitstream_show (9);
+    code = bitstream_show () >> 23;
 
     if (code >= 64) {
 	code >>= 6;
@@ -155,7 +155,7 @@ int Get_coded_block_pattern (void)
 {
     int code;
 
-    code = bitstream_show (9);
+    code = bitstream_show () >> 23;
 
     if (code >= 128) {
 	code >>= 4;
@@ -186,7 +186,7 @@ int Get_macroblock_address_increment (void)
 
     val = 0;
 
-    while ((code = bitstream_show (11)) < 24) {
+    while ((code = bitstream_show () >> 21) < 24) {
 	if (code!=15) {	/* if not macroblock_stuffing */
 	    if (code==8) /* if macroblock_escape */
 		val += 33;
@@ -239,13 +239,13 @@ int Get_Luma_DC_dct_diff (void)
     int code, size, dct_diff;
 
     /* decode length */
-    code = bitstream_show (5);
+    code = bitstream_show () >> 27;
 
     if (code < 31) {
 	size = DClumtab0[code].val;
 	bitstream_flush (DClumtab0[code].len);
     } else {
-	code = bitstream_show (9) - 0x1f0;
+	code = (bitstream_show () >> 23) - 0x1f0;
 	size = DClumtab1[code].val;
 	bitstream_flush (DClumtab1[code].len);
     }
@@ -266,13 +266,13 @@ int Get_Chroma_DC_dct_diff (void)
     int code, size, dct_diff;
 
     /* decode length */
-    code = bitstream_show (5);
+    code = bitstream_show () >> 27;
 
     if (code < 31) {
 	size = DCchromtab0[code].val;
 	bitstream_flush (DCchromtab0[code].len);
     } else {
-	code = bitstream_show (10) - 0x3e0;
+	code = (bitstream_show () >> 22) - 0x3e0;
 	size = DCchromtab1[code].val;
 	bitstream_flush (DCchromtab1[code].len);
     }
