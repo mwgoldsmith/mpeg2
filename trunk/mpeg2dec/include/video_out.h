@@ -19,6 +19,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef VIDEO_OUT_H
+#define VIDEO_OUT_H
+
 typedef struct vo_frame_s vo_frame_t;
 typedef struct vo_instance_s vo_instance_t;
 
@@ -84,3 +87,5 @@ static inline void vo_draw (vo_frame_t * frame)
 {
     frame->draw (frame);
 }
+
+#endif /* VIDEO_OUT_H */
