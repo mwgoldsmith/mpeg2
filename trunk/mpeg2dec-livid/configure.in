@@ -60,6 +60,9 @@ if test x"$GCC" = x"yes"; then
     esac
 fi
 
+dnl gcc __attribute__ ((aligned ()))
+AC_C_ATTRIBUTE_ALIGNED
+
 builtin([include],[libmpeg2/configure.incl])
 builtin([include],[libvo/configure.incl])
 

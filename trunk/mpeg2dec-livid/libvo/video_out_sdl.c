@@ -101,7 +101,7 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
     if (rc != 0)
     {
         printf("SDL: SDL_Init() failed! rc == (%d).\n", rc);
-        return(0);
+        return -1;
     } // if
 
     atexit(SDL_Quit);
@@ -120,7 +120,7 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
             if (modes == NULL)
             {
                 printf("SDL: SDL_ListModes() failed.\n");
-                return(0);
+                return -1;
             } // if
         } // if
     } // if
@@ -148,7 +148,7 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
     {
         printf("SDL: Couldn't produce a mode with at least"
                " a (%dx%d) resolution!\n", width, height);
-        return(0);
+        return -1;
     } // if
 
     dispSize.x = (desiredWidth - width) / 2;
@@ -182,7 +182,7 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
     if (surface == NULL)
     {
         printf("ERROR: SDL could not set the video mode!\n");
-        return(0);
+        return -1;
     } // if
 
     if (title == NULL)
@@ -194,7 +194,7 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
     if (overlay == NULL)
     {
         printf("ERROR: Couldn't create an SDL-based YUV overlay!\n");
-        return(0);
+        return -1;
     } // if
 
     keyState = SDL_GetKeyState(NULL);
@@ -206,7 +206,7 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
 
 // temp !!!!
 setbuf(stdout, NULL);
-    return(-1);  // non-zero == SUCCESS. Oooh yeah.
+    return 0;
 } // display_init
 
 

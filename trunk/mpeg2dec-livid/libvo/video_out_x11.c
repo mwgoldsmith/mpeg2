@@ -25,11 +25,16 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/XShm.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 #include <errno.h>
 
 #include "video_out.h"
 #include "video_out_internal.h"
 #include "yuv2rgb.h"
+
+// not defined on solaris 2.6... grumbl
+Bool XShmQueryExtension (Display *);
 
 LIBVO_EXTERN(x11)
 
