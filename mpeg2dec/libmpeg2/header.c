@@ -465,19 +465,19 @@ mpeg2_state_t mpeg2_header_picture_start (mpeg2dec_t * mpeg2dec)
 
     mpeg2dec->state = ((mpeg2dec->state != STATE_SLICE_1ST) ?
 		       STATE_PICTURE : STATE_PICTURE_2ND);
-    picture->flags = 0;
+    picture->flags = PIC_FLAG_PROGRESSIVE_FRAME;
     picture->tag = picture->tag2 = 0;
     if (mpeg2dec->num_tags) {
 	if (mpeg2dec->bytes_since_tag >= 4) {
 	    mpeg2dec->num_tags = 0;
 	    picture->tag = mpeg2dec->tag_current;
 	    picture->tag2 = mpeg2dec->tag2_current;
-	    picture->flags = PIC_FLAG_TAGS;
+	    picture->flags |= PIC_FLAG_TAGS;
 	} else if (mpeg2dec->num_tags > 1) {
 	    mpeg2dec->num_tags = 1;
 	    picture->tag = mpeg2dec->tag_previous;
 	    picture->tag2 = mpeg2dec->tag2_previous;
-	    picture->flags = PIC_FLAG_TAGS;
+	    picture->flags |= PIC_FLAG_TAGS;
 	}
     }
     picture->display_offset[0].x = picture->display_offset[1].x =
@@ -563,7 +563,8 @@ static int picture_coding_ext (mpeg2dec_t * mpeg2dec)
     mpeg2dec->q_scale_type = buffer[3] & 16;
     decoder->intra_vlc_format = (buffer[3] >> 3) & 1;
     decoder->scan = (buffer[3] & 4) ? mpeg2_scan_alt : mpeg2_scan_norm;
-    flags |= (buffer[4] & 0x80) ? PIC_FLAG_PROGRESSIVE_FRAME : 0;
+    if (!(buffer[4] & 0x80))
+	flags &= ~PIC_FLAG_PROGRESSIVE_FRAME;
     if (buffer[4] & 0x40)
 	flags |= (((buffer[4]<<26) | (buffer[5]<<18) | (buffer[6]<<10)) &
 		  PIC_MASK_COMPOSITE_DISPLAY) | PIC_FLAG_COMPOSITE_DISPLAY;
