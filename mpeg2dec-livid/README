@@ -10,7 +10,7 @@ Contributions by (in no particular order):
 	H}kan Hjort <d95hjort@dtek.chalmers.se> - Solaris fixes
 	Didier Gautheron <dgautheron@magic.fr> - bug fixes
   Gerd Knorr <kraxel@goldbach.in-berlin.de> - Xv support
-	Michel LESPINASSE <walken@windriver.com> - motion comp cleanup et al.
+	Michel LESPINASSE <walken@windriver.com> - motion comp cleanup, new yuv2rgb
   David I. Lehn <dlehn@vt.edu> - motion_comp mmx code
 	Fredrik Vraalsen <vraalsen@cs.uiuc.edu> - general hackage and good stuff
 	(let me know if I've forgotten anyone)

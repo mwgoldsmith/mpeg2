@@ -41,9 +41,13 @@ static void print_fps(void)
 {
 	struct timeval tv_end;
 	float elapsed;
-	
-	gettimeofday(&tv_end, NULL);
 
+	//XXX hackety hack hack...
+#ifdef __i386__
+		asm("emms"); 
+#endif
+	gettimeofday(&tv_end, NULL);
+	
 	elapsed = (tv_end.tv_sec - tv_beg.tv_sec) + 
 			(tv_end.tv_usec - tv_beg.tv_usec) / 1000000.0;        
 	printf("\n %u frames in %5.2f seconds ( %5.3f fps )\n", 

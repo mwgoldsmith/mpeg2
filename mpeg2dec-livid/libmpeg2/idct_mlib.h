@@ -21,4 +21,5 @@
  *
  */
 
-void idct_mlib(mb_buffer_t *mb_buffer);
+void idct_block_mlib(macroblock_t *mb);
+void idct_end_mlib();

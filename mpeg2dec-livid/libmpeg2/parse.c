@@ -494,10 +494,6 @@ parse_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint_32 
 	uint_8 *quant_matrix = picture->intra_quantizer_matrix;
 	sint_16 quantizer_scale = slice->quantizer_scale;
 
-	//Clear the entire block and bring it into the cache
-	//XXX we should perhaps do this at the start of the frame
-	memset(dest,0,sizeof(sint_16) * 64);
-
 	//Get the intra DC coefficient and inverse quantize it
   if (cc == 0)
     dest[0] = (slice->dc_dct_pred[0] += Get_Luma_DC_dct_diff()) << (3 - picture->intra_dc_precision);
@@ -559,9 +555,6 @@ parse_non_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint
 	const uint_8 *scan = picture->scan;
 	uint_8 *quant_matrix = picture->non_intra_quantizer_matrix;
 	sint_16 quantizer_scale = slice->quantizer_scale;
-
-	//Clear the entire block and bring it into the cache
-	memset(dest,0,sizeof(sint_16) * 64);
 
 	while((coeff = vlc_get_block_coeff(i==0,0)))
 	{

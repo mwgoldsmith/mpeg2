@@ -45,11 +45,14 @@
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 
-#include "mb_buffer.h"
 #include "idct.h"
 #include "idct_mmx.h"
 #include "idct_mlib.h"
 
+
+// Fixed Point
+// to convert from 16.0 to 12.4 fixed point
+#define FP 4
 
 #define W1 2841 /* 2048*sqrt(2)*cos(1*pi/16) */
 #define W2 2676 /* 2048*sqrt(2)*cos(2*pi/16) */
@@ -60,13 +63,14 @@
 
 
 // idct main entry point 
-void (*idct)(mb_buffer_t *mb_buffer);
+static void (*idct_block)(sint_16 *block);
+static void (*idct_end)();
 
 // private prototypes 
-static void idct_row(sint_16 *blk);
-static void idct_col_s16(sint_16 *blk);
-static void idct_c(mb_buffer_t *mb_buffer);
-
+static void idct_row_c(sint_16 *blk);
+static void idct_col_s16_c(sint_16 *blk);
+static void idct_block_c(sint_16 *block);
+static void idct_end_c(void);
 
 // Clamp to [-256,255]
 static sint_16 clip_tbl[1024]; /* clipping table */
@@ -75,24 +79,33 @@ static sint_16 *clip;
 void 
 idct_init(void)
 {
-  sint_32 i;
+	sint_32 i;
 
-  clip = clip_tbl + 512;
+	clip = clip_tbl + 512;
 
-  for (i= -512; i< 512; i++)
-    clip[i] = (i < -256) ? -256 : ((i > 255) ? 255 : i);
+	for (i= -512; i< 512; i++)
+		clip[i] = (i < -256) ? -256 : ((i > 255) ? 255 : i);
 
 #ifdef __i386__
 	if(config.flags & MPEG2_MMX_ENABLE)
-		idct = idct_mmx;
+	{
+		idct_block = idct_block_mmx;
+		idct_end = idct_end_mmx;
+	}
 	else
 #endif
 #ifdef HAVE_MLIB
-	if(1 || config.flags & MPEG2_MLIB_ENABLE) // Fix me
-		idct = idct_mlib;
+	if(config.flags & MPEG2_MLIB_ENABLE)
+	{
+		idct_block = idct_block_mlib;
+		idct_end = idct_end_mlib;
+	}
 	else
 #endif
-		idct = idct_c;
+	{
+		idct_block = idct_block_c;
+		idct_end = idct_end_c;
+	}
 }
 
 /* row (horizontal) IDCT
@@ -105,17 +118,18 @@ idct_init(void)
  *        c[1..7] = 128*sqrt(2)
  */
 
-static void idct_row(sint_16 *blk)
+static void inline
+idct_row_c(sint_16 *blk)
 {
   sint_32 x0, x1, x2, x3, x4, x5, x6, x7, x8;
 
   x1 = blk[4]<<11; 
-	x2 = blk[6]; 
-	x3 = blk[2];
+  x2 = blk[6]; 
+  x3 = blk[2];
   x4 = blk[1]; 
-	x5 = blk[7]; 
-	x6 = blk[5]; 
-	x7 = blk[3];
+  x5 = blk[7]; 
+  x6 = blk[5]; 
+  x7 = blk[3];
 
   /* shortcut */
   if (!(x1 | x2 | x3 | x4 | x5 | x6 | x7 ))
@@ -175,18 +189,19 @@ static void idct_row(sint_16 *blk)
  *        c[1..7] = (1/1024)*sqrt(2)
  */
 
-static void idct_col_s16(sint_16 *blk)
+static void inline
+idct_col_s16_c(sint_16 *blk)
 {
   int x0, x1, x2, x3, x4, x5, x6, x7, x8;
 
   /* shortcut */
-  x1 = (blk[8*4]<<8); 
-	x2 = blk[8*6]; 
-	x3 = blk[8*2];
+  x1 = blk[8*4]<<8; 
+  x2 = blk[8*6]; 
+  x3 = blk[8*2];
   x4 = blk[8*1];
-	x5 = blk[8*7]; 
-	x6 = blk[8*5];
-	x7 = blk[8*3];
+  x5 = blk[8*7]; 
+  x6 = blk[8*5];
+  x7 = blk[8*3];
 
   if (!(x1  | x2 | x3 | x4 | x5 | x6 | x7 ))
   {
@@ -235,57 +250,42 @@ static void idct_col_s16(sint_16 *blk)
   blk[8*7] = clip[(x7-x1)>>14];
 }
 
+void
+idct_block_c(sint_16 *block)
+{
+	uint_32 i;
+
+	for (i=0; i<8; i++)
+		idct_row_c(block + 8*i);
+
+	for (i=0; i<8; i++)
+		idct_col_s16_c(block + i);
+}
  
 void
-idct_c(mb_buffer_t *mb_buffer)
+idct_end_c(void)
 {
-	uint_32 i,j,k;
-	sint_16 *blk;
-	macroblock_t *mb = mb_buffer->macroblocks;
-	uint_32 num_blocks = mb_buffer->num_blocks;
-
-	
-	for(k=0;k<num_blocks;k++)
-	{
-		if(mb[k].skipped)
-			continue;
-
-		for(i=0;i<4;i++)
-		{
-			blk = mb[k].y_blocks + 64*i; 
-
-			if(mb[k].coded_block_pattern & (0x20 >> i))
-			{
-				for (j=0; j<8; j++)
-					idct_row(blk + 8*j);
-
-				for (j=0; j<8; j++)
-					idct_col_s16(blk + j);
-			}
-		}
-
-		if(mb[k].coded_block_pattern & 0x2)
-		{
-			blk = mb[k].cr_blocks; 
-
-			for (j=0; j<8; j++)
-				idct_row(blk + 8*j);
-
-			for (j=0; j<8; j++)
-				idct_col_s16(blk + j);
-		}
-
-		if(mb[k].coded_block_pattern & 0x1)
-		{
-			blk = mb[k].cb_blocks; 
-
-			for (j=0; j<8; j++)
-				idct_row(blk + 8*j);
-
-			for (j=0; j<8; j++)
-				idct_col_s16(blk + j);
-		}
-	}
 }
+ 
+void
+idct(macroblock_t *mb)
+{
+	//XXX only 4:2:0 supported here
+	if(mb->coded_block_pattern & 0x20)
+		idct_block(mb->y_blocks + 64*0);
+	if(mb->coded_block_pattern & 0x10)
+		idct_block(mb->y_blocks + 64*1);
+	if(mb->coded_block_pattern & 0x08)
+		idct_block(mb->y_blocks + 64*2);
+	if(mb->coded_block_pattern & 0x04)
+		idct_block(mb->y_blocks + 64*3);
 
+	if(mb->coded_block_pattern & 0x2)
+		idct_block(mb->cr_blocks);
+
+	if(mb->coded_block_pattern & 0x1)
+		idct_block(mb->cb_blocks);
+
+	idct_end();
+}
 

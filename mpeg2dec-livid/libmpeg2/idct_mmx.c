@@ -26,43 +26,18 @@
  */
 
 #include <stdio.h>
+#include <mmx.h>
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 
-#include "mb_buffer.h"
 #include "idct.h"
 
 void idct_block_mmx(sint_16* foo);
 
 void
-idct_mmx(mb_buffer_t *mb_buffer)
+idct_end_mmx()
 {
-	uint_32 k;
-	macroblock_t *mb = mb_buffer->macroblocks;
-	uint_32 num_blocks = mb_buffer->num_blocks;
-	
-	for(k=0;k<num_blocks;k++)
-	{
-		if(mb[k].skipped)
-			continue;
-
-		//XXX only 4:2:0 supported here
-		if(mb[k].coded_block_pattern & 0x20)
-			idct_block_mmx(mb[k].y_blocks + 64*0);
-		if(mb[k].coded_block_pattern & 0x10)
-			idct_block_mmx(mb[k].y_blocks + 64*1);
-		if(mb[k].coded_block_pattern & 0x08)
-			idct_block_mmx(mb[k].y_blocks + 64*2);
-		if(mb[k].coded_block_pattern & 0x04)
-			idct_block_mmx(mb[k].y_blocks + 64*3);
-
-		if(mb[k].coded_block_pattern & 0x2)
-			idct_block_mmx(mb[k].cr_blocks);
-
-		if(mb[k].coded_block_pattern & 0x1)
-			idct_block_mmx(mb[k].cb_blocks);
-	}
-	asm volatile("emms\n\t");
+	emms();
 }
 
 

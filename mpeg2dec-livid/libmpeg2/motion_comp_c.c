@@ -32,7 +32,6 @@
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 
-#include "mb_buffer.h"
 #include "motion_comp.h"
 
 static uint_8 clip_lut[1024];
