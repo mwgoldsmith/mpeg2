@@ -12,6 +12,7 @@ AM_MAINTAINER_MODE
 AC_PROG_CC
 AC_PROG_GCC_TRADITIONAL
 AC_PROG_RANLIB
+AC_C_BIGENDIAN
 
 
 dnl 
@@ -42,7 +43,7 @@ if test x$DISPLAY_DRIVER = x -a x$enable_gatos = xyes; then
 fi
 
 if test x$DISPLAY_DRIVER = x; then
-  AC_MSG_WARN(No accelerated display driver found, using X11)
+  AC_MSG_WARN(no accelerated display driver found -> using X11)
   DISPLAY_DRIVER=display_x11.o
 fi
 
