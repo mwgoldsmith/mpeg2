@@ -167,7 +167,12 @@ struct mpeg2dec_s {
     picture_t pictures[4];
     picture_t * picture;
     fbuf_t fbufs[3];
+    fbuf_t * start_fbuf;
+    fbuf_t * end_fbuf;
     fbuf_t * fbuf;
+    fbuf_t * start_yuv_fbuf;
+    fbuf_t * end_yuv_fbuf;
+    fbuf_t * yuv_fbuf;
 };
 
 typedef struct {
@@ -186,6 +191,16 @@ void mpeg2_free (void * buf);
 
 /* cpu_state.c */
 void mpeg2_cpu_state_init (uint32_t mm_accel);
+
+/* header.c */
+void mpeg2_header_state_init (mpeg2dec_t * mpeg2dec);
+int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec);
+int mpeg2_header_gop (mpeg2dec_t * mpeg2dec);
+int mpeg2_header_picture (mpeg2dec_t * mpeg2dec);
+int mpeg2_header_extension (mpeg2dec_t * mpeg2dec);
+int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec);
+void mpeg2_header_slice (mpeg2dec_t * mpeg2dec);
+void mpeg2_header_end (mpeg2dec_t * mpeg2dec);
 
 /* idct.c */
 void mpeg2_idct_init (uint32_t mm_accel);
