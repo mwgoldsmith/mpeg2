@@ -999,8 +999,8 @@ static inline void slice_intra_DCT (picture_t * picture, slice_t * slice,
 	slice->dc_dct_pred[cc] += get_chroma_dc_dct_diff (slice);
     slice->DCTblock[0] =
 	slice->dc_dct_pred[cc] << (3 - picture->intra_dc_precision);
+    memset (slice->DCTblock+1, 0, 63 * sizeof (int16_t));
 
-    memset (slice->DCTblock, 0, sizeof (slice->DCTblock));
     if (picture->mpeg1) {
 	if (picture->picture_coding_type != D_TYPE)
 	    get_mpeg1_intra_block (picture, slice);
@@ -1017,7 +1017,7 @@ static inline void slice_intra_DCT (picture_t * picture, slice_t * slice,
 static inline void slice_non_intra_DCT (picture_t * picture, slice_t * slice,
 					uint8_t * dest, int stride)
 {
-    memset (slice->DCTblock, 0, sizeof (slice->DCTblock));
+    memset (slice->DCTblock, 0, 64 * sizeof (int16_t));
     if (picture->mpeg1)
 	get_mpeg1_non_intra_block (picture, slice);
     else
