@@ -140,7 +140,7 @@ static int header_process_sequence_extension (picture_t * picture,
     /* this is not used by the decoder */
     picture->progressive_sequence = (buffer[1] >> 3) & 1;
 
-    if (picture->progressive_sequence)
+    if (!(picture->progressive_sequence))
 	picture->coded_picture_height =
 	    (picture->coded_picture_height + 31) & ~31;
 
