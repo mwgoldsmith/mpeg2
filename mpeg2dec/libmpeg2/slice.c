@@ -993,11 +993,14 @@ static inline void slice_non_intra_DCT (picture_t * picture, uint8_t * dest,
 }
 
 #define MOTION(table,ref,motion_x,motion_y,size,y)			      \
-    xy_half = ((motion_y & 1) << 1) | (motion_x & 1);			      \
+    pos_x = 2 * picture->offset + motion_x;				      \
+    pos_y = 2 * picture->v_offset + motion_y + 2 * y;			      \
+    if ((pos_x > picture->limit_x) || (pos_y > picture->limit_y_ ## size))    \
+	return;								      \
+    xy_half = ((pos_y & 1) << 1) | (pos_x & 1);				      \
     table[xy_half] (picture->dest[0] + y * picture->stride + picture->offset, \
-		    (ref[0] + picture->offset + (motion_x >> 1) +	      \
-		     ((picture->v_offset + (motion_y >> 1) + y) *	      \
-		      picture->stride)), picture->stride, size);	      \
+		    ref[0] + (pos_x >> 1) + (pos_y >> 1) * picture->stride,   \
+		    picture->stride, size);				      \
     motion_x /= 2;	motion_y /= 2;					      \
     xy_half = ((motion_y & 1) << 1) | (motion_x & 1);			      \
     offset = (((picture->offset + motion_x) >> 1) +			      \
@@ -1011,12 +1014,16 @@ static inline void slice_non_intra_DCT (picture_t * picture, uint8_t * dest,
 		      picture->uv_stride, size/2)
 
 #define MOTION_FIELD(table,ref,motion_x,motion_y,dest_field,op,src_field)     \
-    xy_half = ((motion_y & 1) << 1) | (motion_x & 1);			      \
+    pos_x = 2 * picture->offset + motion_x;				      \
+    pos_y = picture->v_offset + motion_y;				      \
+    if ((pos_x > picture->limit_x) || (pos_y > picture->limit_y_field))	      \
+	return;								      \
+    xy_half = ((pos_y & 1) << 1) | (pos_x & 1);				      \
     table[xy_half] (picture->dest[0] + dest_field * picture->stride +	      \
 		    picture->offset,					      \
-		    (ref[0] + picture->offset + (motion_x >> 1) +	      \
-		     ((picture->v_offset + (motion_y op) + src_field) *	      \
-		      picture->stride)), 2 * picture->stride, 8);	      \
+		    (ref[0] + (pos_x >> 1) +				      \
+		     ((pos_y op) + src_field) * picture->stride),	      \
+		    2 * picture->stride, 8);				      \
     motion_x /= 2;	motion_y /= 2;					      \
     xy_half = ((motion_y & 1) << 1) | (motion_x & 1);			      \
     offset = (((picture->offset + motion_x) >> 1) +			      \
@@ -1036,7 +1043,7 @@ static void motion_mp1 (picture_t * picture, motion_t * motion,
 #define bits (picture->bitstream_bits)
 #define bit_ptr (picture->bitstream_ptr)
     int motion_x, motion_y;
-    int xy_half, offset;
+    unsigned int pos_x, pos_y, xy_half, offset;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
     motion_x = motion->pmv[0][0] + get_motion_delta (picture,
@@ -1063,7 +1070,7 @@ static void motion_mp1_reuse (picture_t * picture, motion_t * motion,
 			      void (** table) (uint8_t *, uint8_t *, int, int))
 {
     int motion_x, motion_y;
-    int xy_half, offset;
+    unsigned int pos_x, pos_y, xy_half, offset;
 
     motion_x = motion->pmv[0][0] << motion->f_code[1];	/* full-pixel MC */
     motion_y = motion->pmv[0][1] << motion->f_code[1];
@@ -1078,7 +1085,7 @@ static void motion_fr_frame (picture_t * picture, motion_t * motion,
 #define bits (picture->bitstream_bits)
 #define bit_ptr (picture->bitstream_ptr)
     int motion_x, motion_y;
-    int xy_half, offset;
+    unsigned int pos_x, pos_y, xy_half, offset;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
     motion_x = motion->pmv[0][0] + get_motion_delta (picture,
@@ -1104,9 +1111,8 @@ static void motion_fr_field (picture_t * picture, motion_t * motion,
 #define bit_buf (picture->bitstream_buf)
 #define bits (picture->bitstream_bits)
 #define bit_ptr (picture->bitstream_ptr)
-    int motion_x, motion_y;
-    int field;
-    int xy_half, offset;
+    int motion_x, motion_y, field;
+    unsigned int pos_x, pos_y, xy_half, offset;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
     field = UBITS (bit_buf, 1);
@@ -1152,11 +1158,8 @@ static void motion_fr_dmv (picture_t * picture, motion_t * motion,
 #define bit_buf (picture->bitstream_buf)
 #define bits (picture->bitstream_bits)
 #define bit_ptr (picture->bitstream_ptr)
-    int motion_x, motion_y;
-    int dmv_x, dmv_y;
-    int m;
-    int other_x, other_y;
-    int xy_half, offset;
+    int motion_x, motion_y, dmv_x, dmv_y, m, other_x, other_y;
+    unsigned int pos_x, pos_y, xy_half, offset;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
     motion_x = motion->pmv[0][0] + get_motion_delta (picture,
@@ -1219,7 +1222,7 @@ static void motion_reuse (picture_t * picture, motion_t * motion,
 			  void (** table) (uint8_t *, uint8_t *, int, int))
 {
     int motion_x, motion_y;
-    int xy_half, offset;
+    unsigned int pos_x, pos_y, xy_half, offset;
 
     motion_x = motion->pmv[0][0];
     motion_y = motion->pmv[0][1];
@@ -1230,7 +1233,7 @@ static void motion_reuse (picture_t * picture, motion_t * motion,
 static void motion_zero (picture_t * picture, motion_t * motion,
 			 void (** table) (uint8_t *, uint8_t *, int, int))
 {
-    int offset;
+    unsigned int offset;
 
     table[0] (picture->dest[0] + picture->offset,
 	      (motion->ref[0][0] + picture->offset +
@@ -1279,7 +1282,7 @@ static void motion_fi_field (picture_t * picture, motion_t * motion,
 #define bit_ptr (picture->bitstream_ptr)
     int motion_x, motion_y;
     uint8_t ** ref_field;
-    int xy_half, offset;
+    unsigned int pos_x, pos_y, xy_half, offset;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
     ref_field = motion->ref2[UBITS (bit_buf, 1)];
@@ -1310,7 +1313,7 @@ static void motion_fi_16x8 (picture_t * picture, motion_t * motion,
 #define bit_ptr (picture->bitstream_ptr)
     int motion_x, motion_y;
     uint8_t ** ref_field;
-    int xy_half, offset;
+    unsigned int pos_x, pos_y, xy_half, offset;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
     ref_field = motion->ref2[UBITS (bit_buf, 1)];
@@ -1356,9 +1359,8 @@ static void motion_fi_dmv (picture_t * picture, motion_t * motion,
 #define bit_buf (picture->bitstream_buf)
 #define bits (picture->bitstream_bits)
 #define bit_ptr (picture->bitstream_ptr)
-    int motion_x, motion_y;
-    int other_x, other_y;
-    int xy_half, offset;
+    int motion_x, motion_y, other_x, other_y;
+    unsigned int pos_x, pos_y, xy_half, offset;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
     motion_x = motion->pmv[0][0] + get_motion_delta (picture,
@@ -1435,7 +1437,7 @@ do {									\
 	    picture->dest[2] += 4 * picture->stride;			\
 	} while (0);							\
 	picture->v_offset += 16;					\
-	if (picture->v_offset >= picture->coded_picture_height) {	\
+	if (picture->v_offset > picture->limit_y_field) {		\
 	    if (mpeg2_cpu_state_restore)				\
 		mpeg2_cpu_state_restore (&cpu_state);			\
 	    return;							\
@@ -1449,7 +1451,7 @@ static inline int slice_init (picture_t * picture, int code)
 #define bit_buf (picture->bitstream_buf)
 #define bits (picture->bitstream_bits)
 #define bit_ptr (picture->bitstream_ptr)
-    int offset, stride;
+    int offset, stride, height;
     MBAtab * mba;
 
     stride = picture->coded_picture_width;
@@ -1512,6 +1514,7 @@ static inline int slice_init (picture_t * picture, int code)
     picture->dest[1] = picture->current_frame->base[1] + offset;
     picture->dest[2] = picture->current_frame->base[2] + offset;
 
+    height = picture->coded_picture_height;
     switch (picture->picture_structure) {
     case BOTTOM_FIELD:
 	picture->dest[0] += stride;
@@ -1520,9 +1523,14 @@ static inline int slice_init (picture_t * picture, int code)
 	/* follow thru */
     case TOP_FIELD:
 	stride <<= 1;
+	height >>= 1;
     }
     picture->stride = stride;
     picture->uv_stride = stride >> 1;
+    picture->limit_x = 2 * picture->coded_picture_width - 32;
+    picture->limit_y_16 = 2 * height - 32;
+    picture->limit_y_8 = 2 * height - 16;
+    picture->limit_y_field = height - 16;
 
     picture->dc_dct_pred[0] = picture->dc_dct_pred[1] =
 	picture->dc_dct_pred[2] = 1 << (picture->intra_dc_precision + 7);
@@ -1572,7 +1580,7 @@ static inline int slice_init (picture_t * picture, int code)
 	}
 	picture->v_offset += 16;
     }
-    if (picture->v_offset >= picture->coded_picture_height)
+    if (picture->v_offset > picture->limit_y_field)
 	return 1;
 
     return 0;

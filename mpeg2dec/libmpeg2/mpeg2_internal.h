@@ -70,6 +70,10 @@ typedef struct picture_s {
     int offset;
     int stride;
     int uv_stride;
+    unsigned int limit_x;
+    unsigned int limit_y_16;
+    unsigned int limit_y_8;
+    unsigned int limit_y_field;
 
     /* Motion vectors */
     /* The f_ and b_ correspond to the forward and backward motion */
