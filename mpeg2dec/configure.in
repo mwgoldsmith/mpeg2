@@ -20,9 +20,9 @@ if test x"$CC" = x"checkergcc"; then
 elif test x"$GCC" = x"yes"; then
 
     dnl GCC-specific flags
-    dnl -Wall -Werror moved to the end to not disturb the configure script
 
     dnl -Wall
+    dnl -Werror moved to the end to not disturb the configure script
     OPT_CFLAGS="$CFLAGS -Wall"
     AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS])
 
