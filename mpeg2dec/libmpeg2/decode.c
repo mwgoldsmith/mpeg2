@@ -382,12 +382,10 @@ void mpeg2_tag_picture (mpeg2dec_t * mpeg2dec, uint32_t tag, uint32_t tag2)
 uint32_t mpeg2_accel (uint32_t accel)
 {
     if (!mpeg2_accels) {
-	if (accel & MPEG2_ACCEL_DETECT)
-	    accel |= mpeg2_detect_accel ();
-	mpeg2_accels = accel |= MPEG2_ACCEL_DETECT;
-	mpeg2_cpu_state_init (accel);
-	mpeg2_idct_init (accel);
-	mpeg2_mc_init (accel);
+	mpeg2_accels = mpeg2_detect_accel (accel) | MPEG2_ACCEL_DETECT;
+	mpeg2_cpu_state_init (mpeg2_accels);
+	mpeg2_idct_init (mpeg2_accels);
+	mpeg2_mc_init (mpeg2_accels);
     }
     return mpeg2_accels & ~MPEG2_ACCEL_DETECT;
 }

@@ -224,7 +224,7 @@ typedef struct {
 } cpu_state_t;
 
 /* cpu_accel.c */
-uint32_t mpeg2_detect_accel (void);
+uint32_t mpeg2_detect_accel (uint32_t accel);
 
 /* cpu_state.c */
 void mpeg2_cpu_state_init (uint32_t accel);
