@@ -29,11 +29,6 @@ for compiler in cc gcc gcc272 gcc-2.95 gcc-3.0 gcc-3.1 checkergcc tcc icc \
 		i586-mingw32msvc-gcc; do
     compiler_path=`which $compiler`;
     if test x"$compiler_path" = x""; then continue; fi
-    compiler_inode=`ls -Li $compiler_path|awk '{print $1}'`
-    duplicate=0; for inode in $inodes; do
-	if test x"$compiler_inode" = x"$inode"; then duplicate=1; fi
-    done; if test x"$duplicate" = x"1"; then continue; fi
-    inodes="$inodes $compiler_inode"
 
     mkdir compile_test
     cd compile_test; tar xzpf $basedir/mpeg2dec-*.tar.gz; cd mpeg2dec-*
