@@ -21,20 +21,18 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>	/* strcmp */
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <inttypes.h>
 
-#ifdef LIBVO_XSHM
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <X11/extensions/XShm.h>
 /* since it doesn't seem to be defined on some platforms */
 int XShmGetEventBase (Display *);
-#endif
 
 #ifdef LIBVO_XV
+#include <string.h>	/* strcmp */
 #include <X11/extensions/Xvlib.h>
 #define FOURCC_YV12 0x32315659
 #endif
@@ -49,13 +47,9 @@ typedef struct x11_frame_s {
     uint8_t * rgb_ptr;
     int rgb_stride;
     int yuv_stride;
-
-#ifdef LIBVO_XSHM
     int wait_completion;
-#endif
-
 #ifdef LIBVO_XV
-    XvImage * xvimage;
+    XvImage * xvimage;	/* FIXME have only one ximage/xvimage pointer ? */
 #endif
 } x11_frame_t;
 
@@ -74,33 +68,52 @@ typedef struct x11_instance_s {
     Window window;
     GC gc;
     XVisualInfo vinfo;
-
-#ifdef LIBVO_XSHM
     XShmSegmentInfo shminfo;
     int completion_type;
-#endif
-
 #ifdef LIBVO_XV
     XvPortID port;
 #endif
 } x11_instance_t;
 
-static int x11_get_visual_info (x11_instance_t * this)
+static int open_display (x11_instance_t * instance)
 {
+    int major;
+    int minor;
+    Bool pixmaps;
     XVisualInfo visualTemplate;
     XVisualInfo * XvisualInfoTable;
     XVisualInfo * XvisualInfo;
     int number;
     int i;
+    XSetWindowAttributes attr;
+    XGCValues gcValues;
+
+    instance->display = XOpenDisplay (NULL);
+    if (! (instance->display)) {
+	fprintf (stderr, "Can not open display\n");
+	return 1;
+    }
+
+    if ((XShmQueryVersion (instance->display, &major, &minor,
+			   &pixmaps) == 0) ||
+	(major < 1) || ((major == 1) && (minor < 1))) {
+	fprintf (stderr, "No xshm extension\n");
+	return 1;
+    }
+
+    instance->completion_type =
+	XShmGetEventBase (instance->display) + ShmCompletion;
 
     /* list truecolor visuals for the default screen */
     visualTemplate.class = TrueColor;
-    visualTemplate.screen = DefaultScreen (this->display);
-    XvisualInfoTable = XGetVisualInfo (this->display,
+    visualTemplate.screen = DefaultScreen (instance->display);
+    XvisualInfoTable = XGetVisualInfo (instance->display,
 				       VisualScreenMask | VisualClassMask,
 				       &visualTemplate, &number);
-    if (XvisualInfoTable == NULL)
+    if (XvisualInfoTable == NULL) {
+	fprintf (stderr, "No truecolor visual\n");
 	return 1;
+    }
 
     /* find the visual with the highest depth */
     XvisualInfo = XvisualInfoTable;
@@ -108,177 +121,129 @@ static int x11_get_visual_info (x11_instance_t * this)
 	if (XvisualInfoTable[i].depth > XvisualInfo->depth)
 	    XvisualInfo = XvisualInfoTable + i;
 
-    this->vinfo = *XvisualInfo;
+    instance->vinfo = *XvisualInfo;
     XFree (XvisualInfoTable);
-    return 0;
-}
-
-static void x11_create_window (x11_instance_t * this, int width, int height)
-{
-    XSetWindowAttributes attr;
 
     attr.background_pixmap = None;
     attr.backing_store = NotUseful;
     attr.border_pixel = 0;
     attr.event_mask = 0;
     /* fucking sun blows me - you have to create a colormap there... */
-    attr.colormap = XCreateColormap (this->display,
-				     RootWindow (this->display,
-						 this->vinfo.screen),
-				     this->vinfo.visual, AllocNone);
-    this->window =
-	XCreateWindow (this->display, DefaultRootWindow (this->display),
-		       0 /* x */, 0 /* y */, width, height,
-		       0 /* border_width */, this->vinfo.depth,
-		       InputOutput, this->vinfo.visual,
+    attr.colormap = XCreateColormap (instance->display,
+				     RootWindow (instance->display,
+						 instance->vinfo.screen),
+				     instance->vinfo.visual, AllocNone);
+    instance->window =
+	XCreateWindow (instance->display,
+		       DefaultRootWindow (instance->display),
+		       0 /* x */, 0 /* y */, instance->width, instance->height,
+		       0 /* border_width */, instance->vinfo.depth,
+		       InputOutput, instance->vinfo.visual,
 		       (CWBackPixmap | CWBackingStore | CWBorderPixel |
 			CWEventMask | CWColormap), &attr);
-}
 
-static void x11_create_gc (x11_instance_t * this)
-{
-    XGCValues gcValues;
-
-    this->gc = XCreateGC (this->display, this->window, 0, &gcValues);
-}
-
-static int x11_create_images (x11_instance_t * this, int width, int height)
-{
-    int size;
-    uint8_t * alloc;
-    int i;
-
-    size = 0;
-    alloc = NULL;
-    for (i = 0; i < 3; i++) {
-	this->frame[i].ximage =
-	    XCreateImage (this->display, this->vinfo.visual, this->vinfo.depth,
-			  ZPixmap, 0, NULL /* data */, width, height, 16, 0);
-	if (this->frame[i].ximage == NULL)
-	    return 1;
-	else if (i == 0) {
-	    size = (this->frame[0].ximage->bytes_per_line * 
-		    this->frame[0].ximage->height);
-	    alloc = malloc (3 * size);
-	    if (alloc == NULL)
-		return 1;
-	}
-	else if (size != (this->frame[0].ximage->bytes_per_line *
-			  this->frame[0].ximage->height))
-	    return 1;
-
-	this->frame[i].ximage->data = alloc;
-	alloc += size;
-    }
-    return 0;
-}
-
-static int x11_yuv2rgb_init (x11_instance_t * this)
-{
-    int mode;
-
-    /* If we have blue in the lowest bit then "obviously" RGB */
-    /* (the guy who wrote this convention never heard of endianness ?) */
-    mode = ((this->frame[0].ximage->blue_mask & 0x01)) ? MODE_RGB : MODE_BGR;
-
-#ifdef WORDS_BIGENDIAN 
-    if (this->frame[0].ximage->byte_order != MSBFirst)
-	return 1;
-#else
-    if (this->frame[0].ximage->byte_order != LSBFirst)
-	return 1;
-#endif
-
-    /*
-     *
-     * depth in X11 terminology land is the number of bits used to
-     * actually represent the colour.
-     *
-     * bpp in X11 land means how many bits in the frame buffer per
-     * pixel. 
-     *
-     * ex. 15 bit color is 15 bit depth and 16 bpp. Also 24 bit
-     *     color is 24 bit depth, but can be 24 bpp or 32 bpp.
-     */
-
-    yuv2rgb_init (((this->vinfo.depth == 24) ?
-		   this->frame[0].ximage->bits_per_pixel :
-		   this->vinfo.depth), mode);
+    instance->gc = XCreateGC (instance->display, instance->window, 0,
+			      &gcValues);
 
     return 0;
 }
 
-static int x11_common_setup (x11_instance_t * this, int width, int height,
-			     int (* create_images) (x11_instance_t *,int,int),
-			     void (* draw_image) (vo_frame_t * frame))
+static int shmerror = 0;
+
+static int handle_error (Display * display, XErrorEvent * error)
 {
-    if (x11_get_visual_info (this)) {
-	fprintf (stderr, "No truecolor visual\n");
-	return 1;
-    }
-
-    x11_create_window (this, width, height);
-    x11_create_gc (this);
-
-    if (create_images (this, width, height)) {
-	fprintf (stderr, "Cannot create ximage\n");
-	return 1;
-    }
-
-    if (x11_yuv2rgb_init (this)) {
-	fprintf (stderr, "No support for non-native byte order\n");
-	return 1;
-    }
-
-    if (libvo_common_alloc_frames ((vo_instance_t *)this, width, height,
-				   sizeof (x11_frame_t), draw_image)) {
-	fprintf (stderr, "Can not allocate yuv backing buffers\n");
-	return 1;
-    }
-
-    XMapWindow (this->display, this->window);
-
-    this->width = width;
-    this->height = height;
+    shmerror = 1;
     return 0;
 }
 
-static void common_close (x11_instance_t * this)
+static void * create_shm (x11_instance_t * instance, int size)
 {
-    if (this->window) {
-	XFreeGC (this->display, this->gc);
-	XDestroyWindow (this->display, this->window);
+    instance->shminfo.shmid = shmget (IPC_PRIVATE, size, IPC_CREAT | 0777);
+    if (instance->shminfo.shmid == -1)
+	goto error;
+
+    instance->shminfo.shmaddr = shmat (instance->shminfo.shmid, 0, 0);
+    if (instance->shminfo.shmaddr == (char *)-1)
+	goto error;
+
+    /* on linux the IPC_RMID only kicks off once everyone detaches the shm */
+    /* doing this early avoids shm leaks when we are interrupted. */
+    /* this would break the solaris port though :-/ */
+    /* shmctl (instance->shminfo.shmid, IPC_RMID, 0); */
+
+    /* XShmAttach fails on remote displays, so we have to catch this event */
+
+    XSync (instance->display, False);
+    XSetErrorHandler (handle_error);
+
+    instance->shminfo.readOnly = True;
+    if (! (XShmAttach (instance->display, &(instance->shminfo))))
+	shmerror = 1;
+
+    XSync (instance->display, False);
+    XSetErrorHandler (NULL);
+    if (shmerror) {
+    error:
+	fprintf (stderr, "cannot create shared memory\n");
+	return NULL;
     }
-    if (this->display)
-	XCloseDisplay (this->display);
+
+    return instance->shminfo.shmaddr;
 }
 
-static void x11_draw_frame (vo_frame_t * _frame)
+static void destroy_shm (x11_instance_t * instance)
 {
+    XShmDetach (instance->display, &(instance->shminfo));
+    shmdt (instance->shminfo.shmaddr);
+    shmctl (instance->shminfo.shmid, IPC_RMID, 0);
+}
+
+static vo_frame_t * x11_get_frame (vo_instance_t * _instance, int flags)
+{
+    x11_instance_t * instance;
     x11_frame_t * frame;
-    x11_instance_t * this;
 
-    frame = (x11_frame_t *)_frame;
-    this = (x11_instance_t *)frame->vo.this;
+    instance = (x11_instance_t *) _instance;
+    frame = (x11_frame_t *) libvo_common_get_frame ((vo_instance_t *) instance,
+						    flags);
 
-    XPutImage (this->display, this->window, this->gc, frame->ximage, 
-	       0, 0, 0, 0, this->width, this->height);
-    XFlush (this->display);
+    while (frame->wait_completion) {
+	XEvent event;
+	char * addr;
+	int i;
+
+	XNextEvent (instance->display, &event);
+	if (event.type == instance->completion_type) {
+	    addr = (instance->shminfo.shmaddr +
+		    ((XShmCompletionEvent *)&event)->offset);
+	    for (i = 0; i < 3; i++)
+		if (addr == instance->frame[i].ximage->data)
+		    instance->frame[i].wait_completion = 0;
+	}
+    }
+
+    frame->rgb_ptr = frame->ximage->data;
+    frame->rgb_stride = frame->ximage->bytes_per_line;
+    frame->yuv_stride = instance->width;
+    if ((flags & VO_TOP_FIELD) == 0)
+	frame->rgb_ptr += frame->rgb_stride;
+    if ((flags & VO_BOTH_FIELDS) != VO_BOTH_FIELDS) {
+	frame->rgb_stride <<= 1;
+	frame->yuv_stride <<= 1;
+    }
+
+    return (vo_frame_t *) frame;
 }
-
-    uint8_t * rgb_ptr;
-    int rgb_stride;
-    int yuv_stride;
 
 static void x11_copy_slice (vo_frame_t * _frame, uint8_t ** src)
 {
     x11_frame_t * frame;
-    x11_instance_t * this;
+    x11_instance_t * instance;
 
     frame = (x11_frame_t *) _frame;
-    this = (x11_instance_t *) frame->vo.this;
+    instance = (x11_instance_t *) frame->vo.instance;
 
-    yuv2rgb (frame->rgb_ptr, src[0], src[1], src[2], this->width, 16,
+    yuv2rgb (frame->rgb_ptr, src[0], src[1], src[2], instance->width, 16,
 	     frame->rgb_stride, frame->yuv_stride, frame->yuv_stride >> 1);
     frame->rgb_ptr += frame->rgb_stride << 4;
 }
@@ -293,165 +258,22 @@ static void x11_field (vo_frame_t * _frame, int flags)
 	frame->rgb_ptr += frame->ximage->bytes_per_line;;
 }
 
-static vo_frame_t * x11_get_frame (vo_instance_t * _this, int flags)
+static void x11_draw_frame (vo_frame_t * _frame)
 {
-    x11_instance_t * this;
     x11_frame_t * frame;
+    x11_instance_t * instance;
 
-    this = (x11_instance_t *) _this;
-    frame = (x11_frame_t *) libvo_common_get_frame ((vo_instance_t *) this,
-						    flags);
-    frame->vo.copy = x11_copy_slice;
-    frame->vo.field = x11_field;
-    frame->rgb_ptr = frame->ximage->data;
-    frame->rgb_stride = frame->ximage->bytes_per_line;
-    frame->yuv_stride = this->width;
-    if ((flags & VO_TOP_FIELD) == 0)
-	frame->rgb_ptr += frame->rgb_stride;
-    if ((flags & VO_BOTH_FIELDS) != VO_BOTH_FIELDS) {
-	frame->rgb_stride <<= 1;
-	frame->yuv_stride <<= 1;
-    }
-    return (vo_frame_t *) frame;
+    frame = (x11_frame_t *) _frame;
+    instance = (x11_instance_t *) frame->vo.instance;
+
+    XShmPutImage (instance->display, instance->window, instance->gc,
+		  frame->ximage, 0, 0, 0, 0, instance->width, instance->height,
+		  True);
+    XFlush (instance->display);
+    frame->wait_completion = 1;
 }
 
-static void x11_close (vo_instance_t * _this)
-{
-    x11_instance_t * this = (x11_instance_t *)_this;
-    int i;
-
-    libvo_common_free_frames ((vo_instance_t *)this);
-    for (i = 0; i < 3; i++)
-	XDestroyImage (this->frame[i].ximage);
-    common_close (this);
-}
-
-vo_instance_t * vo_x11_setup (vo_instance_t * _this, int width, int height)
-{
-    x11_instance_t * this;
-
-    if (_this != NULL)
-	return NULL;
-    this = malloc (sizeof (x11_instance_t));
-    if (this == NULL)
-	return NULL;
-
-    this->display = XOpenDisplay (NULL);
-    if (! (this->display)) {
-	fprintf (stderr, "Can not open display\n");
-	return NULL;
-    }
-
-    if (x11_common_setup (this, width, height, x11_create_images,
-			  x11_draw_frame))
-	return NULL;
-
-    this->vo.reinit = vo_x11_setup;
-    this->vo.close = x11_close;
-    this->vo.get_frame = x11_get_frame;
-
-    return (vo_instance_t *)this;
-}
-
-#ifdef LIBVO_XSHM
-static int xshm_check_extension (x11_instance_t * this)
-{
-    int major;
-    int minor;
-    Bool pixmaps;
-
-    if (XShmQueryVersion (this->display, &major, &minor, &pixmaps) == 0)
-	return 1;
-
-    if ((major < 1) || ((major == 1) && (minor < 1)))
-	return 1;
-
-    this->completion_type = XShmGetEventBase (this->display) + ShmCompletion;
-
-    return 0;
-}
-
-static int shmerror = 0;
-
-static int x11_handle_error (Display * display, XErrorEvent * error)
-{
-    shmerror = 1;
-    return 0;
-}
-
-static void * xshm_create_shm (x11_instance_t * this, int size)
-{
-    this->shminfo.shmid = shmget (IPC_PRIVATE, size, IPC_CREAT | 0777);
-    if (this->shminfo.shmid == -1)
-	return NULL;
-
-    this->shminfo.shmaddr = shmat (this->shminfo.shmid, 0, 0);
-    if (this->shminfo.shmaddr == (char *)-1)
-	return NULL;
-
-    /* on linux the IPC_RMID only kicks off once everyone detaches the shm */
-    /* doing this early avoids shm leaks when we are interrupted. */
-    /* this would break the solaris port though :-/ */
-    /* shmctl (this->shminfo.shmid, IPC_RMID, 0); */
-
-    /* XShmAttach fails on remote displays, so we have to catch this event */
-
-    XSync (this->display, False);
-    XSetErrorHandler (x11_handle_error);
-
-    this->shminfo.readOnly = True;
-    if (! (XShmAttach (this->display, &(this->shminfo))))
-	shmerror = 1;
-
-    XSync (this->display, False);
-    XSetErrorHandler (NULL);
-    if (shmerror)
-	return NULL;
-
-    return this->shminfo.shmaddr;
-}
-
-static void xshm_destroy_shm (x11_instance_t * this)
-{
-    if (this->shminfo.shmaddr != (char *)-1) {
-	XShmDetach (this->display, &(this->shminfo));
-	shmdt (this->shminfo.shmaddr);
-    }
-    if (this->shminfo.shmid != -1)
-	shmctl (this->shminfo.shmid, IPC_RMID, 0);
-}
-
-static void xshm_next_event (x11_instance_t * this)
-{
-    XEvent event;
-    char * addr;
-    int i;
-
-    XNextEvent (this->display, &event);
-    if (event.type == this->completion_type) {
-	addr = this->shminfo.shmaddr + ((XShmCompletionEvent *)&event)->offset;
-	for (i = 0; i < 3; i++)
-	    if (addr == this->frame[i].ximage->data) {
-		this->frame[i].wait_completion = 0;
-		return;
-	    }
-	/* NOTREACHED */
-    }
-}
-
-static vo_frame_t * xshm_get_frame (vo_instance_t * _this, int flags)
-{
-    x11_instance_t * this;
-    x11_frame_t * frame;
-
-    this = (x11_instance_t *) _this;
-    frame = (x11_frame_t *) x11_get_frame ((vo_instance_t *) this, flags);
-    while (frame->wait_completion)
-	xshm_next_event (this);
-    return (vo_frame_t *) frame;
-}
-
-static int xshm_create_images (x11_instance_t * this, int width, int height)
+static int x11_alloc_frames (x11_instance_t * instance)
 {
     int size;
     uint8_t * alloc;
@@ -460,113 +282,148 @@ static int xshm_create_images (x11_instance_t * this, int width, int height)
     size = 0;
     alloc = NULL;
     for (i = 0; i < 3; i++) {
-	this->frame[i].wait_completion = 0;
-	this->frame[i].ximage =
-	    XShmCreateImage (this->display, this->vinfo.visual,
-			     this->vinfo.depth, ZPixmap, NULL /* data */,
-			     &(this->shminfo), width, height);
-	if (this->frame[i].ximage == NULL)
+	instance->frame[i].wait_completion = 0;
+	instance->frame[i].ximage =
+	    XShmCreateImage (instance->display, instance->vinfo.visual,
+			     instance->vinfo.depth, ZPixmap, NULL /* data */,
+			     &(instance->shminfo),
+			     instance->width, instance->height);
+	if (instance->frame[i].ximage == NULL) {
+	    fprintf (stderr, "Cannot create ximage\n");
 	    return 1;
-	else if (i == 0) {
-	    size = (this->frame[0].ximage->bytes_per_line * 
-		    this->frame[0].ximage->height);
-	    alloc = xshm_create_shm (this, 3 * size);
+	} else if (i == 0) {
+	    size = (instance->frame[0].ximage->bytes_per_line * 
+		    instance->frame[0].ximage->height);
+	    alloc = create_shm (instance, 3 * size);
 	    if (alloc == NULL)
 		return 1;
-	}
-	else if (size != (this->frame[0].ximage->bytes_per_line *
-			  this->frame[0].ximage->height))
+	} else if (size != (instance->frame[0].ximage->bytes_per_line *
+			    instance->frame[0].ximage->height)) {
+	    fprintf (stderr, "unexpected ximage data size\n");
 	    return 1;
+	}
 
-	this->frame[i].ximage->data = alloc;
+	instance->frame[i].ximage->data = alloc;
 	alloc += size;
     }
+
+#ifdef WORDS_BIGENDIAN 
+    if (instance->frame[0].ximage->byte_order != MSBFirst) {
+	fprintf (stderr, "No support for non-native byte order\n");
+	return 1;
+    }
+#else
+    if (instance->frame[0].ximage->byte_order != LSBFirst) {
+	fprintf (stderr, "No support for non-native byte order\n");
+	return 1;
+    }
+#endif
+
+    /*
+     * depth in X11 terminology land is the number of bits used to
+     * actually represent the colour.
+     *
+     * bpp in X11 land means how many bits in the frame buffer per
+     * pixel. 
+     *
+     * ex. 15 bit color is 15 bit depth and 16 bpp. Also 24 bit
+     *     color is 24 bit depth, but can be 24 bpp or 32 bpp.
+     *
+     * If we have blue in the lowest bit then "obviously" RGB
+     * (the guy who wrote this convention never heard of endianness ?)
+     */
+
+    yuv2rgb_init (((instance->vinfo.depth == 24) ?
+		   instance->frame[0].ximage->bits_per_pixel :
+		   instance->vinfo.depth),
+		  ((instance->frame[0].ximage->blue_mask & 0x01) ?
+		   MODE_RGB : MODE_BGR));
+
+    if (libvo_common_alloc_frames ((vo_instance_t *) instance,
+				   instance->width, instance->height,
+				   sizeof (x11_frame_t), x11_copy_slice,
+				   x11_field, x11_draw_frame)) {
+	fprintf (stderr, "Can not allocate yuv backing buffers\n");
+	return 1;
+    }
+
     return 0;
 }
 
-static void xshm_draw_frame (vo_frame_t * _frame)
+static void x11_close (vo_instance_t * _instance)
+{
+    x11_instance_t * instance = (x11_instance_t *) _instance;
+    int i;
+
+    libvo_common_free_frames ((vo_instance_t *) instance);
+    destroy_shm (instance);
+    for (i = 0; i < 3; i++)
+	XDestroyImage (instance->frame[i].ximage);
+    XFreeGC (instance->display, instance->gc);
+    XDestroyWindow (instance->display, instance->window);
+    XCloseDisplay (instance->display);
+}
+
+x11_instance_t * common_setup (int width, int height, int xv);
+
+vo_instance_t * vo_x11_setup (vo_instance_t * instance, int width, int height)
+{
+    if (instance != NULL)
+	return NULL;
+    return (vo_instance_t *) common_setup (width, height, 0);
+}
+
+#ifdef LIBVO_XV
+static vo_frame_t * xv_get_frame (vo_instance_t * _instance, int flags)
+{
+    x11_instance_t * instance;
+    x11_frame_t * frame;
+
+    instance = (x11_instance_t *) _instance;
+    frame = (x11_frame_t *) libvo_common_get_frame ((vo_instance_t *) instance,
+						    flags);
+
+    while (frame->wait_completion) {
+	XEvent event;
+	char * addr;
+	int i;
+
+	XNextEvent (instance->display, &event);
+	if (event.type == instance->completion_type) {
+	    addr = (instance->shminfo.shmaddr +
+		    ((XShmCompletionEvent *)&event)->offset);
+	    for (i = 0; i < 3; i++)
+		if (addr == instance->frame[i].xvimage->data)
+		    instance->frame[i].wait_completion = 0;
+	}
+    }
+
+    return (vo_frame_t *) frame;
+}
+
+static void xv_draw_frame (vo_frame_t * _frame)
 {
     x11_frame_t * frame;
-    x11_instance_t * this;
+    x11_instance_t * instance;
 
-    frame = (x11_frame_t *)_frame;
-    this = (x11_instance_t *)frame->vo.this;
+    frame = (x11_frame_t *) _frame;
+    instance = (x11_instance_t *) frame->vo.instance;
 
-    XShmPutImage (this->display, this->window, this->gc, frame->ximage, 
-		  0, 0, 0, 0, this->width, this->height, True);
-    XFlush (this->display);
+    XvShmPutImage (instance->display, instance->port, instance->window,
+		   instance->gc, frame->xvimage, 0, 0,
+		   instance->width, instance->height, 0, 0,
+		   instance->width, instance->height, True);
+    XFlush (instance->display);
     frame->wait_completion = 1;
 }
 
-static void xshm_close (vo_instance_t * _this)
-{
-    x11_instance_t * this = (x11_instance_t *)_this;
-    int i;
-
-    libvo_common_free_frames ((vo_instance_t *)this);
-    xshm_destroy_shm (this);
-    for (i = 0; i < 3; i++)
-	XDestroyImage (this->frame[i].ximage);
-    common_close (this);
-}
-
-vo_instance_t * vo_xshm_setup (vo_instance_t * _this, int width, int height)
-{
-    x11_instance_t * this;
-
-    if (_this != NULL)
-	return NULL;
-    this = malloc (sizeof (x11_instance_t));
-    if (this == NULL)
-	return NULL;
-
-    this->display = XOpenDisplay (NULL);
-    if (! (this->display)) {
-	fprintf (stderr, "Can not open display\n");
-	return NULL;
-    }
-
-    if (xshm_check_extension (this)) {
-	fprintf (stderr, "No xshm extension\n");
-	return NULL;
-    }
-
-    if (x11_common_setup (this, width, height, xshm_create_images,
-			  xshm_draw_frame))
-	return NULL;
-
-    this->vo.reinit = vo_xshm_setup;
-    this->vo.close = xshm_close;
-    this->vo.get_frame = xshm_get_frame;
-
-    return (vo_instance_t *)this;
-}
-#endif
-
-#ifdef LIBVO_XV
-static int xv_check_extension (x11_instance_t * this)
-{
-    unsigned int version;
-    unsigned int release;
-    unsigned int dummy;
-
-    if (XvQueryExtension (this->display, &version, &release,
-			  &dummy, &dummy, &dummy) != Success)
-	return 1;
-
-    if ((version < 2) || ((version == 2) && (release < 2)))
-	return 1;
-
-    return 0;
-}
-
-static int xv_check_yv12 (x11_instance_t * this, XvPortID port)
+static int xv_check_yv12 (x11_instance_t * instance, XvPortID port)
 {
     XvImageFormatValues * formatValues;
     int formats;
     int i;
 
-    formatValues = XvListImageFormats (this->display, port, &formats);
+    formatValues = XvListImageFormats (instance->display, port, &formats);
     for (i = 0; i < formats; i++)
 	if ((formatValues[i].id == FOURCC_YV12) &&
 	    (! (strcmp (formatValues[i].guid, "YV12")))) {
@@ -577,299 +434,133 @@ static int xv_check_yv12 (x11_instance_t * this, XvPortID port)
     return 1;
 }
 
-static int xv_get_port (x11_instance_t * this)
+static int xv_check_extension (x11_instance_t * instance)
 {
+    unsigned int version;
+    unsigned int release;
+    unsigned int dummy;
     int adaptors;
     int i;
     unsigned long j;
     XvAdaptorInfo * adaptorInfo;
 
-    XvQueryAdaptors (this->display, this->window, &adaptors, &adaptorInfo);
+    if ((XvQueryExtension (instance->display, &version, &release,
+			   &dummy, &dummy, &dummy) != Success) ||
+	(version < 2) || ((version == 2) && (release < 2))) {
+	fprintf (stderr, "No xv extension\n");
+	return 1;
+    }
+
+    XvQueryAdaptors (instance->display, instance->window, &adaptors,
+		     &adaptorInfo);
 
     for (i = 0; i < adaptors; i++)
 	if (adaptorInfo[i].type & XvImageMask)
 	    for (j = 0; j < adaptorInfo[i].num_ports; j++)
-		if ((! (xv_check_yv12 (this, adaptorInfo[i].base_id + j))) &&
-		    (XvGrabPort (this->display, adaptorInfo[i].base_id + j,
+		if ((! (xv_check_yv12 (instance,
+				       adaptorInfo[i].base_id + j))) &&
+		    (XvGrabPort (instance->display, adaptorInfo[i].base_id + j,
 				 0) == Success)) {
-		    this->port = adaptorInfo[i].base_id + j;
+		    instance->port = adaptorInfo[i].base_id + j;
 		    XvFreeAdaptorInfo (adaptorInfo);
 		    return 0;
 		}
 
     XvFreeAdaptorInfo (adaptorInfo);
+    fprintf (stderr, "Cannot find xv port\n");
     return 1;
 }
 
-static void xv_draw_frame (vo_frame_t * _frame)
-{
-    x11_frame_t * frame;
-    x11_instance_t * this;
-
-    frame = (x11_frame_t *)_frame;
-    this = (x11_instance_t *)frame->vo.this;
-
-    XvPutImage (this->display, this->port, this->window, this->gc,
-		frame->xvimage, 0, 0, this->width, this->height,
-		0, 0, this->width, this->height);
-    XFlush (this->display);
-}
-
-static int xv_alloc_frames (x11_instance_t * this, int width, int height)
+static int xv_alloc_frames (x11_instance_t * instance)
 {
     int size;
     uint8_t * alloc;
     int i;
 
-    size = width * height / 4;
-    alloc = malloc (18 * size);
+    size = instance->width * instance->height / 4;
+    alloc = create_shm (instance, 18 * size);
     if (alloc == NULL)
 	return 1;
 
     for (i = 0; i < 3; i++) {
-	this->frame_ptr[i] = (vo_frame_t *)(this->frame + i);
-	this->frame[i].vo.base[0] = alloc;
-	this->frame[i].vo.base[1] = alloc + 5 * size;
-	this->frame[i].vo.base[2] = alloc + 4 * size;
-	this->frame[i].vo.copy = NULL;
-	this->frame[i].vo.field = NULL;
-	this->frame[i].vo.draw = xv_draw_frame;
-	this->frame[i].vo.this = (vo_instance_t *)this;
-	this->frame[i].xvimage = XvCreateImage (this->display, this->port,
-						FOURCC_YV12, alloc,
-						width, height);
-	if ((this->frame[i].xvimage == NULL) ||
-	    (this->frame[i].xvimage->data_size != 6 * size))	/* FIXME */
+	instance->frame_ptr[i] = (vo_frame_t *) (instance->frame + i);
+	instance->frame[i].vo.base[0] = alloc;
+	instance->frame[i].vo.base[1] = alloc + 5 * size;
+	instance->frame[i].vo.base[2] = alloc + 4 * size;
+	instance->frame[i].vo.copy = NULL;
+	instance->frame[i].vo.draw = xv_draw_frame;
+	instance->frame[i].vo.instance = (vo_instance_t *) instance;
+	instance->frame[i].wait_completion = 0;
+	instance->frame[i].xvimage =
+	    XvShmCreateImage (instance->display, instance->port, FOURCC_YV12,
+			      alloc, instance->width, instance->height,
+			      &(instance->shminfo));
+	if ((instance->frame[i].xvimage == NULL) ||
+	    (instance->frame[i].xvimage->data_size != 6 * size)) { /* FIXME */
+	    fprintf (stderr, "Cannot create xvimage\n");
 	    return 1;
-
+	}
 	alloc += 6 * size;
     }
 
     return 0;
 }
 
-static void xv_free_frames (x11_instance_t * this)
+static void xv_close (vo_instance_t * _instance)
 {
+    x11_instance_t * instance = (x11_instance_t *) _instance;
     int i;
 
-    free (this->frame[0].vo.base[0]);
+    destroy_shm (instance);
     for (i = 0; i < 3; i++)
-	XFree (this->frame[i].xvimage);
+	XFree (instance->frame[i].xvimage);
+    XvUngrabPort (instance->display, instance->port, 0);
+    XFreeGC (instance->display, instance->gc);
+    XDestroyWindow (instance->display, instance->window);
+    XCloseDisplay (instance->display);
 }
 
-static int xv_common_setup (x11_instance_t * this, int width, int height,
-			    int (* alloc_frames) (x11_instance_t *, int, int))
+vo_instance_t * vo_xv_setup (vo_instance_t * _instance, int width, int height)
 {
-    if (xv_check_extension (this)) {
-	fprintf (stderr, "No xv extension\n");
-	return 1;
-    }
-
-    if (x11_get_visual_info (this)) {
-	fprintf (stderr, "No truecolor visual\n");
-	return 1;
-    }
-
-    x11_create_window (this, width, height);
-    x11_create_gc (this);
-
-    if (xv_get_port (this)) {
-	fprintf (stderr, "Cannot find xv port\n");
-	return 1;
-    }
-
-    if (alloc_frames (this, width, height)) {
-	fprintf (stderr, "Cannot create xvimage\n");
-	return 1;
-    }
-
-    XMapWindow (this->display, this->window);
-
-    this->width = width;
-    this->height = height;
-
-    return 0;
-}
-
-static void xv_close (vo_instance_t * _this)
-{
-    x11_instance_t * this = (x11_instance_t *)_this;
-
-    xv_free_frames (this);
-    XvUngrabPort (this->display, this->port, 0);
-    common_close (this);
-}
-
-#if 0
-static int xv_draw_slice (uint8_t * src[], int slice_num)
-{
-    x11_instance_t * this = &x11_static_instance;
-
-    memcpy (this->xvimage->data + this->width * 16 * slice_num,
-	    src[0], this->width * 16);
-    memcpy (this->xvimage->data + this->width * (this->height + 4 * slice_num),
-	    src[2], this->width * 4);
-    memcpy (this->xvimage->data +
-	    this->width * (this->height * 5 / 4 + 4 * slice_num),
-	    src[1], this->width * 4);
-
-    return 0;
+    if (_instance != NULL)
+	return NULL;
+    return (vo_instance_t *) common_setup (width, height, 1);
 }
 #endif
 
-vo_instance_t * vo_xv_setup (vo_instance_t * _this, int width, int height)
+x11_instance_t * common_setup (int width, int height, int xv)
 {
-    x11_instance_t * this;
+    x11_instance_t * instance;
 
-    if (_this != NULL)
-	return NULL;
-    this = malloc (sizeof (x11_instance_t));
-    if (this == NULL)
+    instance = malloc (sizeof (x11_instance_t));
+    if (instance == NULL)
 	return NULL;
 
-    this->display = XOpenDisplay (NULL);
-    if (! (this->display)) {
-	fprintf (stderr, "Can not open display\n");
-	return NULL;
-    }
+    instance->width = width;
+    instance->height = height;
 
-    if (xv_common_setup (this, width, height, xv_alloc_frames))
+    if (open_display (instance))
 	return NULL;
 
-    this->vo.reinit = vo_xv_setup;
-    this->vo.close = xv_close;
-    this->vo.get_frame = libvo_common_get_frame;
-
-    return (vo_instance_t *)this;
-}
-
-static void xvshm_next_event (x11_instance_t * this)
-{
-    XEvent event;
-    char * addr;
-    int i;
-
-    XNextEvent (this->display, &event);
-    if (event.type == this->completion_type) {
-	addr = this->shminfo.shmaddr + ((XShmCompletionEvent *)&event)->offset;
-	for (i = 0; i < 3; i++)
-	    if (addr == this->frame[i].xvimage->data) {
-		this->frame[i].wait_completion = 0;
-		return;
-	    }
-	/* NOTREACHED */
-    }
-}
-
-static vo_frame_t * xvshm_get_frame (vo_instance_t * _this, int flags)
-{
-    x11_instance_t * this;
-    x11_frame_t * frame;
-
-    this = (x11_instance_t *) _this;
-    frame = (x11_frame_t *) libvo_common_get_frame ((vo_instance_t *) this,
-						    flags);
-    while (frame->wait_completion)
-	xvshm_next_event (this);
-    return (vo_frame_t *) frame;
-}
-
-static void xvshm_draw_frame (vo_frame_t * _frame)
-{
-    x11_frame_t * frame;
-    x11_instance_t * this;
-
-    frame = (x11_frame_t *)_frame;
-    this = (x11_instance_t *)frame->vo.this;
-
-    XvShmPutImage (this->display, this->port, this->window, this->gc,
-		   frame->xvimage, 0, 0, this->width, this->height,
-		   0, 0, this->width, this->height, True);
-    XFlush (this->display);
-    frame->wait_completion = 1;
-}
-
-static int xvshm_alloc_frames (x11_instance_t * this, int width, int height)
-{
-    int size;
-    uint8_t * alloc;
-    int i;
-
-    size = width * height / 4;
-    alloc = xshm_create_shm (this, 18 * size);
-    if (alloc == NULL)
-	return 1;
-
-    for (i = 0; i < 3; i++) {
-	this->frame_ptr[i] = (vo_frame_t *)(this->frame + i);
-	this->frame[i].vo.base[0] = alloc;
-	this->frame[i].vo.base[1] = alloc + 5 * size;
-	this->frame[i].vo.base[2] = alloc + 4 * size;
-	this->frame[i].vo.copy = NULL;
-	this->frame[i].vo.draw = xvshm_draw_frame;
-	this->frame[i].vo.this = (vo_instance_t *)this;
-	this->frame[i].wait_completion = 0;
-	this->frame[i].xvimage =
-	    XvShmCreateImage (this->display, this->port, FOURCC_YV12, alloc,
-			      width, height, &(this->shminfo));
-	if ((this->frame[i].xvimage == NULL) ||
-	    (this->frame[i].xvimage->data_size != 6 * size))	/* FIXME */
-	    return 1;
-
-	alloc += 6 * size;
-    }
-
-    return 0;
-}
-
-static void xvshm_free_frames (x11_instance_t * this)
-{
-    int i;
-
-    xshm_destroy_shm (this);
-    for (i = 0; i < 3; i++)
-	XFree (this->frame[i].xvimage);
-}
-
-static void xvshm_close (vo_instance_t * _this)
-{
-    x11_instance_t * this = (x11_instance_t *)_this;
-
-    xvshm_free_frames (this);
-    XvUngrabPort (this->display, this->port, 0);
-    common_close (this);
-}
-
-vo_instance_t * vo_xvshm_setup (vo_instance_t * _this, int width, int height)
-{
-    x11_instance_t * this;
-
-    if (_this != NULL)
-	return NULL;
-    this = malloc (sizeof (x11_instance_t));
-    if (this == NULL)
-	return NULL;
-
-    this->display = XOpenDisplay (NULL);
-    if (! (this->display)) {
-	fprintf (stderr, "Can not open display\n");
-	return NULL;
-    }
-
-    if (xshm_check_extension (this)) {
-	fprintf (stderr, "No xshm extension\n");
-	return NULL;
-    }
-
-    if (xv_common_setup (this, width, height, xvshm_alloc_frames))
-	return NULL;
-
-    this->vo.reinit = vo_xvshm_setup;
-    this->vo.close = xvshm_close;
-    this->vo.get_frame = xvshm_get_frame;
-
-    return (vo_instance_t *)this;
-}
+#ifdef LIBVO_XV
+    if (xv && (! (xv_check_extension (instance)))) {
+	if (xv_alloc_frames (instance))
+	    return NULL;
+	instance->vo.reinit = vo_xv_setup;
+	instance->vo.close = xv_close;
+	instance->vo.get_frame = xv_get_frame;
+    } else
 #endif
+    {
+	if (x11_alloc_frames (instance))
+	    return NULL;
+	instance->vo.reinit = vo_x11_setup;
+	instance->vo.close = x11_close;
+	instance->vo.get_frame = x11_get_frame;
+    }
 
+    XMapWindow (instance->display, instance->window);
+
+    return instance;
+}
 #endif

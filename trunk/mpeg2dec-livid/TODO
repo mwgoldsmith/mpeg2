@@ -3,7 +3,6 @@
 	* generic slice handling, plus sdl implementation
 	* clean up frame_t declaration and usage (libvo/libmpeg2) + video_out.h
 	* libmpeg2 reentrancy
-	* x11auto output module + video_out_x11.c cleanups
 	* fix mga output module
 	* clean up yuv2rgb for interlaced pictures (handling of uv)
 
