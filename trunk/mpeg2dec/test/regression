@@ -8,8 +8,9 @@ basedir=`cd $basedir;pwd`
 dirs=`awk -F '#' '{print $1}' $testfile`
 
 # choose between c_md5 and mmx_md5 (based on the idct you use)
-md5=mmx.md5
-if [ $# -ge 2 ]; then md5=$2.md5; fi
+md5=c.md5
+accel="-c"
+if [ $# -ge 2 -a x"$2" != x"c" ]; then md5="$2.md5"; accel=""; fi
 
 rm -fr data
 mkdir data
@@ -17,7 +18,7 @@ cd data
 
 for dir in $dirs; do
     echo $dir
-    ../../src/mpeg2dec -o md5 $basedir/$dir/stream >/dev/null 2>&1 >md5
+    ../../src/mpeg2dec $accel -o md5 $basedir/$dir/stream >/dev/null 2>&1 >md5
     diff -u md5 $basedir/$dir/$md5
     rm -f md5 core
 done
