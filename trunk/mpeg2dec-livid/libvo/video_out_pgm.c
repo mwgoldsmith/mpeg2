@@ -22,6 +22,7 @@
 #include "config.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
 
@@ -32,7 +33,6 @@ static int image_width;
 static int image_height;
 static char header[1024];
 static int framenum = -2;
-static FILE * md5_file;
 static char filename[100];
 
 static vo_instance_t * pgm_setup (vo_instance_t * this, int width, int height)
@@ -53,20 +53,6 @@ static int pgm_close (vo_instance_t * this)
     return 0;
 }
 
-static FILE * open_frame_file (void)
-{
-    FILE * file;
-
-    if (++framenum < 0)
-	return NULL;
-
-    sprintf (filename, "%d.pgm", framenum);
-    if (!(file = fopen (filename, "wb")))
-	return NULL;
-
-    return file;
-}
-
 static void internal_draw_frame (FILE * file, frame_t * frame)
 {
     int i;
@@ -83,8 +69,11 @@ static void pgm_draw_frame (frame_t * frame)
 {
     FILE * file;
 
-    file = open_frame_file ();
-    if (file == NULL)
+    if (++framenum < 0)
+	return;
+    sprintf (filename, "%d.pgm", framenum);
+    file = fopen (filename, "wb");
+    if (!file)
 	return;
     internal_draw_frame (file, frame);
     fclose (file);
@@ -97,9 +86,8 @@ vo_output_video_t video_out_pgm = {
 
 static void pgmpipe_draw_frame (frame_t * frame)
 {
-    if (++framenum < 0)
-	return;
-    internal_draw_frame (stdout, frame);
+    if (++framenum >= 0)
+	internal_draw_frame (stdout, frame);
 }
 
 vo_output_video_t video_out_pgmpipe = {
@@ -107,34 +95,19 @@ vo_output_video_t video_out_pgmpipe = {
     pgm_setup, pgm_close, libvo_common_get_frame, pgmpipe_draw_frame
 };
 
-static vo_instance_t * md5_setup (vo_instance_t * this, int width, int height)
-{
-    if (!(md5_file = fopen ("md5", "w")))
-        return NULL;
-
-    return pgm_setup (NULL, width, height);
-}
-
 static void md5_draw_frame (frame_t * frame)
 {
     char buf[100];
-    FILE * file;
-    int i;
 
-    file = open_frame_file ();
-    if (file == NULL)
+    pgm_draw_frame (frame);
+    if (framenum < 0)
 	return;
-    internal_draw_frame (file, frame);
-    fclose (file);
     sprintf (buf, "md5sum -b %s", filename);
-    file = popen (buf, "r");
-    i = fread (buf, 1, sizeof(buf), file);
-    pclose (file);
-    fwrite (buf, 1, i, md5_file);
+    system (buf);
     remove (filename);
 }
 
 vo_output_video_t video_out_md5 = {
     "md5",
-    md5_setup, pgm_close, libvo_common_get_frame, md5_draw_frame
+    pgm_setup, pgm_close, libvo_common_get_frame, md5_draw_frame
 };

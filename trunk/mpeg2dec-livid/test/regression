@@ -17,7 +17,7 @@ cd data
 
 for dir in $dirs; do
     echo $dir
-    ../../src/mpeg2dec -o md5 $basedir/$dir/stream >/dev/null 2>&1
+    ../../src/mpeg2dec -o md5 $basedir/$dir/stream >/dev/null 2>&1 >md5
     diff -u md5 $basedir/$dir/$md5
     rm -f md5 core
 done
