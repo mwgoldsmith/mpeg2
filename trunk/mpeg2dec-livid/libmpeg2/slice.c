@@ -946,43 +946,34 @@ static void get_mpeg1_non_intra_block (picture_t * picture)
     picture->bitstream_ptr = bit_ptr;
 }
 
-static inline int get_macroblock_address_increment (picture_t * picture)
-{
-#define bit_buf (picture->bitstream_buf)
-#define bits (picture->bitstream_bits)
-#define bit_ptr (picture->bitstream_ptr)
-
-    MBAtab * tab;
-    int mba;
-
-    mba = 0;
-
-    while (1) {
-	if (bit_buf >= 0x10000000) {
-	    tab = MBA_5 - 2 + UBITS (bit_buf, 5);
-	    DUMPBITS (bit_buf, bits, tab->len);
-	    return mba + tab->mba;
-	} else if (bit_buf >= 0x03000000) {
-	    tab = MBA_11 - 24 + UBITS (bit_buf, 11);
-	    DUMPBITS (bit_buf, bits, tab->len);
-	    return mba + tab->mba;
-	} else switch (UBITS (bit_buf, 11)) {
-	case 8:		/* macroblock_escape */
-	    mba += 33;
-	    /* no break here on purpose */
-	case 15:	/* macroblock_stuffing (MPEG1 only) */
-	    DUMPBITS (bit_buf, bits, 11);
-	    NEEDBITS (bit_buf, bits, bit_ptr);
-	    break;
-	default:	/* end of slice, or error */
-	    return 0;
-	}
-    }
-
-#undef bit_buf
-#undef bits
-#undef bit_ptr
-}
+#define GET_MACROBLOCK_ADDRESS_INCREMENT(increment)		\
+do {								\
+    MBAtab * tab;						\
+								\
+    increment = 0;						\
+								\
+    while (1) {							\
+	if (bit_buf >= 0x10000000) {				\
+	    tab = MBA_5 - 2 + UBITS (bit_buf, 5);		\
+	    break;						\
+	} else if (bit_buf >= 0x03000000) {			\
+	    tab = MBA_11 - 24 + UBITS (bit_buf, 11);		\
+	    break;						\
+	} else switch (UBITS (bit_buf, 11)) {			\
+	case 8:		/* macroblock_escape */			\
+	    increment += 33;					\
+	    /* pass through */					\
+	case 15:	/* macroblock_stuffing (MPEG1 only) */	\
+	    DUMPBITS (bit_buf, bits, 11);			\
+	    NEEDBITS (bit_buf, bits, bit_ptr);			\
+	    continue;						\
+	default:	/* end of slice, or error */		\
+	    return;						\
+	}							\
+    }								\
+    DUMPBITS (bit_buf, bits, tab->len);				\
+    increment += tab->mba;					\
+} while (0)
 
 static inline void slice_intra_DCT (picture_t * picture, int cc,
 				    uint8_t * dest, int stride)
@@ -1504,15 +1495,15 @@ do {									\
 	    dest[2] += 4 * stride;					\
 	} while (0);							\
 	if (! (picture->mpeg1))						\
-	    return 0;							\
+	    return;							\
 	picture->v_offset += 16;					\
 	if (picture->v_offset >= picture->coded_picture_height)		\
-	    return 0;							\
+	    return;							\
 	offset = 0;							\
     }									\
 } while (0)
 
-int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
+void slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 {
 #define bit_buf (picture->bitstream_buf)
 #define bits (picture->bitstream_bits)
@@ -1596,9 +1587,12 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     DUMPBITS (bit_buf, bits, 1);
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    offset = get_macroblock_address_increment (picture) << 4;
+    GET_MACROBLOCK_ADDRESS_INCREMENT (offset);
+    offset <<= 4;
 
     while (1) {
+	int mba_inc;
+
 	NEEDBITS (bit_buf, bits, bit_ptr);
 
 	macroblock_modes = get_macroblock_modes (picture);
@@ -1750,16 +1744,9 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	CHECK_DISPLAY;
 
 	NEEDBITS (bit_buf, bits, bit_ptr);
+	GET_MACROBLOCK_ADDRESS_INCREMENT (mba_inc);
 
-	if (bit_buf & 0x80000000) {
-	    DUMPBITS (bit_buf, bits, 1);
-	} else {
-	    int mba_inc;
-
-	    mba_inc = get_macroblock_address_increment (picture);
-	    if (!mba_inc)
-		break;
-
+	if (mba_inc) {
 	    picture->dc_dct_pred[0] = picture->dc_dct_pred[1] =
 		picture->dc_dct_pred[2] = 1 << (picture->intra_dc_precision+7);
 
@@ -1791,8 +1778,6 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	    }
 	}
     }
-
-    return 0;
 #undef bit_buf
 #undef bits
 #undef bit_ptr
