@@ -42,21 +42,47 @@ static int _mpeg2dec_close (plugin_t *plugin)
 	return 0;
 }
 
+static void compute_stat(void) 
+{
+        static int fps = 0;
+        static struct timeval s, e = { 0, 0 };
+        double time;
+        
+        fps++;
+
+        time = (s.tv_sec + (double) (s.tv_usec * 1e-6)) -
+                (e.tv_sec  + (double) (e.tv_usec * 1e-6));
+
+        gettimeofday(&s, NULL);
+        if ( e.tv_sec == 0 ) 
+                gettimeofday(&e, NULL);
+
+        time = (s.tv_sec + (double) (s.tv_usec * 1e-6)) -
+                (e.tv_sec  + (double) (e.tv_usec * 1e-6));
+
+        if ( time >= 1 ) {
+                printf("%d fps in %fs\n", fps, time);
+                fps = 0;
+                e.tv_sec = s.tv_sec;
+                e.tv_usec = s.tv_usec;
+        }
+}
 
 static int _mpeg2dec_read (plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t *buf_entry)
-{
+{       
 	mpeg2_decode_data (plugin->output, buf_entry->data, buf_entry->data+buf_entry->data_len);
 
-	return 0;
+        compute_stat();
+
+        return 0;
 }
 
 static int _mpeg2dec_set_flag	(plugin_codec_video_t *plugin, uint flag, uint val)
 {
-
 	switch (flag) {
 	case FLAG_VIDEO_DROP_FRAME:
-		//fprintf (stderr, "%c", val ? '-':'+');
-		mpeg2_drop (val);
+                //fprintf (stderr, "%c", val ? '-':'+');
+                mpeg2_drop (val);
 		break;
 	default:
 		return -1;
