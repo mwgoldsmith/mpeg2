@@ -1590,6 +1590,19 @@ void slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     GET_MACROBLOCK_ADDRESS_INCREMENT (offset);
     offset <<= 4;
 
+    while (offset - picture->coded_picture_width >= 0) {
+	offset -= picture->coded_picture_width;
+	if ((picture->current_frame->copy == NULL) ||
+	    (picture->picture_coding_type != B_TYPE)) {
+	    dest[0] += 16 * stride;
+	    dest[1] += 4 * stride;
+	    dest[2] += 4 * stride;
+	}
+	picture->v_offset += 16;
+    }
+    if (picture->v_offset >= picture->coded_picture_height)
+	return;
+
     while (1) {
 	int mba_inc;
 
