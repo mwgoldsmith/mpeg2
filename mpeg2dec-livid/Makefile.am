@@ -2,7 +2,7 @@
 
 AUTOMAKE_OPTIONS = 1.3 foreign no-dependencies
 
-CFLAGS = -g -O3 -Wall -Werror @ROOT_CFLAGS@ @GLOBAL_CFLAGS@ @X_CFLAGS@ -Ilibvo
+CFLAGS = -g -O3 -Wall -Werror @ROOT_CFLAGS@ @GLOBAL_CFLAGS@ @X_CFLAGS@ -Ilibvo -idirafter compatibility
 
 SUBDIRS = libmpeg2 libvo tools drivers .
 

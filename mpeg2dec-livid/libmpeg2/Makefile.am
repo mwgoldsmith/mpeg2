@@ -1,4 +1,4 @@
-CFLAGS = -g -O3 -Wall  -Werror @LIBMPEG2_CFLAGS@ @GLOBAL_CFLAGS@
+CFLAGS = -g -O3 -Wall  -Werror @LIBMPEG2_CFLAGS@ @GLOBAL_CFLAGS@ -idirafter ../compatibility
 
 lib_LTLIBRARIES = libmpeg2.la
 

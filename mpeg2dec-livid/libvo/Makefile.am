@@ -2,7 +2,7 @@
 
 AUTOMAKE_OPTIONS = 1.3 foreign 
 
-CFLAGS = -g -O3 -Wall -Werror @LIBVO_CFLAGS@ @GLOBAL_CFLAGS@ @X_CFLAGS@
+CFLAGS = -g -O3 -Wall -Werror @LIBVO_CFLAGS@ @GLOBAL_CFLAGS@ @X_CFLAGS@ -idirafter ../compatibility
 
 lib_LTLIBRARIES = libvo.la
 
