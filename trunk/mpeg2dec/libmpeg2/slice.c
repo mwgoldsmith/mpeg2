@@ -1300,8 +1300,8 @@ static void motion_fr_dmv (picture_t * picture, motion_t * motion,
 }
 
 /* like motion_frame, but reuse previous motion vectors */
-static void motion_fr_reuse (picture_t * picture, motion_t * motion,
-			     void (** table) (uint8_t *, uint8_t *, int, int))
+static void motion_reuse (picture_t * picture, motion_t * motion,
+			  void (** table) (uint8_t *, uint8_t *, int, int))
 {
     int motion_x, motion_y;
     int xy_half, offset;
@@ -1313,8 +1313,8 @@ static void motion_fr_reuse (picture_t * picture, motion_t * motion,
 }
 
 /* like motion_frame, but use null motion vectors */
-static void motion_fr_zero (picture_t * picture, motion_t * motion,
-			    void (** table) (uint8_t *, uint8_t *, int, int))
+static void motion_zero (picture_t * picture, motion_t * motion,
+			 void (** table) (uint8_t *, uint8_t *, int, int))
 {
     int offset;
 
@@ -1382,7 +1382,7 @@ static void motion_fi_field (picture_t * picture, motion_t * motion,
     motion->pmv[1][1] = motion->pmv[0][1] = motion_y;
 
     motion_block (table, picture->offset, picture->v_offset, 0, 0, 0,
-		  motion_x, motion_y, picture->dest, motion->ref[field_select],
+		  motion_x, motion_y, picture->dest, motion->ref2[field_select],
 		  picture->stride, 16);
 #undef bit_buf
 #undef bits
@@ -1414,7 +1414,7 @@ static void motion_fi_16x8 (picture_t * picture, motion_t * motion,
     motion->pmv[0][1] = motion_y;
 
     motion_block (table, picture->offset, picture->v_offset, 0, 0, 0,
-		  motion_x, motion_y, picture->dest, motion->ref[field_select],
+		  motion_x, motion_y, picture->dest, motion->ref2[field_select],
 		  picture->stride, 8);
 
     NEEDBITS (bit_buf, bits, bit_ptr);
@@ -1433,7 +1433,7 @@ static void motion_fi_16x8 (picture_t * picture, motion_t * motion,
     motion->pmv[1][1] = motion_y;
 
     motion_block (table, picture->offset, picture->v_offset+8, 1, 0, 0,
-		  motion_x, motion_y, picture->dest, motion->ref[field_select],
+		  motion_x, motion_y, picture->dest, motion->ref2[field_select],
 		  picture->stride, 8);
 #undef bit_buf
 #undef bits
@@ -1465,33 +1465,16 @@ static void motion_fi_dmv (picture_t * picture, motion_t * motion,
 
     motion_block (mpeg2_mc.put, picture->offset, picture->v_offset, 0, 0, 0,
 		  motion_x, motion_y, picture->dest,
-		  motion->ref[picture->current_field], picture->stride, 16);
+		  motion->ref[0], picture->stride, 16);
 
     motion_x = ((motion_x + (motion_x > 0)) >> 1) + dmv_x;
-    motion_y = ((motion_y + (motion_y > 0)) >> 1) + dmv_y +
-	2 * picture->current_field - 1;
+    motion_y = ((motion_y + (motion_y > 0)) >> 1) + dmv_y + picture->dmv_offset;
     motion_block (mpeg2_mc.avg, picture->offset, picture->v_offset, 0, 0, 0,
 		  motion_x, motion_y,
-		  picture->dest, motion->ref[!picture->current_field], picture->stride, 16);
+		  picture->dest, motion->ref[1], picture->stride, 16);
 #undef bit_buf
 #undef bits
 #undef bit_ptr
-}
-
-static void motion_fi_reuse (picture_t * picture, motion_t * motion,
-			     void (** table) (uint8_t *, uint8_t *, int, int))
-{
-    motion_block (table, picture->offset, picture->v_offset, 0, 0, 0,
-		  motion->pmv[0][0], motion->pmv[0][1], picture->dest,
-		  motion->ref[picture->current_field], picture->stride, 16);
-}
-
-static void motion_fi_zero (picture_t * picture, motion_t * motion,
-			    void (** table) (uint8_t *, uint8_t *, int, int))
-{
-    motion_block (table, picture->offset, picture->v_offset, 0, 0, 0, 0, 0,
-		  picture->dest, motion->ref[picture->current_field],
-		  picture->stride, 16);
 }
 
 static void motion_fi_conceal (picture_t * picture)
@@ -1562,51 +1545,62 @@ static inline int slice_init (picture_t * picture, int code)
 #define bits (picture->bitstream_bits)
 #define bit_ptr (picture->bitstream_ptr)
     int offset, stride;
-    uint8_t ** forward_ref[2];
     MBAtab * mba;
 
     stride = picture->coded_picture_width;
-    offset = (code - 1) * stride * 4;
-    picture->v_offset = (code - 1) * 16;
+    offset = picture->picture_structure == BOTTOM_FIELD ? stride : 0;
 
-    forward_ref[0] = picture->forward_reference_frame->base;
+    picture->f_motion.ref[0][0] =
+	picture->forward_reference_frame->base[0] + offset;
+    picture->f_motion.ref[0][1] =
+	picture->forward_reference_frame->base[1] + (offset >> 1);
+    picture->f_motion.ref[0][2] =
+	picture->forward_reference_frame->base[2] + (offset >> 1);
+
+    picture->b_motion.ref[0][0] =
+	picture->backward_reference_frame->base[0] + offset;
+    picture->b_motion.ref[0][1] =
+	picture->backward_reference_frame->base[1] + (offset >> 1);
+    picture->b_motion.ref[0][2] =
+	picture->backward_reference_frame->base[2] + (offset >> 1);
+
     if (picture->picture_structure != FRAME_PICTURE) {
-	forward_ref[1] = picture->forward_reference_frame->base;
-	offset <<= 1;
-	picture->current_field = (picture->picture_structure == BOTTOM_FIELD);
-	if ((picture->second_field) &&
-	    (picture->picture_coding_type != B_TYPE))
-	    forward_ref[picture->picture_structure == TOP_FIELD] =
-		picture->current_frame->base;
+	uint8_t ** forward_ref;
+	int bottom_field;
 
-	picture->f_motion.ref[1][0] = forward_ref[1][0] + stride;
-	picture->f_motion.ref[1][1] = forward_ref[1][1] + (stride >> 1);
-	picture->f_motion.ref[1][2] = forward_ref[1][2] + (stride >> 1);
+	bottom_field = (picture->picture_structure == BOTTOM_FIELD);
+	picture->dmv_offset = bottom_field ? 1 : -1;
+	picture->f_motion.ref2[0] = picture->f_motion.ref[bottom_field];
+	picture->f_motion.ref2[1] = picture->f_motion.ref[!bottom_field];
+	picture->b_motion.ref2[0] = picture->b_motion.ref[bottom_field];
+	picture->b_motion.ref2[1] = picture->b_motion.ref[!bottom_field];
+	offset = bottom_field ? 0 : stride;
+
+	forward_ref = picture->forward_reference_frame->base;
+	if (picture->second_field && (picture->picture_coding_type != B_TYPE))
+	    forward_ref = picture->current_frame->base;
+
+	picture->f_motion.ref[1][0] = forward_ref[0] + offset;
+	picture->f_motion.ref[1][1] = forward_ref[1] + (offset >> 1);
+	picture->f_motion.ref[1][2] = forward_ref[2] + (offset >> 1);
 
 	picture->b_motion.ref[1][0] =
-	    picture->backward_reference_frame->base[0] + stride;
+	    picture->backward_reference_frame->base[0] + offset;
 	picture->b_motion.ref[1][1] =
-	    picture->backward_reference_frame->base[1] + (stride >> 1);
+	    picture->backward_reference_frame->base[1] + (offset >> 1);
 	picture->b_motion.ref[1][2] =
-	    picture->backward_reference_frame->base[2] + (stride >> 1);
+	    picture->backward_reference_frame->base[2] + (offset >> 1);
     }
-
-    picture->f_motion.ref[0][0] = forward_ref[0][0];
-    picture->f_motion.ref[0][1] = forward_ref[0][1];
-    picture->f_motion.ref[0][2] = forward_ref[0][2];
 
     picture->f_motion.pmv[0][0] = picture->f_motion.pmv[0][1] = 0;
     picture->f_motion.pmv[1][0] = picture->f_motion.pmv[1][1] = 0;
-
-    picture->b_motion.ref[0][0] = picture->backward_reference_frame->base[0];
-    picture->b_motion.ref[0][1] = picture->backward_reference_frame->base[1];
-    picture->b_motion.ref[0][2] = picture->backward_reference_frame->base[2];
-
     picture->b_motion.pmv[0][0] = picture->b_motion.pmv[0][1] = 0;
     picture->b_motion.pmv[1][0] = picture->b_motion.pmv[1][1] = 0;
 
-    if ((picture->current_frame->copy) &&
-	(picture->picture_coding_type == B_TYPE))
+    picture->v_offset = (code - 1) * 16;
+    offset = (code - 1) * stride;
+    offset <<= picture->picture_structure == FRAME_PICTURE ? 2 : 3;
+    if (picture->current_frame->copy && picture->picture_coding_type == B_TYPE)
 	offset = 0;
 
     picture->dest[0] = picture->current_frame->base[0] + offset * 4;
@@ -1762,7 +1756,7 @@ void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer)
 		    picture->f_motion.pmv[0][1] = 0;
 		    picture->f_motion.pmv[1][0] = 0;
 		    picture->f_motion.pmv[1][1] = 0;
-		    MOTION (motion_fr_zero, MACROBLOCK_MOTION_FORWARD);
+		    MOTION (motion_zero, MACROBLOCK_MOTION_FORWARD);
 		}
 	    } else if (picture->picture_structure == FRAME_PICTURE)
 		switch (macroblock_modes & MOTION_TYPE_MASK) {
@@ -1784,7 +1778,7 @@ void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer)
 		    picture->f_motion.pmv[0][1] = 0;
 		    picture->f_motion.pmv[1][0] = 0;
 		    picture->f_motion.pmv[1][1] = 0;
-		    MOTION (motion_fr_zero, MACROBLOCK_MOTION_FORWARD);
+		    MOTION (motion_zero, MACROBLOCK_MOTION_FORWARD);
 		    break;
 		}
 	    else
@@ -1807,7 +1801,7 @@ void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer)
 		    picture->f_motion.pmv[0][1] = 0;
 		    picture->f_motion.pmv[1][0] = 0;
 		    picture->f_motion.pmv[1][1] = 0;
-		    MOTION (motion_fi_zero, MACROBLOCK_MOTION_FORWARD);
+		    MOTION (motion_zero, MACROBLOCK_MOTION_FORWARD);
 		    break;
 		}
 
@@ -1890,20 +1884,15 @@ void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer)
 		picture->f_motion.pmv[1][0] = picture->f_motion.pmv[1][1] = 0;
 
 		do {
-		    if (picture->picture_structure == FRAME_PICTURE)
-			MOTION (motion_fr_zero, MACROBLOCK_MOTION_FORWARD);
-		    else
-			MOTION (motion_fi_zero, MACROBLOCK_MOTION_FORWARD);
+		    MOTION (motion_zero, MACROBLOCK_MOTION_FORWARD);
 		    NEXT_MACROBLOCK;
 		} while (--mba_inc);
 	    } else {
 		do {
 		    if (picture->mpeg1)
 			MOTION (motion_mp1_reuse, macroblock_modes);
-		    else if (picture->picture_structure == FRAME_PICTURE)
-			MOTION (motion_fr_reuse, macroblock_modes);
 		    else
-			MOTION (motion_fi_reuse, macroblock_modes);
+			MOTION (motion_reuse, macroblock_modes);
 		    NEXT_MACROBLOCK;
 		} while (--mba_inc);
 	    }
