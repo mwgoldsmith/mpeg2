@@ -30,7 +30,7 @@
 #include <errno.h>
 #include <inttypes.h>
 
-#include "output_video.h"
+#include "video_out.h"
 #include "mpeg2.h"
 
 #define BUFFER_SIZE 262144
