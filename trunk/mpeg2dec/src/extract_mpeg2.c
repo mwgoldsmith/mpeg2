@@ -34,11 +34,14 @@
 static uint8_t buffer[BUFFER_SIZE];
 static FILE * in_file;
 static int demux_track = 0xe0;
+static int demux_pid = 0;
 
 static void print_usage (char ** argv)
 {
-    fprintf (stderr, "usage: %s [-s<track>] <file>\n"
-	     "\t-s\tset track number (0-15 or 0xe0-0xef)\n", argv[0]);
+    fprintf (stderr, "usage: %s [-s <track>] [-t <pid>] <file>\n"
+	     "\t-s\tset track number (0-15 or 0xe0-0xef)\n"
+	     "\t-t\tuse transport stream demultiplexer, pid 0x10-0x1ffe\n",
+	     argv[0]);
 
     exit (1);
 }
@@ -48,7 +51,7 @@ static void handle_args (int argc, char ** argv)
     int c;
     char * s;
 
-    while ((c = getopt (argc, argv, "s:")) != -1)
+    while ((c = getopt (argc, argv, "s:t:")) != -1)
 	switch (c) {
 	case 's':
 	    demux_track = strtol (optarg, &s, 16);
@@ -56,6 +59,14 @@ static void handle_args (int argc, char ** argv)
 		demux_track += 0xe0;
 	    if ((demux_track < 0xe0) || (demux_track > 0xef) || (*s)) {
 		fprintf (stderr, "Invalid track number: %s\n", optarg);
+		print_usage (argv);
+	    }
+	    break;
+
+	case 't':
+	    demux_pid = strtol (optarg, &s, 16);
+	    if ((demux_pid < 0x10) || (demux_pid > 0x1ffe) || (*s)) {
+		fprintf (stderr, "Invalid pid: %s\n", optarg);
 		print_usage (argv);
 	    }
 	    break;
@@ -75,7 +86,8 @@ static void handle_args (int argc, char ** argv)
 	in_file = stdin;
 }
 
-static int demux (uint8_t * buf, uint8_t * end)
+#define DEMUX_PAYLOAD_START 1
+static int demux (uint8_t * buf, uint8_t * end, int flags)
 {
     static int mpeg1_skip_table[16] = {
 	0, 0, 4, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
@@ -100,7 +112,7 @@ static int demux (uint8_t * buf, uint8_t * end)
 #define DEMUX_HEADER 0
 #define DEMUX_DATA 1
 #define DEMUX_SKIP 2
-    static int state = DEMUX_HEADER;
+    static int state = DEMUX_SKIP;
     static int state_bytes = 0;
     static uint8_t head_buf[264];
 
@@ -139,6 +151,8 @@ static int demux (uint8_t * buf, uint8_t * end)
 	    buf = header + (x);	\
     } while (0)
 
+    if (flags & DEMUX_PAYLOAD_START)
+	goto payload_start;
     switch (state) {
     case DEMUX_HEADER:
 	if (state_bytes > 0) {
@@ -148,7 +162,7 @@ static int demux (uint8_t * buf, uint8_t * end)
 	}
 	break;
     case DEMUX_DATA:
-	if (state_bytes > end - buf) {
+	if (demux_pid || (state_bytes > end - buf)) {
 	    fwrite (buf, end - buf, 1, stdout);
 	    state_bytes -= end - buf;
 	    return 0;
@@ -157,7 +171,7 @@ static int demux (uint8_t * buf, uint8_t * end)
 	buf += state_bytes;
 	break;
     case DEMUX_SKIP:
-	if (state_bytes > end - buf) {
+	if (demux_pid || (state_bytes > end - buf)) {
 	    state_bytes -= end - buf;
 	    return 0;
 	}
@@ -166,14 +180,22 @@ static int demux (uint8_t * buf, uint8_t * end)
     }
 
     while (1) {
+	if (demux_pid) {
+	    state = DEMUX_SKIP;
+	    return 0;
+	}
+    payload_start:
 	header = buf;
 	bytes = end - buf;
     continue_header:
 	NEEDBYTES (4);
 	if (header[0] || header[1] || (header[2] != 1)) {
-	    if (header != head_buf) {
+	    if (demux_pid) {
+		state = DEMUX_SKIP;
+		return 0;
+	    } else if (header != head_buf) {
 		buf++;
-		continue;
+		goto payload_start;
 	    } else {
 		header[0] = header[1];
 		header[1] = header[2];
@@ -181,6 +203,12 @@ static int demux (uint8_t * buf, uint8_t * end)
 		bytes = 3;
 		goto continue_header;
 	    }
+	}
+	if (demux_pid) {
+	    if ((header[3] >= 0xe0) && (header[3] <= 0xef))
+		goto pes;
+	    fprintf (stderr, "bad stream id %x\n", header[3]);
+	    exit (1);
 	}
 	switch (header[3]) {
 	case 0xb9:	/* program end code */
@@ -205,6 +233,7 @@ static int demux (uint8_t * buf, uint8_t * end)
 	    break;
 	default:
 	    if (header[3] == demux_track) {
+	    pes:
 		NEEDBYTES (7);
 		if ((header[6] & 0xc0) == 0x80) {	/* mpeg2 */
 		    NEEDBYTES (9);
@@ -231,14 +260,13 @@ static int demux (uint8_t * buf, uint8_t * end)
 		}
 		DONEBYTES (len);
 		bytes = 6 + (header[4] << 8) + header[5] - len;
-		if (bytes <= 0)
-		    continue;
-		if (bytes > end - buf) {
+		if (demux_pid || (bytes > end - buf)) {
 		    fwrite (buf, end - buf, 1, stdout);
 		    state = DEMUX_DATA;
 		    state_bytes = bytes - (end - buf);
 		    return 0;
-		}
+		} else if (bytes <= 0)
+		    continue;
 		fwrite (buf, bytes, 1, stdout);
 		buf += bytes;
 	    } else if (header[3] < 0xb9) {
@@ -266,16 +294,53 @@ static void ps_loop (void)
 
     do {
 	end = buffer + fread (buffer, 1, BUFFER_SIZE, in_file);
-	if (demux (buffer, end))
+	if (demux (buffer, end, 0))
 	    break;	/* hit program_end_code */
     } while (end == buffer + BUFFER_SIZE);
+}
+
+static void ts_loop (void)
+{
+#define PACKETS (BUFFER_SIZE / 188)
+    uint8_t * buf;
+    uint8_t * data;
+    uint8_t * end;
+    int packets;
+    int i;
+    int pid;
+
+    do {
+	packets = fread (buffer, 188, PACKETS, in_file);
+	for (i = 0; i < packets; i++) {
+	    buf = buffer + i * 188;
+	    end = buf + 188;
+	    if (buf[0] != 0x47) {
+		fprintf (stderr, "bad sync byte\n");
+		exit (1);
+	    }
+	    pid = ((buf[1] << 8) + buf[2]) & 0x1fff;
+	    if (pid != demux_pid)
+		continue;
+	    data = buf + 4;
+	    if (buf[3] & 0x20) {	/* buf contains an adaptation field */
+		data = buf + 5 + buf[4];
+		if (data > end)
+		    continue;
+	    }
+	    if (buf[3] & 0x10)
+		demux (data, end, (buf[1] & 0x40) ? DEMUX_PAYLOAD_START : 0);
+	}
+    } while (packets == PACKETS);
 }
 
 int main (int argc, char ** argv)
 {
     handle_args (argc, argv);
 
-    ps_loop ();
+    if (demux_pid)
+	ts_loop ();
+    else
+	ps_loop ();
 
     return 0;
 }
