@@ -1,5 +1,4 @@
 * before 0.2.0 :
-	* write small libvo doc
 	* fix xshm completion events in libvo
 	* generic slice handling, plus sdl implementation
 	* clean up frame_t declaration and usage (libvo/libmpeg2) + video_out.h
