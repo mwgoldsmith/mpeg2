@@ -49,7 +49,7 @@ typedef struct mpeg2dec_s {
     /* last start code ? */
     uint8_t code;
 
-    /* ONLY for 0.2.0 release - will not stay there later */
+    /* ONLY for 0.2.x release - will not stay there later */
     int frame_rate_code;
 } mpeg2dec_t ;
 

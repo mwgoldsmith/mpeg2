@@ -152,6 +152,8 @@ static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
 	    if (picture->second_field)
 		vo_field (picture->current_frame, picture->picture_structure);
 	    else {
+		vo_frame_t * frame;
+
 		if (picture->picture_coding_type == B_TYPE)
 		    picture->current_frame =
 			vo_get_frame (mpeg2dec->output,
@@ -165,6 +167,17 @@ static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
 			picture->backward_reference_frame;
 		    picture->backward_reference_frame = picture->current_frame;
 		}
+
+		/* hopefully vektor will be happy */
+		frame = picture->current_frame;
+		frame->aspect_ratio = picture->aspect_ratio_information;
+		frame->frame_rate_code = picture->frame_rate_code;
+		frame->bitrate = picture->bitrate;
+		frame->progressive_sequence = picture->progressive_sequence;
+		frame->progressive_frame = picture->progressive_frame;
+		frame->top_field_first = picture->top_field_first;
+		frame->repeat_first_field = picture->repeat_first_field;
+		frame->picture_coding_type = picture->picture_coding_type;
 	    }
 	}
 
