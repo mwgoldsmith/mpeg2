@@ -9,13 +9,13 @@ AC_ARG_ENABLE(mlib,
 fi
 if test x$enable_mlib = xyes; then
   AC_CHECK_LIB(mlib, main, 
-               [ LIBMPEG2_OBJS="$LIBMPEG2_OBJS idct_mlib.lo motion_comp_mlib.lo" 
-		 LIBMPEG2_LIBS="$LIBMPEG2_LIBS -L/opt/SUNWmlib/lib -R/opt/SUNWmlib/lib -lmlib"
+               [ LIBS="$LIBS -L/opt/SUNWmlib/lib -R/opt/SUNWmlib/lib -lmlib" 
+		 LIBMPEG2_OBJS="$LIBMPEG2_OBJS idct_mlib.lo motion_comp_mlib.lo" 
+dnl		 LIBMPEG2_LIBS="$LIBMPEG2_LIBS -L/opt/SUNWmlib/lib -R/opt/SUNWmlib/lib -lmlib"
                  LIBMPEG2_CFLAGS="$LIBMPEG2_CFLAGS -I/opt/SUNWmlib/include" 
                  AC_DEFINE(HAVE_MLIB) ],
 	       , -L/opt/SUNWmlib/lib)
 fi
-
 
 dnl Do the right thing for architecture specific goodness
 case "$host_alias" in

@@ -45,7 +45,7 @@
 #include "idct.h"
 #include "header.h"
 #include "slice.h"
-
+#include "stats.h"
 
 #ifdef __i386__
 #include "mmx.h"
@@ -246,13 +246,14 @@ static int _mpeg2dec_read (plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t
 		if (is_sequence_needed && code != SEQUENCE_HEADER_CODE)
 			continue;
 
-		bitstream_init (chunk_buffer);
-		bitstream_get (8);
+		stats_header (code, chunk_buffer + 1);
+//		bitstream_init (chunk_buffer);
+//		bitstream_get (8);
 
 //deal with the header otherwise
 		switch (code) {
 		case SEQUENCE_HEADER_CODE:
-			header_process_sequence_header (&picture); 
+			header_process_sequence_header (&picture, chunk_buffer + 1); 
 			is_sequence_needed = 0;
 
 			if (!is_display_initialized) {
@@ -271,21 +272,23 @@ static int _mpeg2dec_read (plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t
 			is_sequence_needed = 1;
 			break;
 		case PICTURE_START_CODE:
-			header_process_picture_header (&picture);
+			header_process_picture_header (&picture, chunk_buffer + 1);
 			decode_reorder_frames (&picture);
 			break;
 		case EXTENSION_START_CODE:
-			header_process_extension (&picture);
+			header_process_extension (&picture, chunk_buffer + 1);
 			break;
+#if DELETE_ME
 		case GROUP_START_CODE:
-			header_process_gop_header (&picture);
+			header_process_gop_header (&picture, chunk_buffer + 1);
 			break;
 		case USER_DATA_START_CODE:
 			header_process_user_data ();
 			break;
+#endif
 		default:	
 			if (code >= SLICE_START_CODE_MIN && code <= SLICE_START_CODE_MAX) {
-				is_frame_done = slice_process (&picture, chunk_buffer);
+				is_frame_done = slice_process (&picture, code, chunk_buffer + 1);
 
 				if(picture.picture_coding_type == B_TYPE) {
 					codec_mpeg2dec.output->draw_slice (picture.throwaway_frame, chunk_buffer[0] - 1);
@@ -340,6 +343,8 @@ void *plugin_init (char *whoami)
 	pluginRegister (whoami,
 		PLUGIN_ID_CODEC_VIDEO,
 		"mpeg2",
+		NULL,
+		NULL,
 		&codec_mpeg2dec);
 
 	return &codec_mpeg2dec;

@@ -637,6 +637,8 @@ void *plugin_init (char *whoami)
         pluginRegister (whoami,
                 PLUGIN_ID_OUTPUT_VIDEO,
                 "x11",
+		NULL,
+		NULL,
                 &video_x11);
 
         return &video_x11;

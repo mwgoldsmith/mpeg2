@@ -90,10 +90,8 @@ void yuv420_rgb16_mmx(unsigned char * image, const unsigned char * py,
 		//"movl      $0, (%3)          # cache preload for image\n\t"
 		: : "r" (py), "r" (pu), "r" (pv), "r" (image));
 
-	do 
-	{
-		do 
-		{
+	do {
+		do {
 			/* this mmx assembly code deals with SINGLE scan line at a time, it convert 8
 				 pixels in each iteration */
 			__asm__ (
@@ -211,16 +209,12 @@ void yuv420_rgb16_mmx(unsigned char * image, const unsigned char * py,
 			image   += 16;
 			x       += 8;
 
-		} 
-		while (x < h_size);
+		} while (x < h_size);
 
-		if (even == 0) 
-		{
+		if (even == 0) {
 				pu  -= h_size/2;
 				pv  -= h_size/2;
-		} 
-		else  
-		{
+		} else  {
 				pu  += (uv_stride - h_size/2);
 				pv  += (uv_stride - h_size/2);
 		}
@@ -268,10 +262,8 @@ yuv420_argb32_mmx(unsigned char * image, const unsigned char * py,
 		"movq      (%0), %%mm6       # Load 8 Y        Y7 Y6 Y5 Y4 Y3 Y2 Y1 Y0\n\t"
 		: : "r" (py), "r" (pu), "r" (pv), "r" (image));
 
-	do
-	{
-		do
-		{
+	do {
+		do {
 			/* this mmx assembly code deals with SINGLE scan line at a time, it convert 8
 				 pixels in each iteration */
 			__asm__ (
@@ -400,16 +392,12 @@ yuv420_argb32_mmx(unsigned char * image, const unsigned char * py,
 			pv    += 4;
 			image += 32;
 			x     += 8;
-		} 
-		while (x < h_size);
+		} while (x < h_size);
 
-		if (even == 0)
-		{
+		if (even == 0) {
 			pu -= h_size/2;
 			pv -= h_size/2;
-		}
-		else
-		{
+		} else {
 			pu += (uv_stride - h_size/2);
 			pv += (uv_stride - h_size/2);
 		}
@@ -418,8 +406,7 @@ yuv420_argb32_mmx(unsigned char * image, const unsigned char * py,
 		image += (rgb_stride - 4*h_size);
 
 		/* load data for start of next scan line */
-		__asm__ 
-		(
+		__asm__ (
 			".align 8 \n\t"
 			"movd      (%1), %%mm0       # Load 4 Cb       00 00 00 00 u3 u2 u1 u0\n\t"
 			"movd      (%2), %%mm1       # Load 4 Cr       00 00 00 00 v3 v2 v1 v0\n\t"
@@ -433,8 +420,7 @@ yuv420_argb32_mmx(unsigned char * image, const unsigned char * py,
 		x  = 0;
 		y += 1;
 		even = (!even);
-	}
-	while ( y < v_size) ;
+	} while ( y < v_size) ;
 
 	//__asm__ ("emms\n\t");
 }
@@ -448,24 +434,21 @@ yuv2rgb_init_mmx(uint32_t bpp, uint32_t mode)
 	return NULL;
 	//FIXME remove when fixed
 
-	if (bpp == 15 || bpp == 16) 
-	{
+	if (bpp == 15 || bpp == 16) {
 		if (mode == MODE_RGB)
 				return yuv420_rgb16_mmx;
 		if (mode == MODE_BGR)
 				return NULL;
 	}
 
-	if (bpp == 24) 
-	{
+	if (bpp == 24) {
 		if (mode == MODE_RGB)
 				return NULL;
 		else if (mode == MODE_BGR)
 				return NULL;
 	}
 
-	if (bpp == 32) 
-	{
+	if (bpp == 32) {
 		if (mode == MODE_RGB)
 				return yuv420_argb32_mmx;
 		else if (mode == MODE_BGR)

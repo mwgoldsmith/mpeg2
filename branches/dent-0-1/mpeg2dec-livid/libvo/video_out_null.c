@@ -154,6 +154,8 @@ void *plugin_init (char *whoami)
 	pluginRegister (whoami,
 		PLUGIN_ID_OUTPUT_VIDEO,
 		"null",
+		NULL,
+		NULL,
 		&video_null);
 
 	return &video_null;

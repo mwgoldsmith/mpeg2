@@ -21,5 +21,5 @@
  *
  */
  
-uint32_t slice_process(picture_t *picture,uint8_t *slice_data);
+uint32_t slice_process (picture_t *picture, uint8_t code,  uint8_t *buffer);
 void slice_init(void);

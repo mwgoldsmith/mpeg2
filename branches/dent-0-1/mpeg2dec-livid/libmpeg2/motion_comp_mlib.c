@@ -38,21 +38,20 @@
 #include <mlib_video.h>
 
 
-
 // mlib doesn't have this function...
 void
 motion_comp_idct_copy_mlib (uint8_t *dst, int16_t *block, uint32_t stride)
 {
-  uint32_t i;
-  uint8_t *dst2 = dst;
+	uint32_t i;
+	uint8_t *dst2 = dst;
   
-  for (i = 0; i < 8; i++)
-    {
-      *((uint32_t *)dst2) = (uint32_t)0;
-      *((uint32_t *)(dst2+4)) = (uint32_t)0;
-      dst2 += stride;
-    }
-  mlib_VideoAddBlock_U8_S16 (dst, block, stride);
+	for (i = 0; i < 8; i++) {
+		*((uint32_t *)dst2) = (uint32_t)0;
+		*((uint32_t *)(dst2+4)) = (uint32_t)0;
+		dst2 += stride;
+	}
+
+	mlib_VideoAddBlock_U8_S16 (dst, block, stride);
 }
 
 void
@@ -205,4 +204,4 @@ motion_comp_avg_xy_8x8_mlib (uint8_t *dst, uint8_t *block, int32_t stride, int32
     mlib_VideoInterpAveXY_U8_U8_8x4 (dst, block, stride, stride);
 }
 
-MOTION_COMP_EXTERN(mlib)
+//MOTION_COMP_EXTERN(mlib)

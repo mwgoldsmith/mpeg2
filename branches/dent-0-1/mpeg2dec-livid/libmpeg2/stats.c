@@ -29,195 +29,264 @@
 #include "debug.h"
 #include "stats.h"
 
-char *chroma_format_str[4] =
+static void stats_picture (uint8_t * buffer)
 {
-	"Invalid Chroma Format",
-	"4:2:0 Chroma",
-	"4:2:2 Chroma",
-	"4:4:4 Chroma"
-};
+	static char * picture_coding_type_str [8] = {
+		"Invalid picture type",
+		"I-type",
+		"P-type",
+		"B-type",
+		"D (very bad)",
+		"Invalid","Invalid","Invalid"
+	};
 
-char *picture_structure_str[4] =
+	int picture_coding_type;
+	int temporal_reference;
+	int vbv_delay;
+
+	temporal_reference = (buffer[0] << 2) | (buffer[1] >> 6);
+	picture_coding_type = (buffer [1] >> 3) & 7;
+	vbv_delay = ((buffer[1] << 13) | (buffer[2] << 5) | (buffer[3] >> 3)) & 0xffff;
+
+	dprintf ("(picture) %s temporal_reference %d, vbv_delay %d\n",
+			 picture_coding_type_str [picture_coding_type],
+			 temporal_reference, vbv_delay);
+}
+
+static void stats_user_data (uint8_t * buffer)
 {
-	"Invalid Picture Structure",
-	"Top field",
-	"Bottom field",
-	"Frame Picture"
-};
+	dprintf ("(user_data)\n");
+}
 
-char *picture_coding_type_str[8] = 
+static void stats_sequence (uint8_t * buffer)
 {
-	"Invalid picture type",
-	"I-type",
-	"P-type",
-	"B-type",
-	"D (very bad)",
-	"Invalid","Invalid","Invalid"
-};
+	static char * aspect_ratio_information_str[8] = {
+		"Invalid Aspect Ratio",
+		"1:1",
+		"4:3",
+		"16:9",
+		"2.21:1",
+		"Invalid Aspect Ratio",
+		"Invalid Aspect Ratio",
+		"Invalid Aspect Ratio"
+	};
+	static char * frame_rate_str[16] = {
+		"Invalid frame_rate_code",
+		"23.976", "24", "25"   , "29.97",
+		"30"    , "50", "59.94", "60"   ,
+		"Invalid frame_rate_code", "Invalid frame_rate_code",
+		"Invalid frame_rate_code", "Invalid frame_rate_code",
+		"Invalid frame_rate_code", "Invalid frame_rate_code",
+		"Invalid frame_rate_code"
+	};
 
-char *aspect_ratio_information_str[8] = 
+	int horizontal_size;
+	int vertical_size;
+	int aspect_ratio_information;
+	int frame_rate_code;
+	int bit_rate_value;
+	int vbv_buffer_size_value;
+	int constrained_parameters_flag;
+	int load_intra_quantizer_matrix;
+	int load_non_intra_quantizer_matrix;
+
+	vertical_size = (buffer[0] << 16) | (buffer[1] << 8) | buffer[2];
+	horizontal_size = vertical_size >> 12;
+	vertical_size &= 0xfff;
+	aspect_ratio_information = buffer[3] >> 4;
+	frame_rate_code = buffer[3] & 15;
+	bit_rate_value = (buffer[4] << 10) | (buffer[5] << 2) | (buffer[6] >> 6);
+	vbv_buffer_size_value = ((buffer[6] << 5) | (buffer[7] >> 3)) & 0x3ff;
+	constrained_parameters_flag = buffer[7] & 4;
+	load_intra_quantizer_matrix = buffer[7] & 2;
+	if (load_intra_quantizer_matrix)
+		buffer += 64;
+	load_non_intra_quantizer_matrix = buffer[7] & 1;
+
+	dprintf ("(seq) %dx%d %s, %s fps, %5.0f kbps, VBV %d kB%s%s%s\n",
+			 horizontal_size, vertical_size,
+			 aspect_ratio_information_str [aspect_ratio_information],
+			 frame_rate_str [frame_rate_code],
+			 bit_rate_value * 400.0 / 1000.0,
+			 2 * vbv_buffer_size_value,
+			 constrained_parameters_flag ? " , CP":"",
+			 load_intra_quantizer_matrix ? " , Custom Intra Matrix":"",
+			 load_non_intra_quantizer_matrix ? " , Custom Non-Intra Matrix":"");
+}
+
+static void stats_sequence_error (uint8_t * buffer)
 {
-	"Invalid Aspect Ratio",
-	"1:1",
-	"4:3",
-	"16:9",
-	"2.21:1",
-	"Invalid Aspect Ratio",
-	"Invalid Aspect Ratio",
-	"Invalid Aspect Ratio"
-};
+	dprintf ("(sequence_error)\n");
+}
 
-char *frame_rate_str[16] = 
+static void stats_sequence_end (uint8_t * buffer)
 {
-	"Invalid frame_rate_code",
-	"23.976", "24", "25"   , "29.97",
-	"30"    , "50", "59.94", "60"   ,
-	"Invalid frame_rate_code", "Invalid frame_rate_code",
-	"Invalid frame_rate_code", "Invalid frame_rate_code",
-	"Invalid frame_rate_code", "Invalid frame_rate_code",
-	"Invalid frame_rate_code"
-};
+	dprintf ("(sequence_end)\n");
+}
 
-
-void stats_sequence_header(picture_t *picture)
+static void stats_group (uint8_t * buffer)
 {
-	dprintf("(seq) ");
-	dprintf("%dx%d ",picture->horizontal_size,picture->vertical_size);
-	dprintf("%s, ",aspect_ratio_information_str[picture->aspect_ratio_information]);
-	dprintf("%s fps, ",frame_rate_str[picture->frame_rate_code]);
-	dprintf("%5.0f kbps, ",picture->bit_rate_value * 400.0 / 1000.0);
-	dprintf("VBV %d kB ",2 * picture->vbv_buffer_size);
-	dprintf("%s ",picture->constrained_parameters_flag ? ", CP":"");
-	dprintf("%s ",picture->use_custom_intra_quantizer_matrix ? ", Custom Intra Matrix":"");
-	dprintf("%s ",picture->use_custom_non_intra_quantizer_matrix ? ", Custom Non-Intra Matrix":"");
-	dprintf("\n");
+	dprintf ("(group)%s%s\n",
+			 (buffer[4] & 0x40) ? " closed_gop" : "",
+			 (buffer[4] & 0x20) ? " broken_link" : "");
+}
+
+static void stats_slice (uint8_t code, uint8_t * buffer)
+{
+	//dprintf ("(slice %d)\n", code);
+}
+
+static void stats_sequence_extension (uint8_t * buffer)
+{
+	static char * chroma_format_str[4] = {
+		"Invalid Chroma Format",
+		"4:2:0 Chroma",
+		"4:2:2 Chroma",
+		"4:4:4 Chroma"
+	};
+
+	int progressive_sequence;
+	int chroma_format;
+
+	progressive_sequence = (buffer[1] >> 3) & 1;
+	chroma_format = (buffer[1] >> 1) & 3;
+
+	dprintf ("(seq_ext) progressive_sequence %d, %s\n",
+			 progressive_sequence, chroma_format_str [chroma_format]);
+}
+
+static void stats_sequence_display_extension (uint8_t * buffer)
+{
+	dprintf ("(sequence_display_extension)\n");
+}
+
+static void stats_quant_matrix_extension (uint8_t * buffer)
+{
+	dprintf ("(quant_matrix_extension)\n");
+}
+
+static void stats_copyright_extension (uint8_t * buffer)
+{
+	dprintf ("(copyright_extension)\n");
 }
 
 
-void stats_gop_header(picture_t *picture)
+static void stats_sequence_scalable_extension (uint8_t * buffer)
 {
-	dprintf("(gop) ");
-	dprintf("drop_flag %d, ", picture->drop_flag);
-	dprintf("timecode %d:%02d:%02d:%02d, ", picture->hour, picture->minute, 
-			picture->sec, picture->frame);
-	dprintf("closed_gop %d, ",picture->closed_gop);
-	dprintf("broken_link=%d\n",picture->broken_link);
+	dprintf ("(sequence_scalable_extension)\n");
 }
 
-
-
-void stats_picture_header(picture_t *picture)
+static void stats_picture_display_extension (uint8_t * buffer)
 {
-	dprintf("(picture) %s ",picture_coding_type_str[picture->picture_coding_type]);
-	dprintf("temporal_reference %d, ",picture->temporal_reference);
-	dprintf("vbv_delay %d\n",picture->vbv_delay);
+	dprintf ("(picture_display_extension)\n");
 }
 
-
-
-void stats_slice_header(slice_t *slice)
+static void stats_picture_coding_extension (uint8_t * buffer)
 {
-	dprintf("(slice) ");
-	dprintf("quantizer_scale_code = %d, ",slice->quantizer_scale_code);
-	dprintf("quantizer_scale= %d ",slice->quantizer_scale);
-	dprintf("\n");
+	static char * picture_structure_str[4] = {
+		"Invalid Picture Structure",
+		"Top field",
+		"Bottom field",
+		"Frame Picture"
+	};
+
+	int f_code[2][2];
+	int intra_dc_precision;
+	int picture_structure;
+	int top_field_first;
+	int frame_pred_frame_dct;
+	int concealment_motion_vectors;
+	int q_scale_type;
+	int intra_vlc_format;
+	int alternate_scan;
+	int repeat_first_field;
+	int progressive_frame;
+
+	f_code[0][0] = buffer[0] & 15;
+	f_code[0][1] = buffer[1] >> 4;
+	f_code[1][0] = buffer[1] & 15;
+	f_code[1][1] = buffer[2] >> 4;
+	intra_dc_precision = (buffer[2] >> 2) & 3;
+	picture_structure = buffer[2] & 3;
+	top_field_first = buffer[3] >> 7;
+	frame_pred_frame_dct = (buffer[3] >> 6) & 1;
+	concealment_motion_vectors = (buffer[3] >> 5) & 1;
+	q_scale_type = (buffer[3] >> 4) & 1;
+	intra_vlc_format = (buffer[3] >> 3) & 1;
+	alternate_scan = (buffer[3] >> 2) & 1;
+	repeat_first_field = (buffer[3] >> 1) & 1;
+	progressive_frame = buffer[4] >> 7;
+
+	dprintf ("(pic_ext) %s\n", picture_structure_str [picture_structure]);
+
+	dprintf ("(pic_ext) forward horizontal  f_code % d, forward vertical  f_code % d\n",
+			 f_code[0][0], f_code[0][1]);
+	dprintf ("(pic_ext) backward horizontal f_code % d, backward vertical f_code % d\n", 
+			 f_code[1][0], f_code[1][1]);
+	dprintf ("(pic_ext) intra_dc_precision %d, top_field_first %d, frame_pred_frame_dct %d\n",
+			 intra_dc_precision, top_field_first, frame_pred_frame_dct);
+	dprintf ("(pic_ext) concealment_motion_vectors %d, q_scale_type %d, intra_vlc_format %d\n",
+			 concealment_motion_vectors, q_scale_type, intra_vlc_format);
+	dprintf ("(pic_ext) alternate_scan %d, repeat_first_field %d, progressive_frame %d\n",
+			 alternate_scan, repeat_first_field, progressive_frame);
 }
 
-
-void stats_macroblock(macroblock_t *mb)
+void stats_header (uint8_t code, uint8_t * buffer)
 {
-		dprintf("(macroblock) ");
-		dprintf("cbp = %d ",mb->coded_block_pattern);
-		dprintf("\n");
-}
+	if (! (debug_is_on ()))
+		return;
 
-
-void 
-stats_sequence_ext(picture_t *picture)
-{
-	dprintf("(seq_ext) ");
-	dprintf("progressive_sequence %d, ",picture->progressive_sequence);
-	dprintf("%s\n",chroma_format_str[picture->chroma_format]);
-}
-
-
-void stats_sequence_display_ext(picture_t *picture)
-{
-	dprintf("(seq_dsp_ext) ");
-	dprintf("video_format %d, color_description %d",
-			picture->video_format,picture->color_description);
-	dprintf("\n");
-
-	dprintf("(seq dsp ext) ");
-	dprintf("display_horizontal_size %4d, display_vertical_size %4d",
-			picture->display_horizontal_size,picture->display_vertical_size);
-	dprintf("\n");
-
-	if (picture->color_description)
-	{
-		dprintf("(seq dsp ext) ");
-		dprintf("color_primaries %d, ",picture->color_primaries);
-		dprintf("xfer_characteristics %d,",picture->transfer_characteristics);
-		dprintf("matrix_coefficients %d",picture->matrix_coefficients);
-		dprintf("\n");
+	switch (code) {
+	case 0x00:
+		stats_picture (buffer);
+		break;
+	case 0xb2:
+		stats_user_data (buffer);
+		break;
+	case 0xb3:
+		stats_sequence (buffer);
+		break;
+	case 0xb4:
+		stats_sequence_error (buffer);
+		break;
+	case 0xb5:
+		//stats_extension (buffer);
+		switch (buffer[0] >> 4) {
+		case 1:
+			stats_sequence_extension (buffer);
+			break;
+		case 2:
+			stats_sequence_display_extension (buffer);
+			break;
+		case 3:
+			stats_quant_matrix_extension (buffer);
+			break;
+		case 4:
+			stats_copyright_extension (buffer);
+			break;
+		case 5:
+			stats_sequence_scalable_extension (buffer);
+			break;
+		case 7:
+			stats_picture_display_extension (buffer);
+			break;
+		case 8:
+			stats_picture_coding_extension (buffer);
+			break;
+		default:
+			dprintf ("(unknown extension %#x)\n", buffer[0] >> 4);
+		}
+		break;
+	case 0xb7:
+		stats_sequence_end (buffer);
+		break;
+	case 0xb8:
+		stats_group (buffer);
+		break;
+	default:
+		if (code < 0xb0)
+			stats_slice (code, buffer);
+		else
+			dprintf ("(unknown start code %#02x)\n", code);
 	}
-}
-
-
-
-void stats_quant_matrix_ext_header(picture_t *picture)
-{
-#if 0
-  if (Verbose_Flag>NO_LAYER)
-  {
-   dprintf("quant matrix extension (byte %d)\n",(pos>>3)-4);
-   dprintf("  load_intra_quantizer_matrix=%d\n",
-      ld->load_intra_quantizer_matrix);
-   dprintf("  load_non_intra_quantizer_matrix=%d\n",
-      ld->load_non_intra_quantizer_matrix);
-   dprintf("  load_chroma_intra_quantizer_matrix=%d\n",
-      ld->load_chroma_intra_quantizer_matrix);
-   dprintf("  load_chroma_non_intra_quantizer_matrix=%d\n",
-      ld->load_chroma_non_intra_quantizer_matrix);
-  }
-#endif
-}
-
-void 
-stats_picture_coding_ext_header(picture_t *picture)
-{
-	dprintf("(pic_ext) ");
-	dprintf("%s",picture_structure_str[picture->picture_structure]);
-	dprintf("\n");
-
-	dprintf("(pic_ext) ");
-	dprintf("forward horizontal  f_code %d,  forward vertical  f_code   %d", 
-			picture->f_code[0][0], picture->f_code[0][1]);
-	dprintf("\n");
-
-	dprintf("(pic_ext) ");
-	dprintf("backward horizontal f_code %d,  backward_vertical f_code   %d", 
-			picture->f_code[1][0], picture->f_code[1][1]);
-	dprintf("\n");
-
-
-	dprintf("(pic_ext) ");
-	dprintf("frame_pred_frame_dct       %d,  concealment_motion_vectors %d",
-			picture->frame_pred_frame_dct,picture->concealment_motion_vectors);
-	dprintf("\n");
-
-	dprintf("(pic_ext) ");
-	dprintf("progressive_frame          %d,  composite_display_flag     %d",
-			picture->progressive_frame, picture->composite_display_flag);
-	dprintf("\n");
-
-	dprintf("(pic_ext) ");
-	dprintf("intra_dc_precision %d, q_scale_type  %d,    top_field_first %d",
-			picture->intra_dc_precision,picture->q_scale_type,picture->top_field_first);
-	dprintf("\n");
-
-	dprintf("(pic_ext) ");
-	dprintf("alternate_scan     %d, intra_vlc_fmt %d, repeat_first_field %d",
-			picture->alternate_scan,picture->intra_vlc_format,picture->repeat_first_field);
-	dprintf("\n");
 }

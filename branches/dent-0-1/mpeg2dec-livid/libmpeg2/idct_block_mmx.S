@@ -23,17 +23,21 @@ idct_block_mmx:
  *	column 0: even part
  *  use V4, V12, V0, V8 to produce V22..V25
  */
-	movq		8*12(%ecx), %mm0	/* maybe the first mul can be done together */
+	movq		8*12(%esi), %mm0	/* maybe the first mul can be done together */
 													/* with the dequantization in iHuff module */
-	pmulhw 	8*12(%esi), %mm0		/* V12 */
-	movq		8*4(%ecx), %mm1
-	pmulhw 	8*4(%esi), %mm1		/* V4 */
-	movq 		(%ecx), %mm3
+	psllw $4, %mm0 /* PRESCALE */
+	pmulhw 	8*12(%ecx), %mm0		/* V12 */
+	movq		8*4(%esi), %mm1
+	psllw $4, %mm1 /* PRESCALE */
+	pmulhw 	8*4(%ecx), %mm1		/* V4 */
+	movq 		(%esi), %mm3
+	psllw $4, %mm3 /* PRESCALE */
 	psraw $1, %mm0				/* t64=t66 */
-	pmulhw (%esi), %mm3		/* V0 */
-	movq 8*8(%ecx), %mm5		/* duplicate V4 */
+	pmulhw (%ecx), %mm3		/* V0 */
+	movq 8*8(%esi), %mm5		/* duplicate V4 */
+	psllw $4, %mm5 /* PRESCALE */
 	movq %mm1, %mm2			/* added 11/1/96 */
-	pmulhw 8*8(%esi),%mm5		/* V8 */
+	pmulhw 8*8(%ecx),%mm5		/* V8 */
 	psubsw %mm0, %mm1		/* V16 */
 	pmulhw x5a825a825a825a82, %mm1	/* 23170 ->V18 */
 	paddsw %mm0, %mm2		/* V17 */
@@ -44,7 +48,8 @@ idct_block_mmx:
 	paddsw %mm5, %mm3		/* V19 */
 	psubsw %mm5, %mm4		/* V20 ;mm5 free */
 /* moved from the block below */
-	movq 8*10(%ecx), %mm7
+	movq 8*10(%esi), %mm7
+	psllw $4, %mm7 /* PRESCALE */
 	psraw $1, %mm3			/* t74=t81 */
 	movq %mm3, %mm6			/* duplicate t74=t81 */
 	psraw $2, %mm4			/* t77=t79 */
@@ -64,15 +69,18 @@ idct_block_mmx:
  */
 /* moved above: movq 8*10(%ecx), %mm7 */
 
-	pmulhw 8*10(%esi), %mm7		/* V10 */
-	movq 8*6(%ecx), %mm0
-	pmulhw 8*6(%esi), %mm0		/* V6 */
-	movq 8*2(%ecx), %mm5
+	pmulhw 8*10(%ecx), %mm7		/* V10 */
+	movq 8*6(%esi), %mm0
+	psllw $4, %mm0 /* PRESCALE */
+	pmulhw 8*6(%ecx), %mm0		/* V6 */
+	movq 8*2(%esi), %mm5
+	psllw $4, %mm5 /* PRESCALE */
 	movq %mm7, %mm3			/* duplicate V10 */
-	pmulhw 8*2(%esi), %mm5		/* V2 */
-	movq 8*14(%ecx), %mm4
+	pmulhw 8*2(%ecx), %mm5		/* V2 */
+	movq 8*14(%esi), %mm4
+	psllw $4, %mm4 /* PRESCALE */
 	psubsw %mm0, %mm7		/* V26 */
-	pmulhw 8*14(%esi), %mm4		/* V14 */
+	pmulhw 8*14(%ecx), %mm4		/* V14 */
 	paddsw %mm0, %mm3		/* V29 ; free mm0 */
 	movq %mm7, %mm1			/* duplicate V26 */
 	psraw $1, %mm3			/* t91=t94 */
@@ -136,10 +144,11 @@ idct_block_mmx:
 	movq %mm3, 8*12(%esi)		/* tm12; free mm3 */
 	paddsw %mm4, %mm6		/* tm4 */
 /* moved from next block */
-	movq 8*5(%ecx), %mm1
+	movq 8*5(%esi), %mm1
+	psllw $4, %mm1 /* PRESCALE */
 	psubsw %mm4, %mm0		/* tm10; free mm4 */
 /* moved from next block */
-	pmulhw 8*5(%esi), %mm1		/* V5 */
+	pmulhw 8*5(%ecx), %mm1		/* V5 */
 	movq %mm6, 8*4(%esi)		/* tm4; free mm6 */
 	movq %mm0, 8*10(%esi)		/* tm10; free mm0 */
 /* column 1: even part
@@ -149,15 +158,18 @@ idct_block_mmx:
  *	movq 8*5(%ecx), %mm1
  *	pmulhw 8*5(%esi), %mm1		 V5
  */
-	movq 8*13(%ecx), %mm7
+	movq 8*13(%esi), %mm7
+	psllw $4, %mm7 /* PRESCALE */
 	psllw $1, %mm1			/* t128=t130 */
-	pmulhw 8*13(%esi), %mm7		/* V13 */
+	pmulhw 8*13(%ecx), %mm7		/* V13 */
 	movq %mm1, %mm2			/* duplicate t128=t130 */
-	movq 8(%ecx), %mm3
-	pmulhw 8(%esi), %mm3		/* V1 */
-	movq 8*9(%ecx), %mm5
+	movq 8(%esi), %mm3
+	psllw $4, %mm3 /* PRESCALE */
+	pmulhw 8(%ecx), %mm3		/* V1 */
+	movq 8*9(%esi), %mm5
+	psllw $4, %mm5
 	psubsw %mm7, %mm1		/* V50 */
-	pmulhw 8*9(%esi), %mm5		/* V9 */
+	pmulhw 8*9(%ecx), %mm5		/* V9 */
 	paddsw %mm7, %mm2		/* V51 */
 	pmulhw x5a825a825a825a82, %mm1	/* 23170 ->V52 */
 	movq %mm2, %mm6			/* duplicate V51 */
@@ -168,7 +180,8 @@ idct_block_mmx:
 	psubsw %mm5, %mm4		/* V54 ;mm5 free */
 	movq %mm3, %mm7			/* duplicate V53 */
 /* moved from next block */
-	movq 8*11(%ecx), %mm0
+	movq 8*11(%esi), %mm0
+	psllw $4, %mm0 /* PRESCALE */
 	psraw $1, %mm4			/* t140=t142 */
 	psubsw %mm6, %mm1		/* V55 ; mm6 free */
 	paddsw %mm2, %mm3		/* V56 */
@@ -184,15 +197,18 @@ idct_block_mmx:
  * moved above
  *	movq 8*11(%ecx), %mm0
  */
-	pmulhw 8*11(%esi), %mm0		/* V11 */
-	movq 8*7(%ecx), %mm6
-	pmulhw 8*7(%esi), %mm6		/* V7 */
-	movq 8*15(%ecx), %mm4
+	pmulhw 8*11(%ecx), %mm0		/* V11 */
+	movq 8*7(%esi), %mm6
+	psllw $4, %mm6 /* PRESCALE */
+	pmulhw 8*7(%ecx), %mm6		/* V7 */
+	movq 8*15(%esi), %mm4
+	psllw $4, %mm4 /* PRESCALE */
 	movq %mm0, %mm3			/* duplicate V11 */
-	pmulhw 8*15(%esi), %mm4		/* V15 */
-	movq 8*3(%ecx), %mm5
+	pmulhw 8*15(%ecx), %mm4		/* V15 */
+	movq 8*3(%esi), %mm5
+	psllw $4, %mm5 /* PRESCALE */
 	psllw $1, %mm6			/* t146=t152 */
-	pmulhw 8*3(%esi), %mm5		/* V3 */
+	pmulhw 8*3(%ecx), %mm5		/* V3 */
 	paddsw %mm6, %mm0		/* V63 */
 /* note that V15 computation has a correction step: 
  * this is a 'magic' constant that rebiases the results to be closer to the

@@ -34,7 +34,7 @@ int debug_is_on(void)
 	
 	if(debug_level < 0)
 	{
-	  env_var = getenv("MPEG2_DEBUG");
+		env_var = getenv("MPEG2_DEBUG");
 
 		if (env_var)
 		{

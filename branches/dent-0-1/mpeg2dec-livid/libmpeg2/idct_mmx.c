@@ -39,7 +39,4 @@ void idct_block_mmx(int16_t * foo);
 void
 idct_end_mmx()
 {
-	emms();
 }
-
-
