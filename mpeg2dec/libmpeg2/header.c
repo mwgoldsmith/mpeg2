@@ -459,16 +459,33 @@ void mpeg2_set_fbuf (mpeg2dec_t * mpeg2dec, int b_type)
 	}
 }
 
-mpeg2_state_t mpeg2_header_picture_start (mpeg2dec_t * mpeg2dec)
+int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 {
+    uint8_t * buffer = mpeg2dec->chunk_start;
     mpeg2_picture_t * picture = &(mpeg2dec->new_picture);
+    mpeg2_decoder_t * decoder = &(mpeg2dec->decoder);
+    int type;
 
     mpeg2dec->state = ((mpeg2dec->state != STATE_SLICE_1ST) ?
 		       STATE_PICTURE : STATE_PICTURE_2ND);
-    picture->flags = PIC_FLAG_PROGRESSIVE_FRAME;
+    mpeg2dec->ext_state = PIC_CODING_EXT;
+
+    picture->temporal_reference = (buffer[0] << 2) | (buffer[1] >> 6);
+
+    type = (buffer [1] >> 3) & 7;
+    if (type == PIC_FLAG_CODING_TYPE_P || type == PIC_FLAG_CODING_TYPE_B) {
+	/* forward_f_code and backward_f_code - used in mpeg1 only */
+	decoder->f_motion.f_code[1] = (buffer[3] >> 2) & 1;
+	decoder->f_motion.f_code[0] =
+	    (((buffer[3] << 1) | (buffer[4] >> 7)) & 7) - 1;
+	decoder->b_motion.f_code[1] = (buffer[4] >> 6) & 1;
+	decoder->b_motion.f_code[0] = ((buffer[4] >> 3) & 7) - 1;
+    }
+
+    picture->flags = PIC_FLAG_PROGRESSIVE_FRAME | type;
     picture->tag = picture->tag2 = 0;
     if (mpeg2dec->num_tags) {
-	if (mpeg2dec->bytes_since_tag >= 4) {
+	if (mpeg2dec->bytes_since_tag >= mpeg2dec->chunk_ptr - buffer + 4) {
 	    mpeg2dec->num_tags = 0;
 	    picture->tag = mpeg2dec->tag_current;
 	    picture->tag2 = mpeg2dec->tag2_current;
@@ -480,39 +497,13 @@ mpeg2_state_t mpeg2_header_picture_start (mpeg2dec_t * mpeg2dec)
 	    picture->flags |= PIC_FLAG_TAGS;
 	}
     }
+    picture->nb_fields = 2;
     picture->display_offset[0].x = picture->display_offset[1].x =
 	picture->display_offset[2].x = mpeg2dec->display_offset_x;
     picture->display_offset[0].y = picture->display_offset[1].y =
 	picture->display_offset[2].y = mpeg2dec->display_offset_y;
-    return mpeg2_parse_header (mpeg2dec);
-}
-
-int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
-{
-    uint8_t * buffer = mpeg2dec->chunk_start;
-    mpeg2_picture_t * picture = &(mpeg2dec->new_picture);
-    mpeg2_decoder_t * decoder = &(mpeg2dec->decoder);
-    int type;
-
-    type = (buffer [1] >> 3) & 7;
-    mpeg2dec->ext_state = PIC_CODING_EXT;
-
-    picture->temporal_reference = (buffer[0] << 2) | (buffer[1] >> 6);
-
-    picture->flags |= type;
-
-    if (type == PIC_FLAG_CODING_TYPE_P || type == PIC_FLAG_CODING_TYPE_B) {
-	/* forward_f_code and backward_f_code - used in mpeg1 only */
-	decoder->f_motion.f_code[1] = (buffer[3] >> 2) & 1;
-	decoder->f_motion.f_code[0] =
-	    (((buffer[3] << 1) | (buffer[4] >> 7)) & 7) - 1;
-	decoder->b_motion.f_code[1] = (buffer[4] >> 6) & 1;
-	decoder->b_motion.f_code[0] = ((buffer[4] >> 3) & 7) - 1;
-    }
 
     /* XXXXXX decode extra_information_picture as well */
-
-    picture->nb_fields = 2;
 
     mpeg2dec->q_scale_type = 0;
     decoder->intra_dc_precision = 7;
