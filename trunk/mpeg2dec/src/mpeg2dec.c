@@ -217,7 +217,6 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
     info = mpeg2_info (mpeg2dec);
     while (1) {
 	state = mpeg2_buffer (mpeg2dec, &current, end);
-	//printf ("AAAA %d\n", state);
 	switch (state) {
 	case -1:
 	    return;
