@@ -82,12 +82,12 @@ typedef struct {
 } fbuf_t;
 
 typedef struct {
-    sequence_t * sequence;
-    picture_t * current_picture;
-    picture_t * current_picture_2nd;
+    const sequence_t * sequence;
+    const picture_t * current_picture;
+    const picture_t * current_picture_2nd;
     const fbuf_t * current_fbuf;
-    picture_t * display_picture;
-    picture_t * display_picture_2nd;
+    const picture_t * display_picture;
+    const picture_t * display_picture_2nd;
     const fbuf_t * display_fbuf;
     const fbuf_t * discard_fbuf;
 } mpeg2_info_t;
@@ -118,7 +118,7 @@ void mpeg2_init_fbuf (decoder_t * decoder, uint8_t * current_fbuf[3],
 void mpeg2_slice (decoder_t * decoder, int code, const uint8_t * buffer);
 
 mpeg2dec_t * mpeg2_init (uint32_t mm_accel);
-mpeg2_info_t * mpeg2_info (mpeg2dec_t * mpeg2dec);
+const mpeg2_info_t * mpeg2_info (mpeg2dec_t * mpeg2dec);
 void mpeg2_close (mpeg2dec_t * mpeg2dec);
 
 int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end);

@@ -66,7 +66,7 @@ mpeg2dec_t * mpeg2_init (uint32_t mm_accel)
     return mpeg2dec;
 }
 
-mpeg2_info_t * mpeg2_info (mpeg2dec_t * mpeg2dec)
+const mpeg2_info_t * mpeg2_info (mpeg2dec_t * mpeg2dec)
 {
     return &(mpeg2dec->info);
 }
@@ -181,7 +181,7 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 	/* state transition after a sequence header */
 	case RECEIVED (0x00, STATE_SEQUENCE):
 	case RECEIVED (0xb8, STATE_SEQUENCE):
-	    if (memcmp (&(mpeg2dec->last_sequence), &(mpeg2dec->sequence), 
+	    if (memcmp (&(mpeg2dec->last_sequence), &(mpeg2dec->sequence),
 			sizeof (sequence_t))) {
 		mpeg2dec->last_sequence = mpeg2dec->sequence;
 		return STATE_SEQUENCE;
