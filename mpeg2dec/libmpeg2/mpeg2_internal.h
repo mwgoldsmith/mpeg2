@@ -99,6 +99,8 @@ struct mpeg2_decoder_s {
     uint8_t intra_quantizer_matrix [64];
     uint8_t non_intra_quantizer_matrix [64];
 
+	mpeg2_chroma_format_t chroma_format;
+
     /* The width and height of the picture snapped to macroblock units */
     int width;
     int height;
@@ -162,7 +164,7 @@ struct mpeg2dec_s {
     uint8_t code;
 
     /* PTS */
-    uint32_t pts_current, pts_previous;
+    mpeg2_pts_t pts_current, pts_previous;
     int num_pts;
     int bytes_since_pts;
 
