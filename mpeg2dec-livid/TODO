@@ -6,6 +6,7 @@
 	* missing MC modes
 	* mpeg1 (aaron ?)
 	* conformance testing
+	* dont crash on bad streams, make sure we can resync after a while
 
 * structural optimizations
 	* integrate idct_add and idct_copy into the main idct routine
