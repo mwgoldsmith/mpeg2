@@ -52,6 +52,7 @@ static int demux_pva = 0;
 static mpeg2dec_t * mpeg2dec;
 static vo_open_t * output_open = NULL;
 static vo_instance_t * output;
+static int sigint = 0;
 
 #ifdef HAVE_GETTIMEOFDAY
 
@@ -59,9 +60,8 @@ static void print_fps (int final);
 
 static RETSIGTYPE signal_handler (int sig)
 {
-    print_fps (1);
+    sigint = 1;
     signal (sig, SIG_DFL);
-    raise (sig);
 }
 
 static void print_fps (int final)
@@ -524,7 +524,7 @@ static void ps_loop (void)
 	end = buffer + fread (buffer, 1, BUFFER_SIZE, in_file);
 	if (demux (buffer, end, 0))
 	    break;	/* hit program_end_code */
-    } while (end == buffer + BUFFER_SIZE);
+    } while (end == buffer + BUFFER_SIZE && !sigint);
 }
 
 static int pva_demux (uint8_t * buf, uint8_t * end)
@@ -620,7 +620,7 @@ static void pva_loop (void)
     do {
 	end = buffer + fread (buffer, 1, BUFFER_SIZE, in_file);
 	pva_demux (buffer, end);
-    } while (end == buffer + BUFFER_SIZE);
+    } while (end == buffer + BUFFER_SIZE && !sigint);
 }
 
 static void ts_loop (void)
@@ -654,7 +654,7 @@ static void ts_loop (void)
 	    if (buf[3] & 0x10)
 		demux (data, end, (buf[1] & 0x40) ? DEMUX_PAYLOAD_START : 0);
 	}
-    } while (packets == PACKETS);
+    } while (packets == PACKETS && !sigint);
 }
 
 static void es_loop (void)
@@ -664,7 +664,7 @@ static void es_loop (void)
     do {
 	end = buffer + fread (buffer, 1, BUFFER_SIZE, in_file);
 	decode_mpeg2 (buffer, end);
-    } while (end == buffer + BUFFER_SIZE);
+    } while (end == buffer + BUFFER_SIZE && !sigint);
 }
 
 int main (int argc, char ** argv)
