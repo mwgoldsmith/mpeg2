@@ -1025,6 +1025,53 @@ static inline void slice_non_intra_DCT (mpeg2_decoder_t * const decoder,
 		      (decoder->offset >> 1), ref[2] + offset,		      \
 		      2 * decoder->uv_stride, 4)
 
+#define MOTION_DMV_420(table,ref,motion_x,motion_y)			      \
+    pos_x = 2 * decoder->offset + motion_x;				      \
+    pos_y = decoder->v_offset + motion_y;				      \
+    if (unlikely (pos_x > decoder->limit_x)) {				      \
+	pos_x = ((int)pos_x < 0) ? 0 : decoder->limit_x;		      \
+	motion_x = pos_x - 2 * decoder->offset;				      \
+    }									      \
+    if (unlikely (pos_y > decoder->limit_y)) {				      \
+	pos_y = ((int)pos_y < 0) ? 0 : decoder->limit_y;		      \
+	motion_y = pos_y - decoder->v_offset;				      \
+    }									      \
+    xy_half = ((pos_y & 1) << 1) | (pos_x & 1);				      \
+    offset = (pos_x >> 1) + (pos_y & ~1) * decoder->stride;		      \
+    table[xy_half] (decoder->dest[0] + decoder->offset,			      \
+		    ref[0] + offset, 2 * decoder->stride, 8);		      \
+    table[xy_half] (decoder->dest[0] + decoder->stride + decoder->offset,     \
+		    ref[0] + decoder->stride + offset,			      \
+		    2 * decoder->stride, 8);				      \
+    motion_x /= 2;	motion_y /= 2;					      \
+    xy_half = ((motion_y & 1) << 1) | (motion_x & 1);			      \
+    offset = (((decoder->offset + motion_x) >> 1) +			      \
+	      (((decoder->v_offset >> 1) + (motion_y & ~1)) *		      \
+	       decoder->uv_stride));					      \
+    table[4+xy_half] (decoder->dest[1] + (decoder->offset >> 1),	      \
+		      ref[1] + offset, 2 * decoder->uv_stride, 4);	      \
+    table[4+xy_half] (decoder->dest[1] + decoder->uv_stride +		      \
+		      (decoder->offset >> 1),				      \
+		      ref[1] + decoder->uv_stride + offset,		      \
+		      2 * decoder->uv_stride, 4);			      \
+    table[4+xy_half] (decoder->dest[2] + (decoder->offset >> 1),	      \
+		      ref[2] + offset, 2 * decoder->uv_stride, 4);	      \
+    table[4+xy_half] (decoder->dest[2] + decoder->uv_stride +		      \
+		      (decoder->offset >> 1),				      \
+		      ref[2] + decoder->uv_stride + offset,		      \
+		      2 * decoder->uv_stride, 4)
+
+#define MOTION_ZERO_420(table,ref)					      \
+    table[0] (decoder->dest[0] + decoder->offset,			      \
+	      (ref[0] + decoder->offset +				      \
+	       decoder->v_offset * decoder->stride), decoder->stride, 16);    \
+    offset = ((decoder->offset >> 1) +					      \
+	      (decoder->v_offset >> 1) * decoder->uv_stride);		      \
+    table[4] (decoder->dest[1] + (decoder->offset >> 1),		      \
+	      ref[1] + offset, decoder->uv_stride, 8);			      \
+    table[4] (decoder->dest[2] + (decoder->offset >> 1),		      \
+	      ref[2] + offset, decoder->uv_stride, 8);			      \
+
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
 #define bit_ptr (decoder->bitstream_ptr)
@@ -1055,7 +1102,7 @@ static void motion_mp1 (mpeg2_decoder_t * const decoder,
     MOTION_420 (table, motion->ref[0], motion_x, motion_y, 16, 0);
 }
 
-#define MOTION_FUNCTIONS(FORMAT,MOTION,MOTION_FIELD)			      \
+#define MOTION_FUNCTIONS(FORMAT,MOTION,MOTION_FIELD,MOTION_DMV,MOTION_ZERO)   \
 									      \
 static void motion_fr_frame_##FORMAT (mpeg2_decoder_t * const decoder,	      \
 				      motion_t * const motion,		      \
@@ -1152,44 +1199,7 @@ static void motion_fr_dmv_##FORMAT (mpeg2_decoder_t * const decoder,	      \
     other_y = ((motion_y * m + (motion_y > 0)) >> 1) + dmv_y + 1;	      \
     MOTION_FIELD (mpeg2_mc.put, motion->ref[0], other_x, other_y, 1, & ~1, 0);\
 									      \
-    pos_x = 2 * decoder->offset + motion_x;				      \
-    pos_y = decoder->v_offset + motion_y;				      \
-    if (unlikely (pos_x > decoder->limit_x)) {				      \
-	pos_x = ((int)pos_x < 0) ? 0 : decoder->limit_x;		      \
-	motion_x = pos_x - 2 * decoder->offset;				      \
-    }									      \
-    if (unlikely (pos_y > decoder->limit_y)) {				      \
-	pos_y = ((int)pos_y < 0) ? 0 : decoder->limit_y;		      \
-	motion_y = pos_y - decoder->v_offset;				      \
-    }									      \
-    xy_half = ((pos_y & 1) << 1) | (pos_x & 1);				      \
-    offset = (pos_x >> 1) + (pos_y & ~1) * decoder->stride;		      \
-    mpeg2_mc.avg[xy_half]						      \
-	(decoder->dest[0] + decoder->offset,				      \
-	 motion->ref[0][0] + offset, 2 * decoder->stride, 8);		      \
-    mpeg2_mc.avg[xy_half]						      \
-	(decoder->dest[0] + decoder->stride + decoder->offset,		      \
-	 motion->ref[0][0] + decoder->stride + offset,			      \
-	 2 * decoder->stride, 8);					      \
-    motion_x /= 2;	motion_y /= 2;					      \
-    xy_half = ((motion_y & 1) << 1) | (motion_x & 1);			      \
-    offset = (((decoder->offset + motion_x) >> 1) +			      \
-	      (((decoder->v_offset >> 1) + (motion_y & ~1)) *		      \
-	       decoder->uv_stride));					      \
-    mpeg2_mc.avg[4+xy_half]						      \
-	(decoder->dest[1] + (decoder->offset >> 1),			      \
-	 motion->ref[0][1] + offset, 2 * decoder->uv_stride, 4);	      \
-    mpeg2_mc.avg[4+xy_half]						      \
-	(decoder->dest[1] + decoder->uv_stride + (decoder->offset >> 1),      \
-	 motion->ref[0][1] + decoder->uv_stride + offset,		      \
-	 2 * decoder->uv_stride, 4);					      \
-    mpeg2_mc.avg[4+xy_half]						      \
-	(decoder->dest[2] + (decoder->offset >> 1),			      \
-	 motion->ref[0][2] + offset, 2 * decoder->uv_stride, 4);	      \
-    mpeg2_mc.avg[4+xy_half]						      \
-	(decoder->dest[2] + decoder->uv_stride + (decoder->offset >> 1),      \
-	 motion->ref[0][2] + decoder->uv_stride + offset,		      \
-	 2 * decoder->uv_stride, 4);					      \
+    MOTION_DMV (mpeg2_mc.avg, motion->ref[0], motion_x, motion_y);	      \
 }									      \
 									      \
 static void motion_reuse_##FORMAT (const mpeg2_decoder_t * const decoder,     \
@@ -1214,17 +1224,7 @@ static void motion_zero_##FORMAT (mpeg2_decoder_t * const decoder,	      \
     motion->pmv[0][0] = motion->pmv[0][1] = 0;				      \
     motion->pmv[1][0] = motion->pmv[1][1] = 0;				      \
 									      \
-    table[0] (decoder->dest[0] + decoder->offset,			      \
-	      (motion->ref[0][0] + decoder->offset +			      \
-	       decoder->v_offset * decoder->stride),			      \
-	      decoder->stride, 16);					      \
-									      \
-    offset = ((decoder->offset >> 1) +					      \
-	      (decoder->v_offset >> 1) * decoder->uv_stride);		      \
-    table[4] (decoder->dest[1] + (decoder->offset >> 1),		      \
-	      motion->ref[0][1] + offset, decoder->uv_stride, 8);	      \
-    table[4] (decoder->dest[2] + (decoder->offset >> 1),		      \
-	      motion->ref[0][2] + offset, decoder->uv_stride, 8);	      \
+    MOTION_ZERO (table, motion->ref[0]);				      \
 }									      \
 									      \
 static void motion_fi_field_##FORMAT (mpeg2_decoder_t * const decoder,	      \
@@ -1322,7 +1322,8 @@ static void motion_fi_dmv_##FORMAT (mpeg2_decoder_t * const decoder,	      \
     MOTION (mpeg2_mc.avg, motion->ref[1], other_x, other_y, 16, 0);	      \
 }									      \
 
-MOTION_FUNCTIONS (420, MOTION_420, MOTION_FIELD_420)
+MOTION_FUNCTIONS (420, MOTION_420, MOTION_FIELD_420, MOTION_DMV_420,
+		  MOTION_ZERO_420)
 
 /* like motion_frame, but parsing without actual motion compensation */
 static void motion_fr_conceal (mpeg2_decoder_t * const decoder)
