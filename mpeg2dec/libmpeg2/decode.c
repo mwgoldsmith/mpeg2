@@ -169,15 +169,8 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 	    if (code >= 0xb0)
 		break;
 	    if (mpeg2dec->state != STATE_SLICE &&
-		mpeg2dec->state != STATE_SLICE_1ST) {
+		mpeg2dec->state != STATE_SLICE_1ST)
 		mpeg2_header_slice (mpeg2dec);
-		mpeg2_init_fbuf (&(mpeg2dec->decoder),
-				 mpeg2dec->current_frame->base,
-				 mpeg2dec->forward_reference_frame->base,
-				 mpeg2dec->backward_reference_frame->base);
-		mpeg2dec->decoder.convert = mpeg2dec->current_frame->copy;
-		mpeg2dec->decoder.frame_id = mpeg2dec->current_frame;
-	    }
 	    mpeg2_slice (&(mpeg2dec->decoder), code, mpeg2dec->chunk_buffer);
 	}
 
@@ -238,22 +231,13 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
     }
 }
 
-int mpeg2_set_buf (mpeg2dec_t * mpeg2dec, vo_frame_t * buf)
+void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, vo_frame_t * buf)
 {
+    *(mpeg2dec->fbuf) = buf;
     if (mpeg2dec->state == STATE_SEQUENCE) {
-	if (!(mpeg2dec->forward_reference_frame)) {
-	    mpeg2dec->forward_reference_frame = buf;
-	} else if (!(mpeg2dec->backward_reference_frame)){
-	    mpeg2dec->backward_reference_frame = buf;
-	} else
-	    return 1;
-    } else if (mpeg2dec->decoder.coding_type == B_TYPE) {
-	mpeg2dec->current_frame = buf;
-    } else {
-	mpeg2dec->forward_reference_frame = mpeg2dec->backward_reference_frame;
-	mpeg2dec->backward_reference_frame = mpeg2dec->current_frame = buf;
+	if (++(mpeg2dec->fbuf) == mpeg2dec->fbufs + 3)
+	    mpeg2dec->fbuf = mpeg2dec->fbufs;
     }
-    return 0;
 }
 
 void mpeg2_pts (mpeg2dec_t * mpeg2dec, uint32_t pts)

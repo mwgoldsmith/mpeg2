@@ -108,7 +108,7 @@ int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec);
 void mpeg2_header_slice (mpeg2dec_t * mpeg2dec);
 void mpeg2_header_end (mpeg2dec_t * mpeg2dec);
 
-int mpeg2_set_buf (mpeg2dec_t * mpeg2dec, vo_frame_t * buf);
+void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, vo_frame_t * buf);
 void mpeg2_init_fbuf (decoder_t * decoder, uint8_t * current_fbuf[3],
 		      uint8_t * forward_fbuf[3], uint8_t * backward_fbuf[3]);
 

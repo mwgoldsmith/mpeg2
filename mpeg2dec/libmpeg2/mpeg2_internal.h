@@ -162,14 +162,12 @@ struct mpeg2dec_s {
     int num_pts;
     int bytes_since_pts;
 
-    vo_frame_t * current_frame;
-    vo_frame_t * forward_reference_frame;
-    vo_frame_t * backward_reference_frame;
-
     sequence_t last_sequence;
     sequence_t sequence;
     picture_t pictures[4];
     picture_t * picture;
+    vo_frame_t * fbufs[3];
+    vo_frame_t ** fbuf;
 };
 
 typedef struct {
