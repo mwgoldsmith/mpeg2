@@ -261,8 +261,9 @@ static int common_setup (dx_instance_t * instance, int width, int height)
     return 0;
 }
 
-static int dxrgb_setup (vo_instance_t * _instance, int width, int height,
-			vo_setup_result_t * result)
+static int dxrgb_setup (vo_instance_t * _instance, unsigned int width,
+			unsigned int height, unsigned int chroma_width,
+			unsigned int chroma_height, vo_setup_result_t * result)
 {
     dx_instance_t * instance = (dx_instance_t *) _instance;
     HDC hdc;
@@ -344,13 +345,14 @@ static void dxrgb_draw_frame (vo_instance_t * _instance,
     }
 }
 
-static vo_instance_t * common_open (int (* setup) (vo_instance_t *, int, int,
-						   vo_setup_result_t *),
-				    void (* setup_fbuf) (vo_instance_t *,
-							 uint8_t **, void **),
-				    void (* draw) (vo_instance_t *,
-						   uint8_t * const *,
-						   void * id))
+static vo_instance_t * common_open (int setup (vo_instance_t *,
+					       unsigned int, unsigned int,
+					       unsigned int, unsigned int,
+					       vo_setup_result_t *),
+				    void setup_fbuf (vo_instance_t *,
+						     uint8_t **, void **),
+				    void draw (vo_instance_t *,
+					       uint8_t * const *, void * id))
 {
     dx_instance_t * instance;
 
@@ -402,8 +404,9 @@ static LPDIRECTDRAWSURFACE2 alloc_overlay (dx_instance_t * instance)
     return surface;
 }
 
-static int dx_setup (vo_instance_t * _instance, int width, int height,
-		     vo_setup_result_t * result)
+static int dx_setup (vo_instance_t * _instance, unsigned int width,
+		     unsigned int height, unsigned int chroma_width,
+		     unsigned int chroma_height, vo_setup_result_t * result)
 {
     dx_instance_t * instance = (dx_instance_t *) _instance;
     LPDIRECTDRAWSURFACE2 surface;

@@ -437,7 +437,9 @@ static void xv_teardown (x11_instance_t * instance)
 }
 #endif
 
-static int common_setup (x11_instance_t * instance, int width, int height,
+static int common_setup (x11_instance_t * instance, unsigned int width,
+			 unsigned int height, unsigned int chroma_width,
+			 unsigned int chroma_height,
 			 vo_setup_result_t * result, int xv)
 {
     if (instance->vo.close) {
@@ -519,10 +521,12 @@ static int common_setup (x11_instance_t * instance, int width, int height,
     return 0;
 }
 
-static int x11_setup (vo_instance_t * instance, int width, int height,
-		      vo_setup_result_t * result)
+static int x11_setup (vo_instance_t * instance, unsigned int width,
+		      unsigned int height, unsigned int chroma_width,
+		      unsigned int chroma_height, vo_setup_result_t * result)
 {
-    return common_setup ((x11_instance_t *)instance, width, height, result, 0);
+    return common_setup ((x11_instance_t *) instance, width, height,
+			 chroma_width, chroma_height, result, 0);
 }
 
 vo_instance_t * vo_x11_open (void)
@@ -539,10 +543,12 @@ vo_instance_t * vo_x11_open (void)
 }
 
 #ifdef LIBVO_XV
-static int xv_setup (vo_instance_t * instance, int width, int height,
-		     vo_setup_result_t * result)
+static int xv_setup (vo_instance_t * instance, unsigned int width,
+		     unsigned int height, unsigned int chroma_width,
+		     unsigned int chroma_height, vo_setup_result_t * result)
 {
-    return common_setup ((x11_instance_t *)instance, width, height, result, 1);
+    return common_setup ((x11_instance_t *) instance, width, height,
+			 chroma_width, chroma_height, result, 1);
 }
 
 vo_instance_t * vo_xv_open (void)

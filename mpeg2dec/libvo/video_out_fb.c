@@ -100,8 +100,9 @@ static void fb_close (vo_instance_t * _instance)
    }
 }
 
-static int fb_setup (vo_instance_t * _instance, int width, int height,
-        vo_setup_result_t * result)
+static int fb_setup (vo_instance_t * _instance, unsigned int width,
+		     unsigned int height, unsigned int chroma_width,
+		     unsigned int chroma_height, vo_setup_result_t * result)
 {
    fb_instance_t * instance = (fb_instance_t *) _instance;
    instance->fd_ = open( "/dev/fb", O_RDWR );

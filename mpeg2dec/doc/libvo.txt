@@ -26,7 +26,9 @@ passed to libmpeg2
 
 III - setting up a video mode
 
-int vo_setup (vo_instance_t * this, int width, int height);
+int vo_setup (vo_instance_t * this, unsigned int width, unsigned int height,
+              unsigned int chroma_width, unsigned int chroma_height,
+              vo_setup_result_t * result);
 
 This function initializes the libvo instance with the desired
 resolution. On success it returns 0.
