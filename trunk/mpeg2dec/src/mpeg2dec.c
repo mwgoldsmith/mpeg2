@@ -465,9 +465,9 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 		    if (header[7] & 0x80) {
 			uint32_t pts;
 
-			pts = (((buf[9] >> 1) << 30) |
-			       (buf[10] << 22) | ((buf[11] >> 1) << 15) |
-			       (buf[12] << 7) | (buf[13] >> 1));
+			pts = (((header[9] >> 1) << 30) |
+			       (header[10] << 22) | ((header[11] >> 1) << 15) |
+			       (header[12] << 7) | (header[13] >> 1));
 			mpeg2_pts (mpeg2dec, pts);
 		    }
 		} else {	/* mpeg1 */
