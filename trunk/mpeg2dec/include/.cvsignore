@@ -1,0 +1,14 @@
+.*.sw[po]
+*~
+*.diff
+*.patch
+*.lo
+*.o
+Makefile
+Makefile.in
+.deps
+.libs
+config.h.in
+stamp-h.in
+config.h
+stamp-h
