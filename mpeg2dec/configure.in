@@ -15,9 +15,12 @@ dnl Checks for compiler
 AC_PROG_CC
 AC_PROG_GCC_TRADITIONAL
 
-dnl GCC-specific flags
-if test x"$GCC" = x"yes"; then
+dnl CC-specific flags
+if test x"$CC" = x"checkergcc"; then
+    enable_sdl=no
+elif test x"$GCC" = x"yes"; then
 
+    dnl GCC-specific flags
     dnl -Wall -Werror moved to the end to not disturb the configure script
 
     dnl -O3
