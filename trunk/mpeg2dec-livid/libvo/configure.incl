@@ -14,14 +14,13 @@ if test x"$no_x" != x"yes"; then
     LIBVO_PLUGINS="${LIBVO_PLUGINS} display_x11.la"
 
     dnl check for Xshm
-    dnl the C code should be modified to take this into account !
     AC_CHECK_LIB([Xext],[XShmCreateImage],
 	[AC_DEFINE([LIBVO_XSHM],,[libvo Xshm support])
 	LIBVO_LIBS="$LIBVO_LIBS -lXext"],,
 	[$X_PRE_LIBS $X_LIBS -lX11 $X_EXTRA_LIBS])
 
     dnl check for XV
-    AC_CHECK_LIB([Xv],[XvShmCreateImage],
+    AC_CHECK_LIB([Xv],[XvCreateImage],
 	[AC_DEFINE([LIBVO_XV],,[libvo XV support])
 	LIBVO_LIBS="$LIBVO_LIBS -lXv"],,
 	[$X_PRE_LIBS $X_LIBS -lX11 $X_EXTRA_LIBS -lXext])
