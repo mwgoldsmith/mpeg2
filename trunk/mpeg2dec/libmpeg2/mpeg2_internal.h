@@ -188,6 +188,7 @@ extern mc_functions_t mc_functions_c;
 extern mc_functions_t mc_functions_mmx;
 extern mc_functions_t mc_functions_mmxext;
 extern mc_functions_t mc_functions_3dnow;
+extern mc_functions_t mc_functions_altivec;
 extern mc_functions_t mc_functions_mlib;
 
 /* slice.c */

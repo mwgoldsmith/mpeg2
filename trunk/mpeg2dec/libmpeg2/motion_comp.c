@@ -44,6 +44,12 @@ void motion_comp_init (void)
 	mc_functions = mc_functions_mmx;
     } else
 #endif
+#ifdef ARCH_PPC
+    if (config.flags & MM_ACCEL_PPC_ALTIVEC) {
+	fprintf (stderr, "Using altivec for motion compensation\n");
+	mc_functions = mc_functions_altivec;
+    } else
+#endif
 #ifdef LIBMPEG2_MLIB
     if (config.flags & MM_ACCEL_MLIB) {
 	fprintf (stderr, "Using mlib for motion compensation\n");

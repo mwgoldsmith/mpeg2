@@ -1,3 +1,5 @@
+* architecture context save/restore (altivec v20-v31, mmx emms)
+
 * things we dont implement yet
 	* export mpeg flags to the libvo
 	* dont crash on bad streams, make sure we can resync after a while
