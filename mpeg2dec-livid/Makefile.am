@@ -4,16 +4,19 @@ AUTOMAKE_OPTIONS = 1.3 foreign
 CFLAGS = -Wall -O3 -g @CFLAGS@ @X_CFLAGS@
 
 bin_PROGRAMS = mpeg2dec
+noinst_LIBRARIES = libmpeg2.a
 
-mpeg2dec_LIBS= 
-mpeg2dec_LDADD= @CONFIG_OBJS@ @X_PRE_LIBS@ @X_LIBS@ -lXext -lX11\
+libmpeg2_a_LIBADD = @LIB_CONFIG_OBJS@
+libmpeg2_a_SOURCES = getvlc.c  mb_buffer.c motion.c parse.c stats.c\
+	idct.c motion_comp.c inv_quantize.c decode.c bitstream.c debug.c\
+	yuv2rgb.c 
+libmpeg2_a_DEPENDENCIES = @LIB_CONFIG_OBJS@
+
+mpeg2dec_LDADD= -L. -lmpeg2 @CONFIG_OBJS@ @X_PRE_LIBS@ @X_LIBS@ -lXext -lX11\
 	@X_EXTRA_LIBS@ -lm
 
-mpeg2dec_SOURCES = getvlc.c  mb_buffer.c motion.c parse.c stats.c\
-	idct.c motion_comp.c inv_quantize.c decode.c bitstream.c debug.c\
-	yuv2rgb.c
-
-mpeg2dec_DEPENDENCIES = @CONFIG_OBJS@
+mpeg2dec_SOURCES = mpeg2dec.c
+mpeg2dec_DEPENDENCIES = libmpeg2.a @CONFIG_OBJS@
 
 EXTRA_mpeg2dec_SOURCES = display_gatos.c display_mga_vid.c display_x11.c\
 	display_xil.c idct_mmx.c idct_block_mmx.S idct_mlib.c\
