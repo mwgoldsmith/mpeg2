@@ -1,5 +1,4 @@
 * things we dont get quite right yet (though we dont see the difference)
-	* motion vectors (chroma is wrong I think)
 	* DCT block parsing (rounding, oddification, ...)
 	* IDCT routine compliant with IEEE1180
 

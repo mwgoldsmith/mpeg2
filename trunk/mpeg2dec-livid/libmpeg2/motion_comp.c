@@ -76,24 +76,22 @@ void motion_block (void (** table) (uint_8 *, uint_8 *, sint_32, sint_32),
 	uint_8 *src1, *src2;
 
 	xy_half = ((y_pred & 1) << 1) | (x_pred & 1);
-	x_pred >>= 1;
-	y_pred >>= 1;
 
-	src1 = src[0] + src_offset + x_pred + y_pred * pitch;
+	src1 = src[0] + src_offset + (x_pred >> 1) + (y_pred >> 1) * pitch;
 
 	table[xy_half] (dest[0] + dest_offset, src1, pitch, height);
 
+	x_pred /= 2;
+	y_pred /= 2;
+
 	xy_half = ((y_pred & 1) << 1) | (x_pred & 1);
-	x_pred >>= 1;
-	y_pred >>= 1;
 	pitch >>= 1;
 	height >>= 1;
 	src_offset >>= 1;
 	dest_offset >>= 1;
 
-	src1 = src[1] + src_offset + x_pred + y_pred * pitch;
-	src2 = src[2] + src_offset + x_pred + y_pred * pitch;
-
+	src1 = src[1] + src_offset + (x_pred >> 1) + (y_pred >> 1) * pitch;
+	src2 = src[2] + src_offset + (x_pred >> 1) + (y_pred >> 1) * pitch;
 
 	table[4+xy_half] (dest[1] + dest_offset, src1, pitch, height);
 	table[4+xy_half] (dest[2] + dest_offset, src2, pitch, height);
