@@ -117,9 +117,7 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
     if ((buffer[3] & 15) < 9)
 	sequence->frame_period = frame_period[buffer[3] & 15];
 
-    sequence->byte_rate = 50 * ((buffer[4]<<10)|(buffer[5]<<2)|(buffer[6]>>6));
-    if (sequence->byte_rate == 50 * 0x3ffff)
-	sequence->byte_rate = 0;	/* mpeg-1 VBR */
+    sequence->byte_rate = (buffer[4]<<10) | (buffer[5]<<2) | (buffer[6]>>6);
 
     sequence->vbv_buffer_size = ((buffer[6]<<16)|(buffer[7]<<8))&0x1ff800;
 
@@ -207,10 +205,7 @@ static int sequence_ext (mpeg2dec_t * mpeg2dec)
     sequence->chroma_width = width;
     sequence->chroma_height = height;
 
-
-    if (!(sequence->byte_rate))
-	sequence->byte_rate = 50 * 0x3ffff;
-    sequence->byte_rate += 50 * (1<<17) * (((buffer[2]<<8)|buffer[3])&0x1ffe);
+    sequence->byte_rate += ((buffer[2]<<25) | (buffer[3]<<17)) & 0x3ffc0000;
 
     sequence->vbv_buffer_size |= buffer[4] << 21;
 
@@ -272,9 +267,12 @@ void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
 {
     sequence_t * sequence = &(mpeg2dec->sequence);
 
+    sequence->byte_rate *= 50;
+
     if (sequence->flags & SEQ_FLAG_MPEG2) {
 	int width;
 	int height;
+
 	switch (sequence->pixel_width) {
 	case 1:		/* square pixels */
 	    sequence->pixel_width = sequence->pixel_height = 1;
@@ -294,21 +292,28 @@ void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
 	}
 	sequence->pixel_width = width * sequence->display_height;
 	sequence->pixel_height = height * sequence->display_width;
-    } else switch (sequence->pixel_width) {
-    case 0:	case 15:	/* illegal */
-	sequence->pixel_width = sequence->pixel_height = 0;		break;
-    case 1:	/* square pixels */
-	sequence->pixel_width = sequence->pixel_height = 1;		break;
-    case 3:	/* 720x576 16:9 */
-	sequence->pixel_width = 64;	sequence->pixel_height = 45;	break;
-    case 6:	/* 720x480 16:9 */
-	sequence->pixel_width = 32;	sequence->pixel_height = 27;	break;
-    case 12:	/* 720*480 4:3 */
-	sequence->pixel_width = 8;	sequence->pixel_height = 9;	break;
-    default:
-	sequence->pixel_width = 2000;
-	sequence->pixel_height = 88 * sequence->pixel_width + 1171;
+
+    } else {
+	if (sequence->byte_rate == 50 * 0x3ffff) 
+	    sequence->byte_rate = 0;        /* mpeg-1 VBR */ 
+
+	switch (sequence->pixel_width) {
+	case 0:	case 15:	/* illegal */
+	    sequence->pixel_width = sequence->pixel_height = 0;		break;
+	case 1:	/* square pixels */
+	    sequence->pixel_width = sequence->pixel_height = 1;		break;
+	case 3:	/* 720x576 16:9 */
+	    sequence->pixel_width = 64;	sequence->pixel_height = 45;	break;
+	case 6:	/* 720x480 16:9 */
+	    sequence->pixel_width = 32;	sequence->pixel_height = 27;	break;
+	case 12:	/* 720*480 4:3 */
+	    sequence->pixel_width = 8;	sequence->pixel_height = 9;	break;
+	default:
+	    sequence->pixel_width = 2000;
+	    sequence->pixel_height = 88 * sequence->pixel_width + 1171;
+	}
     }
+
     simplify (&(sequence->pixel_width), &(sequence->pixel_height));
 }
 
