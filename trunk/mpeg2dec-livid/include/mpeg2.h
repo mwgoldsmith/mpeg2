@@ -44,6 +44,9 @@ typedef struct mpeg2dec_s {
     uint8_t * chunk_ptr;
     /* last start code ? */
     uint8_t code;
+
+    /* ONLY for 0.2.0 release - will not stay there later */
+    int frame_rate_code;
 } mpeg2dec_t ;
 
 
