@@ -98,17 +98,18 @@ write_frame_g400(uint_8 *y,uint_8 *cr, uint_8 *cb)
 	}
 }
 
-void
+uint_32
 display_frame(uint_8 *src[])
 {
   if (mga_vid_config.card_type == MGA_G200)
 		write_frame_g200(src[0], src[2], src[1]);
   else
 		write_frame_g400(src[0], src[2], src[1]);
+  return(-1);  // non-zero == success.
 }
 
-void 
-display_init(uint_32 width, uint_32 height)
+uint_32
+display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 {
 	int f;
 	uint_32 frame_size;
@@ -118,7 +119,7 @@ display_init(uint_32 width, uint_32 height)
 	if(f == -1)
 	{
 		fprintf(stderr,"Couldn't open /dev/mga_vid\n");
-		exit(1);
+        return(0);
 	}
 
 	mga_vid_config.src_width = width;
@@ -143,4 +144,6 @@ display_init(uint_32 width, uint_32 height)
 	memset(vid_data,0x80,frame_size);
 
 	dprintf("(display) mga_vid initialized %p\n",vid_data);
+    return(-1);  // non-zero == success.
 }
+

@@ -106,11 +106,11 @@ uint_32 progressive_sequence = 0;
 /* connect to server, create and map window,
  * allocate colors and (shared) memory
  */
-void display_init(uint_32 width, uint_32 height)
+uint_32 display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 {
    int screen;
    unsigned int fg, bg;
-   char *hello = "I hate X11";
+   char *hello = (title == NULL) ? "I hate X11" : title;
    char *name = ":0.0";
    XSizeHints hint;
    XVisualInfo vinfo;
@@ -132,7 +132,10 @@ void display_init(uint_32 width, uint_32 height)
    mydisplay = XOpenDisplay(name);
 
    if (mydisplay == NULL)
+   {
       fprintf(stderr,"Can not open display\n");
+      return(0);
+   }
 
    screen = DefaultScreen(mydisplay);
 
@@ -204,7 +207,7 @@ void display_init(uint_32 width, uint_32 height)
        if (Success != XvQueryAdaptors(mydisplay,DefaultRootWindow(mydisplay),
 				      &adaptors,&ai)) {
 	   fprintf(stderr,"Xv: XvQueryAdaptors failed");
-	   exit(1);
+       return(0);
        }
        /* check adaptors */
        for (i = 0; i < adaptors; i++) {
@@ -369,11 +372,12 @@ void display_init(uint_32 width, uint_32 height)
 #endif
 	 {
 		 fprintf( stderr, "No support fon non-native XImage byte order!\n" );
-		 exit(1);
+		 return 0;
 	 }
    yuv2rgb_init(bpp, mode);
    
    X_already_started++;
+   return(-1);  // non-zero == success.
 }
 
 void Terminate_Display_Process() 
@@ -410,7 +414,7 @@ static void Display_Image(XImage *myximage, uint_8 *ImageData)
 	}
 }
 
-void display_frame(uint_8 *src[])
+uint_32 display_frame(uint_8 *src[])
 {
 #ifdef HAVE_XV
     Window root;
@@ -436,7 +440,7 @@ void display_frame(uint_8 *src[])
 		      0, 0,  win_width, win_height,
 		      False);
 	XFlush(mydisplay);
-	return;
+    return(-1);  // non-zero == success.
     }
 #endif
 
@@ -455,4 +459,5 @@ void display_frame(uint_8 *src[])
    }
    
    Display_Image(myximage, ImageData);
+   return(-1);  // non-zero == success.
 }

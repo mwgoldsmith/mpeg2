@@ -67,11 +67,11 @@ uint_32 progressive_sequence = 0;
 /* connect to server, create and map window,
  * allocate colors and (shared) memory
  */
-void display_init(uint_32 width, uint_32 height)
+int display_init(uint_32 width, uint_32 height, int fullscreen, char *title)
 {
    int screen;
    int i;
-   char *hello = "I love XIL";
+   char *hello = (title == NULL) ? "I love XIL" : title;
    char *name = ":0.0";
    XSizeHints hint;
    XVisualInfo vinfo;
@@ -103,7 +103,10 @@ void display_init(uint_32 width, uint_32 height)
    mydisplay = XOpenDisplay(name);
 
    if (mydisplay == NULL)
+   {
       fprintf(stderr,"Can not open display\n");
+      return(0);
+   }
 
    screen = DefaultScreen(mydisplay);
 
@@ -123,7 +126,7 @@ void display_init(uint_32 width, uint_32 height)
      bands = 1;
    } else {
      fprintf(stderr, "Failed to find a suitable visual" );
-     exit(1);
+     return(0);
    }
    printf("visual id is  %lx\n",vinfo.visualid);
 
@@ -168,7 +171,7 @@ void display_init(uint_32 width, uint_32 height)
     
    // XIL sends an error message to stderr if xil_open fails 
    if ((xilstate = xil_open()) == NULL)
-     exit(1);
+     return(0);
 
    // Install error handler
    //  if (xil_install_error_handler(State, error_handler) == XIL_FAILURE)
@@ -176,12 +179,13 @@ void display_init(uint_32 width, uint_32 height)
 
    // XIL sends error message to stderr if xil_create_from_window fail
    if (!(displayimage = xil_create_from_window(xilstate, mydisplay, mywindow)))
-     exit(1);
+     return(0);
+
    xil_set_synchronize(displayimage, 1);
    
    renderimage = xil_create(xilstate, image_width, image_height, 4, XIL_BYTE);
    if (renderimage == NULL) {
-     fprintf(stderr, "XIL error, faild to create image\n" );
+     fprintf(stderr, "XIL error, failed to create image\n" );
    }
    copyimage = xil_create_child(renderimage, 0, 0, 
 				image_width, image_height, 1, 3);
@@ -189,6 +193,7 @@ void display_init(uint_32 width, uint_32 height)
    //Humm... maybe we should do some more error checking.
    yuv2rgb_init( 32, MODE_BGR ); 
    X_already_started++;
+   return(-1);  // non-zero == success.
 }
 
 void Terminate_Display_Process() {
@@ -235,7 +240,7 @@ void Display_First_Field(void) { /* nothing */ }
 void Display_Second_Field(void) { /* nothing */ }
 
 
-void display_frame(uint_8 *src[])
+int display_frame(uint_8 *src[])
 {
   XilMemoryStorage xilstorage;
   XEvent event;
@@ -258,4 +263,6 @@ void display_frame(uint_8 *src[])
   
   if (XCheckWindowEvent(mydisplay, mywindow, StructureNotifyMask, &event))
     resize();
+
+  return(-1);  // non-zero == success.
 }
