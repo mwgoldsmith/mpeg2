@@ -299,29 +299,12 @@ static int x11_draw_frame (frame_t *frame)
 
 static frame_t* x11_allocate_image_buffer (int width, int height, uint32_t format)
 {
-    frame_t *frame;
-
-    if (!(frame = malloc (sizeof (frame_t))))
-	return NULL;
-
-    //we only know how to do 4:2:0 planar yuv right now.
-    if (!(frame->private = malloc (width * height * 3 / 2))) {
-	free (frame);
-	return NULL;
-    }
-	
-    frame->base[0] = frame->private;
-    frame->base[1] = frame->base[0] + width * height;
-    frame->base[2] = frame->base[0] + width * height * 5 / 4;
-
-    return frame;
+    return libvo_common_alloc (width, height);
 }
-
 
 void x11_free_image_buffer (frame_t* frame)
 {
-    free (frame->private);
-    free (frame);
+    libvo_common_free (frame);
 }
 
 LIBVO_EXTERN (x11,"x11")
