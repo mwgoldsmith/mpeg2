@@ -21,24 +21,24 @@
  *
  */
 
+#include "config.h"
+
+#ifdef LIBVO_SYNCFB
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "config.h"
-#include "video_out.h"
-#include "video_out_internal.h"
-
-LIBVO_EXTERN(syncfb)
-
-#ifdef HAVE_SYNCFB
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <linux/videodev.h>
 
+#include "video_out.h"
+#include "video_out_internal.h"
 #include "drivers/syncfb.h"
+
+LIBVO_EXTERN(syncfb)
 
 static vo_info_t vo_info =
 {
@@ -239,7 +239,7 @@ write_slice_YUV422(uint_8 *y,uint_8 *cr, uint_8 *cb,uint_32 slice_num)
 	}
 }
 
-static uint32_t draw_slice(uint8_t *src[], uint32_t slice_num)
+static uint32_t draw_slice(uint8_t *src[], int slice_num)
 {
 	if ( vid_data == NULL ) return 0;
 
@@ -315,7 +315,7 @@ static uint32_t draw_frame(uint8_t *src[])
 	return 0;
 }
 
-static uint32_t init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title, uint32_t format)
+static uint32_t init(int width, int height, int fullscreen, char *title, uint32_t format)
 {
 	uint_32 frame_size;
 
@@ -420,12 +420,4 @@ free_image_buffer(vo_image_buffer_t* image)
 	free_image_buffer_common(image);
 }
 
-#else /* HAVE_MGA */
-
-LIBVO_DUMMY_FUNCTIONS(sync);
-
 #endif
-
-
-
-

@@ -1,18 +1,18 @@
-CFLAGS = -g -O3 -Wall  -Werror @LIBMPEG2_CFLAGS@ @GLOBAL_CFLAGS@ -idirafter ../compatibility
+INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/libvo
 
-lib_LTLIBRARIES = libmpeg2.la
+CFLAGS = @CFLAGS@ @LIBMPEG2_CFLAGS@
 
-include_HEADERS = mpeg2.h 
+noinst_LTLIBRARIES = libmpeg2.la
+libmpeg2_la_SOURCES = decode.c header.c stats.c debug.c slice.c \
+		      motion_comp.c motion_comp_mlib.c motion_comp_mmx.c \
+		      idct.c idct_mlib.c idct_mmx.c
+# the source ordering seems to impact the speed.
+# On my setup the following ordering is about 2% faster.
+# I'll have to investigate...
+# libmpeg2_la_SOURCES = slice.c header.c stats.c idct.c motion_comp.c \
+# decode.c debug.c idct_mmx.c motion_comp_mmx.c
+libmpeg2_la_LIBADD = @LIBMPEG2_LIBS@
 
-libmpeg2_la_LIBADD = @LIBMPEG2_CONFIG_OBJS@ 
-libmpeg2_la_DEPENDENCIES = @LIBMPEG2_CONFIG_OBJS@
-libmpeg2_la_LDFLAGS = -version-info 1:6:1 -export-symbols libmpeg2.sym @LIBMPEG2_LDFLAGS@
-
-libmpeg2_la_SOURCES = slice.c header.c stats.c idct.c motion_comp.c\
-	decode.c debug.c
-
-EXTRA_libmpeg2_la_SOURCES = idct_mmx.c idct_mlib.c\
-	motion_comp_mmx.c motion_comp_mlib.c libmpeg2.sym 
-
-noinst_HEADERS = mpeg2.h stats.h header.h slice.h motion_comp.h\
-	mpeg2_internal.h idct.h debug.h vlc.h idct_mmx.h idct_mlib.h mmx.h
+EXTRA_DIST = configure.incl \
+	     header.h stats.h debug.h slice.h vlc.h motion_comp.h \
+	     idct.h idct_mlib.h idct_mmx.h mpeg2.h mpeg2_internal.h mpeg2dec.h

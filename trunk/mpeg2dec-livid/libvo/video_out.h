@@ -70,7 +70,7 @@ typedef struct vo_functions_s
 	 *              by terminating.
 	 */
 
-	uint32_t (*init)(uint32_t width, uint32_t height, uint32_t fullscreen, char *title, uint32_t format);
+	uint32_t (*init)(int width, int height, int fullscreen, char *title, uint32_t format);
 
 	/*
 	 * Return driver information.
@@ -128,7 +128,7 @@ typedef struct vo_functions_s
 	 *              by terminating.
 	 */
 
-	uint32_t (*draw_slice)(uint8_t *src[], uint32_t slice_num);
+	uint32_t (*draw_slice)(uint8_t *src[], int slice_num);
 
 	/*
 	 * Draw the current image buffer to the screen. There may be several

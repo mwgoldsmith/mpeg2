@@ -25,6 +25,10 @@
  *
  */
 
+#include "config.h"
+
+#ifdef ARCH_X86
+
 #include <stdio.h>
 #include <mmx.h>
 #include <sse.h>
@@ -400,11 +404,11 @@ static inline void idct_col (int16_t * col, int offset)
 #define T3 43790
 #define C4 23170
 
-    static mmx_t scratch0, scratch1;
     static short _T1[] ALIGN_8_BYTE = {T1,T1,T1,T1};
     static short _T2[] ALIGN_8_BYTE = {T2,T2,T2,T2};
     static short _T3[] ALIGN_8_BYTE = {T3,T3,T3,T3};
     static short _C4[] ALIGN_8_BYTE = {C4,C4,C4,C4};
+    static mmx_t scratch0, scratch1;
 
     /* column code adapted from peter gubanov */
     /* http://www.elecard.com/peter/idct.shtml */
@@ -706,3 +710,5 @@ void idct_mmx_init (void)
 	scan_alt[i] = (j & 0x38) | ((j & 6) >> 1) | ((j & 1) << 2);
     }
 }
+
+#endif

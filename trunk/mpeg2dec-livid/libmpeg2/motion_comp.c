@@ -36,13 +36,13 @@ mc_functions_t mc_functions;
 void motion_comp_init (void)
 {
 
-#ifdef __i386__
+#ifdef ARCH_X86
     if (config.flags & MPEG2_MMX_ENABLE) {
 	fprintf (stderr, "Using MMX for motion compensation\n");
 	mc_functions = mc_functions_mmx;
     } else
 #endif
-#if HAVE_MLIB
+#ifdef LIBMPEG_MLIB
     if (config.flags & MPEG2_MLIB_ENABLE) {
 	fprintf (stderr, "Using mlib for motion compensation\n");
 	mc_functions = mc_functions_mlib;

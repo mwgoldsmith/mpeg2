@@ -77,14 +77,14 @@ static void yuv2rgb_c (void * dst, uint8_t * py,
 void yuv2rgb_init (int bpp, int mode) 
 {
     yuv2rgb = NULL;
-#ifdef __i386__
+#ifdef ARCH_X86
     if (yuv2rgb == NULL && (oms_cpu_accel () & OMS_ACCEL_X86_MMX)) {
 	yuv2rgb = yuv2rgb_init_mmx (bpp, mode);
 	if (yuv2rgb != NULL)
 	    fprintf (stderr, "Using MMX for colorspace transform\n");
     }
 #endif
-#ifdef HAVE_MLIB
+#ifdef LIBVO_MLIB
     if (yuv2rgb == NULL /*&& (config.flags & VO_MLIB_ENABLE)*/) {
 	yuv2rgb = yuv2rgb_init_mlib (bpp, mode);
 	if (yuv2rgb != NULL)

@@ -32,8 +32,8 @@
 #include <errno.h>
 
 #include "config.h"
-#include "libmpeg2/mpeg2.h"
-//#include "libvo/video_out.h"
+#include "mpeg2.h"
+//#include "video_out.h"
 
 #define BUFFER_SIZE 262144
 static uint8_t buffer[BUFFER_SIZE];
@@ -228,10 +228,6 @@ static void ps_loop (void)
 		    tmp1 += mpeg1_skip_table [*tmp1 >> 4];
 		}
 		if (tmp1 < tmp2) {
-		    /*
-		    printf ("decode %x %x %x\n",
-			    buf - buffer, tmp1 - buffer, tmp2 - buffer);
-		    */
 		    num_frames = mpeg2_decode_data (video_out, tmp1, tmp2);
 		    while (num_frames--)
 			print_fps (0);
@@ -256,7 +252,6 @@ static void ps_loop (void)
 	copy:
 	    /* we only pass here for mpeg1 ps streams */
 	    memmove (buffer, buf, end - buf);
-	    /*  printf ("copy\n"); */
 	}
 	buf = buffer + (end - buf);
 

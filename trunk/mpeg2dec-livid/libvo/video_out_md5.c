@@ -1,18 +1,5 @@
-#define DISP
-
 /* 
- * video_out_pgm.c, pgm interface
- *
- *
- * Copyright (C) 1996, MPEG Software Simulation Group. All Rights Reserved. 
- *
- * Hacked into mpeg2dec by
- * 
- * Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
- *
- * 15 & 16 bpp support added by Franck Sicard <Franck.Sicard@solsoft.fr>
- *
- * Xv image suuport by Gerd Knorr <kraxel@goldbach.in-berlin.de>
+ * video_out_md5.c, md5 interface
  */
 
 #include <stdio.h>
@@ -39,7 +26,7 @@ static FILE * md5_file;
 static int framenum = -2;
 
 static uint32_t
-init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title, uint32_t format)
+init(int width, int height, int fullscreen, char *title, uint32_t format)
 {
     md5_file = fopen ("md5", "w");
     return video_out_pgm.init (width, height, fullscreen, title, format);
@@ -55,7 +42,7 @@ static void flip_page (void)
 {
 }
 
-static uint32_t draw_slice(uint8_t * src[], uint32_t slice_num)
+static uint32_t draw_slice(uint8_t * src[], int slice_num)
 {
     return 0;
 }

@@ -44,7 +44,7 @@
 #include "slice.h"
 #include "stats.h"
 
-#ifdef __i386__
+#ifdef ARCH_X86
 #include "mmx.h"
 #endif
 
@@ -245,7 +245,7 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 	    if (is_frame_done)
 		output->flip_page ();
 
-#ifdef __i386__
+#ifdef ARCH_X86
 	    if (config.flags & MPEG2_MMX_ENABLE)
 		emms ();
 #endif

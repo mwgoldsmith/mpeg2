@@ -69,7 +69,7 @@ static uint8_t clip_lut[1024];
 
 void idct_init (void)
 {
-#ifdef __i386__
+#ifdef ARCH_X86
     if (config.flags & OMS_ACCEL_X86_MMXEXT) {
 	fprintf (stderr, "Using SSE for IDCT transform\n");
 	idct_block_copy = idct_block_copy_sse;
@@ -82,7 +82,7 @@ void idct_init (void)
 	idct_mmx_init ();
     } else
 #endif
-#ifdef HAVE_MLIB
+#ifdef LIBMPEG2_MLIB
     if (config.flags & OMS_ACCEL_MLIB) {
 	fprintf (stderr, "Using mlib for IDCT transform\n");
 	idct_block_copy = idct_block_copy_mlib;

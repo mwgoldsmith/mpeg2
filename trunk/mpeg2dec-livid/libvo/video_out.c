@@ -30,29 +30,31 @@
 // Externally visible list of all vo drivers
 //
 
-extern vo_functions_t video_out_mga;
 extern vo_functions_t video_out_x11;
 extern vo_functions_t video_out_sdl;
+extern vo_functions_t video_out_mga;
 extern vo_functions_t video_out_3dfx;
+extern vo_functions_t video_out_syncfb;
 extern vo_functions_t video_out_null;
 extern vo_functions_t video_out_pgm;
 extern vo_functions_t video_out_md5;
-extern vo_functions_t video_out_syncfb;
 
 vo_functions_t* video_out_drivers[] = 
 {
-#ifdef HAVE_X11
+#ifdef LIBVO_X11
 	&video_out_x11,
 #endif
-#ifdef HAVE_MGA
-	&video_out_mga,
-	&video_out_syncfb,
+#ifdef LIBVO_SDL
+	&video_out_sdl,
 #endif
-#ifdef HAVE_3DFX
+#ifdef LIBVO_MGA
+	&video_out_mga,
+#endif
+#ifdef LIBVO_3DFX
 	&video_out_3dfx,
 #endif
-#ifdef HAVE_SDL
-	&video_out_sdl,
+#ifdef LIBVO_SYNCFB
+	&video_out_syncfb,
 #endif
 	&video_out_null,
 	&video_out_pgm,
@@ -70,37 +72,35 @@ vo_functions_t* video_out_drivers[] =
 //FIXME this should allocate AGP memory via agpgart and then we
 //can use AGP transfers to the framebuffer
 vo_image_buffer_t* 
-allocate_image_buffer_common(uint32_t width, uint32_t height, uint32_t format)
+allocate_image_buffer_common (int width, int height, uint32_t format)
 {
-	vo_image_buffer_t *image;
-	uint32_t image_size;
+    vo_image_buffer_t *image;
+    uint32_t image_size;
 
-	//we only know how to do YV12 right now
-	if (format != 0x32315659) return NULL;
+    //we only know how to do YV12 right now
+    if (format != 0x32315659) return NULL;
 	
-	image = malloc(sizeof(vo_image_buffer_t));
+    image = malloc(sizeof(vo_image_buffer_t));
 
-	if(!image) return NULL;
+    if(!image) return NULL;
 
-	image->height = height;
-	image->width = width;
-	image->format = format;
+    image->height = height;
+    image->width = width;
+    image->format = format;
 	
-	image_size = width * height * 3 / 2;
-	image->base = malloc(image_size);
+    image_size = width * height * 3 / 2;
+    image->base = malloc(image_size);
 
-	if(!image->base)
-	{
-		free(image);
-		return NULL;
-	}
+    if (!image->base) {
+	free (image);
+	return NULL;
+    }
 
-	return image;
+    return image;
 }
 
-void	
-free_image_buffer_common(vo_image_buffer_t* image)
+void free_image_buffer_common(vo_image_buffer_t* image)
 {
-	free(image->base);
-	free(image);
+    free (image->base);
+    free (image);
 }
