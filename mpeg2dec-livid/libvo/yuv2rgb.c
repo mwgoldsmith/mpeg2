@@ -72,14 +72,19 @@ void yuv2rgb_init (int bpp, int mode)
 {
     yuv2rgb = NULL;
 #ifdef ARCH_X86
-    if (yuv2rgb == NULL && (vo_mm_accel & MM_ACCEL_X86_MMX)) {
+    if ((yuv2rgb == NULL) && (vo_mm_accel & MM_ACCEL_X86_MMXEXT)) {
+	yuv2rgb = yuv2rgb_init_mmxext (bpp, mode);
+	if (yuv2rgb != NULL)
+	    fprintf (stderr, "Using MMXEXT for colorspace transform\n");
+    }
+    if ((yuv2rgb == NULL) && (vo_mm_accel & MM_ACCEL_X86_MMX)) {
 	yuv2rgb = yuv2rgb_init_mmx (bpp, mode);
 	if (yuv2rgb != NULL)
 	    fprintf (stderr, "Using MMX for colorspace transform\n");
     }
 #endif
 #ifdef LIBVO_MLIB
-    if (yuv2rgb == NULL && (vo_mm_accel & MM_ACCEL_MLIB)) {
+    if ((yuv2rgb == NULL) && (vo_mm_accel & MM_ACCEL_MLIB)) {
 	yuv2rgb = yuv2rgb_init_mlib (bpp, mode);
 	if (yuv2rgb != NULL)
 	    fprintf (stderr, "Using mlib for colorspace transform\n");
