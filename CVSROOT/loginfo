@@ -27,4 +27,6 @@
 
 CVSROOT $CVSROOT/CVSROOT/syncmail -u -m mail.sourceforge.net %{sVv} walken@users.sourceforge.net
 
+MSSG $CVSROOT/CVSROOT/syncmail -u -m mail.sourceforge.net %{sVv} walken@users.sourceforge.net
+
 DEFAULT $CVSROOT/CVSROOT/syncmail -u -m mail.sourceforge.net -f users.sourceforge.net %{sVv} libmpeg2-checkins@lists.sourceforge.net
