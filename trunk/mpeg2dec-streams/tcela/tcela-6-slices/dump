@@ -1,4 +1,10 @@
       f1 S- --- --- - SEQUENCE MPEG2 MP@ML 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
+         USER_DATA 71 bytes
+         e6 1d 37 2f 00 0e e6 1d 37 31 40 28 23 29 4d 50    7/    71@(#)MP
+         45 47 20 45 6e 63 6f 64 65 72 20 76 32 2e 37 20  EG Encoder v2.7 
+         62 79 20 54 72 69 73 74 61 6e 20 53 61 76 61 74  by Tristan Savat
+         69 65 72 2c 20 54 43 45 20 28 4c 6f 73 20 41 6e  ier, TCE (Los An
+         67 65 6c 65 73 29 00                             geles)          
       f9 SG --- --- - GOP  0: 0:17: 3
      117 SG AA- --- ? PICTURE I fields 2 TFF time_ref 0 offset 0/0 0/0
    260e3 SG aa- --- ? SLICE

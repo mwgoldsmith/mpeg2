@@ -1,4 +1,10 @@
       71 S- --- --- - SEQUENCE MPEG2 SP@ML 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
+         USER_DATA 71 bytes
+         e6 1d 37 2f 00 0e e6 1d 37 31 40 28 23 29 4d 50    7/    71@(#)MP
+         45 47 20 45 6e 63 6f 64 65 72 20 76 32 2e 39 20  EG Encoder v2.9 
+         62 79 20 54 72 69 73 74 61 6e 20 53 61 76 61 74  by Tristan Savat
+         69 65 72 2c 20 54 43 45 20 28 4c 6f 73 20 41 6e  ier, TCE (Los An
+         67 65 6c 65 73 29 00                             geles)          
       79 SG --- --- - GOP  0: 0:17: 3
       aa SG AA- --- ? PICTURE I fields 2 time_ref 0 offset 0/0 0/0
    2328f SG aa- --- ? SLICE
@@ -31,6 +37,12 @@
    dd4fe SG OO- nn- m PICTURE P fields 2 time_ref 14 offset 0/0 0/0
    eb2b5 SG oo- nn- m SLICE
    eb322 S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
+         USER_DATA 71 bytes
+         e6 1d 37 2f 00 0e e6 1d 37 31 40 28 23 29 4d 50    7/    71@(#)MP
+         45 47 20 45 6e 63 6f 64 65 72 20 76 32 2e 39 20  EG Encoder v2.9 
+         62 79 20 54 72 69 73 74 61 6e 20 53 61 76 61 74  by Tristan Savat
+         69 65 72 2c 20 54 43 45 20 28 4c 6f 73 20 41 6e  ier, TCE (Los An
+         67 65 6c 65 73 29 00                             geles)          
    eb32a SG --- --- - GOP  0: 0:17:18
    eb35b SG PP- oo- n PICTURE I fields 2 time_ref 0 offset 0/0 0/0
    f90ca SG pp- oo- n SLICE
@@ -63,6 +75,12 @@
   1bac9f SG DD- cc- b PICTURE P fields 2 time_ref 14 offset 0/0 0/0
   1c9c3c SG dd- cc- b SLICE
   1c9ca9 S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
+         USER_DATA 71 bytes
+         e6 1d 37 2f 00 0e e6 1d 37 31 40 28 23 29 4d 50    7/    71@(#)MP
+         45 47 20 45 6e 63 6f 64 65 72 20 76 32 2e 39 20  EG Encoder v2.9 
+         62 79 20 54 72 69 73 74 61 6e 20 53 61 76 61 74  by Tristan Savat
+         69 65 72 2c 20 54 43 45 20 28 4c 6f 73 20 41 6e  ier, TCE (Los An
+         67 65 6c 65 73 29 00                             geles)          
   1c9cb1 SG --- --- - GOP  0: 0:18: 3
   1c9ce2 SG EE- dd- c PICTURE I fields 2 time_ref 0 offset 0/0 0/0
   1d9060 SG ee- dd- c SLICE
@@ -95,6 +113,12 @@
   29fae5 SG SS- rr- q PICTURE P fields 2 time_ref 14 offset 0/0 0/0
   2af01f SG ss- rr- q SLICE
   2af08c S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
+         USER_DATA 71 bytes
+         e6 1d 37 2f 00 0e e6 1d 37 31 40 28 23 29 4d 50    7/    71@(#)MP
+         45 47 20 45 6e 63 6f 64 65 72 20 76 32 2e 39 20  EG Encoder v2.9 
+         62 79 20 54 72 69 73 74 61 6e 20 53 61 76 61 74  by Tristan Savat
+         69 65 72 2c 20 54 43 45 20 28 4c 6f 73 20 41 6e  ier, TCE (Los An
+         67 65 6c 65 73 29 00                             geles)          
   2af094 SG --- --- - GOP  0: 0:18:18
   2af0c5 SG TT- ss- r PICTURE I fields 2 time_ref 0 offset 0/0 0/0
   2beeea SG tt- ss- r SLICE
@@ -127,6 +151,12 @@
   3856ec SG HH- gg- f PICTURE P fields 2 time_ref 14 offset 0/0 0/0
   39496a SG hh- gg- f SLICE
   3949d7 S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
+         USER_DATA 71 bytes
+         e6 1d 37 2f 00 0e e6 1d 37 31 40 28 23 29 4d 50    7/    71@(#)MP
+         45 47 20 45 6e 63 6f 64 65 72 20 76 32 2e 39 20  EG Encoder v2.9 
+         62 79 20 54 72 69 73 74 61 6e 20 53 61 76 61 74  by Tristan Savat
+         69 65 72 2c 20 54 43 45 20 28 4c 6f 73 20 41 6e  ier, TCE (Los An
+         67 65 6c 65 73 29 00                             geles)          
   3949df SG --- --- - GOP  0: 0:19: 3
   394a10 SG II- hh- g PICTURE I fields 2 time_ref 0 offset 0/0 0/0
   3a48e1 SG ii- hh- g SLICE
