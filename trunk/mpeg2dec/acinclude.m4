@@ -77,19 +77,12 @@ AC_DEFUN([AC_C_ATTRIBUTE_ALIGNED],
 		    char a;
 		    char b __attribute__ ((aligned($ac_cv_c_attr_align_try)));
 		} S = {0, 0};
-		extern int i;
-		switch (i) {
-		    case (int)(&((struct s *)0)->b):
-		    case (($ac_cv_c_attr_align_try != 1) ? 1 : 0):
-		    case (($ac_cv_c_attr_align_try != 2) ? 2 : 0):
-		    case (($ac_cv_c_attr_align_try != 4) ? 4 : 0):
-		    case (($ac_cv_c_attr_align_try != 8) ? 8 : 0):
-		    case (($ac_cv_c_attr_align_try != 16) ? 16 : 0):
-		    case (($ac_cv_c_attr_align_try != 32) ? 32 : 0):
-		    case (($ac_cv_c_attr_align_try != 64) ? 64 : 0):
-			return i;
+		switch (1) {
+		    case 0:
+		    case (int)(&((struct s *)0)->b) == $ac_cv_c_attr_align_try:
+			return 0;
 		}
-		return S.a;],
+		return (long)&S;],
 		[ac_cv_c_attribute_aligned=$ac_cv_c_attr_align_try])
 	done])
     if test x"$ac_cv_c_attribute_aligned" != x"0"; then
