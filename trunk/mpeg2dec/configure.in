@@ -16,6 +16,10 @@ dnl Checks for compiler
 AC_PROG_CC
 AC_PROG_GCC_TRADITIONAL
 
+dnl Checks for headers. We do this before the CC-specific section because
+dnl autoconf generates tests for generic headers before the first header test.
+AC_CHECK_HEADERS([sys/time.h time.h sys/timeb.h io.h altivec.h])
+
 dnl CC-specific flags
 AC_SUBST([OPT_CFLAGS])
 AC_SUBST([ARCH_OPT_CFLAGS])
@@ -106,7 +110,6 @@ dnl Checks for header files.
 INCLUDES='-I$(top_srcdir)/include -I$(top_builddir)/include'
 AC_SUBST([INCLUDES])
 AC_HEADER_TIME
-AC_CHECK_HEADERS([sys/time.h time.h sys/timeb.h io.h altivec.h])
 AC_CHECK_TYPES([struct timeval], [], [],
     [#include <sys/time.h>
     #include <time.h>])
