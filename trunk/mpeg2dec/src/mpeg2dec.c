@@ -588,6 +588,7 @@ static void ps_loop (void)
 	if (demux (buffer, end, 0))
 	    break;	/* hit program_end_code */
     } while (end == buffer + buffer_size && !sigint);
+    free (buffer);
 }
 
 static int pva_demux (uint8_t * buf, uint8_t * end)
@@ -687,6 +688,7 @@ static void pva_loop (void)
 	end = buffer + fread (buffer, 1, buffer_size, in_file);
 	pva_demux (buffer, end);
     } while (end == buffer + buffer_size && !sigint);
+    free (buffer);
 }
 
 static void ts_loop (void)
@@ -728,6 +730,7 @@ static void ts_loop (void)
 	memcpy (buffer, buf, end - buf);
 	buf = buffer + (end - buf);
     } while (!sigint);
+    free (buffer);
 }
 
 static void es_loop (void)
@@ -741,6 +744,7 @@ static void es_loop (void)
 	end = buffer + fread (buffer, 1, buffer_size, in_file);
 	decode_mpeg2 (buffer, end);
     } while (end == buffer + buffer_size && !sigint);
+    free (buffer);
 }
 
 int main (int argc, char ** argv)
@@ -778,5 +782,6 @@ int main (int argc, char ** argv)
     if (output->close)
 	output->close (output);
     print_fps (1);
+    fclose (in_file);
     return 0;
 }

@@ -161,6 +161,8 @@ typedef struct x11_instance_s {
     XShmSegmentInfo shminfo;
     int completion_type;
 #ifdef LIBVO_XV
+    unsigned int adaptors;
+    XvAdaptorInfo * adaptorInfo;
     XvPortID port;
     int xv;
 #endif
@@ -240,6 +242,11 @@ static int open_display (x11_instance_t * instance, int width, int height)
 
     instance->gc = XCreateGC (instance->display, instance->window, 0,
 			      &gcValues);
+
+#ifdef LIBVO_XV
+    instance->adaptors = 0;
+    instance->adaptorInfo = NULL;
+#endif
 
     return 0;
 }
@@ -368,8 +375,10 @@ static int x11_alloc_frames (x11_instance_t * instance)
 	    size = (instance->frame[0].ximage->bytes_per_line *
 		    instance->frame[0].ximage->height);
 	    alloc = (char *) create_shm (instance, 3 * size);
-	    if (alloc == NULL)
+	    if (alloc == NULL) {
+		XDestroyImage (instance->frame[i].ximage);
 		return 1;
+	    }
 	} else if (size != (instance->frame[i].ximage->bytes_per_line *
 			    instance->frame[i].ximage->height)) {
 	    fprintf (stderr, "unexpected ximage data size\n");
@@ -403,7 +412,12 @@ static void x11_close (vo_instance_t * _instance)
 	instance->teardown (instance);
     XFreeGC (instance->display, instance->gc);
     XDestroyWindow (instance->display, instance->window);
+#ifdef LIBVO_XV
+    if (instance->adaptors)
+	XvFreeAdaptorInfo (instance->adaptorInfo);
+#endif
     XCloseDisplay (instance->display);
+    free (instance);
 }
 
 #ifdef LIBVO_XV
@@ -455,37 +469,39 @@ static int xv_check_fourcc (x11_instance_t * instance, XvPortID port,
 static int xv_check_extension (x11_instance_t * instance,
 			       int fourcc, const char * fourcc_str)
 {
-    unsigned int version;
-    unsigned int release;
-    unsigned int dummy;
-    unsigned int adaptors;
     unsigned int i;
     unsigned long j;
-    XvAdaptorInfo * adaptorInfo;
 
-    if ((XvQueryExtension (instance->display, &version, &release,
-			   &dummy, &dummy, &dummy) != Success) ||
-	(version < 2) || ((version == 2) && (release < 2))) {
-	fprintf (stderr, "No xv extension\n");
-	return 1;
+    if (!instance->adaptorInfo) {
+	unsigned int version;
+	unsigned int release;
+	unsigned int dummy;
+
+	if ((XvQueryExtension (instance->display, &version, &release,
+			       &dummy, &dummy, &dummy) != Success) ||
+	    (version < 2) || ((version == 2) && (release < 2))) {
+	    fprintf (stderr, "No xv extension\n");
+	    instance->adaptorInfo++; // to avoid re-testing
+	    return 1;
+	}
+
+	XvQueryAdaptors (instance->display, instance->window,
+			 &instance->adaptors, &instance->adaptorInfo);
     }
 
-    XvQueryAdaptors (instance->display, instance->window, &adaptors,
-		     &adaptorInfo);
-
-    for (i = 0; i < adaptors; i++)
-	if (adaptorInfo[i].type & XvImageMask)
-	    for (j = 0; j < adaptorInfo[i].num_ports; j++)
-		if ((! (xv_check_fourcc (instance, adaptorInfo[i].base_id + j,
+    for (i = 0; i < instance->adaptors; i++)
+	if (instance->adaptorInfo[i].type & XvImageMask)
+	    for (j = 0; j < instance->adaptorInfo[i].num_ports; j++)
+		if ((! (xv_check_fourcc (instance,
+					 instance->adaptorInfo[i].base_id + j,
 					 fourcc, fourcc_str))) &&
-		    (XvGrabPort (instance->display, adaptorInfo[i].base_id + j,
+		    (XvGrabPort (instance->display,
+				 instance->adaptorInfo[i].base_id + j,
 				 0) == Success)) {
-		    instance->port = adaptorInfo[i].base_id + j;
-		    XvFreeAdaptorInfo (adaptorInfo);
+		    instance->port = instance->adaptorInfo[i].base_id + j;
 		    return 0;
 		}
 
-    XvFreeAdaptorInfo (adaptorInfo);
     fprintf (stderr, "Cannot find xv %s port\n", fourcc_str);
     return 1;
 }
@@ -541,7 +557,7 @@ static int common_setup (vo_instance_t * _instance, unsigned int width,
 {
     x11_instance_t * instance = (x11_instance_t *) _instance;
 
-    if (instance->vo.close) {
+    if (instance->display != NULL) {
 	/* Already setup, just adjust to the new size */
 	if (instance->teardown != NULL)
 	    instance->teardown (instance);
@@ -635,7 +651,8 @@ static vo_instance_t * common_open (int xv)
 	return NULL;
 
     instance->vo.setup = common_setup;
-    instance->vo.close = NULL;
+    instance->vo.close = (void (*) (vo_instance_t *)) free;
+    instance->display = NULL;
 #ifdef LIBVO_XV
     instance->xv = xv;
 #endif
