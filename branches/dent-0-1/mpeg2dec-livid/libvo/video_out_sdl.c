@@ -63,8 +63,8 @@ static plugin_output_video_t video_sdl = {
         _sdl_open,
         _sdl_close,
         _sdl_setup,
-        _sd_draw_frame,
-        _sd_draw_slice,
+        _sdl_draw_frame,
+        _sdl_draw_slice,
         flip_page,
         allocate_image_buffer,
         free_image_buffer
@@ -96,7 +96,7 @@ static int _sdl_close (plugin_t *plugin)
  *
  *    params : array == array of which we want to find the last element.
  *   returns : index of last NON-NULL element.
- */*
+ **/
 
 static inline int findArrayEnd(SDL_Rect **array)
 {
