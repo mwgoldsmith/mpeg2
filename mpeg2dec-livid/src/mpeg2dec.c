@@ -48,7 +48,7 @@ static uint32_t total_elapsed;
 static uint32_t last_count = 0;
 static uint32_t demux_dvd = 0;
 static mpeg2dec_t mpeg2dec;
-static vo_output_video_t * video_out;
+static vo_setup_t * output_setup = NULL;
 
 static void print_fps (int final) 
 {
@@ -112,8 +112,8 @@ static void print_usage (char * argv[])
 	     "\t-s\tsystem stream (.vob file)\n"
 	     "\t-o\tvideo_output mode\n", argv[0]);
 
-    for (i = 0; video_out_drivers[i]; i++)
-	fprintf (stderr, "\t\t\t%s\n", video_out_drivers[i]->name);
+    for (i = 0; video_out_drivers[i].name; i++)
+	fprintf (stderr, "\t\t\t%s\n", video_out_drivers[i].name);
 
     exit (1);
 }
@@ -126,11 +126,11 @@ static void handle_args (int argc, char * argv[])
     while ((c = getopt (argc,argv,"so:")) != -1) {
 	switch (c) {
 	case 'o':
-	    for (i=0; video_out_drivers[i] != NULL; i++) {
-		if (strcmp (video_out_drivers[i]->name, optarg) == 0)
-		    video_out = video_out_drivers[i];
+	    for (i=0; video_out_drivers[i].name != NULL; i++) {
+		if (strcmp (video_out_drivers[i].name, optarg) == 0)
+		    output_setup = video_out_drivers[i].setup;
 	    }
-	    if (video_out == NULL) {
+	    if (output_setup == NULL) {
 		fprintf (stderr, "Invalid video driver: %s\n", optarg);
 		print_usage (argv);
 	    }
@@ -146,8 +146,8 @@ static void handle_args (int argc, char * argv[])
     }
 
     /* -o not specified, use a default driver */
-    if (video_out == NULL)
-	video_out = video_out_drivers[0];
+    if (output_setup == NULL)
+	output_setup = video_out_drivers[0].setup;
 
     if (optind < argc) {
 	in_file = fopen (argv[optind], "rb");
@@ -159,7 +159,7 @@ static void handle_args (int argc, char * argv[])
     } else
 	in_file = stdin;
 
-    mpeg2_init (&mpeg2dec, video_out);
+    mpeg2_init (&mpeg2dec, output_setup);
 }
 
 static void ps_loop (void)

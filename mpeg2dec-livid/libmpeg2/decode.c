@@ -35,7 +35,7 @@
 
 mpeg2_config_t config;
 
-void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output)
+void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_setup_t * output_setup)
 {
     static int do_init = 1;
 
@@ -49,13 +49,12 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output)
     }
 
     mpeg2dec->shift = 0;
-    mpeg2dec->is_display_initialized = 0;
     mpeg2dec->is_sequence_needed = 1;
     mpeg2dec->drop_flag = 0;
     mpeg2dec->drop_frame = 0;
     mpeg2dec->in_slice = 0;
-    mpeg2dec->output = output;
-    mpeg2dec->output_data = NULL;
+    mpeg2dec->output_setup = output_setup;
+    mpeg2dec->output = NULL;
     mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
     mpeg2dec->code = 0xff;
 
@@ -130,28 +129,27 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 	if (!(mpeg2dec->in_slice)) {
 	    mpeg2dec->in_slice = 1;
 
-	    if (!(mpeg2dec->is_display_initialized)) {
-		mpeg2dec->output_data =
-		    mpeg2dec->output->setup (mpeg2dec->output_data,
-					     picture->coded_picture_width,
-					     picture->coded_picture_height);
-		if (mpeg2dec->output_data == NULL) {
+	    if (!(mpeg2dec->output)) {
+		mpeg2dec->output =
+		    mpeg2dec->output_setup (NULL,
+					    picture->coded_picture_width,
+					    picture->coded_picture_height);
+		if (mpeg2dec->output == NULL) {
 		    fprintf (stderr, "display setup failed\n");
 		    exit (1);
 		}
 		picture->forward_reference_frame =
-		    mpeg2dec->output->get_frame (mpeg2dec->output_data, 1);
+		    vo_get_frame (mpeg2dec->output, 1);
 		picture->backward_reference_frame =
-		    mpeg2dec->output->get_frame (mpeg2dec->output_data, 1);
-		mpeg2dec->is_display_initialized = 1;
+		    vo_get_frame (mpeg2dec->output, 1);
 	    }
 	    if (!(picture->second_field)) {
 		if (picture->picture_coding_type == B_TYPE)
 		    picture->current_frame =
-			mpeg2dec->output->get_frame (mpeg2dec->output_data, 0);
+			vo_get_frame (mpeg2dec->output, 0);
 		else {
 		    picture->current_frame =
-			mpeg2dec->output->get_frame (mpeg2dec->output_data, 1);
+			vo_get_frame (mpeg2dec->output, 1);
 		    picture->forward_reference_frame =
 			picture->backward_reference_frame;
 		    picture->backward_reference_frame = picture->current_frame;
@@ -218,10 +216,11 @@ void mpeg2_close (mpeg2dec_t * mpeg2dec)
 
     mpeg2_decode_data (mpeg2dec, finalizer, finalizer+4);
 
-    if (mpeg2dec->is_display_initialized)
+    if (mpeg2dec->output) {
 	mpeg2dec->output->draw_frame
 	    (mpeg2dec->picture->backward_reference_frame);
-    mpeg2dec->output->close (mpeg2dec->output_data);
+	vo_close (mpeg2dec->output);
+    }
 }
 
 void mpeg2_drop (mpeg2dec_t * mpeg2dec, int flag)

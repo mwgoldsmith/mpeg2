@@ -30,40 +30,40 @@
 
 /* Externally visible list of all vo drivers */
 
-extern vo_output_video_t video_out_xvshm;
-extern vo_output_video_t video_out_xv;
-extern vo_output_video_t video_out_xshm;
-extern vo_output_video_t video_out_x11;
-extern vo_output_video_t video_out_sdl;
-extern vo_output_video_t video_out_mga;
-extern vo_output_video_t video_out_null;
-extern vo_output_video_t video_out_pgm;
-extern vo_output_video_t video_out_pgmpipe;
-extern vo_output_video_t video_out_md5;
+extern vo_setup_t vo_xvshm_setup;
+extern vo_setup_t vo_xv_setup;
+extern vo_setup_t vo_xshm_setup;
+extern vo_setup_t vo_x11_setup;
+extern vo_setup_t vo_sdl_setup;
+extern vo_setup_t vo_mga_setup;
+extern vo_setup_t vo_null_setup;
+extern vo_setup_t vo_pgm_setup;
+extern vo_setup_t vo_pgmpipe_setup;
+extern vo_setup_t vo_md5_setup;
 
-vo_output_video_t * video_out_drivers[] =
+vo_driver_t video_out_drivers[] =
 {
 #ifdef LIBVO_XV
-    &video_out_xvshm,
-    &video_out_xv,
+    {"xvshm", vo_xvshm_setup},
+    {"xv", vo_xv_setup},
 #endif
 #ifdef LIBVO_XSHM
-    &video_out_xshm,
+    {"xshm", vo_xshm_setup},
 #endif
 #ifdef LIBVO_X11
-    &video_out_x11,
+    {"x11", vo_x11_setup},
 #endif
 #ifdef LIBVO_MGA
-    &video_out_mga,
+    {"mga", vo_mga_setup},
 #endif
 #ifdef LIBVO_SDL
-    &video_out_sdl,
+    {"sdl", vo_sdl_setup},
 #endif
-    &video_out_null,
-    &video_out_pgm,
-    &video_out_pgmpipe,
-    &video_out_md5,
-    NULL
+    {"null", vo_null_setup},
+    {"pgm", vo_pgm_setup},
+    {"pgmpipe", vo_pgmpipe_setup},
+    {"md5", vo_md5_setup},
+    {NULL, NULL}
 };
 
 int libvo_common_alloc_frame (frame_t * frame, int width, int height)

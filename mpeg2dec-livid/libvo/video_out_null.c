@@ -27,11 +27,13 @@
 #include "video_out.h"
 #include "video_out_internal.h"
 
-static vo_instance_t * null_setup (vo_instance_t * this, int width, int height)
+extern vo_instance_t null_instance;
+
+vo_instance_t * vo_null_setup (vo_instance_t * this, int width, int height)
 {
     if (libvo_common_alloc_frames (libvo_common_alloc_frame, width, height))
 	return NULL;
-    return (vo_instance_t *)1;
+    return &null_instance;
 }
 
 static int null_close (vo_instance_t * this)
@@ -44,7 +46,6 @@ static void null_draw_frame (frame_t * frame)
 {
 }
 
-vo_output_video_t video_out_null = {
-    "null",
-    null_setup, null_close, libvo_common_get_frame, null_draw_frame
+static vo_instance_t null_instance = {
+    vo_null_setup, null_close, libvo_common_get_frame, null_draw_frame
 };
