@@ -1,3 +1,5 @@
+* fix altivec IDCT (memset block to 0), optimize mmx idct memset too.
+
 * decode.c:
 	* do not ignore parsing errors in headers
 	* error for "stream non demultiplexed"
