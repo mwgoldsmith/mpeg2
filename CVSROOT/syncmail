@@ -38,8 +38,8 @@ Usage:
 Where options are:
 
     --cvsroot=<path>
-    	Use <path> as the environment variable CVSROOT.  Otherwise this
-    	variable must exist in the environment.
+        Use <path> as the environment variable CVSROOT.  Otherwise this
+        variable must exist in the environment.
 
     --context=#
     -C #
@@ -47,6 +47,11 @@ Where options are:
 
     -c
         Produce a context diff (default).
+
+    -m hostname
+    --mailhost hostname
+        The hostname of an available SMTP server.  The default is
+        'localhost'.
 
     -u
         Produce a unified diff (smaller).
@@ -65,7 +70,7 @@ Where options are:
     --fromhost=hostname
     -f hostname
         The hostname that email messages appear to be coming from.  The From:
-        header will of the outgoing message will look like user@hostname.  By
+        header of the outgoing message will look like user@hostname.  By
         default, hostname is the machine's fully qualified domain name.
 
     --help / -h
@@ -111,12 +116,12 @@ except ImportError:
         else:
             fqdn = 'localhost.localdomain'
         return fqdn
-    
+
 
 from cStringIO import StringIO
 
 # Which SMTP server to do we connect to?
-MAILHOST = 'mail.sourceforge.net'
+MAILHOST = 'localhost'
 MAILPORT = 25
 
 # Diff trimming stuff
@@ -176,6 +181,7 @@ def calculate_diff(filespec, contextlines):
         # quote it with single-quotes.
         filestr = "'" + file + "'"
     if oldrev == 'NONE':
+        # File is being added.
         try:
             if os.path.exists(file):
                 fp = open(file)
@@ -200,6 +206,7 @@ def calculate_diff(filespec, contextlines):
     elif newrev == 'NONE':
         lines = ['--- %s DELETED ---\n' % file]
     else:
+        # File has been changed.
         # This /has/ to happen in the background, otherwise we'll run into CVS
         # lock contention.  What a crock.
         if contextlines > 0:
@@ -280,10 +287,12 @@ X-Mailer: Python syncmail %(version)s <http://sf.net/projects/cvs-syncmail>
 
 # scan args for options
 def main():
+    # XXX Should really move all the options to an object, just to
+    # avoid threading so many positional args through everything.
     try:
         opts, args = getopt.getopt(
-            sys.argv[1:], 'hC:cuS:R:qf:',
-            ['fromhost=', 'context=', 'cvsroot=',
+            sys.argv[1:], 'hC:cuS:R:qf:m:',
+            ['fromhost=', 'context=', 'cvsroot=', 'mailhost=',
              'subject-prefix=', 'reply-to=',
              'help', 'quiet'])
     except getopt.error, msg:
@@ -315,6 +324,9 @@ def main():
             verbose = 0
         elif opt in ('-f', '--fromhost'):
             fromhost = arg
+        elif opt in ('-m', '--mailhost'):
+            global MAILHOST
+            MAILHOST = arg
 
     # What follows is the specification containing the files that were
     # modified.  The argument actually must be split, with the first component
