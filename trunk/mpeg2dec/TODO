@@ -6,6 +6,7 @@
 	* remove stats.c
 
 * things we dont implement yet
+	* decoding of 4:2:2 streams
 	* export MC information (for XvMC or for error resilience)
 	* export quantizer information (for postprocessing filters)
 	* export header/picture/slice user data
