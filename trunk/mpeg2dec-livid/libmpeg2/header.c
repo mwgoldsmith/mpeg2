@@ -35,30 +35,27 @@
 
 #include "header.h"
 
-static uint8_t default_intra_quantization_matrix[64] ALIGN_16_BYTE = {
-     8, 16, 19, 22, 26, 27, 29, 34,
-    16, 16, 22, 24, 27, 29, 34, 37,
-    19, 22, 26, 27, 29, 34, 34, 38,
-    22, 22, 26, 27, 29, 34, 37, 40,
-    22, 26, 27, 29, 32, 35, 40, 48,
-    26, 27, 29, 32, 35, 40, 48, 58,
-    26, 27, 29, 34, 38, 46, 56, 69,
-    27, 29, 35, 38, 46, 56, 69, 83
-};
-
-static uint8_t default_non_intra_quantization_matrix[64] ALIGN_16_BYTE = {
-    16, 16, 16, 16, 16, 16, 16, 16, 
-    16, 16, 16, 16, 16, 16, 16, 16, 
-    16, 16, 16, 16, 16, 16, 16, 16, 
-    16, 16, 16, 16, 16, 16, 16, 16, 
-    16, 16, 16, 16, 16, 16, 16, 16, 
-    16, 16, 16, 16, 16, 16, 16, 16, 
-    16, 16, 16, 16, 16, 16, 16, 16, 
-    16, 16, 16, 16, 16, 16, 16, 16 
+// default intra quant matrix, in zig-zag order
+static uint8_t default_intra_quantizer_matrix[64] ALIGN_16_BYTE = {
+    8,
+    16, 16,
+    19, 16, 19,
+    22, 22, 22, 22,
+    22, 22, 26, 24, 26,
+    27, 27, 27, 26, 26, 26,
+    26, 27, 27, 27, 29, 29, 29,
+    34, 34, 34, 29, 29, 29, 27, 27,
+    29, 29, 32, 32, 34, 34, 37,
+    38, 37, 35, 35, 34, 35,
+    38, 38, 40, 40, 40,
+    48, 48, 46, 46,
+    56, 56, 58,
+    69, 69,
+    83
 };
 
 #ifdef __i386__
-static const uint8_t scan_norm_mmx[64] ALIGN_16_BYTE = { 
+static uint8_t scan_norm_mmx[64] ALIGN_16_BYTE = { 
     // MMX Zig-Zag scan pattern (transposed) 
      0, 8, 1, 2, 9,16,24,17,
     10, 3, 4,11,18,25,32,40,
@@ -70,7 +67,7 @@ static const uint8_t scan_norm_mmx[64] ALIGN_16_BYTE = {
     46,39,47,54,61,62,55,63
 };
 
-static const uint8_t scan_alt_mmx[64] ALIGN_16_BYTE = 
+static uint8_t scan_alt_mmx[64] ALIGN_16_BYTE = 
 { 
     // Alternate scan pattern (transposed)
      0, 1, 2, 3, 8, 9,16,17,
@@ -84,7 +81,7 @@ static const uint8_t scan_alt_mmx[64] ALIGN_16_BYTE =
 };
 #endif
 
-static const uint8_t scan_norm[64] ALIGN_16_BYTE =
+static uint8_t scan_norm[64] ALIGN_16_BYTE =
 { 
     // Zig-Zag scan pattern
      0, 1, 8,16, 9, 2, 3,10,
@@ -97,7 +94,7 @@ static const uint8_t scan_norm[64] ALIGN_16_BYTE =
     53,60,61,54,47,55,62,63
 };
 
-static const uint8_t scan_alt[64] ALIGN_16_BYTE =
+static uint8_t scan_alt[64] ALIGN_16_BYTE =
 { 
     // Alternate scan pattern
     0,8,16,24,1,9,2,10,17,25,32,40,48,56,57,49,
@@ -108,8 +105,6 @@ static const uint8_t scan_alt[64] ALIGN_16_BYTE =
 
 void header_state_init (picture_t * picture)
 {
-    picture->intra_quantizer_matrix = default_intra_quantization_matrix;
-    picture->non_intra_quantizer_matrix = default_non_intra_quantization_matrix;
     //FIXME we should set pointers to the real scan matrices here (mmx vs
     //normal) instead of the ifdefs in header_process_picture_coding_extension
 
@@ -125,6 +120,8 @@ void header_process_sequence_header (picture_t * picture, uint8_t * buffer)
 {
     unsigned int h_size;
     unsigned int v_size;
+    int i;
+    uint8_t * scan;
 
     //if ((buffer[6] & 0x20) != 0x20)
     //return 1;	// missing marker_bit
@@ -146,30 +143,31 @@ void header_process_sequence_header (picture_t * picture, uint8_t * buffer)
     picture->aspect_ratio_information = buffer[3] >> 4;
     picture->frame_rate_code = buffer[3] & 15;
 
-    picture->intra_quantizer_matrix = default_intra_quantization_matrix;
+#ifdef __i386__
+    if (config.flags & MPEG2_MMX_ENABLE)
+	scan = scan_norm_mmx;
+    else
+#endif
+	scan = scan_norm;
 
     if (buffer[7] & 2) {
-	int i;
-
 	for (i = 0; i < 64; i++)
-	    picture->custom_intra_quantization_matrix[scan_norm[i]] =
+	    picture->intra_quantizer_matrix[scan[i]] =
 		(buffer[i+7] << 7) | (buffer[i+8] >> 1);
-	picture->intra_quantizer_matrix =
-	    picture->custom_intra_quantization_matrix;
 	buffer += 64;
+    } else {
+	for (i = 0; i < 64; i++)
+	    picture->intra_quantizer_matrix[scan[i]] =
+		default_intra_quantizer_matrix [i];
     }
 
-    picture->non_intra_quantizer_matrix =
-	default_non_intra_quantization_matrix;
-
     if (buffer[7] & 1) {
-	int i;
-
 	for (i = 0; i < 64; i++)
-	    picture->custom_non_intra_quantization_matrix[scan_norm[i]] =
+	    picture->non_intra_quantizer_matrix[scan[i]] =
 		buffer[i+8];
-	picture->non_intra_quantizer_matrix =
-	    picture->custom_non_intra_quantization_matrix;
+    } else {
+	for (i = 0; i < 64; i++)
+	    picture->non_intra_quantizer_matrix[i] = 16;
     }
 
     //return 0;

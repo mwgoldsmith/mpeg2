@@ -310,14 +310,22 @@ static inline int get_chroma_dc_dct_diff (void)
 #undef bits
 }
 
-static void slice_get_intra_block_B14 (const picture_t * picture,
-				       slice_t * slice, int16_t * dest)
+#define SATURATE(val)		\
+do {				\
+    if (val > 2047)		\
+	val = 2047;		\
+    else if (val < -2048)	\
+	val = -2048;		\
+} while (0)
+
+static void slice_get_intra_block_B14 (picture_t * picture, slice_t * slice,
+				       int16_t * dest)
 {
     int i;
     int j;
     int val;
-    const uint8_t * scan = picture->scan;
-    uint8_t * quant_matrix = picture->non_intra_quantizer_matrix;
+    uint8_t * scan = picture->scan;
+    uint8_t * quant_matrix = picture->intra_quantizer_matrix;
     int quantizer_scale = slice->quantizer_scale;
     int mismatch;
     DCTtab * tab;
@@ -350,6 +358,7 @@ static void slice_get_intra_block_B14 (const picture_t * picture,
 	    // if (bitstream_get (1)) val = -val;
 	    val = (val ^ SBITS (bit_buf, 1)) - SBITS (bit_buf, 1);
 
+	    SATURATE (val);
 	    dest[j] = val;
 	    mismatch ^= val;
 
@@ -379,6 +388,7 @@ static void slice_get_intra_block_B14 (const picture_t * picture,
 	    val = (SBITS (bit_buf, 12) *
 		   quantizer_scale * quant_matrix[j]) / 16;
 
+	    SATURATE (val);
 	    dest[j] = val;
 	    mismatch ^= val;
 
@@ -418,14 +428,14 @@ static void slice_get_intra_block_B14 (const picture_t * picture,
     bitstream_bits = bits;
 }
 
-static void slice_get_intra_block_B15 (const picture_t * picture,
-				       slice_t * slice, int16_t * dest)
+static void slice_get_intra_block_B15 (picture_t * picture, slice_t * slice,
+				       int16_t * dest)
 {
     int i;
     int j;
     int val;
-    const uint8_t * scan = picture->scan;
-    uint8_t * quant_matrix = picture->non_intra_quantizer_matrix;
+    uint8_t * scan = picture->scan;
+    uint8_t * quant_matrix = picture->intra_quantizer_matrix;
     int quantizer_scale = slice->quantizer_scale;
     int mismatch;
     DCTtab * tab;
@@ -457,6 +467,7 @@ static void slice_get_intra_block_B15 (const picture_t * picture,
 		// if (bitstream_get (1)) val = -val;
 		val = (val ^ SBITS (bit_buf, 1)) - SBITS (bit_buf, 1);
 
+		SATURATE (val);
 		dest[j] = val;
 		mismatch ^= val;
 
@@ -485,6 +496,7 @@ static void slice_get_intra_block_B15 (const picture_t * picture,
 		val = (SBITS (bit_buf, 12) *
 		       quantizer_scale * quant_matrix[j]) / 16;
 
+		SATURATE (val);
 		dest[j] = val;
 		mismatch ^= val;
 
@@ -525,13 +537,13 @@ static void slice_get_intra_block_B15 (const picture_t * picture,
     bitstream_bits = bits;
 }
 
-static void slice_get_non_intra_block (const picture_t * picture,
-				       slice_t * slice, int16_t * dest)
+static void slice_get_non_intra_block (picture_t * picture, slice_t * slice,
+				       int16_t * dest)
 {
     int i;
     int j;
     int val;
-    const uint8_t * scan = picture->scan;
+    uint8_t * scan = picture->scan;
     uint8_t * quant_matrix = picture->non_intra_quantizer_matrix;
     int quantizer_scale = slice->quantizer_scale;
     int mismatch;
@@ -571,6 +583,7 @@ static void slice_get_non_intra_block (const picture_t * picture,
 	    // if (bitstream_get (1)) val = -val;
 	    val = (val ^ SBITS (bit_buf, 1)) - SBITS (bit_buf, 1);
 
+	    SATURATE (val);
 	    dest[j] = val;
 	    mismatch ^= val;
 
@@ -603,6 +616,7 @@ static void slice_get_non_intra_block (const picture_t * picture,
 	    val = 2 * (SBITS (bit_buf, 12) + SBITS (bit_buf, 1)) + 1;
 	    val = (val * quantizer_scale * quant_matrix[j]) / 32;
 
+	    SATURATE (val);
 	    dest[j] = val;
 	    mismatch ^= val;
 
