@@ -1,6 +1,6 @@
 CFLAGS = @CFLAGS@ @LIBMPEG2_CFLAGS@
 
-noinst_LTLIBRARIES = libmpeg2.la
+lib_LTLIBRARIES = libmpeg2.la
 libmpeg2_la_SOURCES = decode.c header.c stats.c slice.c \
 		      motion_comp.c motion_comp_mlib.c motion_comp_mmx.c \
 		      idct.c idct_mlib.c idct_mmx.c
