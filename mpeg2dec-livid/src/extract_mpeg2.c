@@ -21,10 +21,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
+#ifdef HAVE_GETOPT_H 
+#include <getopt.h> 
+#else 
+#include <unistd.h> 
+#endif 
 
 #define BUFFER_SIZE 262144
 static uint8_t buffer[BUFFER_SIZE];
@@ -46,7 +50,7 @@ static void handle_args (int argc, char * argv[])
     }
 
     if (optind < argc) {
-	in_file = fopen (argv[optind], "r");
+	in_file = fopen (argv[optind], "rb");
 	if (!in_file) {
 	    fprintf (stderr, "%s - couldnt open file %s\n", strerror (errno),
 		     argv[optind]);

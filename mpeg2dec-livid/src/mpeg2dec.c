@@ -24,11 +24,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
-#include <unistd.h>
 #include <signal.h>
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#else
+#include <unistd.h>
+#endif
 
 #include "video_out.h"
 #include "mpeg2.h"
@@ -146,7 +150,7 @@ static void handle_args (int argc, char * argv[])
 	video_out = video_out_drivers[0];
 
     if (optind < argc) {
-	in_file = fopen (argv[optind], "r");
+	in_file = fopen (argv[optind], "rb");
 	if (!in_file) {
 	    fprintf (stderr, "%s - couldnt open file %s\n", strerror (errno),
 		     argv[optind]);
