@@ -16,7 +16,7 @@
 
 static int _mpeg2dec_open	(plugin_t *plugin, void *foo);
 static int _mpeg2dec_close	(plugin_t *plugin);
-static int _mpeg2dec_read	(plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t *buf_entry);
+static int _mpeg2dec_read	(plugin_t *plugin, buf_t *buf, buf_entry_t *buf_entry);
 static int _mpeg2dec_set_flag	(plugin_codec_video_t *plugin, uint flag, uint val);
 
 static plugin_codec_video_t codec_mpeg2dec = {
@@ -45,9 +45,9 @@ static int _mpeg2dec_close (plugin_t *plugin)
 }
 
 
-static int _mpeg2dec_read (plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t *buf_entry)
+static int _mpeg2dec_read (plugin_t *plugin, buf_t *buf, buf_entry_t *buf_entry)
 {       
-	mpeg2_decode_data (plugin->output, buf_entry->data, buf_entry->data+buf_entry->data_len);
+	mpeg2_decode_data (((plugin_codec_video_t *) plugin)->output, buf_entry->data, buf_entry->data+buf_entry->data_len);
 
         return 0;
 }
