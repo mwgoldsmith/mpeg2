@@ -464,6 +464,7 @@ Display_Image(XImage *myximage, uint8_t *ImageData)
 	{
 		XPutImage(mydisplay, mywindow, mygc, myximage, 0, 0, 0, 0, 
 				myximage->width, myximage->height);
+		XFlush(mydisplay);
 	}
 #endif
 }
