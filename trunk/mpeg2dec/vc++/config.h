@@ -3,6 +3,9 @@
 /* autodetect accelerations */
 #define ACCEL_DETECT
 
+/* alpha architecture */
+/* #undef ARCH_ALPHA */
+
 /* ppc architecture */
 /* #undef ARCH_PPC */
 

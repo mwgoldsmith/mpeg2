@@ -298,6 +298,13 @@ void mpeg2_idct_init (uint32_t accel)
 	mpeg2_idct_altivec_init ();
     } else
 #endif
+#ifdef ARCH_ALPHA
+    if (accel & MPEG2_ACCEL_ALPHA) {
+	mpeg2_idct_copy = mpeg2_idct_copy_alpha;
+	mpeg2_idct_add = mpeg2_idct_add_alpha;
+	mpeg2_idct_alpha_init ();
+    } else
+#endif
 #ifdef LIBMPEG2_MLIB
     if (accel & MPEG2_ACCEL_MLIB) {
 	mpeg2_idct_copy = mpeg2_idct_copy_mlib_non_ieee;

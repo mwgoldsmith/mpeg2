@@ -143,6 +143,13 @@ static inline uint32_t arch_accel (void)
     return MPEG2_ACCEL_PPC_ALTIVEC;
 }
 #endif /* ARCH_PPC */
+
+#ifdef ARCH_ALPHA
+static inline uint32_t arch_accel (void)
+{
+    return MPEG2_ACCEL_ALPHA;
+}
+#endif /* ARCH_ALPHA */
 #endif
 
 uint32_t mpeg2_detect_accel (void)
@@ -154,7 +161,7 @@ uint32_t mpeg2_detect_accel (void)
 #ifdef LIBMPEG2_MLIB
     accel = MPEG2_ACCEL_MLIB;
 #endif
-#if defined (ARCH_X86) || defined (ARCH_PPC)
+#if defined (ARCH_X86) || defined (ARCH_PPC) || defined (ARCH_ALPHA)
     accel |= arch_accel ();
 #endif
 #endif
