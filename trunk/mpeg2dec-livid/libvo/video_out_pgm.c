@@ -33,6 +33,7 @@ static int image_height;
 static char header[1024];
 static int framenum = -2;
 static FILE * md5_file;
+static char filename[100];
 
 static vo_instance_t * pgm_setup (vo_instance_t * this, int width, int height)
 {
@@ -52,11 +53,9 @@ static int pgm_close (vo_instance_t * this)
     return 0;
 }
 
-static char * internal_draw_frame (frame_t * frame)
+static FILE * open_frame_file (void)
 {
-    static char filename[100];
     FILE * file;
-    int i;
 
     if (++framenum < 0)
 	return NULL;
@@ -65,25 +64,47 @@ static char * internal_draw_frame (frame_t * frame)
     if (!(file = fopen (filename, "wb")))
 	return NULL;
 
+    return file;
+}
+
+static void internal_draw_frame (FILE * file, frame_t * frame)
+{
+    int i;
+
     fwrite (header, strlen (header), 1, file);
     fwrite (frame->base[0], image_width, image_height, file);
     for (i = 0; i < image_height/2; i++) {
 	fwrite (frame->base[1]+i*image_width/2, image_width/2, 1, file);
 	fwrite (frame->base[2]+i*image_width/2, image_width/2, 1, file);
     }
-    fclose (file);
-
-    return filename;
 }
 
 static void pgm_draw_frame (frame_t * frame)
 {
-    internal_draw_frame (frame);
+    FILE * file;
+
+    file = open_frame_file ();
+    if (file == NULL)
+	return;
+    internal_draw_frame (file, frame);
+    fclose (file);
 }
 
 vo_output_video_t video_out_pgm = {
     "pgm",
     pgm_setup, pgm_close, libvo_common_get_frame, pgm_draw_frame
+};
+
+static void pgmpipe_draw_frame (frame_t * frame)
+{
+    if (++framenum < 0)
+	return;
+    internal_draw_frame (stdout, frame);
+}
+
+vo_output_video_t video_out_pgmpipe = {
+    "pgmpipe",
+    pgm_setup, pgm_close, libvo_common_get_frame, pgmpipe_draw_frame
 };
 
 static vo_instance_t * md5_setup (vo_instance_t * this, int width, int height)
@@ -96,19 +117,19 @@ static vo_instance_t * md5_setup (vo_instance_t * this, int width, int height)
 
 static void md5_draw_frame (frame_t * frame)
 {
-    char * filename;
     char buf[100];
-    FILE * pipe;
+    FILE * file;
     int i;
 
-    filename = internal_draw_frame (frame);
-    if (filename == NULL)
+    file = open_frame_file ();
+    if (file == NULL)
 	return;
-
+    internal_draw_frame (file, frame);
+    fclose (file);
     sprintf (buf, "md5sum -b %s", filename);
-    pipe = popen (buf, "r");
-    i = fread (buf, 1, sizeof(buf), pipe);
-    pclose (pipe);
+    file = popen (buf, "r");
+    i = fread (buf, 1, sizeof(buf), file);
+    pclose (file);
     fwrite (buf, 1, i, md5_file);
     remove (filename);
 }
