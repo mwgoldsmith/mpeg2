@@ -23,12 +23,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/time.h>
-#include <signal.h>
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <getopt.h>
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#include <signal.h>
+#endif
 
 #include "video_out.h"
 #include "mpeg2.h"
@@ -37,24 +39,39 @@
 #define BUFFER_SIZE 262144
 static uint8_t buffer[BUFFER_SIZE];
 static FILE * in_file;
-static uint32_t frame_counter = 0;
-static struct timeval tv_beg, tv_end, tv_start;
-static int elapsed;
-static int total_elapsed;
-static int last_count = 0;
 static int demux_track = 0;
 static int disable_accel = 0;
 static mpeg2dec_t mpeg2dec;
 static vo_open_t * output_open = NULL;
 
+#ifdef HAVE_SYS_TIME_H
+
+#include <sys/time.h>
+#include <signal.h>
+
+static void print_fps (int final);
+
+static RETSIGTYPE signal_handler (int sig)
+{
+    print_fps (1);
+    signal (sig, SIG_DFL);
+    raise (sig);
+}
+
 static void print_fps (int final) 
 {
-    int fps, tfps, frames;
-	
+    static uint32_t frame_counter = 0;
+    static struct timeval tv_beg, tv_start;
+    static int total_elapsed;
+    static int last_count = 0;
+    struct timeval tv_end;
+    int fps, tfps, frames, elapsed;
+
     gettimeofday (&tv_end, NULL);
 
-    if (frame_counter++ == 0) {
+    if (!frame_counter) {
 	tv_start = tv_beg = tv_end;
+	signal (SIGINT, signal_handler);
     }
 
     elapsed = (tv_end.tv_sec - tv_beg.tv_sec) * 100 +
@@ -76,6 +93,8 @@ static void print_fps (int final)
 	return;
     }
 
+    frame_counter++;
+
     if (elapsed < 50)	/* only display every 0.50 seconds */
 	return;
 
@@ -94,14 +113,15 @@ static void print_fps (int final)
     last_count = frame_counter;
 }
 
-static RETSIGTYPE signal_handler (int sig)
+#else /* !HAVE_SYS_TIME_H */
+
+static void print_fps (int final)
 {
-    print_fps (1);
-    signal (sig, SIG_DFL);
-    raise (sig);
 }
 
-static void print_usage (char * argv[])
+#endif
+
+static void print_usage (char ** argv)
 {
     int i;
     vo_driver_t * drivers;
@@ -119,7 +139,7 @@ static void print_usage (char * argv[])
     exit (1);
 }
 
-static void handle_args (int argc, char * argv[])
+static void handle_args (int argc, char ** argv)
 {
     int c;
     vo_driver_t * drivers;
@@ -301,7 +321,7 @@ static void es_loop (void)
     } while (end == buffer + BUFFER_SIZE);
 }
 
-int main (int argc,char *argv[])
+int main (int argc, char ** argv)
 {
     vo_instance_t * output;
     uint32_t accel;
@@ -320,10 +340,6 @@ int main (int argc,char *argv[])
 	return 1;
     }
     mpeg2_init (&mpeg2dec, accel, output);
-
-    signal (SIGINT, signal_handler);
-
-    gettimeofday (&tv_beg, NULL);
 
     if (demux_track)
 	ps_loop ();
