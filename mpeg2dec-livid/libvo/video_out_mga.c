@@ -177,7 +177,7 @@ write_slice_g400(uint_8 *y,uint_8 *cr, uint_8 *cb,uint_32 slice_num)
 	}
 }
 
-uint_32
+static uint_32
 draw_slice(uint_8 *src[], uint_32 slice_num)
 {
 	if (mga_vid_config.card_type == MGA_G200)
