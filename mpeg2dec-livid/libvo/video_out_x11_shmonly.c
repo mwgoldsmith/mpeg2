@@ -31,7 +31,6 @@
 #include <sys/shm.h>
 #include <X11/extensions/XShm.h>
 
-#include "log.h"
 #include "video_out.h"
 #include "video_out_internal.h"
 #include "yuv2rgb.h"
@@ -57,7 +56,7 @@ static struct x11_priv_s {
     XVisualInfo vinfo;
     XImage *ximage;
     int depth, bpp;
-    int X_already_started;
+    int X_already_started;	// = 0
 
     // XSHM
     XShmSegmentInfo Shminfo; // num_buffers
@@ -76,8 +75,9 @@ static int x11_open (void)
     if (priv->X_already_started)
 	return -1;
 
-    if (!(priv->display = XOpenDisplay (NULL))) {
-	LOG (LOG_ERROR, "Can not open display");
+    priv->display = XOpenDisplay (NULL);
+    if (! (priv->display)) {
+	fprintf (stderr, "Can not open display");
 	return -1;
     }
 
@@ -141,15 +141,13 @@ static int x11_open (void)
     priv->gc = XCreateGC (priv->display, priv->window, 0L, &xgcv);
 
     if (XShmQueryExtension (priv->display)) {
-	LOG (LOG_INFO, "Using MIT Shared memory extension");
+	printf ("Using MIT Shared memory extension");
     } else {
 	printf ("no shm\n");
 	exit (1);
     }
 
-    priv->X_already_started++;
-
-    LOG (LOG_DEBUG, "Open Called\n");
+    priv->X_already_started = 1;
     return 0;
 }
 
@@ -160,7 +158,7 @@ static int _xshm_create (XShmSegmentInfo *Shminfo, int size)
     Shminfo->shmid = shmget (IPC_PRIVATE, size, IPC_CREAT | 0777);
 
     if (Shminfo->shmid < 0) {
-	LOG (LOG_ERROR, "Shared memory error, disabling (seg id error: %s)", strerror (errno));
+	fprintf (stderr, "Shared memory error, disabling (seg id error: %s)", strerror (errno));
 	return -1;
     }
 	
@@ -169,7 +167,7 @@ static int _xshm_create (XShmSegmentInfo *Shminfo, int size)
     if (Shminfo->shmaddr == ((char *) -1)) {
 	if (Shminfo->shmaddr != ((char *) -1))
 	    shmdt(Shminfo->shmaddr);
-	LOG (LOG_ERROR, "Shared memory error, disabling (address error)");
+	fprintf (stderr, "Shared memory error, disabling (address error)");
 	return -1;
     }
 		
@@ -193,24 +191,27 @@ static void _xshm_destroy (XShmSegmentInfo *Shminfo)
  * allocate colors and (shared) memory
  **/
 
-static int x11_setup (vo_output_video_attr_t *attr)
+static int x11_setup (vo_output_video_attr_t * vo_attr)
 {
+    int width, height;
     int mode;
     struct x11_priv_s *priv = &x11_priv;
 
+    width = vo_attr->width;
+    height = vo_attr->height;
+
     x11_open ();
 
-    priv->image_width = attr->width;
-    priv->image_height = attr->height;
+    priv->image_width = width;
+    priv->image_height = height;
 
     XResizeWindow (priv->display, priv->window, priv->image_width, priv->image_height);
 
-    priv->ximage = XShmCreateImage (priv->display, priv->vinfo.visual, priv->depth, ZPixmap, NULL, &priv->Shminfo, attr->width, priv->image_height);
+    priv->ximage = XShmCreateImage (priv->display, priv->vinfo.visual, priv->depth, ZPixmap, NULL, &priv->Shminfo, width, priv->image_height);
 
     // If no go, then revert to normal Xlib calls.
     if (!priv->ximage) {
-	LOG (LOG_ERROR, "Shared memory error, disabling (Ximage error)");
-	printf ("shm error\n");
+	fprintf (stderr, "Shared memory error, disabling (Ximage error)");
 	exit (1);
     }
 
@@ -233,7 +234,7 @@ static int x11_setup (vo_output_video_attr_t *attr)
 #else
     if (priv->ximage->byte_order != LSBFirst) {
 #endif
-	LOG (LOG_ERROR, "No support fon non-native XImage byte order");
+	fprintf (stderr, "No support fon non-native XImage byte order");
 	return -1;
     }
 
@@ -245,11 +246,10 @@ static int x11_close(void *plugin)
 {
     struct x11_priv_s *priv = &x11_priv;
 
-    LOG (LOG_INFO, "Closing video plugin");
+    printf ("Closing video plugin");
 
     if (priv->Shminfo.shmaddr) {
 	_xshm_destroy(&priv->Shminfo);
-	LOG (LOG_INFO, "destroying shm segment");
     }
 
     if (priv->ximage)
