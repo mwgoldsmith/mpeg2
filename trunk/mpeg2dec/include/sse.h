@@ -1,6 +1,6 @@
 /*
  * sse.h
- * Copyright (C) 1999-2001 R. Fisher
+ * Copyright (C) 1999-2002 R. Fisher
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
  * See http://libmpeg2.sourceforge.net/ for updates.
