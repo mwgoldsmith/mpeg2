@@ -21,6 +21,9 @@
  *
  */
 
+/* FIXME this should allocate AGP memory via agpgart and then we */
+/* can use AGP transfers to the framebuffer */
+
 #include "config.h"
 
 #ifdef LIBVO_MGA
@@ -115,7 +118,12 @@ static void yuv2g400_c (uint8_t * dst, uint8_t * py,
     } while (--i);
 }
 
-static struct mga_priv_s {
+typedef struct mga_instance_s {
+    vo_instance_t vo;
+    int prediction_index;
+    vo_frame_t * frame_ptr[3];
+    vo_frame_t frame[3];
+
     int fd;
     mga_vid_config_t mga_vid_config;
     uint8_t * vid_data;
@@ -123,89 +131,90 @@ static struct mga_priv_s {
     uint8_t * frame1;
     int next_frame;
     int stride;
-} mga_priv = {-1};
+} mga_instance_t;
 
-static int mga_setup (int width, int height)
+static void mga_draw_frame (vo_frame_t * frame)
 {
-    struct mga_priv_s * priv = &mga_priv;
-    char *frame_mem;
+    mga_instance_t * instance;
+
+    instance = (mga_instance_t *) frame->instance;
+
+    yuv2g400_c (instance->vid_data,
+		frame->base[0], frame->base[1], frame->base[2],
+		instance->mga_vid_config.src_width,
+		instance->mga_vid_config.src_height,
+		instance->stride, instance->mga_vid_config.src_width,
+		instance->mga_vid_config.src_width >> 1);
+
+    ioctl (instance->fd, MGA_VID_FSEL, &instance->next_frame);
+
+    instance->next_frame ^= 2; /* switch between fields A1 and B1 */
+    if (instance->next_frame) 
+	instance->vid_data = instance->frame1;
+    else
+	instance->vid_data = instance->frame0;
+}
+
+static void mga_close (vo_instance_t * _instance)
+{
+    mga_instance_t * instance;
+
+    instance = (mga_instance_t *) _instance;
+
+    close (instance->fd);
+    libvo_common_free_frames ((vo_instance_t *) instance);
+}
+
+vo_instance_t * vo_mga_setup (vo_instance_t * _instance, int width, int height)
+{
+    mga_instance_t * instance;
+    char * frame_mem;
     int frame_size;
 
-    if (priv->fd < 0) {
-	priv->fd = open ("/dev/mga_vid", O_RDWR);
-	if (priv->fd < 0) {
-	    /* LOG (LOG_DEBUG, "Can't open /dev_mga_vid"); */
-	    return -1;
-	}
+    if (_instance != NULL)
+	return NULL;
+    instance = malloc (sizeof (mga_instance_t));
+    if (instance == NULL)
+	return NULL;
 
-	if (ioctl (priv->fd, MGA_VID_ON, 0)) {
-	    /* LOG (LOG_DEBUG, "Can't ioctl /dev_mga_vid"); */
-	    close (priv->fd);
-	    return -1;
-	}
+    instance->fd = open ("/dev/mga_vid", O_RDWR);
+    if (instance->fd < 0)
+	return NULL;
+
+    if (ioctl (instance->fd, MGA_VID_ON, 0)) {
+	close (instance->fd);
+	return NULL;
     }
 
-    priv->mga_vid_config.src_width = width;
-    priv->mga_vid_config.src_height = height;
-    priv->mga_vid_config.dest_width = width;
-    priv->mga_vid_config.dest_height = height;
-    priv->mga_vid_config.x_org = 10;
-    priv->mga_vid_config.y_org = 10;
-    priv->mga_vid_config.colkey_on = 0; /* 1; */
+    instance->mga_vid_config.src_width = width;
+    instance->mga_vid_config.src_height = height;
+    instance->mga_vid_config.dest_width = width;
+    instance->mga_vid_config.dest_height = height;
+    instance->mga_vid_config.x_org = 10;
+    instance->mga_vid_config.y_org = 10;
+    instance->mga_vid_config.colkey_on = 1;
 
-    if (ioctl (priv->fd, MGA_VID_CONFIG, &priv->mga_vid_config))
-	perror ("Error in priv->mga_vid_config ioctl");
-    ioctl (priv->fd, MGA_VID_ON, 0);
+    if (ioctl (instance->fd, MGA_VID_CONFIG, &(instance->mga_vid_config)))
+	perror ("Error in instance->mga_vid_config ioctl");
+    ioctl (instance->fd, MGA_VID_ON, 0);
 
-    priv->stride = (width + 31) & ~31;
-    frame_size = priv->stride * height * 3 / 2;
-    frame_mem = (char*)mmap (0, frame_size*2, PROT_WRITE, MAP_SHARED, priv->fd, 0);
-    priv->frame0 = frame_mem;
-    priv->frame1 = frame_mem + frame_size;
-    priv->vid_data = frame_mem;
-    priv->next_frame = 0;
+    instance->stride = (width + 31) & ~31;
+    frame_size = instance->stride * height * 3 / 2;
+    frame_mem = (char*)mmap (0, frame_size*2, PROT_WRITE, MAP_SHARED, instance->fd, 0);
+    instance->frame0 = frame_mem;
+    instance->frame1 = frame_mem + frame_size;
+    instance->vid_data = frame_mem;
+    instance->next_frame = 0;
 
-    libvo_common_alloc_frames (libvo_common_alloc_frame, width, height);
+    if (libvo_common_alloc_frames ((vo_instance_t *) instance, width, height,
+				   sizeof (vo_frame_t), NULL, NULL,
+				   mga_draw_frame))
+	return NULL;
 
-    return 0;
+    instance->vo.reinit = vo_mga_setup;
+    instance->vo.close = mga_close;
+    instance->vo.get_frame = libvo_common_get_frame;
+
+    return (vo_instance_t *) instance;
 }
-
-static int mga_close (void)
-{
-    struct mga_priv_s * priv = &mga_priv;
-
-    close (priv->fd);
-    libvo_common_free_frames (libvo_common_free_frame);
-
-    return 0;
-}
-
-static void mga_draw_frame (frame_t * frame)
-{
-    struct mga_priv_s * priv = &mga_priv;
-
-    yuv2g400_c (priv->vid_data,
-		frame->base[0], frame->base[1], frame->base[2],
-		priv->mga_vid_config.src_width,
-		priv->mga_vid_config.src_height,
-		priv->stride, priv->mga_vid_config.src_width,
-		priv->mga_vid_config.src_width >> 1);
-
-    ioctl (priv->fd, MGA_VID_FSEL, &priv->next_frame);
-
-    priv->next_frame ^= 2; /* switch between fields A1 and B1 */
-    if (priv->next_frame) 
-	priv->vid_data = priv->frame1;
-    else
-	priv->vid_data = priv->frame0;
-}
-
-/* FIXME this should allocate AGP memory via agpgart and then we */
-/* can use AGP transfers to the framebuffer */
-
-vo_output_video_t video_out_mga = {
-    "mga",
-    mga_setup, mga_close, libvo_common_get_frame, mga_draw_frame
-};
-
 #endif
