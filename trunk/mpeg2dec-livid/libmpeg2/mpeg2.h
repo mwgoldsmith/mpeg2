@@ -21,9 +21,16 @@
  *
  */
 
+#ifdef __OMS__
+#include <oms/plugin/output_video.h>
+#ifndef vo_functions_t
+#define vo_functions_t plugin_output_video_t
+#endif
+#else
 //FIXME normally I wouldn't nest includes, but we'll leave this here until I get
 //another chance to move things around
 #include "video_out.h"
+#endif
 
 #include <inttypes.h>
 

@@ -32,8 +32,6 @@
 #ifdef __OMS__
 #include <oms/oms.h>
 #include <oms/plugin/codec_video.h>
-
-#define vo_functions_t	plugin_codec_video_t
 #endif
  
 #include "config.h"
@@ -83,22 +81,24 @@ void mpeg2_init (void)
     motion_comp_init ();
 }
 
-
-static void decode_allocate_image_buffers (vo_functions_t * video_out,
-					   picture_t * picture)
+#ifdef __OMS__
+static void decode_allocate_image_buffers (plugin_output_video_t *output, picture_t *picture)
+#else
+static void decode_allocate_image_buffers (vo_functions_t * output, picture_t * picture)
+#endif
 {
     int frame_size;
-    vo_image_buffer_t * tmp;
+    vo_image_buffer_t *tmp = NULL;
 
     frame_size = picture->coded_picture_width * picture->coded_picture_height;
 
-    tmp = video_out->allocate_image_buffer (picture->coded_picture_height,
+    tmp = output->allocate_image_buffer (picture->coded_picture_height,
 					    picture->coded_picture_width, 0);
     picture->throwaway_frame[0] = tmp->base;
     picture->throwaway_frame[1] = picture->throwaway_frame[0] + frame_size;
     picture->throwaway_frame[2] = picture->throwaway_frame[1] + frame_size/4;
 
-    tmp = video_out->allocate_image_buffer (picture->coded_picture_height,
+    tmp = output->allocate_image_buffer (picture->coded_picture_height,
 					    picture->coded_picture_width, 0);
     picture->backward_reference_frame[0] = tmp->base;
     picture->backward_reference_frame[1] =
@@ -106,7 +106,7 @@ static void decode_allocate_image_buffers (vo_functions_t * video_out,
     picture->backward_reference_frame[2] =
 	picture->backward_reference_frame[1] + frame_size/4;
 
-    tmp = video_out->allocate_image_buffer (picture->coded_picture_height,
+    tmp = output->allocate_image_buffer (picture->coded_picture_height,
 					    picture->coded_picture_width, 0);
     picture->forward_reference_frame[0] = tmp->base;
     picture->forward_reference_frame[1] =
@@ -147,7 +147,11 @@ static void decode_reorder_frames (void)
 }
 
 
-static int parse_chunk (vo_functions_t * video_out, int code, uint8_t * buffer)
+#ifdef __OMS__
+static int parse_chunk (plugin_output_video_t *output, int code, uint8_t *buffer)
+#else
+static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
+#endif
 {
     int is_frame_done = 0;
 
@@ -167,9 +171,19 @@ static int parse_chunk (vo_functions_t * video_out, int code, uint8_t * buffer)
 	is_sequence_needed = 0;
 
 	if (!is_display_initialized) {
-	    video_out->init (picture.coded_picture_width,picture.coded_picture_height,0,0);
-	    decode_allocate_image_buffers (video_out, &picture);
-	    is_display_initialized = 1;
+#ifdef __OMS__
+		plugin_output_video_attr_t attr;
+		attr.width = picture.coded_picture_width;
+		attr.height = picture.coded_picture_height;
+		attr.fullscreen = 0;
+		attr.title = NULL;
+
+		output->setup (&attr);
+#else
+		output->init (picture.coded_picture_width,picture.coded_picture_height,0,0);
+#endif
+		decode_allocate_image_buffers (output, &picture);
+		is_display_initialized = 1;
 	}
 	break;
 
@@ -201,21 +215,25 @@ static int parse_chunk (vo_functions_t * video_out, int code, uint8_t * buffer)
 		foo[1] = bar[1] + offset;
 		foo[2] = bar[2] + offset;
 
-		video_out->draw_slice (foo, code-1);
+		output->draw_slice (foo, code-1);
 
 	    } else if (is_frame_done)
-		video_out->draw_frame (bar);
+		output->draw_frame (bar);
 
 	    if (is_frame_done)
-		video_out->flip_page ();
+		output->flip_page ();
 	}
     }
 
     return is_frame_done;
 }
 
-int mpeg2_decode_data (vo_functions_t * video_out,
-		       uint8_t * current, uint8_t * end)
+
+#ifdef __OMS__
+int mpeg2_decode_data (plugin_output_video_t *output, uint8_t *current, uint8_t *end)
+#else
+int mpeg2_decode_data (vo_functions_t *output, uint8_t *current, uint8_t *end)
+#endif
 {
     static uint8_t code = 0xff;
     //static uint8_t chunk_buffer[65536];
@@ -239,7 +257,7 @@ int mpeg2_decode_data (vo_functions_t * video_out,
 
 	/* found start_code following chunk */
 
-	ret += parse_chunk (video_out, code, chunk_buffer);
+	ret += parse_chunk (output, code, chunk_buffer);
 
 	/* done with header or slice, prepare for next one */
 
