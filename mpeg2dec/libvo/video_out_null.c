@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
+#include "mpeg2.h"
 #include "video_out.h"
 #include "convert.h"
 
@@ -66,7 +67,10 @@ vo_instance_t * vo_null_open (void)
     return internal_open (null_setup);
 }
 
-static void nullslice_start (void * id, uint8_t * const * dest, int flags)
+static void nullslice_start (void * id, const mpeg2_fbuf_t * fbuf,
+			     const mpeg2_picture_t * picture,
+			     const mpeg2_gop_t * gop,
+			     const mpeg2_sequence_t * sequence)
 {
 }
 

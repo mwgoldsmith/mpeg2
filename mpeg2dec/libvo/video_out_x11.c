@@ -42,6 +42,7 @@ int XShmGetEventBase (Display *);
 #define FOURCC_YV12 0x32315659
 #endif
 
+#include "mpeg2.h"
 #include "video_out.h"
 #include "convert.h"
 

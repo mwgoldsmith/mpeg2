@@ -705,18 +705,9 @@ mpeg2_state_t mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec)
     if (!(mpeg2dec->nb_decode_slices))
 	mpeg2dec->picture->flags |= PIC_FLAG_SKIP;
     else if (mpeg2dec->convert_start) {
-	int flags;
-
-	switch (mpeg2dec->decoder.picture_structure) {
-	case TOP_FIELD:		flags = CONVERT_TOP_FIELD;	break;
-	case BOTTOM_FIELD:	flags = CONVERT_BOTTOM_FIELD;	break;
-	default:
-	    flags =
-		((mpeg2dec->sequence.flags & SEQ_FLAG_PROGRESSIVE_SEQUENCE) ?
-		 CONVERT_FRAME : CONVERT_BOTH_FIELDS);
-	}
-	mpeg2dec->convert_start (mpeg2dec->convert_id,
-				 mpeg2dec->fbuf[0]->buf, flags);
+	mpeg2dec->convert_start (mpeg2dec->convert_id, mpeg2dec->fbuf[0],
+				 mpeg2dec->picture, mpeg2dec->info.gop,
+				 mpeg2dec->info.sequence);
 
 	mpeg2dec->decoder.convert = mpeg2dec->convert_copy;
 	mpeg2dec->decoder.fbuf_id = mpeg2dec->convert_id;

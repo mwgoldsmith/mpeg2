@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
+#include "mpeg2.h"
 #include "convert.h"
 #include "convert_internal.h"
 #include "attributes.h"
