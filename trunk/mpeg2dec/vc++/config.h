@@ -90,6 +90,9 @@
 /* libvo Xv support */
 /* #undef LIBVO_XV */
 
+/* mpeg2dec profiling */
+/* #undef MPEG2DEC_GPROF */
+
 /* Name of package */
 #define PACKAGE "mpeg2dec"
 

@@ -1,4 +1,4 @@
-AM_CFLAGS = $(OPT_CFLAGS) $(LIBVO_CFLAGS)
+AM_CFLAGS = $(MPEG2DEC_CFLAGS) $(LIBVO_CFLAGS)
 
 bin_PROGRAMS = mpeg2dec extract_mpeg2
 mpeg2dec_SOURCES = mpeg2dec.c getopt.c gettimeofday.c
@@ -8,4 +8,4 @@ extract_mpeg2_SOURCES = extract_mpeg2.c getopt.c
 
 man_MANS = mpeg2dec.1 extract_mpeg2.1
 
-EXTRA_DIST = getopt.h gettimeofday.h $(man_MANS)
+EXTRA_DIST = configure.incl getopt.h gettimeofday.h $(man_MANS)
