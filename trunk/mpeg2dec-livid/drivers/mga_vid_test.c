@@ -179,12 +179,12 @@ main(int argc, char *argv[])
 
 	if (config.card_type == MGA_G200) 
 	{
-		printf("Testing MGA G200 Backend Scaler\n");
+		printf("Testing MGA G200 Backend Scaler with %d MB of RAM\n", config.ram_size);
 	  is_g400 = 0;
 	}
 	else
 	{
-		printf("Testing MGA G400 Backend Scaler\n");
+		printf("Testing MGA G400 Backend Scaler with %d MB of RAM\n", config.ram_size);
 	  is_g400 = 1;
 	}
 	

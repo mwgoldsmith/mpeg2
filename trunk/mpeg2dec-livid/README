@@ -80,6 +80,15 @@ How to use mga_vid from scratch
    v4l built for your kernel)
 7. ./mpeg2dec foo.mpeg2  (you're done!)
 
+How do I know if mga_vid works on my system?
+  
+There is a test application called mga_vid_test. This test code should
+print out info on the console about your specific card (G200 or G400,
+as well as RAM size).  RAM size autodetect was only tested on a G200,
+8MB so far... Also it should draw some nice 256x256 images for you,
+if all is working well.
+
+
 Documentation
 
 If you need the mpeg-2 video spec, you can get it on www.wotsit.org

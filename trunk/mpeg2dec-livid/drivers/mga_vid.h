@@ -23,6 +23,7 @@ typedef unsigned char uint_8;
 typedef struct mga_vid_config_s
 {
 uint_32 card_type;
+uint_32 ram_size;
 uint_32 src_width;
 uint_32 src_height;
 uint_32 dest_width;
