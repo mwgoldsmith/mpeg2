@@ -47,10 +47,10 @@ int XShmGetEventBase (Display *);
 
 typedef struct x11_frame_s {
     vo_frame_t vo;
-    XImage * ximage;
     uint8_t * rgb_ptr;
     int rgb_stride;
     int yuv_stride;
+    XImage * ximage;
     int wait_completion;
 #ifdef LIBVO_XV
     XvImage * xvimage;	/* FIXME have only one ximage/xvimage pointer ? */
@@ -263,7 +263,7 @@ static void x11_field (vo_frame_t * _frame, int flags)
     frame = (x11_frame_t *) _frame;
     frame->rgb_ptr = frame->ximage->data;
     if ((flags & VO_TOP_FIELD) == 0)
-	frame->rgb_ptr += frame->ximage->bytes_per_line;;
+	frame->rgb_ptr += frame->ximage->bytes_per_line;
 }
 
 static void x11_draw_frame (vo_frame_t * _frame)
