@@ -29,13 +29,11 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 
 #include "motion_comp.h"
-
-static uint_8 clip_lut[1024];
-static uint_8 *clip_to_u8;
 
 //
 //  All the heavy lifting for motion_comp.c is done in here.
@@ -43,274 +41,8 @@ static uint_8 *clip_to_u8;
 //  This should serve as a reference implementation. Optimized versions
 //  in assembler are a must for speed.
 
-void
-motion_comp_avg_16x16 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride, sint_32 height)
-{
-	int x, y;
-
-	for (y = 0; y < height; y++) 
-	{
-		for (x = 0; x < 16; x++)
-			curr_block[x] = (ref_block[x] + curr_block[x] + 1) >> 1;
-		ref_block += stride;
-		curr_block += stride;
-	}
-}
-
-void
-motion_comp_avg_8x8 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride, sint_32 height)
-{
-  int x, y;
-
-	for (y = 0; y < height; y++) 
-	{
-		for (x = 0; x < 8; x++)
-			curr_block[x] = (ref_block[x] + curr_block[x] + 1) >> 1;
-		ref_block += stride;
-		curr_block += stride;
-	}
-}
-
-void
-motion_comp_put_16x16 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride, sint_32 height)
-{
-  int x, y;
-
-	for (y = 0; y < height; y++) 
-	{
-		for (x = 0; x < 16; x++)
-			curr_block[x] = ref_block[x];
-		ref_block += stride;
-		curr_block += stride;
-	}
-}
-
-void
-motion_comp_put_8x8 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride, sint_32 height)
-{
-	int x, y;
-
-	for (y = 0; y < height; y++) 
-	{
-		for (x = 0; x < 8; x++)
-			curr_block[x] = ref_block[x];
-		ref_block += stride;
-		curr_block += stride;
-	}
-}
-
-void
-motion_comp_avg_x_16x16 (uint_8 *curr_block, 
-				  uint_8 *ref_block, 
-				  sint_32 stride,   
-				  sint_32 height) 
-{
-	int x, y;
-
-	for (y = 0; y < height; y++) 
-	{
-		for (x = 0; x < 16; x++)
-		curr_block[x] = (((ref_block[x] + ref_block[x+1] + 1) >> 1) + 
-				curr_block[x] + 1) >> 1;
-		ref_block += stride;
-		curr_block += stride;
-	}
-}
-
-void
-motion_comp_avg_x_8x8 (uint_8 *curr_block, 
-				uint_8 *ref_block, 
-				sint_32 stride,   
-				sint_32 height) 
-{
-	int x, y;
-
-	for (y = 0; y < height; y++) 
-	{
-		for (x = 0; x < 8; x++)
-			curr_block[x] = (((ref_block[x] + ref_block[x+1] + 1) >> 1) + 
-					curr_block[x] + 1) >> 1;
-		ref_block += stride;
-		curr_block += stride;
-	}
-}
-
-void
-motion_comp_put_x_16x16 (uint_8 *curr_block, 
-			       uint_8 *ref_block, 
-			       sint_32 stride,   
-			       sint_32 height) 
-{
-	int x, y;
-
-	for (y = 0; y < height; y++) 
-	{
-		for (x = 0; x < 16; x++)
-			curr_block[x] = (ref_block[x] + ref_block[x+1] + 1) >> 1;
-		ref_block += stride;
-		curr_block += stride;
-	}
-}
-
-void
-motion_comp_put_x_8x8 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride,   sint_32 height) 
-{
-	int x, y;
-
-	for (y = 0; y < height; y++) 
-	{
-		for (x = 0; x < 8; x++)
-				curr_block[x] = (ref_block[x] + ref_block[x+1] + 1) >> 1;
-		ref_block += stride;
-		curr_block += stride;
-	}
-}
-
-void
-motion_comp_avg_xy_16x16 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride,   sint_32 height) 
-{
-	int x, y;
-
-	for (y = 0; y < height; y++) 
-	{
-		for (x = 0; x < 16; x++)
-			curr_block[x] = (((ref_block[x] + ref_block[x+1] + ref_block[x+stride] + 
-							ref_block[x+stride+1] + 2) >> 2) + curr_block[x] + 1) >> 1;
-		curr_block += stride;
-		ref_block += stride;
-	}
-}
-     
-void
-motion_comp_avg_xy_8x8 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride, sint_32 height) 
-{
-	int x, y;
-
-	for (y = 0; y < height; y++) 
-	{
-		for (x = 0; x < 8; x++)
-				curr_block[x] = (((ref_block[x] + ref_block[x+1] + ref_block[x+stride] + 
-								ref_block[x+stride+1] + 2) >> 2) + curr_block[x] + 1) >> 1;
-		curr_block += stride;
-		ref_block += stride;
-	}
-}
-     
-void
-motion_comp_put_xy_16x16 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride,   sint_32 height) 
-{
-	int x, y;
-
-	for (y = 0; y < height; y++) 
-	{
-		for (x = 0; x < 16; x++)
-			curr_block[x] = (ref_block[x] + ref_block[x+1] + 
-					ref_block[x+stride] + ref_block[x+stride+1] + 2) >> 2;
-		curr_block += stride;
-		ref_block += stride;
-	}
-}
-     
-void
-motion_comp_put_xy_8x8 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride, sint_32 height) 
-{
-	int x, y;
-
-	for (y = 0; y < height; y++) 
-	{
-		for (x = 0; x < 8; x++)
-			curr_block[x] = (ref_block[x] + ref_block[x+1] + 
-					ref_block[x+stride] + ref_block[x+stride+1] + 2) >> 2;
-		curr_block += stride;
-		ref_block += stride;
-	}
-}
-     
-void
-motion_comp_avg_y_16x16 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride,   sint_32 height) 
-{
-	int x, y;
-
-	for (y = 0; y < height; y++) 
-	{
-		for (x = 0; x < 16; x++)
-			curr_block[x] = (((ref_block[x] + ref_block[x+stride] + 1) >> 1) + 
-					curr_block[x] + 1) >> 1;
-		curr_block += stride;
-		ref_block += stride;
-	}
-}
-     
-void
-motion_comp_avg_y_8x8 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride,   sint_32 height) 
-{
-	int x, y;
-
-	for (y = 0; y < height; y++) 
-	{
-		for (x = 0; x < 8; x++)
-				curr_block[x] = (((ref_block[x] + ref_block[x+stride] + 1) >> 1) +
-						 curr_block[x] + 1) >> 1;
-		curr_block += stride;
-		ref_block += stride;
-	}
-}
-     
-void
-motion_comp_put_y_16x16 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride,   sint_32 height) 
-{
-	int x,y;
-
-	for (y = 0; y < height; y++) 
-	{
-		for (x = 0; x < 16; x++)
-				curr_block[x] = (ref_block[x] + ref_block[x+stride] + 1) >> 1;
-		curr_block += stride;
-		ref_block += stride;
-	}
-}
-
-void
-motion_comp_put_y_8x8 (uint_8 *curr_block, uint_8 *ref_block, sint_32 stride,   sint_32 height) 
-{
-	int x,y;
-
-	for (y = 0; y < height; y++) 
-	{
-		for (x = 0; x < 8; x++)
-				curr_block[x] = (ref_block[x] + ref_block[x+stride] + 1) >> 1;
-		curr_block += stride;
-		ref_block += stride;
-	}
-}
-
-void
-motion_comp_idct_copy_c (uint_8 * dst, sint_16 * block, uint_32 stride)
-{
-	int x, y;
-
-	for (y = 0; y < 8; y++) 
-	{
-		for (x = 0; x < 8; x++)
-			dst[x] = block[x];
-		dst += stride;
-		block += 8;
-	}
-}
-
-void
-motion_comp_idct_add_c (uint_8 * dst, sint_16 * block, uint_32 stride)
-{
-	int x, y;
-
-	for (y = 0; y < 8; y++) 
-	{
-		for (x = 0; x < 8; x++)
-			dst[x] = clip_to_u8 [dst[x] + block[x]];
-		dst += stride;
-		block += 8;
-	}
-}
+static uint_8 clip_lut[1024];
+#define CLIP(i) ((clip_lut+384)[(i)])
 
 void motion_comp_c_init(void)
 {
@@ -318,6 +50,123 @@ void motion_comp_c_init(void)
 
 	for ( i =-384; i < 640; i++)
 		clip_lut[i+384] = i < 0 ? 0 : (i > 255 ? 255 : i);
-
-	clip_to_u8 = clip_lut + 384;
 }
+
+#define avg2(a,b) ((a+b+1)>>1)
+#define avg4(a,b,c,d) ((a+b+c+d+2)>>2)
+
+#define predict(i) (ref_block[i])
+#define predict_x(i) (avg2 (ref_block[i], ref_block[i+1]))
+#define predict_y(i) (avg2 (ref_block[i], (ref_block+stride)[i]))
+#define predict_xy(i) (avg4 (ref_block[i], ref_block[i+1], (ref_block+stride)[i], (ref_block+stride)[i+1]))
+
+#define put(predictor,i) curr_block[i] = predictor(i)
+#define avg(predictor,i) curr_block[i] = avg2 (predictor(i), curr_block[i])
+
+// mc function template
+
+#define MC_FUNC(op,xy)							\
+static void motion_comp_##op####xy##_16x16_c (uint_8 *curr_block, uint_8 *ref_block, \
+				    sint_32 stride, sint_32 height)	\
+{									\
+	int i;								\
+								\
+	for (i = 0; i < height; i++)					\
+	{									\
+		op (predict##xy, 0);						\
+		op (predict##xy, 1);						\
+		op (predict##xy, 2);						\
+		op (predict##xy, 3);						\
+		op (predict##xy, 4);						\
+		op (predict##xy, 5);						\
+		op (predict##xy, 6);						\
+		op (predict##xy, 7);						\
+		op (predict##xy, 8);						\
+		op (predict##xy, 9);						\
+		op (predict##xy, 10);						\
+		op (predict##xy, 11);						\
+		op (predict##xy, 12);						\
+		op (predict##xy, 13);						\
+		op (predict##xy, 14);						\
+		op (predict##xy, 15);						\
+		ref_block += stride;						\
+		curr_block += stride;						\
+	}									\
+}									\
+static void motion_comp_##op####xy##_8x8_c (uint_8 *curr_block, uint_8 *ref_block, \
+				   sint_32 stride, sint_32 height)	\
+{									\
+	uint_32 i;								\
+								\
+	for (i = 0; i < height; i++)					\
+	{									\
+		op (predict##xy, 0);						\
+		op (predict##xy, 1);						\
+		op (predict##xy, 2);						\
+		op (predict##xy, 3);						\
+		op (predict##xy, 4);						\
+		op (predict##xy, 5);						\
+		op (predict##xy, 6);						\
+		op (predict##xy, 7);						\
+		ref_block += stride;						\
+		curr_block += stride;						\
+	}									\
+}
+
+// definitions of the actual mc functions
+
+MC_FUNC(put,)
+MC_FUNC(avg,)
+MC_FUNC(put,_x)
+MC_FUNC(avg,_x)
+MC_FUNC(put,_y)
+MC_FUNC(avg,_y)
+MC_FUNC(put,_xy)
+MC_FUNC(avg,_xy)
+
+//#define copy(dest,src) dest = CLip (src)
+//#define add(dest,src) dest = clip (src+dest)
+     
+// idct copy/add functions
+
+static void motion_comp_idct_copy_c (uint_8 * dst, sint_16 * block, uint_32 stride)
+{
+	uint_32 i;
+
+	for (i = 0; i < 8; i++)
+	{
+		dst[0] = CLIP(block[0]);
+		dst[1] = CLIP(block[1]);
+		dst[2] = CLIP(block[2]);
+		dst[3] = CLIP(block[3]);
+		dst[4] = CLIP(block[4]);
+		dst[5] = CLIP(block[5]);
+		dst[6] = CLIP(block[6]);
+		dst[7] = CLIP(block[7]);
+
+		dst += stride;
+		block += 8;
+	}
+}
+
+static void motion_comp_idct_add_c (uint_8 * dst, sint_16 * block, uint_32 stride)
+{
+	uint_32 i;
+
+	for (i = 0; i < 8; i++)
+	{
+		dst[0] = CLIP(block[0] + dst[0]);
+		dst[1] = CLIP(block[1] + dst[1]);
+		dst[2] = CLIP(block[2] + dst[2]);
+		dst[3] = CLIP(block[3] + dst[3]);
+		dst[4] = CLIP(block[4] + dst[4]);
+		dst[5] = CLIP(block[5] + dst[5]);
+		dst[6] = CLIP(block[6] + dst[6]);
+		dst[7] = CLIP(block[7] + dst[7]);
+
+		dst += stride;
+		block += 8;
+	}
+}
+
+MOTION_COMP_EXTERN(c)
