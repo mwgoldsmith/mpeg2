@@ -185,8 +185,6 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	if (mpeg2dec->state == STATE_INVALID && code != 0xb3)
 	    continue;
 
-	mpeg2_stats (code, mpeg2dec->chunk_buffer);
-
 	switch (code) {
 	case 0x00:	/* picture_start_code */
 	    mpeg2_header_picture (mpeg2dec);
