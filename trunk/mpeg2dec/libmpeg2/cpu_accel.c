@@ -212,11 +212,8 @@ uint32_t mpeg2_detect_accel (void)
 
     accel = 0;
 #ifdef ACCEL_DETECT
-#ifdef LIBMPEG2_MLIB
-    accel = MPEG2_ACCEL_MLIB;
-#endif
 #if defined (ARCH_X86) || defined (ARCH_PPC) || defined (ARCH_ALPHA) || defined (ARCH_SPARC)
-    accel |= arch_accel ();
+    accel = arch_accel ();
 #endif
 #endif
     return accel;

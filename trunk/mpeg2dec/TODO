@@ -11,7 +11,7 @@
 		* dont just fprintf and exit
 	* synchronization stuff
 	* IDCT precision with sparse matrixes
-	* sparc IDCT/MC optimizations; get rid of mlib code
+	* sparc IDCT optimizations
 	* support for still pictures (decode before receiving next startcode !)
 
 * structural optimizations

@@ -76,7 +76,6 @@ elif test x"$CC" = x"tendracc"; then
     dnl TenDRA portability checking compiler
     TENDRA=yes
     OPT_CFLAGS="-Xp -Yansi -f`pwd`/include/tendra.h -DELIDE_CODE"
-    enable_mlib=no
     no_x=yes
     enable_sdl=no
 elif test x"$CC" = x"icc" -a x"`$CC -V 2>&1 | grep Intel`" != x""; then

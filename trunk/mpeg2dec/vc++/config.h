@@ -84,14 +84,8 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 /* #undef HAVE_UNISTD_H */
 
-/* libmpeg2 mediaLib support */
-/* #undef LIBMPEG2_MLIB */
-
 /* libvo DirectX support */
 #define LIBVO_DX
-
-/* libvo mediaLib support */
-/* #undef LIBVO_MLIB */
 
 /* libvo SDL support */
 /* #undef LIBVO_SDL */
