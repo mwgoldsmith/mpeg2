@@ -1,0 +1,28 @@
+This stream uses what mpeg2 calls a general slice structure - some
+macroblocks are not included in any slice, and are thus not coded.
+
+In mpeg2, the rule is that the action a decoder takes between the
+coded slices is undefined (see 6.1.2.1). Also all defined mpeg2
+profiles use the restricted slice structure - so in practice the
+general slice structure is never used.
+
+The situation is not so clear with mpeg1 - this standard does not
+formally define the notions of general and restricted slice
+structures. It mentions in D.5.4 that there can be no gap or overlab
+between slices - so this is equivalent to the restricted slice
+structure in mpeg2 - however the mpeg1 annex D is not normative, and
+the mpeg1 standard does not talk about that possibility anywhere else.
+
+So I believe the usage of a general slice structure is a loophole in
+the mpeg1 standard, and that the for such a stream the decoder's
+output between the coded slices is undefined, just as in the mpeg2
+standard.
+
+The libmpeg2 behaviour here is that it will not touch the pixels
+betweent he coded slices, so they will keep whatever value they had
+when vo_get_frame passed the picture. For this stream this results in
+some ugly green blocks - however the mpeg2 reference decoder does
+exactly the same thing, so I believe this is actually correct.
+
+UCB's mpeg_play program seems to fill these non-coded blocks in black,
+but I think this is only by chance not by design.
