@@ -63,7 +63,7 @@ static inline uint64_t avg2 (uint64_t a, uint64_t b)
 #define OP16(LOAD,LOAD16,STORE)			\
     do {					\
 	uint64_t l, r;				\
-	LOAD16( l, r, pixels);			\
+	LOAD16 (l, r, pixels);			\
 	STORE (l, block);			\
 	STORE (r, block + 8);			\
 	pixels += line_size;			\
@@ -76,7 +76,7 @@ static inline uint64_t avg2 (uint64_t a, uint64_t b)
 							\
 	p0 = LOAD (pixels);				\
 	p1 = p0 >> 8 | ((uint64_t) pixels[8] << 56);	\
-	STORE(avg2 (p0, p1), block);			\
+	STORE (avg2 (p0, p1), block);			\
 	pixels += line_size;				\
 	block += line_size;				\
     } while (--h)
