@@ -452,12 +452,6 @@ static void sdl_flip_page (void)
 	SDL_LockYUVOverlay (priv->current_frame);
 }
 
-static int sdl_overlay (overlay_buf_t *overlay_buf, int id) 
-{
-	return 0;
-}
-
-
 static frame_t* sdl_allocate_image_buffer(int width, int height, uint32_t format)
 {
 	struct sdl_priv_s *priv = &sdl_priv;
