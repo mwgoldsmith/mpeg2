@@ -43,53 +43,28 @@ static uint_32 frame_counter = 0;
 
 static struct timeval tv_beg;
 static struct timeval tv_end;
-static float elapsed = 0;
-static float total_elapsed = 0;
+static uint_32 elapsed = 0;
+static uint_32 total_elapsed = 0;
 static uint_32 demux_dvd = 0;
 static vo_functions_t *video_out;
 
 static void print_fps(uint_32 final) 
 {
-
-	//XXX hackety hack hack...
-#ifdef __i386__
-		asm("emms"); 
-#endif
+	int fps, tfps;
+	frame_counter++;
+	
+	elapsed = 0;
 	gettimeofday(&tv_end, NULL);
-	
-	elapsed += (tv_end.tv_sec - tv_beg.tv_sec) + 
-			(tv_end.tv_usec - tv_beg.tv_usec) / 1000000.0;        
-	
+	elapsed = (tv_end.tv_sec - tv_beg.tv_sec) * 1000000+ 
+		  (tv_end.tv_usec - tv_beg.tv_usec);        
 	tv_beg = tv_end;
+	total_elapsed += elapsed / 10000;	/* store 1/100ts */
+	fps = 1000000/(elapsed+1);
+	tfps = frame_counter*100/(total_elapsed+1);
 
-
-	if(!((frame_counter)%200))
-	{
-		printf("|---------+---------+------------+-------+--------|\n");
-		printf("|total t  | avg fps | frame #    | time  | fps    |\n");
-		printf("|---------+---------+------------+-------+--------|\n");
-
-	}
-
-	if(!((++frame_counter)%10))
-	{
-		total_elapsed += elapsed;
-
-		printf("| % 7.3g |  %3.03f | %4d - %4d| %3.03f | %3.03f |\n",
-		total_elapsed, frame_counter / total_elapsed, 
-		frame_counter-10,frame_counter,elapsed, 10 / elapsed);
-
-		elapsed = 0;
-	}
-	if (final)
-	{
-
-		printf("|---------+---------+------------+-------+--------|\n");
-		printf("| % 7.3g |  %3.03f |    0 - %4d| %3.03f | %3.03f |\n",
-		total_elapsed, frame_counter / total_elapsed, 
-		frame_counter,total_elapsed, frame_counter / total_elapsed);
-		printf("|---------+---------+------------+-------+--------|\n");
-	}
+	fprintf(stderr, "%8d %8d.%03d %8d %8d.%02d\r", frame_counter,
+		fps, (1000000000/(elapsed+1)) - (fps * 1000), total_elapsed,
+		tfps, frame_counter * 10000/(total_elapsed+1) - (tfps * 100));
 }
  
 static void 
