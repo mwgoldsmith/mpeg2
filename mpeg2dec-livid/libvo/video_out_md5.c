@@ -34,7 +34,7 @@ static char header[1024];
 static int framenum = -2;
 static FILE * md5_file;
 
-static int md5_close (void *plugin)
+static int md5_close (void * dummy)
 {
     return 0;
 }
@@ -106,4 +106,4 @@ static void md5_free_image_buffer (frame_t* frame)
     libvo_common_free (frame);
 }
 
-LIBVO_EXTERN (md5,"md5")
+LIBVO_EXTERN (md5, "md5")

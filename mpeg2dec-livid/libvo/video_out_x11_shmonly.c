@@ -41,8 +41,7 @@
 
 #ifdef LIBVO_XSHM
 /* since it doesn't seem to be defined on some platforms */
-int XShmGetEventBase(Display*);
-Bool XShmQueryExtension (Display *);
+int XShmGetEventBase (Display *);
 #endif
 
 
@@ -63,15 +62,6 @@ static struct x11_priv_s {
     // XSHM
     XShmSegmentInfo shminfo; // num_buffers
 } x11_priv;
-
-static void _xshm_destroy (XShmSegmentInfo * Shminfo)	// xxxxxxxxx
-{
-    struct x11_priv_s * priv = &x11_priv;
-	
-    XShmDetach (priv->display, Shminfo);
-    shmdt (Shminfo->shmaddr);
-    shmctl (Shminfo->shmid, IPC_RMID, 0);
-}
 
 static int x11_check_local (void)
 {
@@ -152,6 +142,21 @@ static int xshm_create_image (int width, int height)
     return 0;
 }
 
+static void xshm_destroy_image (void)
+{
+    struct x11_priv_s * priv = &x11_priv;
+
+    if (priv->ximage) {
+	if (priv->shminfo.shmaddr != (char *)-1) {
+	    XShmDetach (priv->display, &(priv->shminfo));
+	    shmdt (priv->shminfo.shmaddr);
+	}
+	if (priv->shminfo.shmid != -1)
+	    shmctl (priv->shminfo.shmid, IPC_RMID, 0);
+	XDestroyImage (priv->ximage);
+    }
+}
+
 static int x11_get_visual_info (void)
 {
     struct x11_priv_s * priv = &x11_priv;
@@ -211,7 +216,8 @@ static int x11_yuv2rgb_init (void)
     struct x11_priv_s * priv = &x11_priv;
     int mode;
 
-    // If we have blue in the lowest bit then obviously RGB 
+    // If we have blue in the lowest bit then "obviously" RGB
+    // (walken : the guy who wrote this convention never heard of endianness ?)
     mode = ((priv->ximage->blue_mask & 0x01)) ? MODE_RGB : MODE_BGR;
 
 #ifdef WORDS_BIGENDIAN 
@@ -295,22 +301,18 @@ static int x11_setup (vo_output_video_attr_t * vo_attr)
     return 0;
 }
 
-static int x11_close(void *plugin) 
+static int x11_close (void * dummy)
 {
     struct x11_priv_s * priv = &x11_priv;
 
-    printf ("Closing video plugin\n");
+    xshm_destroy_image ();
 
-    if (priv->shminfo.shmaddr) {
-	_xshm_destroy(&priv->shminfo);
-    }
-
-    if (priv->ximage)
-	XDestroyImage (priv->ximage);
-
-    if (priv->window)
+    if (priv->window) {
+	XFreeGC (priv->display, priv->gc);
 	XDestroyWindow (priv->display, priv->window);
-    XCloseDisplay (priv->display);
+    }
+    if (priv->display)
+	XCloseDisplay (priv->display);
 
     return 0;
 }
@@ -320,8 +322,7 @@ static void x11_flip_page (void)
     struct x11_priv_s * priv = &x11_priv;
 
     XShmPutImage (priv->display, priv->window, priv->gc, priv->ximage, 
-		  0, 0, 0, 0, priv->ximage->width, priv->ximage->height,
-		  False);
+		  0, 0, 0, 0, priv->width, priv->height, False);
     XFlush (priv->display);
 }
 
@@ -358,6 +359,6 @@ void x11_free_image_buffer (frame_t* frame)
     libvo_common_free (frame);
 }
 
-LIBVO_EXTERN (x11,"x11")
+LIBVO_EXTERN (x11, "x11")
 
 #endif
