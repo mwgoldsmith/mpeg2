@@ -133,7 +133,10 @@ static uint32_t arch_accel (void)
 
     canjump = 1;
 
-    asm volatile ("mtspr 256,%0" :: "r" (-1));
+    asm volatile ("mtspr 256, %0\n\t"
+		  "vand %v0, %v0, %v0"
+		  :
+		  : "r" (-1));
 
     signal (SIGILL, SIG_DFL);
     return MM_ACCEL_PPC_ALTIVEC;
