@@ -28,7 +28,10 @@ typedef struct vo_output_video_s {
     char * name; 
  
     int (*setup)                (vo_output_video_attr_t *attr); 
-    int (*close) (void * this); 
+    int (*close) (void * this);
+
+    frame_t *(*request_frame)(void);
+    void (*release_frame)(frame_t* frame);
  
 // <old> 
     int (*draw_frame)   (frame_t *frame); 

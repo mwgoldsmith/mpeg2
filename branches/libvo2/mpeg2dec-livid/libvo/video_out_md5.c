@@ -36,6 +36,7 @@ static FILE * md5_file;
 
 static int md5_close (void * dummy)
 {
+    libvo_common_close();
     return 0;
 }
 
@@ -85,6 +86,8 @@ static void md5_flip_page (void)
 
 static int md5_setup (vo_output_video_attr_t * attr)
 {
+    libvo_common_setup(attr);
+
     if (!(md5_file = fopen ("md5", "w")))
 	return -1;
 

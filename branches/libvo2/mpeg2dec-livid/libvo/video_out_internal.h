@@ -12,6 +12,8 @@
 
 #define VIDEO_BUFFER_SIZE 5
 
+int libvo_common_setup (vo_output_video_attr_t *attr);
+int libvo_common_close ();
 frame_t * libvo_common_alloc (int width, int height);
 void libvo_common_free (frame_t * frame);
 

@@ -75,8 +75,32 @@ frame_t * request_frame (void)
 
 void release_frame (frame_t *frame)
 {
-    video_buffer[i]->used = 0;
+    frame->used = 0;
     return;
+}
+
+int libvo_common_setup (vo_output_video_attr_t *attr)
+{
+    int i;
+    
+    for ( i = 0 ; i < VIDEO_BUFFER_SIZE ; i++)
+    {
+	video_buffer[i] = libvo_common_alloc (attr->width, attr->height);
+	video_buffer[i]->used = 0;
+    }
+
+    return 0;
+}
+
+int libvo_common_close (void * plugin)
+{
+    int i;
+    
+    for ( i = 0 ; i < VIDEO_BUFFER_SIZE ; i++)
+    {
+	libvo_common_free(video_buffer[i]);
+    }
+    return 0;
 }
 
 frame_t * libvo_common_alloc (int width, int height)

@@ -28,6 +28,7 @@
 
 static int null_close (void * plugin)
 {
+    libvo_common_close();
     return 0;
 }
 
@@ -47,6 +48,7 @@ static void null_flip_page (void)
 
 static int null_setup (vo_output_video_attr_t *attr)
 {
+    libvo_common_setup (attr);
     return 0;
 }
 

@@ -35,6 +35,7 @@ static int framenum = -2;
 
 static int pgm_close (void * plugin)
 {
+    libvo_common_close();
     return 0;
 }
 
@@ -73,6 +74,8 @@ static void pgm_flip_page (void)
 
 static int pgm_setup (vo_output_video_attr_t *attr)
 {
+    libvo_common_setup (attr);
+
     image_width = attr->width;
     image_height = attr->height;
 
