@@ -528,7 +528,9 @@ int plugin_init (char *whoami)
 {
 	pluginRegister (whoami,
 		PLUGIN_ID_OUTPUT_VIDEO,
-		0,
+		"mga",
+                NULL,
+                NULL,
 		&video_mga);
 
 	return 0;
