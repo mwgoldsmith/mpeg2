@@ -7,6 +7,10 @@ AUTOMAKE_OPTIONS = no-dependencies foreign
 DEFS = $(CFLAGS) @DEFS@
 INCLUDES = -I$(top_builddir)/include -I.
 
+libdir = $(OMS_PLUGINDIR)
+
+
+## Libs
 lib_LTLIBRARIES = codec_mpeg2dec.la
 
 include_HEADERS = mpeg2.h 
@@ -23,6 +27,7 @@ EXTRA_codec_mpeg2dec_la_SOURCES = idct_mmx.c idct_block_mmx.S idct_mlib.c\
 
 noinst_HEADERS = mpeg2.h getvlc.h stats.h header.h slice.h motion_comp.h\
 	mpeg2_internal.h idct.h debug.h bitstream.h idct_mmx.h idct_mlib.h mmx.h
+
 
 mostlyclean-generic:
 	-rm -f *~ \#* .*~ .\#*

@@ -1,3 +1,6 @@
+//PLUGIN_INFO(INFO_NAME, "MPEG2 video decoder");
+//PLUGIN_INFO(INFO_AUTHOR, "Aaron Holtzman <aholtzma@ess.engr.uvic.ca>");
+
 /*
  *  codec.c
  *
@@ -54,22 +57,19 @@ static picture_t picture;
 //global config struct
 mpeg2_config_t config;
 
-//pointers to the display interface functions
-plugin_output_video_t *video_out;
-
 //
 //the current start code chunk we are working on
 //we max out at 65536 bytes as that is the largest
 //slice we will see in MP@ML streams.
 //(we make no pretenses ofdecoding anything more than that)
-static u_int8_t chunk_buffer[65536 + 4];
-static u_int8_t *chunk_end = chunk_buffer;
-static u_int32_t shift = 0;
-static u_int32_t has_sync = 0;
-static u_int8_t is_display_initialized = 0;
-static u_int8_t is_sequence_needed = 1;
+static uint8_t chunk_buffer[65536 + 4];
+static uint8_t *chunk_end = chunk_buffer;
+static uint32_t shift = 0;
+static uint32_t has_sync = 0;
+static uint8_t is_display_initialized = 0;
+static uint8_t is_sequence_needed = 1;
 
-static int _mpeg2dec_open	(void *foo);
+static int _mpeg2dec_open	(plugin_t *plugin, void *foo);
 static int _mpeg2dec_close	(plugin_t *plugin);
 static int _mpeg2dec_read	(plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t *buf_entry);
 
@@ -91,7 +91,7 @@ static plugin_codec_video_t codec_mpeg2dec = {
  *
  **/
 
-static int _mpeg2dec_open (void *foo)
+static int _mpeg2dec_open (plugin_t *plugin, void *foo)
 {
 	chunk_end	= chunk_buffer;
 	shift		= 0;
@@ -101,7 +101,7 @@ static int _mpeg2dec_open (void *foo)
 	is_sequence_needed = 1;
 
 	//copy the display interface function pointers
-	video_out = (plugin_output_video_t *) foo;
+	codec_mpeg2dec.output = (plugin_output_video_t *) foo;
 
 	//FIXME setup config properly
 	config.flags = MPEG2_MMX_ENABLE;
@@ -133,25 +133,25 @@ static int _mpeg2dec_close (plugin_t *plugin)
 
 static void decode_allocate_image_buffers (picture_t *pic)
 {
-	u_int32_t frame_size;
-	u_int32_t slice_size;
+	uint32_t frame_size;
+	uint32_t slice_size;
 	vo_image_buffer_t *img_buf;
 
 	frame_size = pic->coded_picture_width * pic->coded_picture_height;
 	slice_size = pic->coded_picture_width * 16;
 
 	//FIXME the next step is to give a vo_image_buffer_t* to dislay_slice (or eqiv)
-	img_buf = video_out->allocate_image_buffer(16,pic->coded_picture_width,0);
+	img_buf = codec_mpeg2dec.output->allocate_image_buffer(16,pic->coded_picture_width,0);
 	pic->throwaway_frame[0] = img_buf->base;
 	pic->throwaway_frame[1] = pic->throwaway_frame[0] + slice_size;
 	pic->throwaway_frame[2] = pic->throwaway_frame[1] + slice_size/4;
 
-	img_buf = video_out->allocate_image_buffer(pic->coded_picture_height,pic->coded_picture_width,0);
+	img_buf = codec_mpeg2dec.output->allocate_image_buffer(pic->coded_picture_height,pic->coded_picture_width,0);
 	pic->backward_reference_frame[0] = img_buf->base;
 	pic->backward_reference_frame[1] = pic->backward_reference_frame[0] + frame_size;
 	pic->backward_reference_frame[2] = pic->backward_reference_frame[1] + frame_size/4;
 
-	img_buf = video_out->allocate_image_buffer(pic->coded_picture_height,pic->coded_picture_width,0);
+	img_buf = codec_mpeg2dec.output->allocate_image_buffer(pic->coded_picture_height,pic->coded_picture_width,0);
 	pic->forward_reference_frame[0] = img_buf->base;
 	pic->forward_reference_frame[1] = pic->forward_reference_frame[0] + frame_size;
 	pic->forward_reference_frame[2] = pic->forward_reference_frame[1] + frame_size/4;
@@ -163,9 +163,9 @@ static void decode_allocate_image_buffers (picture_t *pic)
  * "start code chunk" at a time
  **/
 
-static u_int32_t decode_buffer_chunk (u_int8_t **start, u_int8_t *end)
+static uint32_t decode_buffer_chunk (uint8_t **start, uint8_t *end)
 {
-	static u_int8_t *cur;
+	static uint8_t *cur;
 
 	cur = *start;
 
@@ -241,11 +241,11 @@ static int _mpeg2dec_read (plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t
 {
 	uint_8 *data_start = buf_entry->data;
 	uint_8 *data_end = data_start+buf_entry->data_len;
-	u_int32_t is_frame_done = 0;
-	u_int32_t ret = 0;
+	uint32_t is_frame_done = 0;
+	uint32_t ret = 0;
 
 	while ((is_frame_done <= 0) && decode_buffer_chunk (&data_start, data_end)) {
-		u_int32_t code = chunk_buffer[0];
+		uint32_t code = chunk_buffer[0];
 
 		if (is_sequence_needed && code != SEQUENCE_HEADER_CODE)
 			continue;
@@ -260,7 +260,7 @@ static int _mpeg2dec_read (plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t
 			is_sequence_needed = 0;
 
 			if(!is_display_initialized) {
-				video_out->setup (picture.coded_picture_width, picture.coded_picture_height, 0, 0);
+				codec_mpeg2dec.output->setup (picture.coded_picture_width, picture.coded_picture_height, 0, 0);
 				decode_allocate_image_buffers (&picture);
 				is_display_initialized = 1;
 			}
@@ -292,7 +292,7 @@ static int _mpeg2dec_read (plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t
 #endif
 
 				if(picture.picture_coding_type == B_TYPE) {
-					video_out->draw_slice (picture.throwaway_frame,chunk_buffer[0] - 1);
+					codec_mpeg2dec.output->draw_slice (picture.throwaway_frame,chunk_buffer[0] - 1);
 
 					picture.current_frame[0] = picture.throwaway_frame[0] - 
 						(chunk_buffer[0]) * 16 * picture.coded_picture_width;
@@ -301,7 +301,7 @@ static int _mpeg2dec_read (plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t
 					picture.current_frame[2] = picture.throwaway_frame[2] - 
 						(chunk_buffer[0]) * 8 * picture.coded_picture_width/2;
 				} else {
-					u_int8_t *foo[3];
+					uint8_t *foo[3];
 
 					foo[0] = picture.forward_reference_frame[0] + (chunk_buffer[0]-1) * 16 *
 						picture.coded_picture_width;
@@ -309,8 +309,8 @@ static int _mpeg2dec_read (plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t
 						picture.coded_picture_width/2;
 					foo[2] = picture.forward_reference_frame[2] + (chunk_buffer[0]-1) * 8 *
 						picture.coded_picture_width/2;
-					video_out->draw_slice (foo, chunk_buffer[0]-1);
-//					video_out->draw_frame (picture.forward_reference_frame);
+					codec_mpeg2dec.output->draw_slice (foo, chunk_buffer[0]-1);
+//					codec_mpeg2dec.output->draw_frame (picture.forward_reference_frame);
 				}
 			}
 		}
@@ -321,7 +321,7 @@ static int _mpeg2dec_read (plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t
 #endif
 
 		if (is_frame_done > 0) {
-			video_out->flip_page ();
+			codec_mpeg2dec.output->flip_page ();
 
 			is_frame_done = 0;
 
