@@ -3,10 +3,6 @@
  * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
- * Portions of this code are from the MPEG software simulation group
- * idct implementation. This code will be replaced with a new
- * implementation soon.
- *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
  * See http://libmpeg2.sourceforge.net/ for updates.
  *
@@ -24,20 +20,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
-/**********************************************************/
-/* inverse two dimensional DCT, Chen-Wang algorithm */
-/* (cf. IEEE ASSP-32, pp. 803-816, Aug. 1984) */
-/* 32-bit integer arithmetic (8 bit coefficients) */
-/* 11 mults, 29 adds per DCT */
-/* sE, 18.8.91 */
-/**********************************************************/
-/* coefficients extended to 12 bit for IEEE1180-1990 */
-/* compliance sE, 2.1.94 */
-/**********************************************************/
-
-/* this code assumes >> to be a two's-complement arithmetic */
-/* right shift: (-2)>>1 == -1 , (-3)>>1 == -2 */
 
 #include "config.h"
 
