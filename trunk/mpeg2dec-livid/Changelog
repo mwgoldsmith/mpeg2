@@ -8,6 +8,10 @@ mpeg2dec-0.1.7
 -SDL display code added
 -faster motion_comp_c code
 -moved codec, display code into separate libraries
+-test suite
+-lots of conformance fixes
+-rewrite of the parsing code
+-MMX/SSE runtime detection and support
 
 mpeg2dec-0.1.6 Wed Mar 22 09:45:44 PST 2000
 -enhanced g200 
