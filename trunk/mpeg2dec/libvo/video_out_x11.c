@@ -48,13 +48,8 @@ int XShmGetEventBase (Display *);
 #include "video_out.h"
 #include "convert.h"
 
-/*
- * BEGINNING of the generic C code to convert 422 planar to UYVY. This will
- * eventually move into its own file.
- */
 typedef struct {
     unsigned int width;
-    unsigned int height;
     uint8_t * out;
 } convert_uyvy_t;
 
@@ -71,41 +66,39 @@ static void uyvy_start (void * _id, const mpeg2_fbuf_t * fbuf,
 static void uyvy_copy (void * _id, uint8_t * const * src,
 		       unsigned int v_offset)
 {
-    uint8_t const * y;
-    uint8_t const * u;
-    uint8_t const * v;
-    convert_uyvy_t const * instance = (convert_uyvy_t *) _id;
-    unsigned int const chroma_width = instance->width / 2;
+    const uint8_t * y;
+    const uint8_t * u;
+    const uint8_t * v;
+    const convert_uyvy_t * instance = (convert_uyvy_t *) _id;
     uint32_t * out;
-    uint8_t const * u_end1;
+    int width, height;
 
     y = src[0];
     u = src[1];
     v = src[2];
-    out = (uint32_t *) instance->out + chroma_width * v_offset;
-    // XXX Change the 8 into a 16 when the lib can deliver 422
-    for (u_end1 = u + 8 * chroma_width; u != u_end1; ) {
-	uint8_t const * u_end2;
-
-	for (u_end2 = u + chroma_width; u != u_end2; ) {
-	    *out = y[1] << 24 | v[0] << 16 | y[0] << 8 | u[0];
-	    y += 2;
-	    u++;
-	    v++;
-	    out++;
+    out = (uint32_t *) (instance->out + 2 * instance->width * v_offset);
+    height = 16;
+    do {
+	width = instance->width >> 4;
+	do {
+	    out[0] =  y[1] << 24 | v[0] << 16 |  y[0] << 8 | u[0];
+	    out[1] =  y[3] << 24 | v[1] << 16 |  y[2] << 8 | u[1];
+	    out[2] =  y[5] << 24 | v[2] << 16 |  y[4] << 8 | u[2];
+	    out[3] =  y[7] << 24 | v[3] << 16 |  y[6] << 8 | u[3];
+	    out[4] =  y[9] << 24 | v[4] << 16 |  y[8] << 8 | u[4];
+	    out[5] = y[11] << 24 | v[5] << 16 | y[10] << 8 | u[5];
+	    out[6] = y[13] << 24 | v[6] << 16 | y[12] << 8 | u[6];
+	    out[7] = y[15] << 24 | v[7] << 16 | y[14] << 8 | u[7];
+	    y += 16;
+	    u += 8;
+	    v += 8;
+	    out += 8;
+	} while (--width);
+	if (--height & 1) {
+	    u -= instance->width >> 1;
+	    v -= instance->width >> 1;
 	}
-	// XXX Remove the code until the end of the loop when the lib can
-	//     deliver 422
-	u -= chroma_width;
-	v -= chroma_width;
-	while (u < u_end2) {
-	    *out = y[1] << 24 | v[0] << 16 | y[0] << 8 | u[0];
-	    y += 2;
-	    u++;
-	    v++;
-	    out++;
-	}
-    }
+    } while (height);
 }
 
 void convert_uyvy (int width, int height, uint32_t accel, void * arg,
@@ -115,7 +108,6 @@ void convert_uyvy (int width, int height, uint32_t accel, void * arg,
 
     if (instance) {
 	instance->width = width;
-	instance->height = height;
 	result->buf_size[0] = width * height * 2;
 	result->buf_size[1] = result->buf_size[2] = 0;
 	result->start = uyvy_start;
@@ -124,9 +116,6 @@ void convert_uyvy (int width, int height, uint32_t accel, void * arg,
 	result->id_size = sizeof (convert_uyvy_t);
     }
 }
-/*
- * END of the generic C code to convert 422 planar to UYVY.
- */
 
 typedef struct {
     void * data;
