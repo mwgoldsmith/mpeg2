@@ -49,7 +49,9 @@ i?86-* | k?-*) dnl catch i386,i486,i586,i686,k6,k7
 			GLOBAL_CFLAGS="$GLOBAL_CFLAGS -march=k7";;
 	esac;;
 alpha*-*) AC_DEFINE(__alpha__);;
-sparc-*) AC_DEFINE(__sparc__);;
+sparc-*) 
+	AC_DEFINE(__sparc__)
+	GLOBAL_CFLAGS="$GLOBAL_CFLAGS -mcpu=ultrasparc -mvis";;
 ppc-*) AC_DEFINE(__ppc__);;
 *) echo "$host is not currently supported by mpeg2dec"; exit 1;;
 esac

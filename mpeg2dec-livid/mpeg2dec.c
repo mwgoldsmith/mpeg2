@@ -29,7 +29,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <string.h>
-#include <sys/errno.h>
+#include <errno.h>
 
 #include "config.h"
 #include "libmpeg2/mpeg2.h"
@@ -63,7 +63,10 @@ static void print_fps(uint_32 final)
 		  (tv_end.tv_usec - tv_start.tv_usec) / 10000;
 
 	if (final) {
-		tfps = frame_counter * 10000 / total_elapsed;
+		if (total_elapsed) 
+			tfps = frame_counter * 10000 / total_elapsed;
+		else
+			tfps = 0;
 		fprintf(stderr,"\n%d frames decoded in %d.%02d "
 			"seconds (%d.%02d fps)\n", frame_counter,
 			total_elapsed / 100, total_elapsed % 100,
