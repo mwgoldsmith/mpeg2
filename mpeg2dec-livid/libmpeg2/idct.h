@@ -23,5 +23,4 @@
  *
  */
 
-void idct(macroblock_t *mb);
 void idct_init(void);
