@@ -595,7 +595,7 @@ static int pva_demux (uint8_t * buf, uint8_t * end)
 {
     static int state = DEMUX_SKIP;
     static int state_bytes = 0;
-    static uint8_t head_buf[12];
+    static uint8_t head_buf[15];
 
     uint8_t * header;
     int bytes;
