@@ -44,7 +44,6 @@ int XShmGetEventBase (Display *);
 
 #include "video_out.h"
 #include "video_out_internal.h"
-#include "yuv2rgb.h"
 
 typedef struct x11_frame_s {
     vo_frame_t vo;

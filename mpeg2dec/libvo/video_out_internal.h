@@ -30,3 +30,15 @@ int libvo_common_alloc_frames (vo_instance_t * instance, int width, int height,
 			       void (* draw) (vo_frame_t *));
 void libvo_common_free_frames (vo_instance_t * instance);
 vo_frame_t * libvo_common_get_frame (vo_instance_t * instance, int prediction);
+
+#define MODE_RGB  0x1
+#define MODE_BGR  0x2
+
+extern void (* yuv2rgb) (uint8_t * image, uint8_t * py,
+                         uint8_t * pu, uint8_t * pv, int h_size, int v_size,
+                         int rgb_stride, int y_stride, int uv_stride);
+
+void yuv2rgb_init (int bpp, int mode);
+int yuv2rgb_init_mmxext (int bpp, int mode);
+int yuv2rgb_init_mmx (int bpp, int mode);
+int yuv2rgb_init_mlib (int bpp, int mode);
