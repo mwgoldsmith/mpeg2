@@ -126,22 +126,22 @@ idct_row_c(sint_16 *blk)
 {
   sint_32 x0, x1, x2, x3, x4, x5, x6, x7, x8;
 
-  x1 = blk[4]<<7; 
-  x2 = blk[6]>>4; 
-  x3 = blk[2]>>4;
-  x4 = blk[1]>>4; 
-  x5 = blk[7]>>4; 
-  x6 = blk[5]>>4; 
-  x7 = blk[3]>>4;
+  x1 = blk[4]<<11;
+  x2 = blk[6];
+  x3 = blk[2];
+  x4 = blk[1];
+  x5 = blk[7];
+  x6 = blk[5];
+  x7 = blk[3];
 
   /* shortcut */
   if (!(x1 | x2 | x3 | x4 | x5 | x6 | x7 ))
   {
-    blk[0]=blk[1]=blk[2]=blk[3]=blk[4]=blk[5]=blk[6]=blk[7]=blk[0]>>1;
+    blk[0]=blk[1]=blk[2]=blk[3]=blk[4]=blk[5]=blk[6]=blk[7]=blk[0]<<3;
     return;
   }
 
-  x0 = (blk[0]<<7) + 128; /* for proper rounding in the fourth stage */
+  x0 = (blk[0]<<11) + 128; /* for proper rounding in the fourth stage */
 
   /* first stage */
   x8 = W7*(x4+x5);

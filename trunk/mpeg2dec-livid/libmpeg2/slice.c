@@ -169,14 +169,12 @@ slice_get_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint
 	else 
 		dest[0] = (slice->dc_dct_pred[cc]+= Get_Chroma_DC_dct_diff()) << (3 - picture->intra_dc_precision);
 
-	dest[0] <<= 4;
-
 	i = 1;
 	while((slice_get_block_coeff(&run,&val,0,picture->intra_vlc_format)))
 	{
 		i += run;
 		j = scan[i++];
-		dest[j] = (val * quantizer_scale * quant_matrix[j]);
+		dest[j] = (val * quantizer_scale * quant_matrix[j]) / 16;
 		//FIXME put mismatch control back in
 	}
 }
@@ -196,7 +194,7 @@ slice_get_non_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest)
 	{
 		i += run;
 		j = scan[i++];
-		dest[j] = (((val<<1) + (val>>15))* quantizer_scale * quant_matrix[j]) >> 1;
+		dest[j] = (((val<<1) + (val>>15))* quantizer_scale * quant_matrix[j]) >> 5;
 	}
 }
 
