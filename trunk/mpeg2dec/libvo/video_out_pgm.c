@@ -54,7 +54,8 @@ static void internal_draw_frame (pgm_instance_t * instance,
 {
     int i;
 
-    instance->writer (instance, instance->header, strlen (instance->header));
+    instance->writer (instance, (uint8_t *)instance->header,
+		      strlen (instance->header));
     instance->writer (instance, buf[0], instance->width * instance->height);
     for (i = 0; i < instance->height >> 1; i++) {
 	instance->writer (instance, buf[1] + i * (instance->width >> 1),
