@@ -33,6 +33,14 @@
 #include "attributes.h"
 #include "mmx.h"
 
+#ifdef HAVE_MEMALIGN
+/* some systems have memalign() but no declaration for it */
+void * memalign (size_t align, size_t size);
+#else
+/* assume malloc alignment is sufficient */
+#define memalign(align,size) malloc (size)
+#endif
+
 mpeg2_config_t config;
 
 void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
@@ -45,9 +53,10 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
 	config.flags = mm_accel;
 	idct_init ();
 	motion_comp_init ();
-	mpeg2dec->chunk_buffer = (uint8_t *) malloc(224 * 1024 + 4);
-	mpeg2dec->picture = (picture_t *) malloc (sizeof (picture_t));
     }
+
+    mpeg2dec->chunk_buffer = memalign(16, 224 * 1024 + 4);
+    mpeg2dec->picture = memalign (16, sizeof (picture_t));
 
     mpeg2dec->shift = 0;
     mpeg2dec->is_sequence_needed = 1;
@@ -221,8 +230,11 @@ void mpeg2_close (mpeg2dec_t * mpeg2dec)
 
     mpeg2_decode_data (mpeg2dec, finalizer, finalizer+4);
 
-    if (mpeg2dec->output)
+    if (! (mpeg2dec->is_sequence_needed))
 	vo_draw (mpeg2dec->picture->backward_reference_frame);
+
+    free (mpeg2dec->chunk_buffer);
+    free (mpeg2dec->picture);
 }
 
 void mpeg2_drop (mpeg2dec_t * mpeg2dec, int flag)
