@@ -74,7 +74,7 @@ static inline uint32_t fastrand (void)
 
 static uint32_t clip (double p)
 {
-    return (p < 0) ? 0 : ((p >= 1) ? 0xffffffff : (p * 4294967296.0));
+    return (p < 0) ? 0 : ((p >= 1) ? 0xffffffff : (uint32_t)(p*4294967296.0));
 }
 
 static void randbyte_init (double p, randbyte_t * rand)
