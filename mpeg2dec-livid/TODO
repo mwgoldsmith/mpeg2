@@ -1,4 +1,5 @@
 * before 0.2.0 :
+	* write small libvo doc
 	* fix xshm completion events in libvo
 	* put back slice handling
 	* interlaced slices
