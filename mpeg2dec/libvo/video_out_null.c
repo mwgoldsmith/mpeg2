@@ -52,7 +52,7 @@ static vo_instance_t * internal_open (int setup (vo_instance_t *, unsigned int,
     instance->start_fbuf = NULL;
     instance->draw = null_draw_frame;
     instance->discard = NULL;
-    instance->close = NULL;
+    instance->close = (void (*) (vo_instance_t *)) free;
 
     return instance;
 }

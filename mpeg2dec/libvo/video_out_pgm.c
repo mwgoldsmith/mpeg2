@@ -134,7 +134,7 @@ static vo_instance_t * internal_open (void draw (vo_instance_t *,
     instance->vo.start_fbuf = NULL;
     instance->vo.draw = draw;
     instance->vo.discard = NULL;
-    instance->vo.close = NULL;
+    instance->vo.close = (void (*) (vo_instance_t *)) free;
     instance->framenum = 0;
     instance->writer = writer;
     instance->file = stdout;
