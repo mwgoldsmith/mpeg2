@@ -348,35 +348,36 @@ void Display_Second_Field(void) { /* nothing */ }
 
 unsigned char *dst, *py, *pu, *pv;
 
-static void display_frame_32bpp_420(const uint_8 * py,
-                                    const uint_8 * pv,
-                                    const uint_8 * pu,
-                                    uint_8 * image,
-                                    int h_size,
-                                    int v_size,
-                                    int bpp);
-static void display_frame_16bpp_420(const uint_8 * py,
-                                    const uint_8 * pv,
-                                    const uint_8 * pu,
-                                    uint_8 * image,
-                                    int h_size,
-                                    int v_size,
-                                    int bpp);
+static void display_frame_32bpp_420(const uint_8 * py, const uint_8 * pv,
+                                    const uint_8 * pu, uint_8 * image,
+                                    int h_size, int v_size, int bpp);
+static void display_frame_24bpp_420(const uint_8 * py, const uint_8 * pv,
+                                    const uint_8 * pu, uint_8 * image,
+                                    int h_size, int v_size, int bpp);
+static void display_frame_16bpp_420(const uint_8 * py, const uint_8 * pv,
+                                    const uint_8 * pu, uint_8 * image,
+                                    int h_size, int v_size, int bpp);
 void display_frame(uint_8 *src[])
 {
-   if (bpp==32 || bpp==24) {
-      display_frame_32bpp_420(src[0],src[1],src[2],ImageData,
-                              image_width, image_height,
-                              bpp);
-   } else if (bpp == 15 || bpp == 16) {
-      display_frame_16bpp_420(src[0],src[1],src[2],ImageData,
-                              image_width, image_height,
-                              bpp);
+   if (bpp==32) 
+	 {
+      display_frame_32bpp_420(src[0],src[1],src[2],ImageData, 
+					image_width, image_height, bpp);
+   } 
+	 else if (bpp==24) 
+	 {
+      display_frame_24bpp_420(src[0],src[1],src[2],ImageData, 
+					image_width, image_height, bpp);
+   } 
+	 else if (bpp == 15 || bpp == 16) 
+	 {
+      display_frame_16bpp_420(src[0],src[1],src[2],ImageData, 
+					image_width, image_height, bpp);
    }
    Display_Image(myximage, ImageData);
 }
 
-/* do 32 and 24 bpp output */
+/* do 32 bpp output */
 static void display_frame_32bpp_420(const uint_8 * py, const uint_8 * pv, 
 		const uint_8 * pu, uint_8 * image, int h_size, int v_size, int bpp)
 {
@@ -390,7 +391,7 @@ static void display_frame_32bpp_420(const uint_8 * py, const uint_8 * pv,
 	const uint_8* py_line_2;
 	volatile char prefetch;
 
-	int byte_per_line=h_size*4;
+	int byte_per_line=h_size*(bpp/8);
 
 	int crv,cbu,cgu,cgv;
 
@@ -418,7 +419,7 @@ static void display_frame_32bpp_420(const uint_8 * py, const uint_8 * pv,
 			prefetch = pv[32];
 			V = (*pv++) - 128;
 
-			g_common = cgu * U + cgu * V - 32768;
+			g_common = cgu * U + cgv * V - 32768;
 			b_common = cbu * U + 32768;
 			r_common = crv * V;
 
@@ -454,6 +455,105 @@ static void display_frame_32bpp_420(const uint_8 * py, const uint_8 * pv,
 			*dst_line_2++ = clip[(Y-g_common)>>16];
 			*dst_line_2++ = clip[(Y+b_common)>>16];
 			dst_line_2++;
+		}
+
+		py_line_1 += h_size;
+		py_line_2 += h_size;
+		dst_line_1 += byte_per_line;
+		dst_line_2 += byte_per_line;
+	}
+}
+
+/* do 24 bpp output */
+static void display_frame_24bpp_420(const uint_8 * py, const uint_8 * pv, 
+		const uint_8 * pu, uint_8 * image, int h_size, int v_size, int bpp)
+{
+	sint_32 Y,U,V;
+	sint_32 g_common,b_common,r_common;
+	uint_32 x,y;
+
+	uint_8 *dst_line_1;
+	uint_8 *dst_line_2;
+	const uint_8* py_line_1;
+	const uint_8* py_line_2;
+	volatile char prefetch;
+
+	int byte_per_line=h_size*(bpp/8);
+
+	int crv,cbu,cgu,cgv;
+
+	/* matrix coefficients */
+	crv = Inverse_Table_6_9[matrix_coefficients][0];
+	cbu = Inverse_Table_6_9[matrix_coefficients][1];
+	cgu = Inverse_Table_6_9[matrix_coefficients][2];
+	cgv = Inverse_Table_6_9[matrix_coefficients][3];
+
+
+	dst_line_1 = dst_line_2 =  image;
+	dst_line_2 = dst_line_1 + byte_per_line;
+
+	py_line_1 = py;
+	py_line_2 = py + h_size;
+
+	for (y = 0; y < v_size / 2; y++) 
+	{
+		for (x = 0; x < h_size / 2; x++) 
+		{
+
+			//Common to all four pixels
+			prefetch = pu[32];
+			U = (*pu++) - 128;
+			prefetch = pv[32];
+			V = (*pv++) - 128;
+
+			g_common = cgu * U + cgv * V - 32768;
+			b_common = cbu * U + 32768;
+			r_common = crv * V;
+
+			//Pixel I
+			prefetch = py_line_1[32];
+			Y = 76309 * ((*py_line_1++) - 16);
+			*dst_line_1++ = clip[(Y+r_common)>>16];
+			*dst_line_1++ = clip[(Y-g_common)>>16];
+			*dst_line_1++ = clip[(Y+b_common)>>16];
+			if (bpp==32)
+			{
+				dst_line_1++;
+			}
+
+			//Pixel II
+			Y = 76309 * ((*py_line_1++) - 16);
+
+			*dst_line_1++ = clip[(Y+r_common)>>16];
+			*dst_line_1++ = clip[(Y-g_common)>>16];
+			*dst_line_1++ = clip[(Y+b_common)>>16];
+			if (bpp==32)
+			{
+				dst_line_1++;
+			}
+
+			//Pixel III
+			prefetch = py_line_2[32];
+			Y = 76309 * ((*py_line_2++) - 16);
+
+			*dst_line_2++ = clip[(Y+r_common)>>16];
+			*dst_line_2++ = clip[(Y-g_common)>>16];
+			*dst_line_2++ = clip[(Y+b_common)>>16];
+			if (bpp==32)
+			{
+				dst_line_1++;
+			}
+
+			//Pixel IV
+			Y = 76309 * ((*py_line_2++) - 16);
+
+			*dst_line_2++ = clip[(Y+r_common)>>16];
+			*dst_line_2++ = clip[(Y-g_common)>>16];
+			*dst_line_2++ = clip[(Y+b_common)>>16];
+			if (bpp==32)
+			{
+				dst_line_1++;
+			}
 		}
 
 		py_line_1 += h_size;
