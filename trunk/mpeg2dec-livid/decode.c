@@ -256,7 +256,7 @@ mpeg2_decode_frame(void)
 					{
 						memset(mb->f_motion_vectors,0,8);
 						//FIXME i don't know why this doesn't work
-//						mb->macroblock_type = MACROBLOCK_MOTION_FORWARD;
+						//mb->macroblock_type = MACROBLOCK_MOTION_FORWARD;
 						mb->skipped = 1;
 						mb->mba = ++mba;
 						mb = mb_buffer_increment();
