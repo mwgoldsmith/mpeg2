@@ -1,13 +1,10 @@
-* before 0.2.0 :
-	* clean up frame_t declaration and usage (libvo/libmpeg2) + video_out.h
-	* clean up yuv2rgb for interlaced pictures (handling of uv)
-
 * things we dont implement yet
 	* dont crash on bad streams, make sure we can resync after a while
 		* possible chunk buffer overflow (writing or reading back)
 		* destination macroblock overflow
 		* MC source out of bounds (maybe signal handler for that one ?)
 		* dont just fprintf and exit
+	* synchronization stuff 
 
 * structural optimizations
 	* integrate idct_add and idct_copy into the main idct routine
@@ -23,9 +20,9 @@
 	* optimize IDCT for very sparse input matrixes ?
 	* optimize startcode search loop ?
 	* bit parsing / DCT parsing optimizations
+	* clean up slice_process init (and get rid of video_out.h there)
 
 * clean up
 	* clean up header file usage
 	* clean up DMV and field MC code
-
-* synchronization stuff 
+	* clean up yuv2rgb for interlaced pictures (handling of uv)
