@@ -9,7 +9,8 @@ EXTRA_mga_vid_test_SOURCES = mga_vid_test.c
 KERNEL_INCLUDES = @KERNEL_INCLUDES@
 INCLUDES = -I$(KERNEL_INCLUDES)
 CFLAGS = -g -O2  -Wall -D__KERNEL__  -DMODULE @MOD_CFLAGS@\
-	 -include $(KERNEL_INCLUDES)/linux/modversions.h
+	 -include $(KERNEL_INCLUDES)/linux/modversions.h\
+	 -idirafter ../compatibility
 
 noinst_HEADERS = mga_vid.h sis_vid.h
 
