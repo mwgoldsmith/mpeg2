@@ -61,6 +61,9 @@ elif test x"$CC" = x"tcc" -a x"`$CC -version 2>&1 | grep TenDRA`" != x""; then
     enable_mlib=no
     no_x=yes
     enable_sdl=no
+elif test x"$CC" = x"icc" -a x"`$CC -V 2>&1 | grep Intel`" != x""; then
+    dnl Intel C++ compiler
+    CFLAGS="-g -O3 -unroll -ip"
 else
     dnl non-gcc flags - we probably need exact configuration triplets here.
     case "$host_alias" in
