@@ -1,0 +1,5 @@
+      48 S- --- --- - SEQUENCE PROG 480x480 chroma 240x240 fps 30 maxBps 1875000 vbv 229376 picture 480x480 display 480x480 pixel 1x1
+      50 SG --- --- - GOP CLOSED  0: 0: 0: 0
+      58 SG AA- --- ? PICTURE I fields 2 time_ref 0 offset 0/0
+    99fd SG aa- --- ? SLICE
+    99fd SG --- aa- ? END

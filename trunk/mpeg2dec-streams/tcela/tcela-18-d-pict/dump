@@ -1,0 +1,125 @@
+      10 S- --- --- - SEQUENCE PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+      18 SG --- --- - GOP  0: 0:17: 3
+      20 SG AA- --- ? PICTURE D fields 2 time_ref 0 offset 0/0
+    209a SG aa- --- ? SLICE
+    20a6 S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+    20ae SG --- --- - GOP  0: 0:17: 4
+    20b6 SG BB- aa- ? PICTURE D fields 2 time_ref 0 offset 0/0
+    4130 SG bb- aa- ? SLICE
+    413c S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+    4144 SG --- --- - GOP  0: 0:17: 5
+    414c SG CC- bb- a PICTURE D fields 2 time_ref 0 offset 0/0
+    61c5 SG cc- bb- a SLICE
+    61d1 S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+    61d9 SG --- --- - GOP  0: 0:17: 6
+    61e1 SG DD- cc- b PICTURE D fields 2 time_ref 0 offset 0/0
+    825b SG dd- cc- b SLICE
+    8267 S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+    826f SG --- --- - GOP  0: 0:17: 7
+    8277 SG EE- dd- c PICTURE D fields 2 time_ref 0 offset 0/0
+    a2f1 SG ee- dd- c SLICE
+    a2fd S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+    a305 SG --- --- - GOP  0: 0:17: 8
+    a30d SG FF- ee- d PICTURE D fields 2 time_ref 0 offset 0/0
+    c386 SG ff- ee- d SLICE
+    c392 S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+    c39a SG --- --- - GOP  0: 0:17: 9
+    c3a2 SG GG- ff- e PICTURE D fields 2 time_ref 0 offset 0/0
+    e41c SG gg- ff- e SLICE
+    e428 S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+    e430 SG --- --- - GOP  0: 0:17:10
+    e438 SG HH- gg- f PICTURE D fields 2 time_ref 0 offset 0/0
+   104b2 SG hh- gg- f SLICE
+   104be S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   104c6 SG --- --- - GOP  0: 0:17:11
+   104ce SG II- hh- g PICTURE D fields 2 time_ref 0 offset 0/0
+   12547 SG ii- hh- g SLICE
+   12553 S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   1255b SG --- --- - GOP  0: 0:17:12
+   12563 SG JJ- ii- h PICTURE D fields 2 time_ref 0 offset 0/0
+   145dd SG jj- ii- h SLICE
+   145e9 S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   145f1 SG --- --- - GOP  0: 0:17:13
+   145f9 SG KK- jj- i PICTURE D fields 2 time_ref 0 offset 0/0
+   16673 SG kk- jj- i SLICE
+   1667f S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   16687 SG --- --- - GOP  0: 0:17:14
+   1668f SG LL- kk- j PICTURE D fields 2 time_ref 0 offset 0/0
+   18708 SG ll- kk- j SLICE
+   18714 S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   1871c SG --- --- - GOP  0: 0:17:15
+   18724 SG MM- ll- k PICTURE D fields 2 time_ref 0 offset 0/0
+   1a79e SG mm- ll- k SLICE
+   1a7aa S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   1a7b2 SG --- --- - GOP  0: 0:17:16
+   1a7ba SG NN- mm- l PICTURE D fields 2 time_ref 0 offset 0/0
+   1c834 SG nn- mm- l SLICE
+   1c840 S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   1c848 SG --- --- - GOP  0: 0:17:17
+   1c850 SG OO- nn- m PICTURE D fields 2 time_ref 0 offset 0/0
+   1e8c9 SG oo- nn- m SLICE
+   1e8d5 S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   1e8dd SG --- --- - GOP  0: 0:17:18
+   1e8e5 SG PP- oo- n PICTURE D fields 2 time_ref 0 offset 0/0
+   2095f SG pp- oo- n SLICE
+   2096b S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   20973 SG --- --- - GOP  0: 0:17:19
+   2097b SG QQ- pp- o PICTURE D fields 2 time_ref 0 offset 0/0
+   229f5 SG qq- pp- o SLICE
+   22a01 S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   22a09 SG --- --- - GOP  0: 0:17:20
+   22a11 SG RR- qq- p PICTURE D fields 2 time_ref 0 offset 0/0
+   24a8a SG rr- qq- p SLICE
+   24a96 S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   24a9e SG --- --- - GOP  0: 0:17:21
+   24aa6 SG SS- rr- q PICTURE D fields 2 time_ref 0 offset 0/0
+   26b20 SG ss- rr- q SLICE
+   26b2c S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   26b34 SG --- --- - GOP  0: 0:17:22
+   26b3c SG TT- ss- r PICTURE D fields 2 time_ref 0 offset 0/0
+   28bb6 SG tt- ss- r SLICE
+   28bc2 S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   28bca SG --- --- - GOP  0: 0:17:23
+   28bd2 SG UU- tt- s PICTURE D fields 2 time_ref 0 offset 0/0
+   2ac4b SG uu- tt- s SLICE
+   2ac57 S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   2ac5f SG --- --- - GOP  0: 0:17:24
+   2ac67 SG VV- uu- t PICTURE D fields 2 time_ref 0 offset 0/0
+   2cce1 SG vv- uu- t SLICE
+   2cced S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   2ccf5 SG --- --- - GOP  0: 0:17:25
+   2ccfd SG WW- vv- u PICTURE D fields 2 time_ref 0 offset 0/0
+   2ed77 SG ww- vv- u SLICE
+   2ed83 S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   2ed8b SG --- --- - GOP  0: 0:17:26
+   2ed93 SG XX- ww- v PICTURE D fields 2 time_ref 0 offset 0/0
+   30e0c SG xx- ww- v SLICE
+   30e18 S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   30e20 SG --- --- - GOP  0: 0:17:27
+   30e28 SG YY- xx- w PICTURE D fields 2 time_ref 0 offset 0/0
+   32ea2 SG yy- xx- w SLICE
+   32eae S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   32eb6 SG --- --- - GOP  0: 0:17:28
+   32ebe SG ZZ- yy- x PICTURE D fields 2 time_ref 0 offset 0/0
+   34f38 SG zz- yy- x SLICE
+   34f44 S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   34f4c SG --- --- - GOP  0: 0:17:29
+   34f54 SG AA- zz- y PICTURE D fields 2 time_ref 0 offset 0/0
+   36fcd SG aa- zz- y SLICE
+   36fd9 S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   36fe1 SG --- --- - GOP  0: 0:18: 0
+   36fe9 SG BB- aa- z PICTURE D fields 2 time_ref 0 offset 0/0
+   39063 SG bb- aa- z SLICE
+   3906f S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   39077 SG --- --- - GOP  0: 0:18: 1
+   3907f SG CC- bb- a PICTURE D fields 2 time_ref 0 offset 0/0
+   3b0f9 SG cc- bb- a SLICE
+   3b105 S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   3b10d SG --- --- - GOP  0: 0:18: 2
+   3b115 SG DD- cc- b PICTURE D fields 2 time_ref 0 offset 0/0
+   3d18e SG dd- cc- b SLICE
+   3d19a S- --- --- - SEQUENCE_REPEATED PROG 720x480 chroma 360x240 fps 29.97 maxBps 250000 vbv 61440 picture 720x480 display 720x480 pixel 2000x2139
+   3d1a2 SG --- --- - GOP  0: 0:18: 3
+   3d1aa SG EE- dd- c PICTURE D fields 2 time_ref 0 offset 0/0
+   3f224 SG ee- dd- c SLICE
+   3f224 SG --- ee- d END
