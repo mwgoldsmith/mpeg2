@@ -56,9 +56,6 @@ elif test x"$GCC" = x"yes"; then
     sparc-* | sparc64-*)
 	OPT_CFLAGS="$CFLAGS -mcpu=ultrasparc -mvis -Wa,-Av9"
 	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
-    mips-sgi-irix6.*)	dnl do we need to be that specific ?
-	OPT_CFLAGS="$CFLAGS -mabi=64"
-	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
     esac
 elif test x"$CC" = x"tcc" -a x"`$CC -version 2>&1 | grep TenDRA`" != x""; then
     dnl TenDRA portability checking compiler
@@ -73,9 +70,6 @@ elif test x"$CC" = x"icc" -a x"`$CC -V 2>&1 | grep Intel`" != x""; then
 else
     dnl non-gcc flags - we probably need exact configuration triplets here.
     case "$host" in
-    mips-sgi-irix6.*)
-	OPT_CFLAGS="$CFLAGS -64"
-	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
     sparc-sun-solaris*)
 	OPT_CFLAGS="$CFLAGS -xCC -fast -xO5"
 	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
