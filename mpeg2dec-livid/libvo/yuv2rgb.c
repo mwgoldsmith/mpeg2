@@ -21,6 +21,8 @@
 
 #include "config.h"
 
+#ifdef LIBVO_X11
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
@@ -405,3 +407,5 @@ static void yuv2rgb_c_init (int bpp, int mode)
 		       entry_size * div_round (cbu * (i-128), 76309));
     }
 }
+
+#endif

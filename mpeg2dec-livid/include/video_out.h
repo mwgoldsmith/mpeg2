@@ -34,8 +34,8 @@ typedef struct vo_driver_s {
     vo_setup_t * setup;
 } vo_driver_t;
 
-/* NULL terminated array of all drivers */
-extern vo_driver_t video_out_drivers[];
+/* return NULL terminated array of all drivers */
+vo_driver_t * vo_drivers (void);
 
 static vo_instance_t * vo_setup (vo_setup_t * setup, int width, int height)
 {
