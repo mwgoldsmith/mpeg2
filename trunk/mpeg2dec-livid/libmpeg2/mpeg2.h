@@ -33,7 +33,11 @@
 #endif
 
 #include <inttypes.h>
+#ifdef __OMS__
+#include <oms/accel.h>
+#else
 #include "oms_accel.h"
+#endif
 
 //config flags
 #define MPEG2_MLIB_ENABLE OMS_ACCEL_MLIB
