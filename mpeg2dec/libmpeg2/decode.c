@@ -121,7 +121,7 @@ int mpeg2_getpos (mpeg2dec_t * mpeg2dec)
     return mpeg2dec->buf_end - mpeg2dec->buf_start;
 }
 
-static inline int seek_chunk (mpeg2dec_t * mpeg2dec)
+static inline state_t seek_chunk (mpeg2dec_t * mpeg2dec)
 {
     int size, skipped;
 
@@ -133,14 +133,14 @@ static inline int seek_chunk (mpeg2dec_t * mpeg2dec)
     }
     mpeg2dec->bytes_since_pts += skipped;
     mpeg2dec->code = mpeg2dec->buf_start[-1];
-    return -1;
+    return (state_t)-1;
 }
 
-static int seek_header (mpeg2dec_t * mpeg2dec)
+static state_t seek_header (mpeg2dec_t * mpeg2dec)
 {
     while (mpeg2dec->code != 0xb3 &&
 	   ((mpeg2dec->code != 0xb7 && mpeg2dec->code != 0xb8 &&
-	     mpeg2dec->code) || mpeg2dec->sequence.width == -1))
+	     mpeg2dec->code) || mpeg2dec->sequence.width == (unsigned)-1))
 	if (seek_chunk (mpeg2dec) == STATE_BUFFER)
 	    return STATE_BUFFER;
     mpeg2dec->chunk_start = mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
@@ -148,23 +148,23 @@ static int seek_header (mpeg2dec_t * mpeg2dec)
 	    mpeg2_header_picture_start (mpeg2dec));
 }
 
-int mpeg2_seek_sequence (mpeg2dec_t * mpeg2dec)
+state_t mpeg2_seek_sequence (mpeg2dec_t * mpeg2dec)
 {
-    mpeg2dec->sequence.width = -1;
+    mpeg2dec->sequence.width = (unsigned)-1;
     return seek_header (mpeg2dec);
 }
 
 #define RECEIVED(code,state) (((state) << 8) + (code))
 
-int mpeg2_parse (mpeg2dec_t * mpeg2dec)
+state_t mpeg2_parse (mpeg2dec_t * mpeg2dec)
 {
     int size_buffer, size_chunk, copied;
 
     if (mpeg2dec->action) {
-	int state;
+	state_t state;
 
 	state = mpeg2dec->action (mpeg2dec);
-	if (state >= 0)
+	if ((int)state >= 0)
 	    return state;
     }
 
@@ -221,7 +221,7 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
     return (mpeg2dec->state == STATE_SLICE) ? STATE_SLICE : STATE_INVALID;
 }
 
-int mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
+state_t mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
 {
     static int (* process_header[]) (mpeg2dec_t * mpeg2dec) = {
 	mpeg2_header_picture, mpeg2_header_extension, mpeg2_header_user_data,

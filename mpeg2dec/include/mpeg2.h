@@ -113,16 +113,18 @@ typedef struct {
 typedef struct mpeg2dec_s mpeg2dec_t;
 typedef struct decoder_s decoder_t;
 
-#define STATE_BUFFER 0
-#define STATE_SEQUENCE 1
-#define STATE_SEQUENCE_REPEATED 2
-#define STATE_GOP 3
-#define STATE_PICTURE 4
-#define STATE_SLICE_1ST 5
-#define STATE_PICTURE_2ND 6
-#define STATE_SLICE 7
-#define STATE_END 8
-#define STATE_INVALID 9
+typedef enum {
+    STATE_BUFFER = 0,
+    STATE_SEQUENCE = 1,
+    STATE_SEQUENCE_REPEATED = 2,
+    STATE_GOP = 3,
+    STATE_PICTURE = 4,
+    STATE_SLICE_1ST = 5,
+    STATE_PICTURE_2ND = 6,
+    STATE_SLICE = 7,
+    STATE_END = 8,
+    STATE_INVALID = 9
+} state_t;
 
 struct convert_init_s;
 void mpeg2_convert (mpeg2dec_t * mpeg2dec,
@@ -151,7 +153,7 @@ void mpeg2_close (mpeg2dec_t * mpeg2dec);
 
 void mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t * start, uint8_t * end);
 int mpeg2_getpos (mpeg2dec_t * mpeg2dec);
-int mpeg2_parse (mpeg2dec_t * mpeg2dec);
+state_t mpeg2_parse (mpeg2dec_t * mpeg2dec);
 
 void mpeg2_skip (mpeg2dec_t * mpeg2dec, int skip);
 void mpeg2_slice_region (mpeg2dec_t * mpeg2dec, int start, int end);

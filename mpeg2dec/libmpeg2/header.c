@@ -373,7 +373,7 @@ void mpeg2_set_fbuf (mpeg2dec_t * mpeg2dec, int coding_type)
 	}
 }
 
-int mpeg2_header_picture_start (mpeg2dec_t * mpeg2dec)
+state_t mpeg2_header_picture_start (mpeg2dec_t * mpeg2dec)
 {
     decoder_t * decoder = &(mpeg2dec->decoder);
     picture_t * picture;
@@ -647,7 +647,7 @@ int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec)
     return 0;
 }
 
-int mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec)
+state_t mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec)
 {
     mpeg2dec->state = ((mpeg2dec->picture->nb_fields > 1 ||
 			mpeg2dec->state == STATE_PICTURE_2ND) ?
@@ -694,10 +694,10 @@ int mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec)
 			 mpeg2dec->fbuf[b_type]->buf);
     }
     mpeg2dec->action = NULL;
-    return -1;
+    return (state_t)-1;
 }
 
-int mpeg2_header_end (mpeg2dec_t * mpeg2dec)
+state_t mpeg2_header_end (mpeg2dec_t * mpeg2dec)
 {
     picture_t * picture;
     int b_type;

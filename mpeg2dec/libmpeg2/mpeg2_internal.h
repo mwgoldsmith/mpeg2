@@ -148,8 +148,8 @@ struct mpeg2dec_s {
 
     uint32_t shift;
     int is_display_initialized;
-    int (* action) (struct mpeg2dec_s * mpeg2dec);
-    int state;
+    state_t (* action) (struct mpeg2dec_s * mpeg2dec);
+    state_t state;
     uint32_t ext_state;
 
     /* allocated in init - gcc has problems allocating such big structures */
@@ -223,21 +223,21 @@ uint32_t mpeg2_detect_accel (void);
 void mpeg2_cpu_state_init (uint32_t accel);
 
 /* decode.c */
-int mpeg2_seek_sequence (mpeg2dec_t * mpeg2dec);
-int mpeg2_parse_header (mpeg2dec_t * mpeg2dec);
+state_t mpeg2_seek_sequence (mpeg2dec_t * mpeg2dec);
+state_t mpeg2_parse_header (mpeg2dec_t * mpeg2dec);
 
 /* header.c */
 void mpeg2_header_state_init (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_gop (mpeg2dec_t * mpeg2dec);
-int mpeg2_header_picture_start (mpeg2dec_t * mpeg2dec);
+state_t mpeg2_header_picture_start (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_picture (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_extension (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec);
 void mpeg2_header_matrix_finalize (mpeg2dec_t * mpeg2dec);
 void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec);
-int mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec);
-int mpeg2_header_end (mpeg2dec_t * mpeg2dec);
+state_t mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec);
+state_t mpeg2_header_end (mpeg2dec_t * mpeg2dec);
 void mpeg2_set_fbuf (mpeg2dec_t * mpeg2dec, int coding_type);
 
 /* idct.c */
