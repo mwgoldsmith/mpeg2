@@ -309,6 +309,8 @@ static vo_instance_t * sdl_setup (vo_instance_t * _this, int width, int height)
 
 vo_instance_t * vo_sdl_setup (vo_instance_t * _this, int width, int height)
 {
+    setenv("SDL_VIDEO_YUV_HWACCEL", "1", 1);
+    setenv("SDL_VIDEO_X11_NODIRECTCOLOR", "1", 1);
     return sdl_setup (_this, width, height);
 }
 
