@@ -116,6 +116,11 @@ void mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t * start, uint8_t * end)
     mpeg2dec->buf_end = end;
 }
 
+int mpeg2_getpos (mpeg2dec_t * mpeg2dec)
+{
+    return mpeg2dec->buf_end - mpeg2dec->buf_start;
+}
+
 static inline int seek_chunk (mpeg2dec_t * mpeg2dec)
 {
     int size, skipped;
