@@ -33,6 +33,8 @@
 extern mc_functions_t mc_functions;
 extern void (* idct_block_copy) (int16_t * block, uint8_t * dest, int stride);
 extern void (* idct_block_add) (int16_t * block, uint8_t * dest, int stride);
+extern void (* cpu_state_save) (cpu_state_t * state);
+extern void (* cpu_state_restore) (cpu_state_t * state);
 
 #include "vlc.h"
 
@@ -948,35 +950,6 @@ static void get_mpeg1_non_intra_block (picture_t * picture)
     picture->bitstream_ptr = bit_ptr;
 }
 
-#define GET_MACROBLOCK_ADDRESS_INCREMENT(increment)		\
-do {								\
-    MBAtab * tab;						\
-								\
-    increment = 0;						\
-								\
-    while (1) {							\
-	if (bit_buf >= 0x10000000) {				\
-	    tab = MBA_5 - 2 + UBITS (bit_buf, 5);		\
-	    break;						\
-	} else if (bit_buf >= 0x03000000) {			\
-	    tab = MBA_11 - 24 + UBITS (bit_buf, 11);		\
-	    break;						\
-	} else switch (UBITS (bit_buf, 11)) {			\
-	case 8:		/* macroblock_escape */			\
-	    increment += 33;					\
-	    /* pass through */					\
-	case 15:	/* macroblock_stuffing (MPEG1 only) */	\
-	    DUMPBITS (bit_buf, bits, 11);			\
-	    NEEDBITS (bit_buf, bits, bit_ptr);			\
-	    continue;						\
-	default:	/* end of slice, or error */		\
-	    return;						\
-	}							\
-    }								\
-    DUMPBITS (bit_buf, bits, tab->len);				\
-    increment += tab->mba;					\
-} while (0)
-
 static inline void slice_intra_DCT (picture_t * picture, int cc,
 				    uint8_t * dest, int stride)
 {
@@ -1482,8 +1455,9 @@ do {									\
 		  mc_functions.avg : mc_functions.put));		\
 } while (0)
 
-#define CHECK_DISPLAY							\
+#define NEXT_MACROBLOCK							\
 do {									\
+    offset += 16;							\
     if (offset == picture->coded_picture_width) {			\
 	do { /* just so we can use the break statement */		\
 	    if (picture->current_frame->copy) {				\
@@ -1496,11 +1470,12 @@ do {									\
 	    dest[1] += 4 * stride;					\
 	    dest[2] += 4 * stride;					\
 	} while (0);							\
-	if (! (picture->mpeg1))						\
-	    return;							\
 	picture->v_offset += 16;					\
-	if (picture->v_offset >= picture->coded_picture_height)		\
+	if (picture->v_offset >= picture->coded_picture_height) {	\
+	    if (cpu_state_restore)					\
+		cpu_state_restore (&cpu_state);				\
 	    return;							\
+	}								\
 	offset = 0;							\
     }									\
 } while (0)
@@ -1515,6 +1490,8 @@ void slice_process (picture_t * picture, int code, uint8_t * buffer)
     uint8_t * dest[3];
     int offset;
     uint8_t ** forward_ref[2];
+    MBAtab * mba;
+    cpu_state_t cpu_state;
 
     stride = picture->coded_picture_width;
     offset = (code - 1) * stride * 4;
@@ -1586,11 +1563,33 @@ void slice_process (picture_t * picture, int code, uint8_t * buffer)
 	DUMPBITS (bit_buf, bits, 9);
 	NEEDBITS (bit_buf, bits, bit_ptr);
     }
-    DUMPBITS (bit_buf, bits, 1);
 
-    NEEDBITS (bit_buf, bits, bit_ptr);
-    GET_MACROBLOCK_ADDRESS_INCREMENT (offset);
-    offset <<= 4;
+    /* decode initial macroblock address increment */
+    offset = 0;
+    while (1) {
+	if (bit_buf >= 0x08000000) {
+	    mba = MBA_5 - 2 + UBITS (bit_buf, 6);
+	    break;
+	} else if (bit_buf >= 0x01800000) {
+	    mba = MBA_11 - 24 + UBITS (bit_buf, 12);
+	    break;
+	} else switch (UBITS (bit_buf, 12)) {
+	case 8:		/* macroblock_escape */
+	    offset += 33;
+	    DUMPBITS (bit_buf, bits, 11);
+	    NEEDBITS (bit_buf, bits, bit_ptr);
+	    continue;
+	case 15:	/* macroblock_stuffing (MPEG1 only) */
+	    bit_buf &= 0xfffff;
+	    DUMPBITS (bit_buf, bits, 11);
+	    NEEDBITS (bit_buf, bits, bit_ptr);
+	    continue;
+	default:	/* error */
+	    return;
+	}
+    }
+    DUMPBITS (bit_buf, bits, mba->len + 1);
+    offset = (offset + mba->mba) << 4;
 
     while (offset - picture->coded_picture_width >= 0) {
 	offset -= picture->coded_picture_width;
@@ -1604,6 +1603,9 @@ void slice_process (picture_t * picture, int code, uint8_t * buffer)
     }
     if (picture->v_offset >= picture->coded_picture_height)
 	return;
+
+    if (cpu_state_save)
+	cpu_state_save (&cpu_state);
 
     while (1) {
 	int mba_inc;
@@ -1755,11 +1757,33 @@ void slice_process (picture_t * picture, int code, uint8_t * buffer)
 		picture->dc_dct_pred[2] = 1 << (picture->intra_dc_precision+7);
 	}
 
-	offset += 16;
-	CHECK_DISPLAY;
+	NEXT_MACROBLOCK;
 
 	NEEDBITS (bit_buf, bits, bit_ptr);
-	GET_MACROBLOCK_ADDRESS_INCREMENT (mba_inc);
+	mba_inc = 0;
+	while (1) {
+	    if (bit_buf >= 0x10000000) {
+		mba = MBA_5 - 2 + UBITS (bit_buf, 5);
+		break;
+	    } else if (bit_buf >= 0x03000000) {
+		mba = MBA_11 - 24 + UBITS (bit_buf, 11);
+		break;
+	    } else switch (UBITS (bit_buf, 11)) {
+	    case 8:		/* macroblock_escape */
+		mba_inc += 33;
+		/* pass through */
+	    case 15:	/* macroblock_stuffing (MPEG1 only) */
+		DUMPBITS (bit_buf, bits, 11);
+		NEEDBITS (bit_buf, bits, bit_ptr);
+		continue;
+	    default:	/* end of slice, or error */
+		if (cpu_state_restore)
+		    cpu_state_restore (&cpu_state);
+		return;
+	    }
+	}
+	DUMPBITS (bit_buf, bits, mba->len);
+	mba_inc += mba->mba;
 
 	if (mba_inc) {
 	    picture->dc_dct_pred[0] = picture->dc_dct_pred[1] =
@@ -1774,9 +1798,7 @@ void slice_process (picture_t * picture, int code, uint8_t * buffer)
 			MOTION (motion_fr_zero, MACROBLOCK_MOTION_FORWARD);
 		    else
 			MOTION (motion_fi_zero, MACROBLOCK_MOTION_FORWARD);
-
-		    offset += 16;
-		    CHECK_DISPLAY;
+		    NEXT_MACROBLOCK;
 		} while (--mba_inc);
 	    } else {
 		do {
@@ -1786,9 +1808,7 @@ void slice_process (picture_t * picture, int code, uint8_t * buffer)
 			MOTION (motion_fr_reuse, macroblock_modes);
 		    else
 			MOTION (motion_fi_reuse, macroblock_modes);
-
-		    offset += 16;
-		    CHECK_DISPLAY;
+		    NEXT_MACROBLOCK;
 		} while (--mba_inc);
 	    }
 	}

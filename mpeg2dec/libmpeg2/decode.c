@@ -31,11 +31,6 @@
 #include "video_out.h"
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
-#include "mm_accel.h"
-#include "attributes.h"
-#ifdef ARCH_X86
-#include "mmx.h"
-#endif
 
 #ifdef HAVE_MEMALIGN
 /* some systems have memalign() but no declaration for it */
@@ -47,8 +42,6 @@ void * memalign (size_t align, size_t size);
 
 #define BUFFER_SIZE (1194 * 1024)
 
-mpeg2_config_t config;
-
 void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
 		 vo_instance_t * output)
 {
@@ -56,9 +49,9 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
 
     if (do_init) {
 	do_init = 0;
-	config.flags = mm_accel;
-	idct_init ();
-	motion_comp_init ();
+	cpu_state_init (mm_accel);
+	idct_init (mm_accel);
+	motion_comp_init (mm_accel);
     }
 
     mpeg2dec->chunk_buffer = memalign (16, BUFFER_SIZE + 4);
@@ -104,10 +97,6 @@ static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
 	    vo_draw ((picture->picture_coding_type == B_TYPE) ?
 		     picture->current_frame :
 		     picture->forward_reference_frame);
-#ifdef ARCH_X86
-	    if (config.flags & MM_ACCEL_X86_MMX)
-		emms ();
-#endif
 	}
     }
 
@@ -179,14 +168,8 @@ static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
 	    }
 	}
 
-	if (!(mpeg2dec->drop_frame)) {
+	if (!(mpeg2dec->drop_frame))
 	    slice_process (picture, code, buffer);
-
-#ifdef ARCH_X86
-	    if (config.flags & MM_ACCEL_X86_MMX)
-		emms ();
-#endif
-	}
     }
 
     return is_frame_done;

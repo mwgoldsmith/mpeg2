@@ -31,29 +31,28 @@
 
 mc_functions_t mc_functions;
 
-void motion_comp_init (void)
+void motion_comp_init (uint32_t mm_accel)
 {
-
 #ifdef ARCH_X86
-    if (config.flags & MM_ACCEL_X86_MMXEXT) {
+    if (mm_accel & MM_ACCEL_X86_MMXEXT) {
 	fprintf (stderr, "Using MMXEXT for motion compensation\n");
 	mc_functions = mc_functions_mmxext;
-    } else if (config.flags & MM_ACCEL_X86_3DNOW) {
+    } else if (mm_accel & MM_ACCEL_X86_3DNOW) {
 	fprintf (stderr, "Using 3DNOW for motion compensation\n");
 	mc_functions = mc_functions_3dnow;
-    } else if (config.flags & MM_ACCEL_X86_MMX) {
+    } else if (mm_accel & MM_ACCEL_X86_MMX) {
 	fprintf (stderr, "Using MMX for motion compensation\n");
 	mc_functions = mc_functions_mmx;
     } else
 #endif
 #ifdef ARCH_PPC
-    if (config.flags & MM_ACCEL_PPC_ALTIVEC) {
+    if (mm_accel & MM_ACCEL_PPC_ALTIVEC) {
 	fprintf (stderr, "Using altivec for motion compensation\n");
 	mc_functions = mc_functions_altivec;
     } else
 #endif
 #ifdef LIBMPEG2_MLIB
-    if (config.flags & MM_ACCEL_MLIB) {
+    if (mm_accel & MM_ACCEL_MLIB) {
 	fprintf (stderr, "Using mlib for motion compensation\n");
 	mc_functions = mc_functions_mlib;
     } else
