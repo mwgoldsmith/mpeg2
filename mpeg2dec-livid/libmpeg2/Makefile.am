@@ -1,5 +1,4 @@
-INCLUDES += $(LIBMPEG2_CFLAGS)
-INCLUDES += $(VO_CFLAGS)
+CFLAGS = @CFLAGS@ @LIBMPEG2_CFLAGS@
 
 noinst_LTLIBRARIES = libmpeg2.la
 libmpeg2_la_SOURCES = decode.c header.c stats.c slice.c \
@@ -10,6 +9,6 @@ libmpeg2_la_SOURCES = decode.c header.c stats.c slice.c \
 # I'll have to investigate...
 # libmpeg2_la_SOURCES = slice.c header.c stats.c idct.c motion_comp.c \
 # decode.c idct_mmx.c motion_comp_mmx.c
-libmpeg2_la_LIBADD = $(LIBMPEG2_LIBS) $(VO_LIBS)
+libmpeg2_la_LIBADD = @LIBMPEG2_LIBS@
 
 EXTRA_DIST = configure.incl vlc.h mpeg2_internal.h
