@@ -44,10 +44,12 @@ convert_t convert_rgb32;
 convert_t convert_rgb24;
 convert_t convert_rgb16;
 convert_t convert_rgb15;
+convert_t convert_rgb8;
 convert_t convert_bgr32;
 convert_t convert_bgr24;
 convert_t convert_bgr16;
 convert_t convert_bgr15;
+convert_t convert_bgr8;
 
 #define CONVERT_RGB 0
 #define CONVERT_BGR 1

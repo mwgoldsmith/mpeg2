@@ -22,6 +22,7 @@
  */
 
 #include "config.h"
+#include "attributes.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,7 +34,7 @@
 
 static uint32_t matrix_coefficients = 6;
 
-const int32_t Inverse_Table_6_9[8][4] = {
+static const int32_t Inverse_Table_6_9[8][4] = {
     {117504, 138453, 13954, 34903}, /* no sequence_display_extension */
     {117504, 138453, 13954, 34903}, /* ITU-R Rec. 709 (1990) */
     {104597, 132201, 25675, 53279}, /* unspecified */
@@ -44,8 +45,30 @@ const int32_t Inverse_Table_6_9[8][4] = {
     {117579, 136230, 16907, 35559}  /* SMPTE 240M (1987) */
 };
 
+static const uint8_t dither_8x8_36[8][8] ATTR_ALIGN(16) = {
+    { 0, 27,  6, 34,  1, 29,  8, 35},
+    {18,  9, 25, 15, 19, 10, 26, 17},
+    { 4, 31,  2, 29,  6, 33,  3, 31},
+    {22, 13, 20, 11, 24, 15, 22, 13},
+    { 1, 28,  7, 35,  0, 27,  7, 34},
+    {19, 10, 26, 17, 18,  9, 25, 16},
+    { 5, 33,  3, 30,  5, 32,  2, 30},
+    {23, 14, 21, 12, 23, 14, 21, 11}
+};
+
+static const uint8_t dither_8x8_85[8][8] ATTR_ALIGN(16) = {
+    { 0, 63, 15, 79,  3, 67, 19, 83},
+    {42, 21, 58, 37, 46, 25, 62, 41},
+    {10, 74,  5, 69, 14, 78,  9, 73},
+    {53, 31, 47, 26, 57, 35, 51, 30},
+    { 2, 66, 18, 82,  1, 65, 17, 81},
+    {45, 23, 61, 39, 43, 22, 59, 38},
+    {13, 77,  7, 71, 11, 75,  6, 70},
+    {55, 34, 50, 29, 54, 33, 49, 27}
+};
+
 typedef void yuv2rgb_c_internal (uint8_t *, uint8_t *, uint8_t *, uint8_t *,
-				 void *, void *, int);
+				 void *, void *, int, int);
 
 void * table_rV[256];
 void * table_gU[256];
@@ -77,9 +100,15 @@ void * table_bU[256];
 	Y = py[2*i+1];							\
 	dst[6*i+3] = b[Y]; dst[6*i+4] = g[Y]; dst[6*i+5] = r[Y];
 
+#define DSTDITHER(py,dst,i,d)						\
+	Y = py[2*i];							\
+	dst[2*i] = r[Y+d36[2*i+d]] + g[Y-d36[2*i+d]] + b[Y+d85[2*i+d]];	\
+	Y = py[2*i+1];							\
+	dst[2*i+1] = r[Y+d36[2*i+1+d]] + g[Y-d36[2*i+1+d]] + b[Y+d85[2*i+1+d]];
+
 static void yuv2rgb_c_32 (uint8_t * py_1, uint8_t * py_2,
 			  uint8_t * pu, uint8_t * pv,
-			  void * _dst_1, void * _dst_2, int width)
+			  void * _dst_1, void * _dst_2, int width, int loop)
 {
     int U, V, Y;
     uint32_t * r, * g, * b;
@@ -118,7 +147,8 @@ static void yuv2rgb_c_32 (uint8_t * py_1, uint8_t * py_2,
 /* This is very near from the yuv2rgb_c_32 code */
 static void yuv2rgb_c_24_rgb (uint8_t * py_1, uint8_t * py_2,
 			      uint8_t * pu, uint8_t * pv,
-			      void * _dst_1, void * _dst_2, int width)
+			      void * _dst_1, void * _dst_2, int width,
+			      int loop)
 {
     int U, V, Y;
     uint8_t * r, * g, * b;
@@ -157,7 +187,8 @@ static void yuv2rgb_c_24_rgb (uint8_t * py_1, uint8_t * py_2,
 /* only trivial mods from yuv2rgb_c_24_rgb */
 static void yuv2rgb_c_24_bgr (uint8_t * py_1, uint8_t * py_2,
 			      uint8_t * pu, uint8_t * pv,
-			      void * _dst_1, void * _dst_2, int width)
+			      void * _dst_1, void * _dst_2, int width,
+			      int loop)
 {
     int U, V, Y;
     uint8_t * r, * g, * b;
@@ -197,7 +228,7 @@ static void yuv2rgb_c_24_bgr (uint8_t * py_1, uint8_t * py_2,
 /* r, g, b, dst_1, dst_2 */
 static void yuv2rgb_c_16 (uint8_t * py_1, uint8_t * py_2,
 			  uint8_t * pu, uint8_t * pv,
-			  void * _dst_1, void * _dst_2, int width)
+			  void * _dst_1, void * _dst_2, int width, int loop)
 {
     int U, V, Y;
     uint16_t * r, * g, * b;
@@ -233,7 +264,49 @@ static void yuv2rgb_c_16 (uint8_t * py_1, uint8_t * py_2,
     } while (--width);
 }
 
-static int div_round (int dividend, int divisor)
+static void yuv2rgb_c_8 (uint8_t * py_1, uint8_t * py_2,
+			 uint8_t * pu, uint8_t * pv,
+			 void * _dst_1, void * _dst_2, int width, int loop)
+{
+    int U, V, Y;
+    uint8_t * r, * g, * b;
+    uint8_t * dst_1, * dst_2;
+    const uint8_t * d36, * d85;
+
+    d36 = dither_8x8_36[(2*loop) & 7];
+    d85 = dither_8x8_85[(2*loop) & 7];
+
+    width >>= 3;
+    dst_1 = _dst_1;
+    dst_2 = _dst_2;
+
+    do {
+	RGB (uint8_t, 0);
+	DSTDITHER (py_1, dst_1, 0, 8);
+	DSTDITHER (py_2, dst_2, 0, 0);
+
+	RGB (uint8_t, 1);
+	DSTDITHER (py_2, dst_2, 1, 0);
+	DSTDITHER (py_1, dst_1, 1, 8);
+
+	RGB (uint8_t, 2);
+	DSTDITHER (py_1, dst_1, 2, 8);
+	DSTDITHER (py_2, dst_2, 2, 0);
+
+	RGB (uint8_t, 3);
+	DSTDITHER (py_2, dst_2, 3, 0);
+	DSTDITHER (py_1, dst_1, 3, 8);
+
+	pu += 4;
+	pv += 4;
+	py_1 += 8;
+	py_2 += 8;
+	dst_1 += 8;
+	dst_2 += 8;
+    } while (--width);
+}
+
+static inline int div_round (int dividend, int divisor)
 {
     if (dividend > 0)
 	return (dividend + (divisor>>1)) / divisor;
@@ -248,6 +321,7 @@ static yuv2rgb_c_internal * yuv2rgb_c_init (int order, int bpp)
     uint32_t * table_32 = 0;
     uint16_t * table_16 = 0;
     uint8_t * table_8 = 0;
+    uint8_t * table_332 = 0;
     int entry_size = 0;
     void * table_r = 0;
     void * table_g = 0;
@@ -263,8 +337,7 @@ static yuv2rgb_c_internal * yuv2rgb_c_init (int order, int bpp)
 	int j;
 
 	j = (76309 * (i - 384 - 16) + 32768) >> 16;
-	j = (j < 0) ? 0 : ((j > 255) ? 255 : j);
-	table_Y[i] = j;
+	table_Y[i] = (j < 0) ? 0 : ((j > 255) ? 255 : j);
     }
 
     switch (bpp) {
@@ -336,6 +409,29 @@ static yuv2rgb_c_internal * yuv2rgb_c_init (int order, int bpp)
 	}
 	break;
 
+    case 8:
+	yuv2rgb = yuv2rgb_c_8;
+
+	table_332 = (uint8_t *) malloc ((197 + 2*682 + 256 + 232 + 83) *
+					sizeof (uint8_t));
+
+	entry_size = sizeof (uint8_t);
+	table_r = table_332 + 197;
+	table_g = table_332 + 197 + 682;
+	table_b = table_332 + 197 + 2*682;
+
+	for (i = -197; i < 256+197+35; i++)
+	    ((uint8_t *)table_r)[i] =
+		(table_Y[i+384] * 7 / 255) << ((order == CONVERT_RGB) ? 5 : 0);
+	for (i = -132; i < 256+132+35; i++)
+	    ((uint8_t *)table_g)[i] =
+		(table_Y[i+384] * 7 / 255) << ((order == CONVERT_RGB) ? 2 : 3);
+	for (i = -232; i < 256+232+83; i++)
+	    ((uint8_t *)table_b)[i] =
+		(table_Y[i+384] / 85) << ((order == CONVERT_RGB) ? 0 : 6);
+	table_g += 35;	/* green dither is reversed */
+	break;
+
     default:
 	yuv2rgb = NULL;	/* just to keep gcc happy */
     }
@@ -369,7 +465,7 @@ static void convert_yuv2rgb_c (void * _id, uint8_t * const * src,
     loop = 8;
     do {
 	id->yuv2rgb (py, py + (id->uv_stride << 1), pu, pv,
-		     dst, dst + id->rgb_stride, id->width);
+		     dst, dst + id->rgb_stride, id->width, loop);
 	py += id->uv_stride << 2;
 	pu += id->uv_stride;
 	pv += id->uv_stride;
@@ -457,6 +553,12 @@ void convert_rgb15 (int width, int height, uint32_t accel, void * arg,
     convert_internal (CONVERT_RGB, 15, width, height, accel, arg, result);
 }
 
+void convert_rgb8 (int width, int height, uint32_t accel, void * arg,
+		    convert_init_t * result)
+{
+    convert_internal (CONVERT_RGB, 8, width, height, accel, arg, result);
+}
+
 void convert_bgr32 (int width, int height, uint32_t accel, void * arg,
 		    convert_init_t * result)
 {
@@ -481,6 +583,12 @@ void convert_bgr15 (int width, int height, uint32_t accel, void * arg,
     convert_internal (CONVERT_BGR, 15, width, height, accel, arg, result);
 }
 
+void convert_bgr8 (int width, int height, uint32_t accel, void * arg,
+		    convert_init_t * result)
+{
+    convert_internal (CONVERT_BGR, 8, width, height, accel, arg, result);
+}
+
 convert_t * convert_rgb (int order, int bpp)
 {
     if (order == CONVERT_RGB || order == CONVERT_BGR)
@@ -489,6 +597,7 @@ convert_t * convert_rgb (int order, int bpp)
 	case 24: return (order == CONVERT_RGB) ? convert_rgb24 : convert_bgr24;
 	case 16: return (order == CONVERT_RGB) ? convert_rgb16 : convert_bgr16;
 	case 15: return (order == CONVERT_RGB) ? convert_rgb15 : convert_bgr15;
+	case 8:  return (order == CONVERT_RGB) ? convert_rgb8  : convert_bgr8;
 	}
     fprintf (stderr, "%dbpp not supported by yuv2rgb\n", bpp);
     exit (1);
