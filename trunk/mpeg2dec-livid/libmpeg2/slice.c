@@ -1191,7 +1191,6 @@ static void motion_fr_field (picture_t * picture, motion_t * motion,
 #undef bit_ptr
 }
 
-static int motion_dmv_top_field_first;
 static void motion_fr_dmv (picture_t * picture, motion_t * motion,
 			   uint8_t * dest[3], int offset, int stride,
 			   void (** table) (uint8_t *, uint8_t *, int, int))
@@ -1225,7 +1224,7 @@ static void motion_fr_dmv (picture_t * picture, motion_t * motion,
     motion_block (mc_functions.put, motion_x, motion_y, dest, offset,
 		  motion->ref[0], offset, stride * 2, 8, 0);
 
-    m = motion_dmv_top_field_first ? 1 : 3;
+    m = picture->top_field_first ? 1 : 3;
     other_x = ((motion_x * m + (motion_x > 0)) >> 1) + dmv_x;
     other_y = ((motion_y * m + (motion_y > 0)) >> 1) + dmv_y - 1;
     motion_block (mc_functions.avg, other_x, other_y, dest, offset,
@@ -1234,7 +1233,7 @@ static void motion_fr_dmv (picture_t * picture, motion_t * motion,
     motion_block (mc_functions.put, motion_x, motion_y, dest, offset + stride,
 		  motion->ref[0], offset + stride, stride * 2, 8, 0);
 
-    m = motion_dmv_top_field_first ? 3 : 1;
+    m = picture->top_field_first ? 3 : 1;
     other_x = ((motion_x * m + (motion_x > 0)) >> 1) + dmv_x;
     other_y = ((motion_y * m + (motion_y > 0)) >> 1) + dmv_y + 1;
     motion_block (mc_functions.avg, other_x, other_y, dest, offset + stride,
@@ -1373,7 +1372,6 @@ static void motion_fi_16x8 (picture_t * picture, motion_t * motion,
 #undef bit_ptr
 }
 
-static int current_field = 0;
 static void motion_fi_dmv (picture_t * picture, motion_t * motion,
 			   uint8_t * dest[3], int offset, int stride,
 			   void (** table) (uint8_t *, uint8_t *, int, int))
@@ -1403,13 +1401,13 @@ static void motion_fi_dmv (picture_t * picture, motion_t * motion,
     dmv_y = get_dmv (picture);
 
     motion_block (mc_functions.put, motion_x, motion_y, dest, offset,
-		  motion->ref[current_field], offset, stride, 16, 0);
+		  motion->ref[picture->current_field], offset, stride, 16, 0);
 
     motion_x = ((motion_x + (motion_x > 0)) >> 1) + dmv_x;
     motion_y = ((motion_y + (motion_y > 0)) >> 1) + dmv_y +
-	2 * current_field - 1;
+	2 * picture->current_field - 1;
     motion_block (mc_functions.avg, motion_x, motion_y, dest, offset,
-		  motion->ref[!current_field], offset, stride, 16, 0);
+		  motion->ref[!picture->current_field], offset, stride, 16, 0);
 #undef bit_buf
 #undef bits
 #undef bit_ptr
@@ -1420,7 +1418,7 @@ static void motion_fi_reuse (picture_t * picture, motion_t * motion,
 			     void (** table) (uint8_t *, uint8_t *, int, int))
 {
     motion_block (table, motion->pmv[0][0], motion->pmv[0][1], dest, offset,
-		  motion->ref[current_field], offset, stride, 16, 0);
+		  motion->ref[picture->current_field], offset, stride, 16, 0);
 }
 
 static void motion_fi_zero (picture_t * picture, motion_t * motion,
@@ -1428,7 +1426,7 @@ static void motion_fi_zero (picture_t * picture, motion_t * motion,
 			    void (** table) (uint8_t *, uint8_t *, int, int))
 {
     motion_block (table, 0, 0, dest, offset,
-		  motion->ref[current_field], offset, stride, 16, 0);
+		  motion->ref[picture->current_field], offset, stride, 16, 0);
 }
 
 static void motion_fi_conceal (picture_t * picture)
@@ -1512,7 +1510,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     if (picture->picture_structure != FRAME_PICTURE) {
 	offset <<= 1;
 	forward_ref[1] = picture->forward_reference_frame->base;
-	current_field = (picture->picture_structure == BOTTOM_FIELD);
+	picture->current_field = (picture->picture_structure == BOTTOM_FIELD);
 	if ((picture->second_field) &&
 	    (picture->picture_coding_type != B_TYPE))
 	    forward_ref[picture->picture_structure == TOP_FIELD] =
@@ -1659,7 +1657,6 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		    break;
 
 		case MC_DMV:
-		    motion_dmv_top_field_first = picture->top_field_first;
 		    MOTION (motion_fr_dmv, MACROBLOCK_MOTION_FORWARD);
 		    break;
 
@@ -1683,7 +1680,6 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		    break;
 
 		case MC_DMV:
-		    motion_dmv_top_field_first = picture->top_field_first;
 		    MOTION (motion_fi_dmv, MACROBLOCK_MOTION_FORWARD);
 		    break;
 
