@@ -135,7 +135,7 @@ static inline mpeg2_state_t seek_chunk (mpeg2dec_t * mpeg2dec)
     return (mpeg2_state_t)-1;
 }
 
-static mpeg2_state_t seek_header (mpeg2dec_t * mpeg2dec)
+mpeg2_state_t mpeg2_seek_header (mpeg2dec_t * mpeg2dec)
 {
     while (mpeg2dec->code != 0xb3 &&
 	   ((mpeg2dec->code != 0xb7 && mpeg2dec->code != 0xb8 &&
@@ -150,8 +150,8 @@ static mpeg2_state_t seek_header (mpeg2dec_t * mpeg2dec)
 mpeg2_state_t mpeg2_seek_sequence (mpeg2dec_t * mpeg2dec)
 {
     mpeg2_header_state_init (mpeg2dec);
-    mpeg2dec->action = seek_header;
-    return seek_header (mpeg2dec);
+    mpeg2dec->action = mpeg2_seek_header;
+    return mpeg2_seek_header (mpeg2dec);
 }
 
 #define RECEIVED(code,state) (((state) << 8) + (code))
@@ -247,7 +247,7 @@ mpeg2_state_t mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
 		/* filled the chunk buffer without finding a start code */
 		mpeg2dec->bytes_since_pts += size_chunk;
 		mpeg2dec->code = 0xb4;
-		mpeg2dec->action = seek_header;
+		mpeg2dec->action = mpeg2_seek_header;
 		return STATE_INVALID;
 	    }
 	}
@@ -255,7 +255,7 @@ mpeg2_state_t mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
 
 	if (process_header[mpeg2dec->code & 0x0b] (mpeg2dec)) {
 	    mpeg2dec->code = mpeg2dec->buf_start[-1];
-	    mpeg2dec->action = seek_header;
+	    mpeg2dec->action = mpeg2_seek_header;
 	    return STATE_INVALID;
 	}
 
@@ -291,7 +291,7 @@ mpeg2_state_t mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
 	    continue;
 
 	default:
-	    mpeg2dec->action = seek_header;
+	    mpeg2dec->action = mpeg2_seek_header;
 	    return STATE_INVALID;
 	}
 
