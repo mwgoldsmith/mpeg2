@@ -75,6 +75,7 @@ struct mpeg2_decoder_s {
     int uv_stride;
     int slice_stride;
     int slice_uv_stride;
+    int stride_frame;
     unsigned int limit_x;
     unsigned int limit_y_16;
     unsigned int limit_y_8;
@@ -199,6 +200,7 @@ struct mpeg2dec_s {
     mpeg2_convert_t * convert;
     void * convert_arg;
     unsigned int convert_id_size;
+    int convert_stride;
     void (* convert_start) (void * id, const mpeg2_fbuf_t * fbuf,
 			    const mpeg2_picture_t * picture,
 			    const mpeg2_gop_t * gop);

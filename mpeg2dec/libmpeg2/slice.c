@@ -1592,7 +1592,7 @@ void mpeg2_init_fbuf (mpeg2_decoder_t * decoder, uint8_t * current_fbuf[3],
 {
     int offset, stride, height, bottom_field;
 
-    stride = decoder->width;
+    stride = decoder->stride_frame;
     bottom_field = (decoder->picture_structure == BOTTOM_FIELD);
     offset = bottom_field ? stride : 0;
     height = decoder->height;

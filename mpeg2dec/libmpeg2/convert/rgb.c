@@ -336,7 +336,7 @@ static void rgb_start (void * _id, const mpeg2_fbuf_t * fbuf,
     }
     id->y_increm = (id->y_stride << id->convert420) - id->y_stride_frame;
     id->uv_increm = uv_stride - id->uv_stride_frame;
-    id->rgb_increm = (id->rgb_stride << id->convert420) - id->rgb_stride_frame;
+    id->rgb_increm = (id->rgb_stride << id->convert420) - id->rgb_stride_min;
     id->dither_stride <<= id->convert420;
 }
 
@@ -474,14 +474,17 @@ static unsigned int rgb_c_init (convert_rgb_c_t * id,
 }
 
 static int rgb_internal (mpeg2convert_rgb_order_t order, unsigned int bpp,
-			 const mpeg2_sequence_t * seq, uint32_t accel,
-			 void * arg, mpeg2_convert_init_t * result)
+			 mpeg2_convert_stage_t stage, void * _id,
+			 const mpeg2_sequence_t * seq, int stride,
+			 uint32_t accel, void * arg,
+			 mpeg2_convert_init_t * result)
 {
-    convert_rgb_t * id = (convert_rgb_t *) result->id;
+    convert_rgb_t * id = (convert_rgb_t *) _id;
     mpeg2convert_copy_t * copy = (mpeg2convert_copy_t *) 0;
     unsigned int id_size = sizeof (convert_rgb_t);
     int chroma420 = (seq->chroma_height < seq->height);
     int convert420 = 0;
+    int rgb_stride_min = ((bpp + 7) >> 3) * seq->width;
 
 #ifdef ARCH_X86_
     if (!copy && (accel & MPEG2_ACCEL_X86_MMXEXT)) {
@@ -519,84 +522,48 @@ static int rgb_internal (mpeg2convert_rgb_order_t order, unsigned int bpp,
 	copy = rgb_c[src][dest];
     }
 
-    if (!id)
-	result->id_size = id_size;
-    else {
+    result->id_size = id_size;
+
+    if (stride < rgb_stride_min)
+	stride = rgb_stride_min;
+
+    if (stage == MPEG2_CONVERT_STRIDE)
+	return stride;
+    else if (stage == MPEG2_CONVERT_START) {
 	id->width = seq->width >> 3;
 	id->y_stride_frame = seq->width;
 	id->uv_stride_frame = seq->chroma_width;
-	id->rgb_stride_frame = ((bpp + 7) >> 3) * seq->width;
+	id->rgb_stride_frame = stride;
+	id->rgb_stride_min = rgb_stride_min;
 	id->chroma420 = chroma420;
 	id->convert420 = convert420;
-
-	result->buf_size[0] = id->rgb_stride_frame * seq->height;
+	result->buf_size[0] = stride * seq->height;
 	result->buf_size[1] = result->buf_size[2] = 0;
 	result->start = rgb_start;
 	result->copy = copy;
     }
-
     return 0;
 }
 
-int mpeg2convert_rgb32 (const mpeg2_sequence_t * seq, uint32_t accel,
-			void * arg, mpeg2_convert_init_t * result)
-{
-    return rgb_internal (MPEG2CONVERT_RGB, 32, seq, accel, arg, result);
+#define DECLARE(func,order,bpp)						\
+int func (mpeg2_convert_stage_t stage, void * id,			\
+	  const mpeg2_sequence_t * sequence, int stride,		\
+	  uint32_t accel, void * arg, mpeg2_convert_init_t * result)	\
+{									\
+    return rgb_internal (order, bpp, stage, id, sequence, stride,	\
+			 accel, arg, result);				\
 }
 
-int mpeg2convert_rgb24 (const mpeg2_sequence_t * seq, uint32_t accel,
-			void * arg, mpeg2_convert_init_t * result)
-{
-    return rgb_internal (MPEG2CONVERT_RGB, 24, seq, accel, arg, result);
-}
-
-int mpeg2convert_rgb16 (const mpeg2_sequence_t * seq, uint32_t accel,
-			void * arg, mpeg2_convert_init_t * result)
-{
-    return rgb_internal (MPEG2CONVERT_RGB, 16, seq, accel, arg, result);
-}
-
-int mpeg2convert_rgb15 (const mpeg2_sequence_t * seq, uint32_t accel,
-			void * arg, mpeg2_convert_init_t * result)
-{
-    return rgb_internal (MPEG2CONVERT_RGB, 15, seq, accel, arg, result);
-}
-
-int mpeg2convert_rgb8 (const mpeg2_sequence_t * seq, uint32_t accel,
-		       void * arg, mpeg2_convert_init_t * result)
-{
-    return rgb_internal (MPEG2CONVERT_RGB, 8, seq, accel, arg, result);
-}
-
-int mpeg2convert_bgr32 (const mpeg2_sequence_t * seq, uint32_t accel,
-			void * arg, mpeg2_convert_init_t * result)
-{
-    return rgb_internal (MPEG2CONVERT_BGR, 32, seq, accel, arg, result);
-}
-
-int mpeg2convert_bgr24 (const mpeg2_sequence_t * seq, uint32_t accel,
-			void * arg, mpeg2_convert_init_t * result)
-{
-    return rgb_internal (MPEG2CONVERT_BGR, 24, seq, accel, arg, result);
-}
-
-int mpeg2convert_bgr16 (const mpeg2_sequence_t * seq, uint32_t accel,
-			void * arg, mpeg2_convert_init_t * result)
-{
-    return rgb_internal (MPEG2CONVERT_BGR, 16, seq, accel, arg, result);
-}
-
-int mpeg2convert_bgr15 (const mpeg2_sequence_t * seq, uint32_t accel,
-			void * arg, mpeg2_convert_init_t * result)
-{
-    return rgb_internal (MPEG2CONVERT_BGR, 15, seq, accel, arg, result);
-}
-
-int mpeg2convert_bgr8 (const mpeg2_sequence_t * seq, uint32_t accel,
-		       void * arg, mpeg2_convert_init_t * result)
-{
-    return rgb_internal (MPEG2CONVERT_BGR, 8, seq, accel, arg, result);
-}
+DECLARE (mpeg2convert_rgb32, MPEG2CONVERT_RGB, 32)
+DECLARE (mpeg2convert_rgb24, MPEG2CONVERT_RGB, 24)
+DECLARE (mpeg2convert_rgb16, MPEG2CONVERT_RGB, 16)
+DECLARE (mpeg2convert_rgb15, MPEG2CONVERT_RGB, 15)
+DECLARE (mpeg2convert_rgb8, MPEG2CONVERT_RGB, 8)
+DECLARE (mpeg2convert_bgr32, MPEG2CONVERT_BGR, 32)
+DECLARE (mpeg2convert_bgr24, MPEG2CONVERT_BGR, 24)
+DECLARE (mpeg2convert_bgr16, MPEG2CONVERT_BGR, 16)
+DECLARE (mpeg2convert_bgr15, MPEG2CONVERT_BGR, 15)
+DECLARE (mpeg2convert_bgr8, MPEG2CONVERT_BGR, 8)
 
 mpeg2_convert_t * mpeg2convert_rgb (mpeg2convert_rgb_order_t order,
 				    unsigned int bpp)

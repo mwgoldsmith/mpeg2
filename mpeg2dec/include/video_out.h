@@ -21,11 +21,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-struct mpeg2_sequence_s;
-struct mpeg2_convert_init_s;
+typedef int convert_t ();
 typedef struct {
-    int (* convert) (const struct mpeg2_sequence_s *, uint32_t, void *,
-		     struct mpeg2_convert_init_s *);
+    convert_t * convert;
 } vo_setup_result_t;
 
 typedef struct vo_instance_s vo_instance_t;
