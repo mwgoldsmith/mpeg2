@@ -1,4 +1,5 @@
 * things we dont implement yet
+	* export mpeg flags to the libvo
 	* dont crash on bad streams, make sure we can resync after a while
 		* possible chunk buffer overflow while reading bits
 		* MC source out of bounds (maybe signal handler for that one ?)
@@ -12,6 +13,7 @@
 	* once we have sync, call draw_frame before decoding I or P not after
 
 * local optimizations
+	* altivec IDCT and MC routines
 	* try feig IDCT instead of MSSG c IDCT ?
 	* review the use of static inline functions
 	* rework the MC parsing code
