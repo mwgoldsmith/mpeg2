@@ -74,6 +74,22 @@ if test "x$DISPLAY_DRIVER" = x -a x$enable_xil = xyes; then
                             LIBS="$LIBS -lxil" ])
 fi
 
+dnl SDL option added by Ryan C. Gordon 04/23/2000
+dnl   !!! This really needs to check the SDL version.
+dnl   !!! I think we're using SDL 1.1 features, so 1.0 won't cut it.
+AC_ARG_ENABLE(sdl, [  --enable-sdl            make a version using SDL],
+  enable_sdl=yes, enable_sdl=no)
+if test "x$enable_sdl" = xyes; then
+  AC_CHECK_PROG(SDLCONFIG, sdl-config, yes)
+  if test "x$SDLCONFIG" = xyes; then
+    DISPLAY_DRIVER="display_sdl.o"
+    CFLAGS="$CFLAGS `sdl-config --cflags`"
+    LIBS="$LIBS `sdl-config --libs`"
+  else
+    AC_MSG_ERROR([\"--enable-sdl\" specified, but sdl-config isn't in your path!])
+  fi
+fi
+
 if test "x$DISPLAY_DRIVER" = x; then
   AC_MSG_WARN(no accelerated display driver found -> using X11)
   DISPLAY_DRIVER="display_x11.o yuv2rgb.o"
@@ -99,7 +115,7 @@ CONFIG_OBJS="$CONFIG_OBJS $DISPLAY_DRIVER $EXTENSION_DRIVER"
 AC_SUBST(CONFIG_OBJS)
 AC_SUBST(LIB_CONFIG_OBJS)
 AC_SUBST(DRIVERS)
-
+AC_SUBST(CFLAGS)
 
 dnl There must be a better way to check for SMP....
 AC_MSG_CHECKING(for SMP)
