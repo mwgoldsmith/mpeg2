@@ -10,5 +10,3 @@ Makefile.in
 .libs
 mpeg2dec
 extract_mpeg2
-libcpuaccel.la
-libcpuaccel.pc
