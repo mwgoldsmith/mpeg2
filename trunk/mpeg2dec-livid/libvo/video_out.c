@@ -35,6 +35,7 @@ extern vo_functions_t video_out_x11;
 extern vo_functions_t video_out_sdl;
 extern vo_functions_t video_out_3dfx;
 extern vo_functions_t video_out_null;
+extern vo_functions_t video_out_pgm;
 
 vo_functions_t* video_out_drivers[] = 
 {
@@ -51,6 +52,7 @@ vo_functions_t* video_out_drivers[] =
 	&video_out_sdl,
 #endif
 	&video_out_null,
+	&video_out_pgm,
 	NULL
 };
 
