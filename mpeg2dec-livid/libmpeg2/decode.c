@@ -220,8 +220,3 @@ void mpeg2_drop (mpeg2dec_t * mpeg2dec, int flag)
 {
     mpeg2dec->drop_flag = flag;
 }
-
-void mpeg2_output_init (mpeg2dec_t * mpeg2dec,int flag)
-{
-    mpeg2dec->is_display_initialized = flag;
-}
