@@ -236,8 +236,8 @@ void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id)
     mpeg2dec->fbuf->buf[2] = buf[2];
     mpeg2dec->fbuf->id = id;
     if (mpeg2dec->state == STATE_SEQUENCE) {
-	if (++(mpeg2dec->fbuf) == mpeg2dec->fbufs + 3)
-	    mpeg2dec->fbuf = mpeg2dec->fbufs;
+	mpeg2dec->fbuf[2] = mpeg2dec->fbuf[1];
+	mpeg2dec->fbuf[1] = mpeg2dec->fbuf[0];
     }
 }
 
