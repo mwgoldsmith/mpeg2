@@ -206,7 +206,7 @@ increase your display's color depth, if possible", priv->bpp);
  *   returns : non-zero on success, zero on error.
  **/
 
-static int sdl_close (void *plugin)
+static int sdl_close (void)
 {
 	struct sdl_priv_s *priv = &sdl_priv;
 	

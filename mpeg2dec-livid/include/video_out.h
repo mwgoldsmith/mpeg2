@@ -18,7 +18,7 @@ typedef struct frame_s {
 typedef struct vo_output_video_s {
     char * name;
     int (* setup) (int width, int height);
-    int (* close) (void * this);
+    int (* close) (void);
     void (* flip_page) (void);
     int (* draw_slice) (uint8_t * src[], int slice_num);
     int (* draw_frame) (frame_t * frame);

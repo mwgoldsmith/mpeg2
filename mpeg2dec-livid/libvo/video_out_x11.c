@@ -238,7 +238,7 @@ static int x11_setup (int width, int height)
     return x11_common_setup (width, height, x11_create_image);
 }
 
-static int x11_close (void * dummy)
+static int x11_close (void)
 {
     struct x11_priv_s * priv = &x11_priv;
 
@@ -408,7 +408,7 @@ static int xshm_setup (int width, int height)
     return x11_common_setup (width, height, xshm_create_image);
 }
 
-static int xshm_close (void * dummy)
+static int xshm_close (void)
 {
     struct x11_priv_s * priv = &x11_priv;
 
@@ -564,7 +564,7 @@ static int xv_setup (int width, int height)
     return xv_common_setup (width, height, xv_create_image);
 }
 
-static int xv_close (void * dummy)
+static int xv_close (void)
 {
     struct x11_priv_s * priv = &x11_priv;
 
@@ -662,7 +662,7 @@ static int xvshm_setup (int width, int height)
     return xv_common_setup (width, height, xvshm_create_image);
 }
 
-static int xvshm_close (void * dummy)
+static int xvshm_close (void)
 {
     struct x11_priv_s * priv = &x11_priv;
 
