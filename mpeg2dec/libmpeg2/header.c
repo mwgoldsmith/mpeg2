@@ -91,6 +91,7 @@ void mpeg2_header_state_init (mpeg2dec_t * mpeg2dec)
 	    mpeg2_free (mpeg2dec->convert_id);
     }
     mpeg2dec->decoder.scan = mpeg2_scan_norm;
+    mpeg2dec->decoder.coding_type = PIC_FLAG_CODING_TYPE_I;
     mpeg2dec->picture = mpeg2dec->pictures;
     mpeg2dec->fbuf[0] = &mpeg2dec->fbuf_alloc[0].fbuf;
     mpeg2dec->fbuf[1] = &mpeg2dec->fbuf_alloc[1].fbuf;
@@ -414,6 +415,7 @@ mpeg2_state_t mpeg2_header_picture_start (mpeg2dec_t * mpeg2dec)
     }
     mpeg2dec->picture = picture;
     picture->flags = 0;
+    picture->pts = 0;
     if (mpeg2dec->num_pts) {
 	if (mpeg2dec->bytes_since_pts >= 4) {
 	    mpeg2dec->num_pts = 0;
