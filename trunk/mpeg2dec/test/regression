@@ -35,10 +35,22 @@ rm -fr data
 mkdir data
 cd data
 
+mpeg2dec="../../src/mpeg2dec"; if [ ! -x $mpeg2dec ]; then
+    if [ -x ../../vc++/Release/mpeg2dec.exe ]; then
+	mpeg2dec="../../vc++/Release/mpeg2dec.exe"
+	basedir=`echo "$basedir" | sed "s,/cygdrive/\(.\)/,\1:/,"`
+    elif [ -x ../../vc++/Debug/mpeg2dec.exe ]; then
+	mpeg2dec="../../vc++/Debug/mpeg2dec.exe"
+	basedir=`echo "$basedir" | sed "s,/cygdrive/\(.\)/,\1:/,"`
+    else
+	echo "Can not find mpeg2dec executable"; exit 1
+    fi
+fi
+
 for dir in $dirs; do
     echo $dir
-    ../../src/mpeg2dec $accel -o md5 $basedir/$dir/stream >/dev/null 2>&1 >md5
-    diff -u md5 $basedir/$dir/$md5 || error=1
+    $mpeg2dec $accel -o md5 $basedir/$dir/stream >/dev/null 2>&1 >md5
+    diff -wu md5 $basedir/$dir/$md5 || error=1
     rm -f md5 core
 done
 
