@@ -110,7 +110,9 @@ static inline int slice_get_block_coeff (uint16_t * run, int16_t * val,
     else if (code>=16)
 	tab = &DCTtab6[code-16];
     else {
-	fprintf (stderr," (vlc) invalid huffman code 0x%x in vlc_get_block_coeff ()\n",code);
+	fprintf (stderr,
+		 "(vlc) invalid huffman code 0x%x in vlc_get_block_coeff ()\n",
+		 code);
 	exit (1);
 	return 0;
     }
@@ -244,8 +246,9 @@ static inline int bound_motion_vector (int vector, int f_code)
 #endif
 }
 
-void motion_frame (motion_t * motion, uint8_t * dest[3], int offset, int width,
-		   void (** table) (uint8_t *, uint8_t *, int, int))
+static void motion_frame (motion_t * motion, uint8_t * dest[3],
+			  int offset, int width,
+			  void (** table) (uint8_t *, uint8_t *, int, int))
 {
     int motion_x, motion_y;
 
@@ -261,8 +264,9 @@ void motion_frame (motion_t * motion, uint8_t * dest[3], int offset, int width,
 		  motion->ref_frame, offset, width, 16);
 }
 
-void motion_field (motion_t * motion, uint8_t * dest[3], int offset, int width,
-		   void (** table) (uint8_t *, uint8_t *, int, int))
+static void motion_field (motion_t * motion, uint8_t * dest[3],
+			  int offset, int width,
+			  void (** table) (uint8_t *, uint8_t *, int, int))
 {
     int vertical_field_select;
     int motion_x, motion_y;
@@ -297,23 +301,25 @@ void motion_field (motion_t * motion, uint8_t * dest[3], int offset, int width,
 }
 
 // like motion_frame, but reuse previous motion vectors
-void motion_reuse (motion_t * motion, uint8_t * dest[3], int offset, int width,
-		   void (** table) (uint8_t *, uint8_t *, int, int))
+static void motion_reuse (motion_t * motion, uint8_t * dest[3],
+			  int offset, int width,
+			  void (** table) (uint8_t *, uint8_t *, int, int))
 {
     motion_block (table, motion->pmv[0][0], motion->pmv[0][1], dest, offset,
 		  motion->ref_frame, offset, width, 16);
 }
 
 // like motion_frame, but use null motion vectors
-void motion_zero (motion_t * motion, uint8_t * dest[3], int offset, int width,
-		  void (** table) (uint8_t *, uint8_t *, int, int))
+static void motion_zero (motion_t * motion, uint8_t * dest[3],
+			 int offset, int width,
+			 void (** table) (uint8_t *, uint8_t *, int, int))
 {
     motion_block (table, 0, 0, dest, offset,
 		  motion->ref_frame, offset, width, 16);
 }
 
 // like motion_frame, but no actual motion compensation
-void motion_conceal (motion_t * motion)
+static void motion_conceal (motion_t * motion)
 {
     int tmp;
 
@@ -340,7 +346,8 @@ do {								\
 		  mc_functions.avg : mc_functions.put));	\
 } while (0);
 
-int get_macroblock_modes (int picture_coding_type, int frame_pred_frame_dct)
+static int get_macroblock_modes (int picture_coding_type,
+				 int frame_pred_frame_dct)
 {
     int macroblock_modes;
 
