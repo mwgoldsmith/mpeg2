@@ -46,7 +46,6 @@
 
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
-#include "mm_accel.h"
 
 #define W1 2841 /* 2048*sqrt (2)*cos (1*pi/16) */
 #define W2 2676 /* 2048*sqrt (2)*cos (2*pi/16) */
@@ -279,28 +278,28 @@ static void mpeg2_idct_add_c (const int last, int16_t * block,
     }
 }
 
-void mpeg2_idct_init (uint32_t mm_accel)
+void mpeg2_idct_init (uint32_t accel)
 {
 #ifdef ARCH_X86
-    if (mm_accel & MM_ACCEL_X86_MMXEXT) {
+    if (accel & MPEG2_ACCEL_X86_MMXEXT) {
 	mpeg2_idct_copy = mpeg2_idct_copy_mmxext;
 	mpeg2_idct_add = mpeg2_idct_add_mmxext;
 	mpeg2_idct_mmx_init ();
-    } else if (mm_accel & MM_ACCEL_X86_MMX) {
+    } else if (accel & MPEG2_ACCEL_X86_MMX) {
 	mpeg2_idct_copy = mpeg2_idct_copy_mmx;
 	mpeg2_idct_add = mpeg2_idct_add_mmx;
 	mpeg2_idct_mmx_init ();
     } else
 #endif
 #ifdef ARCH_PPC
-    if (mm_accel & MM_ACCEL_PPC_ALTIVEC) {
+    if (accel & MPEG2_ACCEL_PPC_ALTIVEC) {
 	mpeg2_idct_copy = mpeg2_idct_copy_altivec;
 	mpeg2_idct_add = mpeg2_idct_add_altivec;
 	mpeg2_idct_altivec_init ();
     } else
 #endif
 #ifdef LIBMPEG2_MLIB
-    if (mm_accel & MM_ACCEL_MLIB) {
+    if (accel & MPEG2_ACCEL_MLIB) {
 	mpeg2_idct_copy = mpeg2_idct_copy_mlib_non_ieee;
 	mpeg2_idct_add = (getenv ("MLIB_NON_IEEE") ?
 			  mpeg2_idct_add_mlib_non_ieee : mpeg2_idct_add_mlib);

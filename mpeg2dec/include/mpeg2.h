@@ -121,7 +121,15 @@ void mpeg2_init_fbuf (decoder_t * decoder, uint8_t * current_fbuf[3],
 
 void mpeg2_slice (decoder_t * decoder, int code, const uint8_t * buffer);
 
-mpeg2dec_t * mpeg2_init (uint32_t mm_accel);
+#define MPEG2_ACCEL_X86_MMX 1
+#define MPEG2_ACCEL_X86_3DNOW 2
+#define MPEG2_ACCEL_X86_MMXEXT 4
+#define MPEG2_ACCEL_PPC_ALTIVEC 1
+#define MPEG2_ACCEL_MLIB 0x40000000
+#define MPEG2_ACCEL_DETECT 0x80000000
+
+uint32_t mpeg2_accel (uint32_t accel);
+mpeg2dec_t * mpeg2_init (void);
 const mpeg2_info_t * mpeg2_info (mpeg2dec_t * mpeg2dec);
 void mpeg2_close (mpeg2dec_t * mpeg2dec);
 

@@ -210,8 +210,11 @@ typedef struct {
 void * mpeg2_malloc (int size, int reason);
 void mpeg2_free (void * buf);
 
+/* cpu_accel.c */
+uint32_t mpeg2_detect_accel (void);
+
 /* cpu_state.c */
-void mpeg2_cpu_state_init (uint32_t mm_accel);
+void mpeg2_cpu_state_init (uint32_t accel);
 
 /* decode.c */
 int mpeg2_seek_sequence (mpeg2dec_t * mpeg2dec);
@@ -232,7 +235,7 @@ int mpeg2_header_end (mpeg2dec_t * mpeg2dec);
 void mpeg2_set_fbuf (mpeg2dec_t * mpeg2dec, int coding_type);
 
 /* idct.c */
-void mpeg2_idct_init (uint32_t mm_accel);
+void mpeg2_idct_init (uint32_t accel);
 
 /* idct_mlib.c */
 void mpeg2_idct_add_mlib (int last, int16_t * block,
@@ -258,7 +261,7 @@ void mpeg2_idct_add_altivec (int last, int16_t * block,
 void mpeg2_idct_altivec_init (void);
 
 /* motion_comp.c */
-void mpeg2_mc_init (uint32_t mm_accel);
+void mpeg2_mc_init (uint32_t accel);
 
 typedef void mpeg2_mc_fct (uint8_t *, const uint8_t *, int, int);
 
