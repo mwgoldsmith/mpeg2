@@ -104,7 +104,7 @@ static void print_usage (char * argv[])
 {
     int i;
 
-    fprintf (stderr,"usage: %s [-o mode] [-s] file\n"
+    fprintf (stderr, "usage: %s [-o mode] [-s] file\n"
 	     "\t-s\tsystem stream (.vob file)\n"
 	     "\t-o\tvideo_output mode\n", argv[0]);
 
@@ -165,12 +165,13 @@ static void ps_loop (void)
 	0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff
     };
 
-    int num_frames;
     uint8_t * buf;
     uint8_t * end;
     uint8_t * tmp1;
     uint8_t * tmp2;
+    int complain_loudly;
 
+    complain_loudly = 1;
     buf = buffer;
 
     do {
@@ -180,8 +181,19 @@ static void ps_loop (void)
 	while (buf + 4 <= end) {
 	    // check start code
 	    if (buf[0] || buf[1] || (buf[2] != 0x01)) {
-		printf ("missing start code\n");
-		exit (1);
+		if (complain_loudly) {
+		    fprintf (stderr, "missing start code at %lx\n",
+			     ftell (in_file) - (end - buf));
+		    if ((buf[0] == 0) && (buf[1] == 0) && (buf[2] == 0))
+			fprintf (stderr, "this stream appears to use "
+				 "zero-byte padding before start codes,\n"
+				 "which is not correct according to the "
+				 "mpeg system standard.\n"
+				 "mp1e is one encoder known to do this.\n");
+		    complain_loudly = 0;
+		}
+		buf++;
+		continue;
 	    }
 
 	    switch (buf[3]) {
@@ -196,7 +208,7 @@ static void ps_loop (void)
 		else if (buf + 5 > end)
 		    goto copy;
 		else {
-		    printf ("weird pack header\n");
+		    fprintf (stderr, "weird pack header\n");
 		    exit (1);
 		}
 		if (tmp1 > end)
@@ -212,7 +224,7 @@ static void ps_loop (void)
 		else {	/* mpeg1 */
 		    for (tmp1 = buf + 6; *tmp1 == 0xff; tmp1++)
 			if (tmp1 == buf + 6 + 16) {
-			    printf ("too much stuffing\n");
+			    fprintf (stderr, "too much stuffing\n");
 			    buf = tmp2;
 			    break;
 			}
@@ -221,6 +233,8 @@ static void ps_loop (void)
 		    tmp1 += mpeg1_skip_table [*tmp1 >> 4];
 		}
 		if (tmp1 < tmp2) {
+		    int num_frames;
+
 		    num_frames = mpeg2_decode_data (&mpeg2dec, tmp1, tmp2);
 		    while (num_frames--)
 			print_fps (0);
@@ -229,7 +243,8 @@ static void ps_loop (void)
 		break;
 	    default:
 		if (buf[3] < 0xb9) {
-		    printf ("looks like a video stream, not system stream\n");
+		    fprintf (stderr,
+			     "looks like a video stream, not system stream\n");
 		    exit (1);
 		}
 		/* skip */
@@ -259,8 +274,7 @@ static void es_loop (void)
     do {
 	end = buffer + fread (buffer, 1, BUFFER_SIZE, in_file);
 
-	num_frames =
-	    mpeg2_decode_data (&mpeg2dec, buffer, end);
+	num_frames = mpeg2_decode_data (&mpeg2dec, buffer, end);
 
 	while (num_frames--)
 	    print_fps (0);
