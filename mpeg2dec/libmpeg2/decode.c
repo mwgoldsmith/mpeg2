@@ -255,13 +255,11 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	goto next_chunk;
 
     default:
-	if ((mpeg2dec->code < 0xb0) &&
+	if (((unsigned) (mpeg2dec->code - 1) < 0xb0 - 1) &&
 	    (mpeg2dec->state == STATE_PICTURE ||
 	     mpeg2dec->state == STATE_PICTURE_2ND))
 	    break;
 
-    case RECEIVED (0x00, STATE_PICTURE):
-    case RECEIVED (0x00, STATE_PICTURE_2ND):
 	mpeg2dec->state = STATE_INVALID;
 	mpeg2dec->chunk_start = mpeg2dec->chunk_buffer;
 	goto next_chunk;
