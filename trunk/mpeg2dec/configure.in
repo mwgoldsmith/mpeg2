@@ -46,6 +46,12 @@ if test x"$GCC" = x"yes"; then
 	OPT_CFLAGS="$CFLAGS -mabi=64"
 	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
     esac
+elif test x"$CC" = x"tcc"; then
+    dnl TenDRA portability checking compiler
+    CFLAGS="-Xp -Yansi -f`pwd`/include/tendra.h"
+    enable_mlib=no
+    no_x=yes
+    enable_sdl=no
 else
     dnl non-gcc flags - we probably need exact configuration triplets here.
     case "$host_alias" in
