@@ -26,11 +26,7 @@
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
-#ifdef HAVE_GETOPT_H
 #include <getopt.h>
-#else
-#include <unistd.h>
-#endif
 
 #define BUFFER_SIZE 262144
 static uint8_t buffer[BUFFER_SIZE];

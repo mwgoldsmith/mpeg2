@@ -69,7 +69,6 @@ dnl Checks for header files.
 INCLUDES='-I$(top_srcdir)/include -I$(top_builddir)/include'
 AC_SUBST(INCLUDES)
 AC_CHECK_GENERATE_INTTYPES(include)
-AC_CHECK_HEADERS(getopt.h)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

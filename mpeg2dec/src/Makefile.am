@@ -11,4 +11,4 @@ lib_LTLIBRARIES = libcpuaccel.la
 libcpuaccel_la_SOURCES = cpu_accel.c
 libcpuaccel_la_LDFLAGS = -no-undefined
 
-EXTRA_DIST = configure.incl
+EXTRA_DIST = configure.incl getopt.h
