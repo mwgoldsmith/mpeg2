@@ -101,5 +101,9 @@
    if it is not supported. */
 #define inline __inline
 
+/* Define as `__restrict' if that's what the C compiler calls it, or to
+   nothing if it is not supported. */
+#define restrict __restrict
+
 /* Define to `unsigned' if <sys/types.h> does not define. */
 /* #undef size_t */

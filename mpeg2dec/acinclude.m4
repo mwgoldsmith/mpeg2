@@ -1,3 +1,20 @@
+dnl AC_C_RESTRICT
+dnl Do nothing if the compiler accepts the restrict keyword.
+dnl Otherwise define restrict to __restrict__ or __restrict if one of
+dnl those work, otherwise define restrict to be empty.
+AC_DEFUN([AC_C_RESTRICT],
+    [ac_cv_c_inline=no
+    for ac_kw in restrict __restrict__ __restrict; do
+	AC_TRY_COMPILE([],[char * $ac_kw p;],[ac_cv_c_restrict=$ac_kw; break])
+    done
+    case $ac_cv_c_restrict in
+	restrict) ;;
+	no)	AC_DEFINE([restrict],,
+		    [Define as `__restrict' if that's what the C compiler calls
+		    it, or to nothing if it is not supported.]) ;;
+	*)	AC_DEFINE_UNQUOTED([restrict],$ac_cv_c_restrict) ;;
+    esac])
+
 dnl AC_C_ATTRIBUTE_ALIGNED
 dnl define ATTRIBUTE_ALIGNED_MAX to the maximum alignment if this is supported
 AC_DEFUN([AC_C_ATTRIBUTE_ALIGNED],
