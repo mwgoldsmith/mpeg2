@@ -95,9 +95,9 @@ typedef struct picture_s {
     /* pointer to the zigzag scan we're supposed to be using */
     uint8_t * scan;
 
-    struct frame_s * current_frame;
-    struct frame_s * forward_reference_frame;
-    struct frame_s * backward_reference_frame;
+    struct vo_frame_s * current_frame;
+    struct vo_frame_s * forward_reference_frame;
+    struct vo_frame_s * backward_reference_frame;
 
     int second_field;
 

@@ -70,54 +70,56 @@ vo_driver_t video_out_drivers[] =
     {NULL, NULL}
 };
 
-int libvo_common_alloc_frame (frame_t * frame, int width, int height)
+typedef struct common_instance_s {
+    vo_instance_t vo;
+    int prediction_index;
+    vo_frame_t frame[3];
+} common_instance_t;
+
+int libvo_common_alloc_frames (vo_instance_t * _this, int width, int height,
+			       void (* draw) (vo_frame_t * frame))
 {
-    /* we only know how to do 4:2:0 planar yuv right now. */
-    frame->private = malloc (width * height * 3 / 2);
-    if (!(frame->private))
-	return 1;
-
-    frame->base[0] = frame->private;
-    frame->base[1] = frame->base[0] + width * height;
-    frame->base[2] = frame->base[0] + width * height * 5 / 4;
-
-    return 0;
-}
-
-static frame_t common_frame[3];
-
-int libvo_common_alloc_frames (int (* alloc_frame) (frame_t *, int, int),
-			       int width, int height)
-{
+    common_instance_t * this;
+    int size;
+    uint8_t * alloc;
     int i;
 
-    for (i = 0; i < 3; i++)
-	if (alloc_frame (common_frame + i, width, height))
-	    return 1;
+    this = (common_instance_t *)_this;
+    this->prediction_index = 1;
+    size = width * height / 4;
+    alloc = malloc (18 * size);
+    if (alloc == NULL)
+	return 1;
+
+    for (i = 0; i < 3; i++) {
+	this->frame[i].base[0] = alloc;
+	this->frame[i].base[1] = alloc + 4 * size;
+	this->frame[i].base[2] = alloc + 5 * size;
+	this->frame[i].draw = draw;
+	this->frame[i].this = (vo_instance_t *)this;
+	alloc += 6 * size;
+    }
 
     return 0;
 }
 
-void libvo_common_free_frame (frame_t * frame)
+void libvo_common_free_frames (vo_instance_t * _this)
 {
-    free (frame->private);
+    common_instance_t * this;
+
+    this = (common_instance_t *)_this;
+    free (this->frame[0].base[0]);
 }
 
-void libvo_common_free_frames (void (* free_frame) (frame_t *))
+vo_frame_t * libvo_common_get_frame (vo_instance_t * _this, int prediction)
 {
-    free_frame (common_frame);
-    free_frame (common_frame + 1);
-    free_frame (common_frame + 2);
-}
+    common_instance_t * this;
 
-frame_t * libvo_common_get_frame (vo_instance_t * this, int prediction)
-{
-    static int prediction_index = 0;
-
+    this = (common_instance_t *)_this;
     if (!prediction)
-	return common_frame + 2;
+	return this->frame + 2;
     else {
-	prediction_index ^= 1;
-	return common_frame + prediction_index;
+	this->prediction_index ^= 1;
+	return this->frame + this->prediction_index;
     }
 }

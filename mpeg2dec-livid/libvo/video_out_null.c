@@ -27,25 +27,38 @@
 #include "video_out.h"
 #include "video_out_internal.h"
 
-extern vo_instance_t null_instance;
+typedef struct null_instance_s {
+    vo_instance_t vo;
+    int prediction_index;
+    vo_frame_t frame[3];
+} null_instance_t;
 
-vo_instance_t * vo_null_setup (vo_instance_t * this, int width, int height)
+extern vo_instance_t null_vo_instance;
+
+static void null_draw_frame (vo_frame_t * frame)
 {
-    if (libvo_common_alloc_frames (libvo_common_alloc_frame, width, height))
+}
+
+vo_instance_t * vo_null_setup (vo_instance_t * _this, int width, int height)
+{
+    null_instance_t * this;
+
+    this = (null_instance_t *)_this;
+    if (this == NULL) {
+	this = malloc (sizeof (null_instance_t));
+	if (this == NULL)
+	    return NULL;
+    }
+
+    if (libvo_common_alloc_frames ((vo_instance_t *)this, width, height,
+				   null_draw_frame))
 	return NULL;
-    return &null_instance;
+
+    this->vo = null_vo_instance;
+
+    return (vo_instance_t *)this;
 }
 
-static int null_close (vo_instance_t * this)
-{
-    libvo_common_free_frames (libvo_common_free_frame);
-    return 0;
-}
-
-static void null_draw_frame (frame_t * frame)
-{
-}
-
-static vo_instance_t null_instance = {
-    vo_null_setup, null_close, libvo_common_get_frame, null_draw_frame
+static vo_instance_t null_vo_instance = {
+    vo_null_setup, libvo_common_free_frames, libvo_common_get_frame
 };
