@@ -5,6 +5,7 @@
 	* interlaced slices
 	* clean up frame_t declaration and usage (libvo/libmpeg2)
 	* libvo reentrancy
+	* x11auto output module
 
 * things we dont implement yet
 	* dont crash on bad streams, make sure we can resync after a while
