@@ -1754,7 +1754,7 @@ void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer)
 	    }
 
 	    picture->dc_dct_pred[0] = picture->dc_dct_pred[1] =
-		picture->dc_dct_pred[2] = 1 << (picture->intra_dc_precision+7);
+		picture->dc_dct_pred[2] = 128 << picture->intra_dc_precision;
 	}
 
 	NEXT_MACROBLOCK;
@@ -1787,7 +1787,7 @@ void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer)
 
 	if (mba_inc) {
 	    picture->dc_dct_pred[0] = picture->dc_dct_pred[1] =
-		picture->dc_dct_pred[2] = 1 << (picture->intra_dc_precision+7);
+		picture->dc_dct_pred[2] = 128 << picture->intra_dc_precision;
 
 	    if (picture->picture_coding_type == P_TYPE) {
 		picture->f_motion.pmv[0][0] = picture->f_motion.pmv[0][1] = 0;
