@@ -90,10 +90,4 @@ AC_C_ATTRIBUTE_ALIGNED
 builtin([include],[libmpeg2/configure.incl])
 builtin([include],[libvo/configure.incl])
 
-AC_OUTPUT(Makefile autotools/Makefile include/Makefile test/Makefile src/Makefile libmpeg2/Makefile libvo/Makefile)
-
-
-
-
-
-
+AC_OUTPUT(Makefile autotools/Makefile include/Makefile test/Makefile doc/Makefile src/Makefile libmpeg2/Makefile libvo/Makefile)
