@@ -35,8 +35,6 @@ typedef struct null_instance_s {
     vo_frame_t frame[3];
 } null_instance_t;
 
-extern vo_instance_t null_vo_instance;
-
 static void null_draw_frame (vo_frame_t * frame)
 {
 }
@@ -56,11 +54,30 @@ vo_instance_t * vo_null_setup (vo_instance_t * _this, int width, int height)
 				   null_draw_frame))
 	return NULL;
 
-    this->vo = null_vo_instance;
+    this->vo.reinit = vo_null_setup;
+    this->vo.close = libvo_common_free_frames;
+    this->vo.get_frame = libvo_common_get_frame;
 
     return (vo_instance_t *)this;
 }
 
-static vo_instance_t null_vo_instance = {
-    vo_null_setup, libvo_common_free_frames, libvo_common_get_frame
-};
+static void null_copy_slice (vo_frame_t * frame, uint8_t ** src)
+{
+}
+
+vo_instance_t * vo_nullslice_setup (vo_instance_t * _this,
+				    int width, int height)
+{
+    null_instance_t * this;
+    int i;
+
+    this = (null_instance_t *)vo_null_setup (_this, width, height);
+    if (this == NULL)
+	return NULL;
+
+    this->vo.reinit = vo_nullslice_setup;
+    for (i = 0; i < 3; i++)
+	this->frame[i].copy = null_copy_slice;
+
+    return (vo_instance_t *)this;
+}

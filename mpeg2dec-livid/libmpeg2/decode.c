@@ -130,10 +130,9 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 	    mpeg2dec->in_slice = 1;
 
 	    if (!(mpeg2dec->output)) {
-		mpeg2dec->output =
-		    mpeg2dec->output_setup (NULL,
-					    picture->coded_picture_width,
-					    picture->coded_picture_height);
+		mpeg2dec->output = vo_setup (mpeg2dec->output_setup,
+					     picture->coded_picture_width,
+					     picture->coded_picture_height);
 		if (mpeg2dec->output == NULL) {
 		    fprintf (stderr, "display setup failed\n");
 		    exit (1);
