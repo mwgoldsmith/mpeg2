@@ -247,12 +247,21 @@ init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
   return 0;
 }
 
+
 //FIXME this should allocate AGP memory via agpgart and then we
 //can use AGP transfers to the framebuffer
-void* 
-allocate_buffer(uint_32 num_bytes)
+static vo_image_buffer_t* 
+allocate_image_buffer(uint_32 width, uint_32 height, uint_32 format)
 {
-	return(malloc(num_bytes));	
+	//use the generic fallback
+	return allocate_image_buffer_common(width,height,format);
+}
+
+static void	
+free_image_buffer(vo_image_buffer_t* image)
+{
+	//use the generic fallback
+	free_image_buffer_common(image);
 }
 
 #else /* HAVE_MGA */

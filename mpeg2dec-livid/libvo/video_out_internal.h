@@ -21,12 +21,12 @@
  *
  */
 
-static uint_32 init(uint_32 width, uint_32 height, uint_32 fullscreen, 
-		char *title);
+static uint_32 init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title);
 static uint_32 draw_frame(uint_8 *src[]);
-static void* allocate_buffer(uint_32 num_bytes);
 static uint_32 draw_slice(uint_8 *src[], uint_32 slice_num);
 static void flip_page(void);
+static vo_image_buffer_t* allocate_image_buffer(uint_32 width, uint_32 height, uint_32 format);
+static void	free_image_buffer(vo_image_buffer_t* image);
 
 #define LIBVO_EXTERN(x) vo_functions_t video_out_##x =\
 {\
@@ -34,7 +34,8 @@ static void flip_page(void);
 	draw_frame,\
 	draw_slice,\
 	flip_page,\
-	allocate_buffer\
+	allocate_image_buffer,\
+	free_image_buffer\
 };
 
 #define LIBVO_DUMMY_FUNCTIONS(x)\
@@ -46,6 +47,15 @@ static uint_32 init(uint_32 width, uint_32 height, uint_32 fullscreen,\
 	return 0;\
 }\
 static uint_32 draw_frame(uint_8 *src[]){return 0;}\
-static void* allocate_buffer(uint_32 num_bytes){ return (void*)0;}\
 static uint_32 draw_slice(uint_8 *src[], uint_32 slice_num){return 0;}\
-static void flip_page(void){}
+static void flip_page(void){}\
+static vo_image_buffer_t* allocate_image_buffer(uint_32 width, uint_32 height, uint_32 format){return 0;}\
+static void	free_image_buffer(vo_image_buffer_t* image){}
+
+
+
+//
+// Generic fallback routines used by some drivers
+//
+vo_image_buffer_t* allocate_image_buffer_common(uint_32 width, uint_32 height, uint_32 format);
+void	free_image_buffer_common(vo_image_buffer_t* image);

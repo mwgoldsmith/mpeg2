@@ -277,19 +277,19 @@ flip_page(void)
     SDL_DisplayYUVOverlay(overlay, &dispSize);
 } // display_flip_page
 
-
-void*
-allocate_buffer(uint_32 num_bytes)
-/*
- * Allocate a display buffer. This allows, for some drivers, some
- *  acceleration (like AGP-based transfers, etc...)
- *
- *    params : num_bytes == number of bytes to allocate.
- *   returns : NULL if unable to allocate, ptr to new buffer on success.
- */
+static vo_image_buffer_t* 
+allocate_image_buffer(uint_32 width, uint_32 height, uint_32 format)
 {
-    return(malloc(num_bytes));
-} // display_allocate_buffer
+	//use the generic fallback
+	return allocate_image_buffer_common(width,height,format);
+}
+
+static void	
+free_image_buffer(vo_image_buffer_t* image)
+{
+	//use the generic fallback
+	free_image_buffer_common(image);
+}
 
 #else /* HAVE_SDL*/
 

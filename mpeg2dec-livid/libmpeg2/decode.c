@@ -83,23 +83,28 @@ mpeg2_init(vo_functions_t *foo)
 }
 
 static void 
-decode_allocate_surfaces(picture_t *picture)
+decode_allocate_image_buffers(picture_t *picture)
 {
 	uint_32 frame_size;
 	uint_32 slice_size;
+	vo_image_buffer_t *tmp;
 
 	frame_size = picture->coded_picture_width * picture->coded_picture_height;
 	slice_size = picture->coded_picture_width * 16;
 
-	picture->throwaway_frame[0] = video_out.allocate_buffer((slice_size * 3) / 2);
+	//FIXME the next step is to give a vo_image_buffer_t* to dislay_slice (or eqiv)
+	tmp = video_out.allocate_image_buffer(16,picture->coded_picture_width,0);
+	picture->throwaway_frame[0] = tmp->base;
 	picture->throwaway_frame[1] = picture->throwaway_frame[0] + slice_size;
 	picture->throwaway_frame[2] = picture->throwaway_frame[1] + slice_size/4;
 
-	picture->backward_reference_frame[0] = video_out.allocate_buffer((frame_size *3) / 2); 
+	tmp = video_out.allocate_image_buffer(picture->coded_picture_height,picture->coded_picture_width,0);
+	picture->backward_reference_frame[0] = tmp->base;
 	picture->backward_reference_frame[1] = picture->backward_reference_frame[0] + frame_size;
 	picture->backward_reference_frame[2] = picture->backward_reference_frame[1] + frame_size/4;
 
-	picture->forward_reference_frame[0] = video_out.allocate_buffer((frame_size * 3) / 2); 
+	tmp = video_out.allocate_image_buffer(picture->coded_picture_height,picture->coded_picture_width,0);
+	picture->forward_reference_frame[0] = tmp->base;
 	picture->forward_reference_frame[1] = picture->forward_reference_frame[0] + frame_size;
 	picture->forward_reference_frame[2] = picture->forward_reference_frame[1] + frame_size/4;
 }
@@ -207,7 +212,7 @@ mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end)
 			if(!is_display_initialized)
 			{
 				video_out.init(picture.coded_picture_width,picture.coded_picture_height,0,0);
-				decode_allocate_surfaces(&picture);
+				decode_allocate_image_buffers(&picture);
 				is_display_initialized = 1;
 			}
 		}

@@ -38,14 +38,6 @@ else
 fi
 
 
-AC_ARG_ENABLE(gatos, 
-  [  --enable-gatos          make a version using GATOS],
-  enable_gatos=yes, enable_gatos=no)
-if test "x$LIBVO_CONFIG_OBJS" = x -a x$enable_gatos = xyes; then
-   AC_CHECK_LIB(gatos, main, [ LIBVO_CONFIG_OBJS=video_out_gatos.o 
-	   LIBS="$LIBS -lgatos" ], , -L/usr/X11R6/lib -L/usr/lib -L/usr/local/lib)
-fi
-
 AC_ARG_ENABLE(xil, [  --disable-xil           make a version not using XIL],
   enable_xil=no, enable_xil=yes)
 if test "x$LIBVO_CONFIG_OBJS" = x -a x$enable_xil = xyes; then
