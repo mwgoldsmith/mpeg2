@@ -37,8 +37,8 @@ EOF
 	fi
 	rm -f conftest*])
     if test x"$ac_cv_builtin_expect" = x"yes"; then
-	AC_DEFINE(HAVE_BUILTIN_EXPECT,[1],
-	    [Define to 1 if you have the `__builtin_expect' function.])
+	AC_DEFINE(HAVE_BUILTIN_EXPECT,,
+	    [Define if you have the `__builtin_expect' function.])
     fi])
 
 dnl AC_C_ALWAYS_INLINE
