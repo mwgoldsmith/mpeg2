@@ -1,0 +1,43 @@
+      26 S- --- --- - SEQUENCE MPEG2 profile 9c 720x480 chroma 720x480 fps 30 maxBps 6553600 vbv 1222656 picture 720x480 display 720x480 pixel 8x9
+      2e SG --- --- - GOP  0: 0: 0: 0
+      48 SG AA- --- ? PICTURE I fields 2 TFF time_ref 0 offset 0/0 0/0
+         USER_DATA 5 bytes
+         00 89 f8 53 32                                      S2           
+   8fb48 SG aa- --- ? SLICE
+   8fb63 SG BB- aa- ? PICTURE P fields 2 TFF time_ref 3 offset 0/0 0/0
+         USER_DATA 5 bytes
+         00 89 f8 53 32                                      S2           
+   f4e3c SG bb- aa- ? SLICE
+   f4e57 SG CC- CC- C PICTURE B fields 2 TFF time_ref 1 offset 0/0 0/0
+         USER_DATA 5 bytes
+         00 89 f8 53 32                                      S2           
+  165596 SG cc- cc- c SLICE
+  1655b1 SG DD- DD- D PICTURE B fields 2 TFF time_ref 2 offset 0/0 0/0
+         USER_DATA 5 bytes
+         00 89 f8 53 32                                      S2           
+  1dcf0c SG dd- dd- d SLICE
+  1dcf27 SG EE- bb- a PICTURE P fields 2 TFF time_ref 6 offset 0/0 0/0
+         USER_DATA 5 bytes
+         00 89 f8 53 32                                      S2           
+  23cbb5 SG ee- bb- a SLICE
+  23cbd0 SG FF- FF- F PICTURE B fields 2 TFF time_ref 4 offset 0/0 0/0
+         USER_DATA 5 bytes
+         00 89 f8 53 32                                      S2           
+  2a53b0 SG ff- ff- f SLICE
+  2a53cb SG GG- GG- G PICTURE B fields 2 TFF time_ref 5 offset 0/0 0/0
+         USER_DATA 5 bytes
+         00 89 f8 53 32                                      S2           
+  319247 SG gg- gg- g SLICE
+  319262 SG HH- ee- b PICTURE P fields 2 TFF time_ref 9 offset 0/0 0/0
+         USER_DATA 5 bytes
+         00 89 f8 53 32                                      S2           
+  37ad22 SG hh- ee- b SLICE
+  37ad3d SG II- II- I PICTURE B fields 2 TFF time_ref 7 offset 0/0 0/0
+         USER_DATA 5 bytes
+         00 89 f8 53 32                                      S2           
+  3f05e4 SG ii- ii- i SLICE
+  3f05ff SG JJ- JJ- J PICTURE B fields 2 TFF time_ref 8 offset 0/0 0/0
+         USER_DATA 5 bytes
+         00 89 f8 53 32                                      S2           
+  45b528 SG jj- jj- j SLICE
+  45b528 SG --- hh- e END
