@@ -177,15 +177,6 @@ int framenum, MBAmax;
       printf("frame %d, MB %d\n",framenum,MBA);
 #endif /* TRACE */
 
-#ifdef DISPLAY
-    if (!progressive_frame && picture_structure==FRAME_PICTURE 
-      && MBA==(MBAmax>>1) && framenum!=0 && Output_Type==T_X11 
-       && !Display_Progressive_Flag)
-    {
-      Display_Second_Field();
-    }
-#endif
-
     ld = &base;
 
     if (MBAinc==0)
@@ -773,13 +764,6 @@ int Bitstream_Framenum, Sequence_Framenum;
         Oldref_progressive_frame = progressive_frame = Newref_progressive_frame;
       }
     }
-#ifdef DISPLAY
-    else if (Output_Type==T_X11)
-    {
-      if(!Display_Progressive_Flag)
-        Display_Second_Field();
-    }
-#endif
   }
   else
     Oldref_progressive_frame = progressive_frame;

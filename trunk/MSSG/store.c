@@ -45,6 +45,8 @@ static void store_ppm_tga _ANSI_ARGS_((char *outname, unsigned char *src[],
   int offset, int incr, int height, int tgaflag));
 static void store_yuv1 _ANSI_ARGS_((char *name, unsigned char *src,
   int offset, int incr, int width, int height));
+static void store_pgm(char *outname, unsigned char *src[],
+  int offset, int incr, int height);
 static void putbyte _ANSI_ARGS_((int c));
 static void putword _ANSI_ARGS_((int w));
 static void conv422to444 _ANSI_ARGS_((unsigned char *src, unsigned char *dst));
@@ -68,17 +70,17 @@ int frame;
   {
     /* progressive */
     sprintf(outname,Output_Picture_Filename,frame,'f');
-    store_one(outname,src,0,Coded_Picture_Width,vertical_size);
+    store_one(outname,src,0,Coded_Picture_Width,Coded_Picture_Height);
   }
   else
   {
     /* interlaced */
     sprintf(outname,Output_Picture_Filename,frame,'a');
-    store_one(outname,src,0,Coded_Picture_Width<<1,vertical_size>>1);
+    store_one(outname,src,0,Coded_Picture_Width<<1,Coded_Picture_Height>>1);
 
     sprintf(outname,Output_Picture_Filename,frame,'b');
     store_one(outname,src,
-      Coded_Picture_Width,Coded_Picture_Width<<1,vertical_size>>1);
+      Coded_Picture_Width,Coded_Picture_Width<<1,Coded_Picture_Height>>1);
   }
 }
 
@@ -106,9 +108,12 @@ int offset, incr, height;
     break;
 #ifdef DISPLAY
   case T_X11:
-    dither(src);
+    display_frame(src);
     break;
 #endif
+  case 6:
+    store_pgm(outname,src,offset,incr,height);
+    break;
   default:
     break;
   }
@@ -169,6 +174,56 @@ int offset,incr,width,height;
   {
     p = src + offset + incr*i;
     for (j=0; j<width; j++)
+      putbyte(*p++);
+  }
+
+  if (optr!=obfr)
+    write(outfile,obfr,optr-obfr);
+
+  close(outfile);
+}
+
+static void store_pgm(outname,src,offset,incr,height)
+char *outname;
+unsigned char *src[];
+int offset,incr,height;
+{
+  int hsize;
+  int i, j;
+  unsigned char *p;
+
+  char header[1024];
+
+  if (!Quiet_Flag)
+    fprintf(stderr,"saving %s\n",outname);
+
+  hsize = (horizontal_size + 15) & ~15;
+
+  if ((outfile = open(outname,O_CREAT|O_TRUNC|O_WRONLY|O_BINARY,0666))==-1)
+  {
+    sprintf(Error_Text,"Couldn't create %s\n",outname);
+    Error(Error_Text);
+  }
+
+  optr=obfr;
+
+  sprintf (header, "P5\n%d %d\n255\n", hsize, height*3/2);
+    for (j=0; header[j]; j++)
+      putbyte(header[j]);
+
+  for (i=0; i<height; i++)
+  {
+    p = src[0] + offset + incr*i;
+    for (j=0; j<hsize; j++)
+      putbyte(*p++);
+  }
+  for (i=0; i<height/2; i++)
+  {
+    p = src[1] + offset/2 + incr*i/2;
+    for (j=0; j<hsize/2; j++)
+      putbyte(*p++);
+    p = src[2] + offset/2 + incr*i/2;
+    for (j=0; j<hsize/2; j++)
       putbyte(*p++);
   }
 
