@@ -69,23 +69,6 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output,
     motion_comp_init ();
 }
 
-static void decode_allocate_image_buffers (mpeg2dec_t * mpeg2dec)
-{
-    int width;
-    int height;
-    frame_t * (* allocate) (int, int, uint32_t);
-
-    width = mpeg2dec->picture->coded_picture_width;
-    height = mpeg2dec->picture->coded_picture_height;
-    allocate = mpeg2dec->output->allocate_image_buffer;
-
-    // allocate images in YV12 format
-    mpeg2dec->throwaway_frame = allocate (width, height, 0x32315659);
-    mpeg2dec->backward_reference_frame = allocate (width, height, 0x32315659);
-    mpeg2dec->forward_reference_frame = allocate (width, height, 0x32315659);
-}
-
-
 static void decode_reorder_frames (mpeg2dec_t * mpeg2dec)
 {
     picture_t * picture;
@@ -95,12 +78,14 @@ static void decode_reorder_frames (mpeg2dec_t * mpeg2dec)
     picture = mpeg2dec->picture;
 
     if (picture->picture_coding_type != B_TYPE) {
-	//reuse the soon to be outdated forward reference frame
-	current_frame = mpeg2dec->forward_reference_frame;
+	//outdates forward reference frame
+	mpeg2dec->output->release_frame (mpeg2dec->forward_reference_frame);
 
 	//make the backward reference frame the new forward reference frame
 	mpeg2dec->forward_reference_frame = mpeg2dec->backward_reference_frame;
-	mpeg2dec->backward_reference_frame = current_frame;
+	mpeg2dec->backward_reference_frame = mpeg2dec->output->request_frame();
+
+	current_frame = mpeg2dec->backward_reference_frame;
     } else
 	current_frame = mpeg2dec->throwaway_frame;
 
@@ -196,7 +181,11 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 		    exit (1);
 		}
 
-		decode_allocate_image_buffers (mpeg2dec);
+		// allocate images in YV12 format
+		mpeg2dec->throwaway_frame = mpeg2dec->output->request_frame ();
+		mpeg2dec->backward_reference_frame = mpeg2dec->output->request_frame ();
+		mpeg2dec->forward_reference_frame = mpeg2dec->output->request_frame ();
+		
 		decode_reorder_frames (mpeg2dec);
 		mpeg2dec->is_display_initialized = 1;
 	    } else if (!(picture->second_field) )
@@ -285,9 +274,9 @@ void mpeg2_close (mpeg2dec_t * mpeg2dec)
 
     if (mpeg2dec->is_display_initialized) {
 	mpeg2dec->output->draw_frame (mpeg2dec->backward_reference_frame);
-	mpeg2dec->output->free_image_buffer (mpeg2dec->backward_reference_frame);
-	mpeg2dec->output->free_image_buffer (mpeg2dec->forward_reference_frame);
-	mpeg2dec->output->free_image_buffer (mpeg2dec->throwaway_frame);
+	mpeg2dec->output->release_frame (mpeg2dec->backward_reference_frame);
+	mpeg2dec->output->release_frame (mpeg2dec->forward_reference_frame);
+	mpeg2dec->output->release_frame (mpeg2dec->throwaway_frame);
     }
 }
 
