@@ -72,6 +72,15 @@
 /* Define as the return type of signal handlers (`int' or `void'). */
 /* #undef RETSIGTYPE */
 
+/* The size of a `char', as computed by sizeof. */
+#define SIZEOF_CHAR 1
+
+/* The size of a `int', as computed by sizeof. */
+#define SIZEOF_INT 4
+
+/* The size of a `short', as computed by sizeof. */
+#define SIZEOF_SHORT 2
+
 /* Define if you have the ANSI C header files. */
 #define STDC_HEADERS 1
 
