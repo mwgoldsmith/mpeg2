@@ -27,8 +27,6 @@
 #include <errno.h>
 #include <inttypes.h>
 
-#include "video_out.h"
-#include "mpeg2.h"
 
 #define BUFFER_SIZE 262144
 static uint8_t buffer[BUFFER_SIZE];
