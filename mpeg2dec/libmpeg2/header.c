@@ -172,6 +172,8 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
     sequence->transfer_characteristics = 0;
     sequence->matrix_coefficients = 0;
 
+	sequence->chroma_format = CHROMA_FORMAT_420;	/* this is default for MPEG-1 */
+
     mpeg2dec->ext_state = SEQ_EXT;
     mpeg2dec->state = STATE_SEQUENCE;
     mpeg2dec->display_offset_x = mpeg2dec->display_offset_y = 0;
@@ -208,6 +210,7 @@ static int sequence_ext (mpeg2dec_t * mpeg2dec)
     sequence->flags = flags;
     sequence->chroma_width = sequence->width;
     sequence->chroma_height = sequence->height;
+	sequence->chroma_format = (mpeg2_chroma_format_t)((buffer[1] & 6) >> 1);	/* 2 bits describing chroma format */
     switch (buffer[1] & 6) {
     case 0:	/* invalid */
 	return 1;
@@ -337,6 +340,7 @@ void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
     decoder->width = sequence->width;
     decoder->height = sequence->height;
     decoder->vertical_position_extension = (sequence->picture_height > 2800);
+	decoder->chroma_format = sequence->chroma_format;
 
     /*
      * according to 6.1.1.6, repeat sequence headers should be
