@@ -13,4 +13,4 @@ libvo_la_SOURCES = video_out_x11.c yuv2rgb.c video_out_3dfx.c\
 	video_out_mga.c  video_out_sdl.c
 libvo_la_LIBADD =  @LIBVO_CONFIG_LIBS@ @X_PRE_LIBS@ @X_LIBS@ -lXext
 
-noinst_HEADERS =  video_out_internal.h  yuv2rgb.h 
+noinst_HEADERS =  video_out_internal.h  yuv2rgb.h

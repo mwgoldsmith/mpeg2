@@ -495,12 +495,14 @@ flip_page(void)
 static inline uint_32
 draw_slice_xv(uint_8 *src[], uint_32 slice_num)
 {
+	uint_8 *dst;
+
 	dst = xvimage1->data + image_width * 16 * slice_num;
 
 	memcpy(dst,src[0],image_width*16);
 	dst = xvimage1->data + image_width * image_height + image_width * 4 * slice_num;
 	memcpy(dst, src[2],image_width*4);
-	dst = xvimage1->data + image_width * image_height * 5 / 4 + image_width * 4 * slice _num;
+	dst = xvimage1->data + image_width * image_height * 5 / 4 + image_width * 4 * slice_num;
 	memcpy(dst, src[1],image_width*4);
 
 	return 0;  
