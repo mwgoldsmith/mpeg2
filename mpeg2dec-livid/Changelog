@@ -1,4 +1,5 @@
-mpeg2dec-0.1.7 Sun May 28 23:29:27 GMT-5 2000
+mpeg2dec-0.1.7 
+-fix the solaris mlib code back bup
 -added Xv support
 -major cruft removal
 -cleanup on motion_comp
