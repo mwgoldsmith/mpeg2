@@ -3,7 +3,7 @@ dnl Do nothing if the compiler accepts the restrict keyword.
 dnl Otherwise define restrict to __restrict__ or __restrict if one of
 dnl those work, otherwise define restrict to be empty.
 AC_DEFUN([AC_C_RESTRICT],
-    [ac_cv_c_inline=no
+    [ac_cv_c_restrict=no
     for ac_kw in restrict __restrict__ __restrict; do
 	AC_TRY_COMPILE([],[char * $ac_kw p;],[ac_cv_c_restrict=$ac_kw; break])
     done
