@@ -2,7 +2,7 @@
 ## Process this file with automake to produce Makefile.in
 ##
 
-INCLUDES = -I$(top_srcdir)/include -I.
+INCLUDES = -I$(top_srcdir)/include
 libdir = $(PLUGIN_DIR)
 
 
