@@ -68,6 +68,7 @@ typedef struct picture_s {
     uint8_t * dest[3];
     int offset;
     int stride;
+    int uv_stride;
 
     /* Motion vectors */
     /* The f_ and b_ correspond to the forward and backward motion */
