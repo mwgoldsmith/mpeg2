@@ -165,6 +165,7 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
 
     mpeg2dec->ext_state = SEQ_EXT;
     mpeg2dec->state = STATE_SEQUENCE;
+    mpeg2dec->display_offset_x = mpeg2dec->display_offset_y = 0;
 
     mpeg2dec->info.sequence = sequence;
     reset_info (&(mpeg2dec->info));
@@ -376,6 +377,10 @@ void mpeg2_header_picture_start (mpeg2dec_t * mpeg2dec)
 	    picture->flags = PIC_FLAG_PTS;
 	}
     }
+    picture->display_offset[0].x = picture->display_offset[1].x =
+	picture->display_offset[2].x = mpeg2dec->display_offset_x;
+    picture->display_offset[0].y = picture->display_offset[1].y =
+	picture->display_offset[2].y = mpeg2dec->display_offset_y;
 }
 
 int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
@@ -445,6 +450,7 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
     } else {
 	decoder->second_field = 1;
 	mpeg2dec->info.current_picture_2nd = picture;
+	mpeg2dec->info.user_data = NULL; mpeg2dec->info.user_data_len = 0;
 	if (low_delay || type == PIC_FLAG_CODING_TYPE_B)
 	    mpeg2dec->info.display_picture_2nd = picture;
     }
@@ -525,6 +531,30 @@ static int picture_coding_ext (mpeg2dec_t * mpeg2dec)
 
 static int picture_display_ext (mpeg2dec_t * mpeg2dec)
 {
+    uint8_t * buffer = mpeg2dec->chunk_start;
+    picture_t * picture = mpeg2dec->picture;
+    int i, nb_pos;
+
+    nb_pos = picture->nb_fields;
+    if (mpeg2dec->sequence.flags & SEQ_FLAG_PROGRESSIVE_SEQUENCE)
+	nb_pos >>= 1;
+
+    for (i = 0; i < nb_pos; i++) {
+	int x, y;
+
+	x = ((buffer[4*i] << 24) | (buffer[4*i+1] << 16) |
+	     (buffer[4*i+2] << 8) | buffer[4*i+3]) >> (11-2*i);
+	y = ((buffer[4*i+2] << 24) | (buffer[4*i+3] << 16) |
+	     (buffer[4*i+4] << 8) | buffer[4*i+5]) >> (10-2*i);
+	if (! (x & y & 1))
+	    return 1;
+	picture->display_offset[i].x = mpeg2dec->display_offset_x = x >> 1;
+	picture->display_offset[i].y = mpeg2dec->display_offset_y = y >> 1;
+    }
+    for (; i < 3; i++) {
+	picture->display_offset[i].x = mpeg2dec->display_offset_x;
+	picture->display_offset[i].y = mpeg2dec->display_offset_y;
+    }
     return 0;
 }
 
@@ -566,7 +596,7 @@ int mpeg2_header_extension (mpeg2dec_t * mpeg2dec)
     ext_bit = 1 << ext;
 
     if (!(mpeg2dec->ext_state & ext_bit))
-	return 1;	/* illegal extension */
+	return 0;	/* ignore illegal extensions */
     mpeg2dec->ext_state &= ~ext_bit;
     return parser[ext] (mpeg2dec);
 }
