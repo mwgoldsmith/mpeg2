@@ -1008,7 +1008,26 @@ static inline void slice_non_intra_DCT (picture_t * picture, uint8_t * dest,
 		      picture->uv_stride, size/2);			      \
     table[4+xy_half] (picture->dest[2] + y/2 * picture->uv_stride +	      \
 		      (picture->offset >> 1), ref[2] + offset,		      \
-		      picture->uv_stride, size/2);
+		      picture->uv_stride, size/2)
+
+#define MOTION_FIELD(table,ref,motion_x,motion_y,dest_field,op,src_field)     \
+    xy_half = ((motion_y & 1) << 1) | (motion_x & 1);			      \
+    table[xy_half] (picture->dest[0] + dest_field * picture->stride +	      \
+		    picture->offset,					      \
+		    (ref[0] + picture->offset + (motion_x >> 1) +	      \
+		     ((picture->v_offset + (motion_y op) + src_field) *	      \
+		      picture->stride)), 2 * picture->stride, 8);	      \
+    motion_x /= 2;	motion_y /= 2;					      \
+    xy_half = ((motion_y & 1) << 1) | (motion_x & 1);			      \
+    offset = (((picture->offset + motion_x) >> 1) +			      \
+	      (((picture->v_offset >> 1) + (motion_y op) + src_field) *	      \
+	       picture->uv_stride));					      \
+    table[4+xy_half] (picture->dest[1] + dest_field * picture->uv_stride +    \
+		      (picture->offset >> 1), ref[1] + offset,		      \
+		      2 * picture->uv_stride, 4);			      \
+    table[4+xy_half] (picture->dest[2] + dest_field * picture->uv_stride +    \
+		      (picture->offset >> 1), ref[2] + offset,		      \
+		      2 * picture->uv_stride, 4)
 
 static void motion_mp1 (picture_t * picture, motion_t * motion,
 			void (** table) (uint8_t *, uint8_t *, int, int))
@@ -1086,11 +1105,11 @@ static void motion_fr_field (picture_t * picture, motion_t * motion,
 #define bits (picture->bitstream_bits)
 #define bit_ptr (picture->bitstream_ptr)
     int motion_x, motion_y;
-    int field_select;
+    int field;
     int xy_half, offset;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    field_select = UBITS (bit_buf, 1);
+    field = UBITS (bit_buf, 1);
     DUMPBITS (bit_buf, bits, 1);
 
     motion_x = motion->pmv[0][0] + get_motion_delta (picture,
@@ -1104,23 +1123,10 @@ static void motion_fr_field (picture_t * picture, motion_t * motion,
     /* motion_y = bound_motion_vector (motion_y, motion->f_code[1]); */
     motion->pmv[0][1] = motion_y << 1;
 
-    xy_half = ((motion_y & 1) << 1) | (motion_x & 1);
-    table[xy_half] (picture->dest[0] + picture->offset,
-		    (motion->ref[0][0] + picture->offset + (motion_x >> 1) +
-		     ((picture->v_offset + (motion_y & ~1) + field_select) *
-		      picture->stride)), 2 * picture->stride, 8);
-    motion_x /= 2;	motion_y /= 2;
-    xy_half = ((motion_y & 1) << 1) | (motion_x & 1);
-    offset = (((picture->offset + motion_x) >> 1) +
-	      (((picture->v_offset >> 1) + (motion_y & ~1) + field_select) *
-	       picture->uv_stride));
-    table[4+xy_half] (picture->dest[1] + (picture->offset >> 1),
-		      motion->ref[0][1] + offset, 2 * picture->uv_stride, 4);
-    table[4+xy_half] (picture->dest[2] + (picture->offset >> 1),
-		      motion->ref[0][2] + offset, 2 * picture->uv_stride, 4);
+    MOTION_FIELD (table, motion->ref[0], motion_x, motion_y, 0, & ~1, field);
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    field_select = UBITS (bit_buf, 1);
+    field = UBITS (bit_buf, 1);
     DUMPBITS (bit_buf, bits, 1);
 
     motion_x = motion->pmv[1][0] + get_motion_delta (picture,
@@ -1134,22 +1140,7 @@ static void motion_fr_field (picture_t * picture, motion_t * motion,
     /* motion_y = bound_motion_vector (motion_y, motion->f_code[1]); */
     motion->pmv[1][1] = motion_y << 1;
 
-    xy_half = ((motion_y & 1) << 1) | (motion_x & 1);
-    table[xy_half] (picture->dest[0] + picture->stride + picture->offset,
-		    (motion->ref[0][0] + picture->offset + (motion_x >> 1) +
-		     ((picture->v_offset + (motion_y & ~1) + field_select) *
-		      picture->stride)), 2 * picture->stride, 8);
-    motion_x /= 2;	motion_y /= 2;
-    xy_half = ((motion_y & 1) << 1) | (motion_x & 1);
-    offset = (((picture->offset + motion_x) >> 1) +
-	      (((picture->v_offset >> 1) + (motion_y & ~1) + field_select) *
-	       picture->uv_stride));
-    table[4+xy_half] (picture->dest[1] + picture->uv_stride +
-		      (picture->offset >> 1), motion->ref[0][1] + offset,
-		      2 * picture->uv_stride, 4);
-    table[4+xy_half] (picture->dest[2] + picture->uv_stride +
-		      (picture->offset >> 1), motion->ref[0][2] + offset,
-		      2 * picture->uv_stride, 4);
+    MOTION_FIELD (table, motion->ref[0], motion_x, motion_y, 1, & ~1, field);
 #undef bit_buf
 #undef bits
 #undef bit_ptr
@@ -1184,43 +1175,12 @@ static void motion_fr_dmv (picture_t * picture, motion_t * motion,
     m = picture->top_field_first ? 1 : 3;
     other_x = ((motion_x * m + (motion_x > 0)) >> 1) + dmv_x;
     other_y = ((motion_y * m + (motion_y > 0)) >> 1) + dmv_y - 1;
-    xy_half = ((other_y & 1) << 1) | (other_x & 1);
-    mpeg2_mc.put[xy_half]
-	(picture->dest[0] + picture->offset,
-	 (motion->ref[0][0] + picture->offset + (other_x >> 1) +
-	  (picture->v_offset + (other_y | 1)) * picture->stride),
-	 2 * picture->stride, 8);
-    other_x /= 2;	other_y /= 2;
-    xy_half = ((other_y & 1) << 1) | (other_x & 1);
-    offset = (((picture->offset + other_x) >> 1) +
-	      ((picture->v_offset >> 1) + (other_y | 1)) * picture->uv_stride);
-    mpeg2_mc.put[4+xy_half]
-	(picture->dest[1] + (picture->offset >> 1),
-	 motion->ref[0][1] + offset, 2 * picture->uv_stride, 4);
-    mpeg2_mc.put[4+xy_half]
-	(picture->dest[2] + (picture->offset >> 1),
-	 motion->ref[0][2] + offset, 2 * picture->uv_stride, 4);
+    MOTION_FIELD (mpeg2_mc.put, motion->ref[0], other_x, other_y, 0, | 1, 0);
 
     m = picture->top_field_first ? 3 : 1;
     other_x = ((motion_x * m + (motion_x > 0)) >> 1) + dmv_x;
     other_y = ((motion_y * m + (motion_y > 0)) >> 1) + dmv_y + 1;
-    xy_half = ((other_y & 1) << 1) | (other_x & 1);
-    mpeg2_mc.put[xy_half]
-	(picture->dest[0] + picture->stride + picture->offset,
-	 (motion->ref[0][0] + picture->offset + (other_x >> 1) +
-	  (picture->v_offset + (other_y & ~1)) * picture->stride),
-	 2 * picture->stride, 8);
-    other_x /= 2;	other_y /= 2;
-    xy_half = ((other_y & 1) << 1) | (other_x & 1);
-    offset = (((picture->offset + other_x) >> 1) +
-	      (((picture->v_offset >> 1) + (other_y & ~1)) *
-	       picture->uv_stride));
-    mpeg2_mc.put[4+xy_half]
-	(picture->dest[1] + picture->uv_stride + (picture->offset >> 1),
-	 motion->ref[0][1] + offset, 2 * picture->uv_stride, 4);
-    mpeg2_mc.put[4+xy_half]
-	(picture->dest[2] + picture->uv_stride + (picture->offset >> 1),
-	 motion->ref[0][2] + offset, 2 * picture->uv_stride, 4);
+    MOTION_FIELD (mpeg2_mc.put, motion->ref[0], other_x, other_y, 1, & ~1, 0);
 
     xy_half = ((motion_y & 1) << 1) | (motion_x & 1);
     offset = (picture->offset + (motion_x >> 1) +
