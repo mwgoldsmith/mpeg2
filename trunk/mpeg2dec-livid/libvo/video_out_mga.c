@@ -36,7 +36,7 @@
 
 #include "video_out.h"
 
-#include "mga_vid.h"
+#include "hw_bes.h"
 #include "mmx.h"
 
 static int _mga_close		(void *plugin);

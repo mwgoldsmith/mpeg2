@@ -59,12 +59,6 @@ AC_ARG_ENABLE([mga],[  --enable-mga            make a version using MGA],
     [AC_DEFINE([LIBVO_MGA],,[libvo MGA support])
     LIBVO_PLUGINS="${LIBVO_PLUGINS} display_mga.la"])
 
-dnl check for 3dfx - EXPERIMENTAL
-AC_ARG_ENABLE([3dfx],[  --enable-3dfx          make a version using 3dfx],
-    [AC_DEFINE([LIBVO_3DFX],,[libvo 3dfx support])
-    LIBVO_LIBS="$LIBVO_LIBS -lXxf86dga"
-    LIBVO_PLUGINS="${LIBVO_PLUGINS} display_3dfx.la"])
-
 dnl check for ggi - EXPERIMENTAL
 AC_ARG_ENABLE([ggi],[  --enable-ggi            make a version using ggi],
     [AC_DEFINE([LIBVO_GGI],,[libvo ggi support])
