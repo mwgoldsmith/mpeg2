@@ -155,8 +155,6 @@ done:
 void
 decode_reorder_frames(void)
 {
-	uint_8 *tmp[3];
-
 	if(picture.picture_coding_type != B_TYPE)
 	{
 		//reuse the soon to be outdated forward reference frame
@@ -165,15 +163,12 @@ decode_reorder_frames(void)
 		picture.current_frame[2] = picture.forward_reference_frame[2];
 
 		//make the backward reference frame the new forward reference frame
-		tmp[0] = picture.forward_reference_frame[0];
-		tmp[1] = picture.forward_reference_frame[1];
-		tmp[2] = picture.forward_reference_frame[2];
 		picture.forward_reference_frame[0] = picture.backward_reference_frame[0];
 		picture.forward_reference_frame[1] = picture.backward_reference_frame[1];
 		picture.forward_reference_frame[2] = picture.backward_reference_frame[2];
-		picture.backward_reference_frame[0] = tmp[0];
-		picture.backward_reference_frame[1] = tmp[1];
-		picture.backward_reference_frame[2] = tmp[2];
+		picture.backward_reference_frame[0] = picture.current_frame[0];
+		picture.backward_reference_frame[1] = picture.current_frame[1];
+		picture.backward_reference_frame[2] = picture.current_frame[2];
 	}
 	else
 	{
