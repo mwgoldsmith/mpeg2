@@ -205,7 +205,7 @@ static void handle_args (int argc, char ** argv)
 	    break;
 
 	case 'v':
-	    if (++verbose > 2)
+	    if (++verbose > 4)
 		print_usage (argv);
 	    break;
 
