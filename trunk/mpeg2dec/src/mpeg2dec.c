@@ -165,7 +165,7 @@ static void handle_args (int argc, char ** argv)
 	case 's':
 	    demux_track = 0xe0;
 	    if (optarg != NULL) {
-		demux_track = strtol (optarg, &s, 16);
+		demux_track = strtol (optarg, &s, 0);
 		if (demux_track < 0xe0)
 		    demux_track += 0xe0;
 		if ((demux_track < 0xe0) || (demux_track > 0xef) || (*s)) {
@@ -176,7 +176,7 @@ static void handle_args (int argc, char ** argv)
 	    break;
 
 	case 't':
-	    demux_pid = strtol (optarg, &s, 16);
+	    demux_pid = strtol (optarg, &s, 0);
 	    if ((demux_pid < 0x10) || (demux_pid > 0x1ffe) || (*s)) {
 		fprintf (stderr, "Invalid pid: %s\n", optarg);
 		print_usage (argv);
