@@ -261,6 +261,3 @@ extern mpeg2_mc_t mpeg2_mc_mmxext;
 extern mpeg2_mc_t mpeg2_mc_3dnow;
 extern mpeg2_mc_t mpeg2_mc_altivec;
 extern mpeg2_mc_t mpeg2_mc_mlib;
-
-/* stats.c */
-void mpeg2_stats (int code, uint8_t * buffer);
