@@ -131,17 +131,23 @@ typedef enum {
 } mpeg2_state_t;
 
 typedef struct mpeg2_convert_init_s {
-    void * id;
     unsigned int id_size;
     unsigned int buf_size[3];
     void (* start) (void * id, const mpeg2_fbuf_t * fbuf,
 		    const mpeg2_picture_t * picture, const mpeg2_gop_t * gop);
     void (* copy) (void * id, uint8_t * const * src, unsigned int v_offset);
 } mpeg2_convert_init_t;
-typedef int mpeg2_convert_t (const mpeg2_sequence_t * sequence,
+typedef enum {
+    MPEG2_CONVERT_SET = 0,
+    MPEG2_CONVERT_STRIDE = 1,
+    MPEG2_CONVERT_START = 2
+} mpeg2_convert_stage_t;
+typedef int mpeg2_convert_t (mpeg2_convert_stage_t stage, void * id,
+			     const mpeg2_sequence_t * sequence, int stride,
 			     uint32_t accel, void * arg,
 			     mpeg2_convert_init_t * result);
 int mpeg2_convert (mpeg2dec_t * mpeg2dec, mpeg2_convert_t convert, void * arg);
+int mpeg2_stride (mpeg2dec_t * mpeg2dec, int stride);
 void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id);
 void mpeg2_custom_fbuf (mpeg2dec_t * mpeg2dec, int custom_fbuf);
 

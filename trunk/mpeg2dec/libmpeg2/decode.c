@@ -301,14 +301,34 @@ int mpeg2_convert (mpeg2dec_t * mpeg2dec, mpeg2_convert_t convert, void * arg)
     mpeg2_convert_init_t convert_init;
     int error;
 
-    convert_init.id = NULL;
-    error = convert (&(mpeg2dec->sequence), mpeg2_accels, arg, &convert_init);
+    error = convert (MPEG2_CONVERT_SET, NULL, &(mpeg2dec->sequence), 0,
+		     mpeg2_accels, arg, &convert_init);
     if (!error) {
 	mpeg2dec->convert = convert;
 	mpeg2dec->convert_arg = arg;
 	mpeg2dec->convert_id_size = convert_init.id_size;
+	mpeg2dec->convert_stride = 0;
     }
     return error;
+}
+
+int mpeg2_stride (mpeg2dec_t * mpeg2dec, int stride)
+{
+    if (!mpeg2dec->convert) {
+	if (stride < mpeg2dec->sequence.width)
+	    stride = mpeg2dec->sequence.width;
+	mpeg2dec->decoder.stride_frame = stride;
+    } else {
+	mpeg2_convert_init_t convert_init;
+
+	stride = mpeg2dec->convert (MPEG2_CONVERT_STRIDE, NULL,
+				    &(mpeg2dec->sequence), stride,
+				    mpeg2_accels, mpeg2dec->convert_arg,
+				    &convert_init);
+	mpeg2dec->convert_id_size = convert_init.id_size;
+	mpeg2dec->convert_stride = stride;
+    }
+    return stride;
 }
 
 void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id)

@@ -399,6 +399,7 @@ void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
 	sequence->byte_rate = mpeg2dec->sequence.byte_rate;
 	if (memcmp (&(mpeg2dec->sequence), sequence,
 		    sizeof (mpeg2_sequence_t))) {
+	    decoder->stride_frame = sequence->width;
 	    sequence->byte_rate = new_byte_rate;
 	    mpeg2_header_end (mpeg2dec);
 	    mpeg2dec->action = invalid_end_action;
@@ -407,7 +408,8 @@ void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
 	}
 	sequence->byte_rate = new_byte_rate;
 	mpeg2dec->state = STATE_SEQUENCE_REPEATED;
-    }
+    } else
+	decoder->stride_frame = sequence->width;
     mpeg2dec->sequence = *sequence;
     mpeg2_reset_info (&(mpeg2dec->info));
     mpeg2dec->info.sequence = &(mpeg2dec->sequence);
@@ -653,15 +655,18 @@ void mpeg2_header_picture_finalize (mpeg2dec_t * mpeg2dec, uint32_t accels)
 	    if (!mpeg2dec->convert_start) {
 		int y_size, uv_size;
 
-		convert_init.id = mpeg2_malloc (mpeg2dec->convert_id_size,
-						MPEG2_ALLOC_CONVERT_ID);
-		mpeg2dec->convert (&(mpeg2dec->sequence), accels,
+		mpeg2dec->decoder.convert_id =
+		    mpeg2_malloc (mpeg2dec->convert_id_size,
+				  MPEG2_ALLOC_CONVERT_ID);
+		mpeg2dec->convert (MPEG2_CONVERT_START,
+				   mpeg2dec->decoder.convert_id,
+				   &(mpeg2dec->sequence),
+				   mpeg2dec->convert_stride, accels,
 				   mpeg2dec->convert_arg, &convert_init);
 		mpeg2dec->convert_start = convert_init.start;
 		mpeg2dec->decoder.convert = convert_init.copy;
-		mpeg2dec->decoder.convert_id = convert_init.id;
 
-		y_size = mpeg2dec->sequence.width * mpeg2dec->sequence.height;
+		y_size = decoder->stride_frame * mpeg2dec->sequence.height;
 		uv_size = y_size >> (2 - mpeg2dec->decoder.chroma_format);
 		mpeg2dec->yuv_buf[0][0] =
 		    (uint8_t *) mpeg2_malloc (y_size, MPEG2_ALLOC_YUV);
@@ -675,7 +680,7 @@ void mpeg2_header_picture_finalize (mpeg2dec_t * mpeg2dec, uint32_t accels)
 		    (uint8_t *) mpeg2_malloc (uv_size, MPEG2_ALLOC_YUV);
 		mpeg2dec->yuv_buf[1][2] =
 		    (uint8_t *) mpeg2_malloc (uv_size, MPEG2_ALLOC_YUV);
-		y_size = mpeg2dec->sequence.width * 32;
+		y_size = decoder->stride_frame * 32;
 		uv_size = y_size >> (2 - mpeg2dec->decoder.chroma_format);
 		mpeg2dec->yuv_buf[2][0] =
 		    (uint8_t *) mpeg2_malloc (y_size, MPEG2_ALLOC_YUV);
@@ -709,7 +714,7 @@ void mpeg2_header_picture_finalize (mpeg2dec_t * mpeg2dec, uint32_t accels)
 
 		fbuf = &(mpeg2dec->fbuf_alloc[mpeg2dec->alloc_index++].fbuf);
 		fbuf->id = NULL;
-		y_size = mpeg2dec->sequence.width * mpeg2dec->sequence.height;
+		y_size = decoder->stride_frame * mpeg2dec->sequence.height;
 		uv_size = y_size >> (2 - decoder->chroma_format);
 		fbuf->buf[0] = (uint8_t *) mpeg2_malloc (y_size,
 							 MPEG2_ALLOC_YUV);
