@@ -171,7 +171,7 @@ static void yuv420_rgb16_mmx (uint8_t * image, uint8_t * py,
 		     "por %%mm2, %%mm0 # r7r6r5r4 r3g7g6g5 g4g3g2b7 b6b5b4b3\n\t"
 
 		     "movq 8 (%0), %%mm6 # Load 8 Y Y7 Y6 Y5 Y4 Y3 Y2 Y1 Y0\n\t"
-		     "movntq %%mm0, (%3) # store pixel 0-3\n\t"
+		     movntq " %%mm0, (%3) # store pixel 0-3\n\t"
 
 		     /* convert rgb24 plane to rgb16 pack for pixel 0-3 */
 		     "punpckhbw %%mm4, %%mm7 # 0_0_0_0 0_0_0_0 g7g6g5g4 g3g2_0_0\n\t"
@@ -183,7 +183,7 @@ static void yuv420_rgb16_mmx (uint8_t * image, uint8_t * py,
 		     "por %%mm7, %%mm5 # r7r6r5r4 r3g7g6g5 g4g3g2b7 b6b5b4b3\n\t"
 		     "movd 4 (%2), %%mm1 # Load 4 Cr 00 00 00 00 v3 v2 v1 v0\n\t"
 
-		     "movntq %%mm5, 8 (%3) # store pixel 4-7\n\t"
+		     movntq " %%mm5, 8 (%3) # store pixel 4-7\n\t"
 		     : : "r" (py), "r" (pu), "r" (pv), "r" (image));
 
 	    py += 8;
@@ -338,25 +338,25 @@ static void yuv420_argb32_mmx (uint8_t * image, uint8_t * py,
 		     "punpcklbw %%mm3, %%mm7 # 00 R3 00 R2 00 R1 00 R0\n\t"
 
 		     "punpcklwd %%mm7, %%mm6 # 00 R1 B1 G1 00 R0 B0 G0\n\t"
-		     "movntq %%mm6, (%3) # Store ARGB1 ARGB0\n\t"
+		     movntq " %%mm6, (%3) # Store ARGB1 ARGB0\n\t"
 
 		     "movq %%mm0, %%mm6 # B7 B6 B5 B4 B3 B2 B1 B0\n\t"
 		     "punpcklbw %%mm2, %%mm6 # G3 B3 G2 B2 G1 B1 G0 B0\n\t"
 
 		     "punpckhwd %%mm7, %%mm6 # 00 R3 G3 B3 00 R2 B3 G2\n\t"
-		     "movntq %%mm6, 8 (%3) # Store ARGB3 ARGB2\n\t"
+		     movntq " %%mm6, 8 (%3) # Store ARGB3 ARGB2\n\t"
 
 		     "punpckhbw %%mm2, %%mm4 # G7 B7 G6 B6 G5 B5 G4 B4\n\t"
 		     "punpckhbw %%mm3, %%mm5 # 00 R7 00 R6 00 R5 00 R4\n\t"
 				
 		     "punpcklwd %%mm5, %%mm4 # 00 R5 B5 G5 00 R4 B4 G4\n\t"
-		     "movntq %%mm4, 16 (%3) # Store ARGB5 ARGB4\n\t"
+		     movntq " %%mm4, 16 (%3) # Store ARGB5 ARGB4\n\t"
 
 		     "movq %%mm0, %%mm4 # B7 B6 B5 B4 B3 B2 B1 B0\n\t"
 		     "punpckhbw %%mm2, %%mm4 # G7 B7 G6 B6 G5 B5 G4 B4\n\t"
 
 		     "punpckhwd %%mm5, %%mm4 # 00 R7 G7 B7 00 R6 B6 G6\n\t"
-		     "movntq %%mm4, 24 (%3) # Store ARGB7 ARGB6\n\t"
+		     movntq " %%mm4, 24 (%3) # Store ARGB7 ARGB6\n\t"
 
 		     "movd 4 (%1), %%mm0 # Load 4 Cb 00 00 00 00 u3 u2 u1 u0\n\t"
 		     "movd 4 (%2), %%mm1 # Load 4 Cr 00 00 00 00 v3 v2 v1 v0\n\t"
