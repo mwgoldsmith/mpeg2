@@ -68,7 +68,7 @@ static int _mpeg2dec_ctrl (void *plugin, uint ctrl_id, ...)
 		case CTRL_VIDEO_DROP_FRAME: {
 			int val = va_arg (arg_list, int);
 //			fprintf (stderr, "%c", val ? '-':'+');
-                	mpeg2_drop (&mpeg2dec, val);
+			mpeg2_drop (&mpeg2dec, val);
 			break;
 		}
 		default:
