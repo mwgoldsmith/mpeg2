@@ -140,6 +140,10 @@ void mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t * start, uint8_t * end)
 
 int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 {
+    static int (* process_header[]) (mpeg2dec_t * mpeg2dec) = {
+	mpeg2_header_picture, mpeg2_header_extension, mpeg2_header_user_data,
+	mpeg2_header_sequence, NULL, NULL, NULL, NULL, mpeg2_header_gop
+    };
     uint8_t code;
 
     switch (mpeg2dec->state) {
@@ -167,23 +171,8 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	    mpeg2_slice (&(mpeg2dec->decoder), code, mpeg2dec->chunk_start);
 	if ((unsigned) (mpeg2dec->code - 1) < 0xb0 - 1)
 	    goto next_chunk;
-    } else switch (code & 0x0f) {
-    case 0x00 & 0x0f:	/* picture_start_code */
-	mpeg2_header_picture (mpeg2dec);
-	break;
-    case 0xb2 & 0x0f:	/* user_data_start_code */
-	mpeg2_header_user_data (mpeg2dec);
-	break;
-    case 0xb3 & 0x0f:	/* sequence_header_code */
-	mpeg2_header_sequence (mpeg2dec);
-	break;
-    case 0xb5 & 0x0f:	/* extension_start_code */
-	mpeg2_header_extension (mpeg2dec);
-	break;
-    case 0xb8 & 0x0f:	/* group_start_code */
-	mpeg2_header_gop (mpeg2dec);
-	break;
-    }
+    } else
+	process_header[code & 0x0b] (mpeg2dec);
 
 #define RECEIVED(code,state) (((state) << 8) + (code))
 
@@ -218,6 +207,8 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
     case RECEIVED (0x00, STATE_GOP):
     case RECEIVED (0x00, STATE_SLICE_1ST):
     case RECEIVED (0x00, STATE_SLICE):
+    case RECEIVED (0x01, STATE_PICTURE):
+    case RECEIVED (0x01, STATE_PICTURE_2ND):
     case RECEIVED (0xb3, STATE_SLICE):
     case RECEIVED (0xb8, STATE_SLICE):
 	break;
@@ -233,10 +224,6 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	goto next_chunk;
 
     default:
-	if (mpeg2dec->code == 1 && (mpeg2dec->state == STATE_PICTURE ||
-				    mpeg2dec->state == STATE_PICTURE_2ND))
-	    break;
-
 	mpeg2dec->state = STATE_INVALID;
 	mpeg2dec->chunk_start = mpeg2dec->chunk_buffer;
 	goto next_chunk;
