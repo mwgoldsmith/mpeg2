@@ -204,8 +204,8 @@ static inline uint8_t * copy_chunk (mpeg2dec_t * mpeg2dec,
     while (1) {
 	byte = *current++;
 	if (shift != 0x00000100) {
-	    *chunk_ptr++ = byte;
 	    shift = (shift | byte) << 8;
+	    *chunk_ptr++ = byte;
 	    if (current < limit)
 		continue;
 	    if (current == end) {
