@@ -27,8 +27,6 @@ typedef struct {
     int uv_stride, uv_stride_frame;
     int rgb_stride, rgb_stride_frame;
     int dither_offset, dither_stride;
-    void (* yuv2rgb) (uint8_t *, uint8_t *, uint8_t *, uint8_t *,
-		      void *, void *, int, int);
 } convert_rgb_t;
 
 typedef void yuv2rgb_copy (void * id, uint8_t * const * src,
