@@ -74,61 +74,63 @@ static uint8_t clip_lut[1024];
 
 static void inline idct_row (int16_t * const block)
 {
-    int x0, x1, x2, x3, x4, x5, x6, x7, x8;
+    int d0, d1, d2, d3, d4, d5, d6, d7;
+    int a0, a1, a2, a3, b0, b1, b2, b3;
+    int tmp, t0, t1, t2, t3;
 
-    x1 = block[4] << 11;
-    x2 = block[6];
-    x3 = block[2];
-    x4 = block[1];
-    x5 = block[7];
-    x6 = block[5];
-    x7 = block[3];
+    d0 = block[0];
+    d1 = block[1];
+    d2 = block[2];
+    d3 = block[3];
+    d4 = block[4];
+    d5 = block[5];
+    d6 = block[6];
+    d7 = block[7];
 
     /* shortcut */
-    if (! (x1 | x2 | x3 | x4 | x5 | x6 | x7 )) {
+    if (! (d4 | d6 | d2 | d1 | d7 | d5 | d3 )) {
 	block[0] = block[1] = block[2] = block[3] = block[4] =
-	    block[5] = block[6] = block[7] = block[0]<<3;
+	    block[5] = block[6] = block[7] = d0 << 3;
 	return;
     }
 
-    x0 = (block[0] << 11) + 128; /* for proper rounding in the fourth stage */
+    d0 = (d0 << 11) + 128;
+    d4 <<= 11;
+    t0 = d0 + d4;
+    t1 = d0 - d4;
 
-    /* first stage */
-    x8 = W7 * (x4 + x5);
-    x4 = x8 + (W1 - W7) * x4;
-    x5 = x8 - (W1 + W7) * x5;
-    x8 = W3 * (x6 + x7);
-    x6 = x8 - (W3 - W5) * x6;
-    x7 = x8 - (W3 + W5) * x7;
+    tmp = W6 * (d2 + d6);
+    t2 = tmp - (W2 + W6) * d6;
+    t3 = tmp + (W2 - W6) * d2;
 
-    /* second stage */
-    x8 = x0 + x1;
-    x0 -= x1;
-    x1 = W6 * (x3 + x2);
-    x2 = x1 - (W2 + W6) * x2;
-    x3 = x1 + (W2 - W6) * x3;
-    x1 = x4 + x6;
-    x4 -= x6;
-    x6 = x5 + x7;
-    x5 -= x7;
+    a0 = t0 + t3;
+    a1 = t1 + t2;
+    a2 = t1 - t2;
+    a3 = t0 - t3;
 
-    /* third stage */
-    x7 = x8 + x3;
-    x8 -= x3;
-    x3 = x0 + x2;
-    x0 -= x2;
-    x2 = (181 * (x4 + x5) + 128) >> 8;
-    x4 = (181 * (x4 - x5) + 128) >> 8;
+    tmp = W7 * (d1 + d7);
+    t0 = tmp + (W1 - W7) * d1;
+    t1 = tmp - (W1 + W7) * d7;
 
-    /* fourth stage */
-    block[0] = (x7 + x1) >> 8;
-    block[1] = (x3 + x2) >> 8;
-    block[2] = (x0 + x4) >> 8;
-    block[3] = (x8 + x6) >> 8;
-    block[4] = (x8 - x6) >> 8;
-    block[5] = (x0 - x4) >> 8;
-    block[6] = (x3 - x2) >> 8;
-    block[7] = (x7 - x1) >> 8;
+    tmp = W3 * (d5 + d3);
+    t2 = tmp - (W3 - W5) * d5;
+    t3 = tmp - (W3 + W5) * d3;
+
+    b0 = t0 + t2;
+    b3 = t1 + t3;
+    t0 -= t2;
+    t1 -= t3;
+    b1 = (181 * (t0 + t1) + 128) >> 8;
+    b2 = (181 * (t0 - t1) + 128) >> 8;
+
+    block[0] = (a0 + b0) >> 8;
+    block[1] = (a1 + b1) >> 8;
+    block[2] = (a2 + b2) >> 8;
+    block[3] = (a3 + b3) >> 8;
+    block[4] = (a3 - b3) >> 8;
+    block[5] = (a2 - b2) >> 8;
+    block[6] = (a1 - b1) >> 8;
+    block[7] = (a0 - b0) >> 8;
 }
 
 /* column (vertical) IDCT
@@ -143,63 +145,65 @@ static void inline idct_row (int16_t * const block)
 
 static void inline idct_col (int16_t * const block)
 {
-    int x0, x1, x2, x3, x4, x5, x6, x7, x8;
+    int d0, d1, d2, d3, d4, d5, d6, d7;
+    int a0, a1, a2, a3, b0, b1, b2, b3;
+    int tmp, t0, t1, t2, t3;
 
-    /* shortcut */
-    x1 = block [8*4] << 8;
-    x2 = block [8*6];
-    x3 = block [8*2];
-    x4 = block [8*1];
-    x5 = block [8*7];
-    x6 = block [8*5];
-    x7 = block [8*3];
+    d0 = block[8*0];
+    d1 = block[8*1];
+    d2 = block[8*2];
+    d3 = block[8*3];
+    d4 = block[8*4];
+    d5 = block[8*5];
+    d6 = block[8*6];
+    d7 = block[8*7];
 
 #if 0
-    if (! (x1 | x2 | x3 | x4 | x5 | x6 | x7 )) {
-	block[8*0] = block[8*1] = block[8*2] = block[8*3] = block[8*4] =
-	    block[8*5] = block[8*6] = block[8*7] = (block[8*0] + 32) >> 6;
+    /* shortcut */
+    if (! (d4 | d6 | d2 | d1 | d7 | d5 | d3 )) {
+	block[0] = block[1] = block[2] = block[3] = block[4] =
+	    block[5] = block[6] = block[7] = d0 << 3;
 	return;
     }
 #endif
 
-    x0 = (block[8*0] << 8) + 8192;
+    d0 = (d0 << 11) + 65536;
+    d4 <<= 11;
+    t0 = d0 + d4;
+    t1 = d0 - d4;
 
-    /* first stage */
-    x8 = W7 * (x4 + x5) + 4;
-    x4 = (x8 + (W1 - W7) * x4) >> 3;
-    x5 = (x8 - (W1 + W7) * x5) >> 3;
-    x8 = W3 * (x6 + x7) + 4;
-    x6 = (x8 - (W3 - W5) * x6) >> 3;
-    x7 = (x8 - (W3 + W5) * x7) >> 3;
+    tmp = W6 * (d2 + d6);
+    t2 = tmp - (W2 + W6) * d6;
+    t3 = tmp + (W2 - W6) * d2;
 
-    /* second stage */
-    x8 = x0 + x1;
-    x0 -= x1;
-    x1 = W6 * (x3 + x2) + 4;
-    x2 = (x1 - (W2 + W6) * x2) >> 3;
-    x3 = (x1 + (W2 - W6) * x3) >> 3;
-    x1 = x4 + x6;
-    x4 -= x6;
-    x6 = x5 + x7;
-    x5 -= x7;
+    a0 = t0 + t3;
+    a1 = t1 + t2;
+    a2 = t1 - t2;
+    a3 = t0 - t3;
 
-    /* third stage */
-    x7 = x8 + x3;
-    x8 -= x3;
-    x3 = x0 + x2;
-    x0 -= x2;
-    x2 = (181 * (x4 + x5) + 128) >> 8;
-    x4 = (181 * (x4 - x5) + 128) >> 8;
+    tmp = W7 * (d1 + d7);
+    t0 = tmp + (W1 - W7) * d1;
+    t1 = tmp - (W1 + W7) * d7;
 
-    /* fourth stage */
-    block[8*0] = (x7 + x1) >> 14;
-    block[8*1] = (x3 + x2) >> 14;
-    block[8*2] = (x0 + x4) >> 14;
-    block[8*3] = (x8 + x6) >> 14;
-    block[8*4] = (x8 - x6) >> 14;
-    block[8*5] = (x0 - x4) >> 14;
-    block[8*6] = (x3 - x2) >> 14;
-    block[8*7] = (x7 - x1) >> 14;
+    tmp = W3 * (d5 + d3);
+    t2 = tmp - (W3 - W5) * d5;
+    t3 = tmp - (W3 + W5) * d3;
+
+    b0 = t0 + t2;
+    b3 = t1 + t3;
+    t0 = (t0 - t2) >> 3;
+    t1 = (t1 - t3) >> 3;
+    b1 = ((t0 + t1) * 181) >> 5;
+    b2 = ((t0 - t1) * 181) >> 5;
+
+    block[8*0] = (a0 + b0) >> 17;
+    block[8*1] = (a1 + b1) >> 17;
+    block[8*2] = (a2 + b2) >> 17;
+    block[8*3] = (a3 + b3) >> 17;
+    block[8*4] = (a3 - b3) >> 17;
+    block[8*5] = (a2 - b2) >> 17;
+    block[8*6] = (a1 - b1) >> 17;
+    block[8*7] = (a0 - b0) >> 17;
 }
 
 static void mpeg2_idct_copy_c (int16_t * block, uint8_t * dest,
