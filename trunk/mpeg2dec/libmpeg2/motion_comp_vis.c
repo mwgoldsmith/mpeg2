@@ -442,7 +442,7 @@ static void MC_put_x_16_vis (uint8_t * dest, const uint8_t * _ref,
     vis_faligndata (TMP2, TMP4, REF_4);
 
     if (off != 0x7) {
-	vis_alignaddr_g0 ( (void *)off_plus_1);
+	vis_alignaddr_g0 ((void *) off_plus_1);
 	vis_faligndata (TMP0, TMP2, REF_2);
 	vis_faligndata (TMP2, TMP4, REF_6);
     } else {
@@ -476,14 +476,14 @@ static void MC_put_x_16_vis (uint8_t * dest, const uint8_t * _ref,
 	ref += stride;
 	vis_or (REF_4, REF_6, TMP12);
 
-	vis_alignaddr_g0 ( (void *)off);
+	vis_alignaddr_g0 ((void *) off);
 
 	vis_faligndata (TMP0, TMP2, REF_0);
 
 	vis_faligndata (TMP2, TMP4, REF_4);
 
 	if (off != 0x7) {
-	    vis_alignaddr_g0 ( (void *)off_plus_1);
+	    vis_alignaddr_g0 ((void *) off_plus_1);
 	    vis_faligndata (TMP0, TMP2, REF_2);
 	    vis_faligndata (TMP2, TMP4, REF_6);
 	} else {
@@ -516,14 +516,14 @@ static void MC_put_x_16_vis (uint8_t * dest, const uint8_t * _ref,
 
 	vis_or (REF_4, REF_6, TMP12);
 
-	vis_alignaddr_g0 ( (void *)off);
+	vis_alignaddr_g0 ((void *) off);
 
 	vis_faligndata (TMP14, TMP16, REF_0);
 
 	vis_faligndata (TMP16, TMP18, REF_4);
 
 	if (off != 0x7) {
-	    vis_alignaddr_g0 ( (void *)off_plus_1);
+	    vis_alignaddr_g0 ((void *) off_plus_1);
 	    vis_faligndata (TMP14, TMP16, REF_2);
 	    vis_faligndata (TMP16, TMP18, REF_6);
 	} else {
@@ -560,14 +560,14 @@ static void MC_put_x_16_vis (uint8_t * dest, const uint8_t * _ref,
 
     vis_or (REF_4, REF_6, TMP12);
 
-    vis_alignaddr_g0 ( (void *)off);
+    vis_alignaddr_g0 ((void *) off);
 
     vis_faligndata (TMP0, TMP2, REF_0);
 
     vis_faligndata (TMP2, TMP4, REF_4);
 
     if (off != 0x7) {
-	vis_alignaddr_g0 ( (void *)off_plus_1);
+	vis_alignaddr_g0 ((void *) off_plus_1);
 	vis_faligndata (TMP0, TMP2, REF_2);
 	vis_faligndata (TMP2, TMP4, REF_6);
     } else {
@@ -632,7 +632,7 @@ static void MC_put_x_8_vis (uint8_t * dest, const uint8_t * _ref,
     vis_faligndata (TMP0, TMP2, REF_0);
 
     if (off != 0x7) {
-	vis_alignaddr_g0 ( (void *)off_plus_1);
+	vis_alignaddr_g0 ((void *) off_plus_1);
 	vis_faligndata (TMP0, TMP2, REF_2);
     } else {
 	vis_src1 (TMP2, REF_2);
@@ -653,14 +653,14 @@ static void MC_put_x_8_vis (uint8_t * dest, const uint8_t * _ref,
 	vis_or (REF_0, REF_2, TMP6);
 	vis_mul8x16 (CONST_128, TMP4, TMP4);
 
-	vis_alignaddr_g0 ( (void *)off);
+	vis_alignaddr_g0 ((void *) off);
 
 	vis_ld64_2 (ref, 8, TMP10);
 	ref += stride;
 	vis_faligndata (TMP0, TMP2, REF_0);
 
 	if (off != 0x7) {
-	    vis_alignaddr_g0 ( (void *)off_plus_1);
+	    vis_alignaddr_g0 ((void *) off_plus_1);
 	    vis_faligndata (TMP0, TMP2, REF_2);
 	} else {
 	    vis_src1 (TMP2, REF_2);
@@ -679,10 +679,10 @@ static void MC_put_x_8_vis (uint8_t * dest, const uint8_t * _ref,
 	vis_or (REF_0, REF_2, TMP14);
 	vis_mul8x16 (CONST_128, TMP12, TMP12);
 
-	vis_alignaddr_g0 ( (void *)off);
+	vis_alignaddr_g0 ((void *) off);
 	vis_faligndata (TMP8, TMP10, REF_0);
 	if (off != 0x7) {
-	    vis_alignaddr_g0 ( (void *)off_plus_1);
+	    vis_alignaddr_g0 ((void *) off_plus_1);
 	    vis_faligndata (TMP8, TMP10, REF_2);
 	} else {
 	    vis_src1 (TMP10, REF_2);
@@ -704,12 +704,12 @@ static void MC_put_x_8_vis (uint8_t * dest, const uint8_t * _ref,
     vis_or (REF_0, REF_2, TMP6);
     vis_mul8x16 (CONST_128, TMP4, TMP4);
 
-    vis_alignaddr_g0 ( (void *)off);
+    vis_alignaddr_g0 ((void *) off);
 
     vis_faligndata (TMP0, TMP2, REF_0);
 
     if (off != 0x7) {
-	vis_alignaddr_g0 ( (void *)off_plus_1);
+	vis_alignaddr_g0 ((void *) off_plus_1);
 	vis_faligndata (TMP0, TMP2, REF_2);
     } else {
 	vis_src1 (TMP2, REF_2);
@@ -754,7 +754,7 @@ static void MC_avg_x_16_vis (uint8_t * dest, const uint8_t * _ref,
 
 	vis_ld64 (ref[8], TMP2);
 
-	vis_alignaddr_g0 ( (void *)off);
+	vis_alignaddr_g0 ((void *) off);
 
 	vis_ld64 (ref[16], TMP4);
 
@@ -765,7 +765,7 @@ static void MC_avg_x_16_vis (uint8_t * dest, const uint8_t * _ref,
 	vis_faligndata (TMP2, TMP4, REF_4);
 
 	if (off != 0x7) {
-	    vis_alignaddr_g0 ( (void *)off_plus_1);
+	    vis_alignaddr_g0 ((void *) off_plus_1);
 	    vis_faligndata (TMP0, TMP2, REF_2);
 	    vis_faligndata (TMP2, TMP4, REF_6);
 	} else {
@@ -848,7 +848,7 @@ static void MC_avg_x_8_vis (uint8_t * dest, const uint8_t * _ref,
 	vis_ld64_2 (ref, 8, TMP2);
 	ref += stride;
 
-	vis_alignaddr_g0 ( (void *)off);
+	vis_alignaddr_g0 ((void *) off);
 
 	vis_ld64 (ref[0], TMP4);
 	vis_faligndata (TMP0, TMP2, REF_0);
@@ -871,7 +871,7 @@ static void MC_avg_x_8_vis (uint8_t * dest, const uint8_t * _ref,
 	vis_faligndata (TMP12, TMP14, REF_S4);
 
 	if (off != 0x7) {
-	    vis_alignaddr_g0 ( (void *)off_plus_1);
+	    vis_alignaddr_g0 ((void *) off_plus_1);
 
 	    vis_ld64 (dest[0], DST_0);
 	    vis_faligndata (TMP0, TMP2, REF_2);
@@ -1476,7 +1476,7 @@ static void MC_put_xy_16_vis (uint8_t * dest, const uint8_t * _ref,
     vis_faligndata (TMP2, TMP4, REF_S4);
 
     if (off != 0x7) {
-	vis_alignaddr_g0 ( (void *)off_plus_1);
+	vis_alignaddr_g0 ((void *) off_plus_1);
 	vis_faligndata (TMP0, TMP2, REF_S2);
 	vis_faligndata (TMP2, TMP4, REF_S6);
     } else {
@@ -1490,7 +1490,7 @@ static void MC_put_xy_16_vis (uint8_t * dest, const uint8_t * _ref,
 	vis_mul8x16au (REF_S0, CONST_256, TMP12);
 	vis_pmerge (ZERO, REF_S0_1, TMP14);
 
-	vis_alignaddr_g0 ( (void *)off);
+	vis_alignaddr_g0 ((void *) off);
 
 	vis_ld64_2 (ref, stride_8, TMP2);
 	vis_mul8x16au (REF_S2, CONST_256, TMP16);
@@ -1517,7 +1517,7 @@ static void MC_put_xy_16_vis (uint8_t * dest, const uint8_t * _ref,
 	vis_faligndata (TMP8, TMP10, REF_S4);
 
 	if (off != 0x7) {
-	    vis_alignaddr_g0 ( (void *)off_plus_1);
+	    vis_alignaddr_g0 ((void *) off_plus_1);
 	    vis_faligndata (TMP0, TMP2, REF_2);
 	    vis_faligndata (TMP2, TMP4, REF_6);
 	    vis_faligndata (TMP6, TMP8, REF_S2);
@@ -1637,7 +1637,7 @@ static void MC_put_xy_8_vis (uint8_t * dest, const uint8_t * _ref,
     vis_faligndata (TMP0, TMP2, REF_S0);
 
     if (off != 0x7) {
-	vis_alignaddr_g0 ( (void *)off_plus_1);
+	vis_alignaddr_g0 ((void *) off_plus_1);
 	vis_faligndata (TMP0, TMP2, REF_S2);
     } else {
 	vis_src1 (TMP2, REF_S2);
@@ -1649,7 +1649,7 @@ static void MC_put_xy_8_vis (uint8_t * dest, const uint8_t * _ref,
 	vis_mul8x16au (REF_S0, CONST_256, TMP8);
 	vis_pmerge (ZERO, REF_S2, TMP12);
 
-	vis_alignaddr_g0 ( (void *)off);
+	vis_alignaddr_g0 ((void *) off);
 
 	vis_ld64_2 (ref, stride_8, TMP2);
 	ref += stride;
@@ -1669,7 +1669,7 @@ static void MC_put_xy_8_vis (uint8_t * dest, const uint8_t * _ref,
 	vis_faligndata (TMP4, TMP6, REF_S0);
 
 	if (off != 0x7) {
-	    vis_alignaddr_g0 ( (void *)off_plus_1);
+	    vis_alignaddr_g0 ((void *) off_plus_1);
 	    vis_faligndata (TMP0, TMP2, REF_S6);
 	    vis_faligndata (TMP4, TMP6, REF_S2);
 	} else {
@@ -1746,7 +1746,7 @@ static void MC_avg_xy_16_vis (uint8_t * dest, const uint8_t * _ref,
     vis_faligndata (TMP2, TMP4, REF_S4);
 
     if (off != 0x7) {
-	vis_alignaddr_g0 ( (void *)off_plus_1);
+	vis_alignaddr_g0 ((void *) off_plus_1);
 	vis_faligndata (TMP0, TMP2, REF_S2);
 	vis_faligndata (TMP2, TMP4, REF_S6);
     } else {
@@ -1760,7 +1760,7 @@ static void MC_avg_xy_16_vis (uint8_t * dest, const uint8_t * _ref,
 	vis_mul8x16au (REF_S0, CONST_256, TMP12);
 	vis_pmerge (ZERO, REF_S0_1, TMP14);
 
-	vis_alignaddr_g0 ( (void *)off);
+	vis_alignaddr_g0 ((void *) off);
 
 	vis_ld64_2 (ref, stride_8, TMP2);
 	vis_mul8x16au (REF_S2, CONST_256, TMP16);
@@ -1789,7 +1789,7 @@ static void MC_avg_xy_16_vis (uint8_t * dest, const uint8_t * _ref,
 	vis_faligndata (TMP8, TMP10, REF_S4);
 
 	if (off != 0x7) {
-	    vis_alignaddr_g0 ( (void *)off_plus_1);
+	    vis_alignaddr_g0 ((void *) off_plus_1);
 	    vis_faligndata (TMP0, TMP2, REF_2);
 	    vis_faligndata (TMP2, TMP4, REF_6);
 	    vis_faligndata (TMP6, TMP8, REF_S2);
@@ -1939,7 +1939,7 @@ static void MC_avg_xy_8_vis (uint8_t * dest, const uint8_t * _ref,
     vis_faligndata (TMP0, TMP2, REF_S0);
 
     if (off != 0x7) {
-	vis_alignaddr_g0 ( (void *)off_plus_1);
+	vis_alignaddr_g0 ((void *) off_plus_1);
 	vis_faligndata (TMP0, TMP2, REF_S2);
     } else {
 	vis_src1 (TMP2, REF_S2);
@@ -1956,7 +1956,7 @@ static void MC_avg_xy_8_vis (uint8_t * dest, const uint8_t * _ref,
 	vis_mul8x16au (REF_S2, CONST_256, TMP12);
 	vis_pmerge (ZERO, REF_S2_1, TMP14);
 
-	vis_alignaddr_g0 ( (void *)off);
+	vis_alignaddr_g0 ((void *) off);
 
 	vis_ld64_2 (ref, stride, TMP4);
 	vis_faligndata (TMP0, TMP2, REF_S4);
@@ -1970,7 +1970,7 @@ static void MC_avg_xy_8_vis (uint8_t * dest, const uint8_t * _ref,
 	vis_ld64_2 (dest, stride, DST_2);
 
 	if (off != 0x7) {
-	    vis_alignaddr_g0 ( (void *)off_plus_1);
+	    vis_alignaddr_g0 ((void *) off_plus_1);
 	    vis_faligndata (TMP0, TMP2, REF_S6);
 	    vis_faligndata (TMP4, TMP6, REF_S2);
 	} else {
