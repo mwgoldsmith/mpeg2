@@ -512,6 +512,7 @@ static void convert_internal (int order, int bpp, const mpeg2_sequence_t * seq,
 		 {yuv2rgb_c_24_bgr_444, yuv2rgb_c_8_444, yuv2rgb_c_16_444,
 		  yuv2rgb_c_24_rgb_444, yuv2rgb_c_32_444}};
 
+	    id->convert420 = id->chroma420;
 	    yuv2rgb_c_init (order, bpp);
 	    src = ((seq->chroma_width == seq->width) +
 		   (seq->chroma_height == seq->height));
