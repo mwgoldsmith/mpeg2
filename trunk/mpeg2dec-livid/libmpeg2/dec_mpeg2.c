@@ -55,7 +55,7 @@ static int _mpeg2dec_set_flag	(plugin_codec_video_t *plugin, uint flag, uint val
 
 	switch (flag) {
 	case FLAG_VIDEO_DROP_FRAME:
-		fprintf (stderr, "%c", val ? '-':'+');
+		//fprintf (stderr, "%c", val ? '-':'+');
 		mpeg2_drop (val);
 		break;
 	default:
