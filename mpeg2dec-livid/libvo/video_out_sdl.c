@@ -1,22 +1,25 @@
 /*
  *  video_out_sdl.c
  *
+ *  Copyright (C) Dominik Schnitzer <aeneas@linuxvideo.org> - Janurary 13, 2001.
  *  Copyright (C) Ryan C. Gordon <icculus@lokigames.com> - April 22, 2000.
  *
  *  A mpeg2dec display driver that does output through the
  *  Simple DirectMedia Layer (SDL) library. This effectively gives us all
  *  sorts of output options: X11, SVGAlib, fbcon, AAlib, GGI. Win32, MacOS
  *  and BeOS support, too. Yay. SDL info, source, and binaries can be found
- *  at http://slouken.devolution.com/SDL/
+ *  at http://www.libsdl.org/
  *
- *  This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
+ *  This file is part of oms, free DVD and Video player.
+ *  It is derived from the mpeg2dec SDL video output plugin.
+ *  Adopted for mpeg2dec from Dominik Schnitzer, Jan. 24. 2001
  *	
- *  mpeg2dec is free software; you can redistribute it and/or modify
+ *  oms is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2, or (at your option)
  *  any later version.
  *   
- *  mpeg2dec is distributed in the hope that it will be useful,
+ *  this oms output plugin is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
@@ -38,13 +41,35 @@
  *    Dominik Schnitzer <dominik@schnitzer.at> - November 11, 2000.
  *    - Cleanup code, more comments
  *    - Better error handling
- *    Bruno Barreyra <barreyra@ufl.edu> - December 10, 2000.
- *    - Eliminated memcpy's for entire frames
+ *    Dominik Schnitzer <dominik@schnitzer.at> - December 17, 2000.
+ *    - sdl_close() cleans up everything properly.
+ *    - integrated Bruno Barreyra <barreyra@ufl.edu>'s fix which eliminates
+ *       those memcpy()s for whole frames (sdl_draw_frame()) HACKMODE 2 patch
+ *    - support for YV12 and IYUV format :>
+ *    - minor fixups for future enhancements
+ *    Dominik Schnitzer <dominik@schnitzer.at> - Janurary 13, 2001.
+ *    - bugfix: Double buffered screenmodes made sdl output display nothing but
+ *       a black screen.
+ *    Dominik Schnitzer <dominik@schnitzer.at> - Janurary 20, 2001.
+ *    - subpictures work! Properly! We even time the subpictures displayed they're
+ *       still just blue, but it'll 100% work soon :)
+ *    - switch between fullscreen and windowed mode now possible everytime, even
+ *       when playback stopped
+ *    - we keep the last frame displayed, so window content doesn't wash away
+ *       when you i.e. resize the window when stopped. looks pretty cool.
+ *    Dominik Schnitzer <dominik@schnitzer.at> - Janurary 21, 2001.
+ *    - corrected some threading issues (now using mutexes)
+ *    - chapter switching now works flawless on SDL side (!), _setup is checking
+ *       if it was already called. no need to run _setup() twice.
+ *    Dominik Schnitzer <dominik@schnitzer.at> - Janurary 24, 2001.
+ *    - many changes to make sdl vo work with mpeg2dec
+ *    Dominik Schnitzer <dominik@schnitzer.at> - Janurary 25, 2001.
+ *    - sync with mpeg2dec vo, sudden changes in the vo interface
+ *    - AAlib output added, Software only output added
+ * 
  */
 
 #include "config.h"
-
-#ifdef LIBVO_SDL
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,120 +78,121 @@
 
 #include "video_out.h"
 #include "video_out_internal.h"
-#include "log.h"
 
 #include <SDL/SDL.h>
 
 /** Private SDL Data structure **/
 
-static struct sdl_priv_s {
-
+typedef struct sdl_instance_s {
+	vo_instance_t vo;
+	 
 	/* SDL YUV surface & overlay */
 	SDL_Surface *surface;
-	SDL_Overlay *overlay;
-	SDL_Overlay *current_frame;
-
-	/* available fullscreen modes */
-	SDL_Rect **fullmodes;
-
-	/* surface attributes for fullscreen and windowed mode */
-	Uint32 sdlflags, sdlfullflags;
-
-	/* save the windowed output extents */
-	SDL_Rect windowsize;
 	
+	/* surface attributes for windowed mode */
+	Uint32 sdlflags;
+
 	/* Bits per Pixel */
 	Uint8 bpp;
 
-	/* current fullscreen mode, 0 = highest available fullscreen mode */
-	int fullmode;
+} sdl_instance_t;
 
-	/* YUV ints */
-	int framePlaneY, framePlaneUV;
-	int slicePlaneY, slicePlaneUV;
-} sdl_priv;
+static sdl_instance_t sdl_static_instance;	/* FIXME */
 
+extern vo_instance_t sdl_vo_instance;
 
-/** OMS Plugin functions **/
+/** libvo Plugin functions **/
 
 
 /**
- * Take a null-terminated array of pointers, and find the last element.
+ * Allocate an SDL frame buffer. Called once to allocate memory for a frame.
  *
- *    params : array == array of which we want to find the last element.
- *   returns : index of last NON-NULL element.
+ *   params : width, height == needed surface width and height
+ *            frame == frame to allocate
+ *  returns : 0 on success, <> 0 on failure
  **/
 
-static inline int findArrayEnd (SDL_Rect **array)
+static int sdl_alloc_frame (frame_t * frame, int width, int height)
 {
-	int i = 0;
-	while ( array[i++] );	/* keep loopin' ... */
+	sdl_instance_t * this = &sdl_static_instance;
+
+	/* This is a bug somewhere else height == width, and width == height */
+	if (!(frame->private = (void*) SDL_CreateYUVOverlay (width, height,
+			SDL_YV12_OVERLAY, this->surface))) {
+		fprintf (stderr, "sdl couldn't create a YUV overlay.");
+		return 1;
+	}
+
+	frame->base[0] = (uint8_t*) ((SDL_Overlay*) (frame->private))->pixels[0];
+	frame->base[2] = (uint8_t*) ((SDL_Overlay*) (frame->private))->pixels[1];
+	frame->base[1] = (uint8_t*) ((SDL_Overlay*) (frame->private))->pixels[2];
+
+	/* Locks the allocated frame, to allow writing to it.
+	 * sdl_flip Unlocks it. sdl_draw_frame Locks it again.*/
+	SDL_LockYUVOverlay ((SDL_Overlay*) frame->private);
 	
-	/* return the index of the last array element */
-	return i - 1;
+	return 0;
+}
+
+
+/**
+ * Free an SDL image frame from memory
+ *
+ *   params : frame == frame to free
+ *  returns : doesn't return
+ **/
+
+static void sdl_free_frame (frame_t* frame)
+{
+	SDL_FreeYUVOverlay((SDL_Overlay*) frame->private);
 }
 
 
 /**
  * Open and prepare SDL output.
  *
- *    params : *plugin ==
- *             *name == 
- *   returns : 0 on success, -1 on failure
+ *    params : this == instance to initialize
+ *             width, height == width and height of output window
+ *   returns : NULL on failure, a valid vo_instance_t on success
  **/
 
-static int sdl_open (void *plugin, void *name)
+static vo_instance_t * sdl_setup (vo_instance_t * _this, int width, int height)
 {
-	struct sdl_priv_s *priv = &sdl_priv;
+	sdl_instance_t * this;
 	const SDL_VideoInfo *vidInfo = NULL;
-	static int opened = 0;
-
-	if (opened)
-	    return 0;
-	opened = 1;
-
-	LOG (LOG_DEBUG, "SDL video out: Opened Plugin");
 	
-	/* default to no fullscreen mode, we'll set this as soon we have the avail. mdoes */
-	priv->fullmode = -2;
-	/* other default values */
-	priv->sdlflags = SDL_HWSURFACE|SDL_RESIZABLE|SDL_ASYNCBLIT;
-	priv->sdlfullflags = SDL_HWSURFACE|SDL_FULLSCREEN|SDL_DOUBLEBUF|SDL_ASYNCBLIT;
-	priv->surface = NULL;
-	priv->overlay = NULL;
-	priv->fullmodes = NULL;
+	if (_this != NULL)
+		return NULL;
+	
+	this = &sdl_static_instance;
+
+	/* Cleanup YUV Overlay structures */
+	this->surface = NULL;
+	
+	/* Reset the configuration vars to its default values */
+	this->bpp = 0;
+	this->sdlflags = SDL_HWSURFACE|SDL_RESIZABLE;
 
 	/* initialize the SDL Video system */
 	if (SDL_Init (SDL_INIT_VIDEO)) {
-		LOG (LOG_ERROR, "SDL video out: Initializing of SDL failed (SDL_Init). Please use the latest version of SDL.");
-		return -1;
+		fprintf (stderr, "sdl video initialization failed.\n");
+		return NULL;
 	}
-	
-	/* No Keyrepeats! */
-	SDL_EnableKeyRepeat(0,0);
 
 	/* get information about the graphics adapter */
 	vidInfo = SDL_GetVideoInfo ();
 	
-	/* collect all fullscreen & hardware modes available */
-	if (!(priv->fullmodes = SDL_ListModes (vidInfo->vfmt, priv->sdlfullflags))) {
-
-		/* non hardware accelerated fullscreen modes */
-		priv->sdlfullflags &= ~SDL_HWSURFACE;
- 		priv->fullmodes = SDL_ListModes (vidInfo->vfmt, priv->sdlfullflags);
-	}
-	
 	/* test for normal resizeable & windowed hardware accellerated surfaces */
-	if (!SDL_ListModes (vidInfo->vfmt, priv->sdlflags)) {
+	if (!SDL_ListModes (vidInfo->vfmt, this->sdlflags)) {
 		
 		/* test for NON hardware accelerated resizeable surfaces - poor you. 
 		 * That's all we have. If this fails there's nothing left.
 		 * Theoretically there could be Fullscreenmodes left - we ignore this for now.
 		 */
-		priv->sdlflags &= ~SDL_HWSURFACE;
-		if ((!SDL_ListModes (vidInfo->vfmt, priv->sdlflags)) && (!priv->fullmodes)) {
-			LOG (LOG_ERROR, "SDL video out: Couldn't get any acceptable SDL Mode for output. (SDL_ListModes failed)");
-			return -1;
+		this->sdlflags &= ~SDL_HWSURFACE;
+		if (!SDL_ListModes (vidInfo->vfmt, this->sdlflags)) {
+			fprintf(stderr, "sdl couldn't get any acceptable sdl videomode for output.\n");
+			return NULL;
 		}
 	}
 	
@@ -176,295 +202,144 @@ static int sdl_open (void *plugin, void *name)
     * 8-bits, for example. So, if the display is less than 16-bits,
     * we'll force the BPP to 16, and pray that SDL can emulate for us.
 	 */
-	priv->bpp = vidInfo->vfmt->BitsPerPixel;
-	if (priv->bpp < 16) {
-		LOG (LOG_WARNING, "SDL video out: Your SDL display target wants to be at a color depth of (%d), but we need it to be at\
-least 16 bits, so we need to emulate 16-bit color. This is going to slow things down; you might want to\
-increase your display's color depth, if possible", priv->bpp);
-		priv->bpp = 16;  
+	this->bpp = vidInfo->vfmt->BitsPerPixel;
+	if (this->bpp < 16) {
+		fprintf(stderr, "sdl has to emulate a 16 bit surfaces, that will slow things down.\n");
+		this->bpp = 16;  
 	}
 	
-	/* We dont want those in out event queue */
+	/* We dont want those in our event queue */
 	SDL_EventState(SDL_ACTIVEEVENT, SDL_IGNORE);
 	SDL_EventState(SDL_KEYUP, SDL_IGNORE);
 	SDL_EventState(SDL_MOUSEMOTION, SDL_IGNORE);
 	SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_IGNORE);
-	SDL_EventState(SDL_MOUSEBUTTONUP, SDL_IGNORE);
+	SDL_EventState(SDL_MOUSEBUTTONUP, SDL_IGNORE); 
 	SDL_EventState(SDL_QUIT, SDL_IGNORE);
 	SDL_EventState(SDL_SYSWMEVENT, SDL_IGNORE);
-	SDL_EventState(SDL_USEREVENT, SDL_IGNORE);
 	
-	/* Success! */
-	return 0;
+	SDL_WM_SetCaption ("sdl video out", NULL);
+
+	if (!(this->surface = SDL_SetVideoMode (width, height, this->bpp, this->sdlflags))) {
+		fprintf (stderr, "sdl could not set the desired video mode\n");
+		return NULL;
+	}
+
+	if (libvo_common_alloc_frames (sdl_alloc_frame, width, height)) {
+		fprintf (stderr, "sdl could not allocate frame buffers\n");
+		return NULL;
+	}
+	 
+	this->vo = sdl_vo_instance;
+	return (vo_instance_t *)this;
 }
 
 
 /**
- * Close SDL, Cleanups, Free Memory
+ * Open and prepare SDL output for dedicated Software and aalib out
  *
- *    params : *plugin
- *   returns : non-zero on success, zero on error.
+ *    params : this == instance to initialize
+ *             width, height == width and height of output window
+ *   returns : NULL on failure, a valid vo_instance_t on success
  **/
 
-static int sdl_close (void)
+vo_instance_t * vo_sdl_setup (vo_instance_t * _this, int width, int height)
 {
-	struct sdl_priv_s *priv = &sdl_priv;
-	
-	LOG (LOG_DEBUG, "SDL video out: Closed Plugin");
-	LOG (LOG_INFO, "SDL video out: Closed Plugin");
+	setenv("SDL_VIDEO_YUV_HWACCEL", "1", 1);
+	setenv("SDL_VIDEO_X11_NODIRECTCOLOR", "1", 1);
+	return sdl_setup (_this, width, height);
+}
 
-	/* Cleanup YUV Overlay structure */
-	if (priv->overlay) 
-		SDL_FreeYUVOverlay(priv->overlay);
+vo_instance_t * vo_sdlsw_setup (vo_instance_t * _this, int width, int height)
+{
+	setenv("SDL_VIDEO_YUV_HWACCEL", "0", 1);
+	return sdl_setup (_this, width, height);
+}
+
+vo_instance_t * vo_sdlaa_setup (vo_instance_t * _this, int width, int height)
+{
+	setenv("SDL_VIDEODRIVER", "aalib", 1);
+	return sdl_setup (_this, width, height);
+}
+
+
+/**
+ * Close SDL, Cleanups, Free Memory.
+ *
+ *    params : this == sdl vo instance to close
+ *   returns : non-zero on error, zero on success
+ **/
+
+static int sdl_close (vo_instance_t * _this)
+{
+	sdl_instance_t * this = (sdl_instance_t *)_this;
+
+	libvo_common_free_frames (sdl_free_frame);
 
 	/* Free our blitting surface */
-	if (priv->surface)
-		SDL_FreeSurface(priv->surface);
-	
-	/* TODO: cleanup the full_modes array */
+	if (this->surface)
+		SDL_FreeSurface(this->surface);
 	
 	/* Cleanup SDL */
-	SDL_Quit();
-
-	return 0;
-}
-
-
-/**
- * Initialize an SDL surface and an SDL YUV overlay.
- *
- *    params : width  == width of video we'll be displaying.
- *             height == height of video we'll be displaying.
- *             fullscreen == want to be fullscreen?
- *             title == Title for window titlebar.
- *   returns : non-zero on success, zero on error.
- **/
-
-static int sdl_setup (int width, int height)
-{
-	struct sdl_priv_s *priv = &sdl_priv;
-
-	sdl_open (NULL, NULL);
-
-	/* Initialize the windowed SDL Window per default */
-	if (!(priv->surface = SDL_SetVideoMode (attr->width, attr->height, priv->bpp, priv->sdlflags))) {
-		LOG (LOG_ERROR, "SDL video out: Could not set the desired video mode (SDL_SetVideoMode)");
-		return -1;
-	}
-
-	/* Initialize and create the YUV Overlay used for video out */
-	if (!(priv->overlay = SDL_CreateYUVOverlay (width, height, SDL_IYUV_OVERLAY, priv->surface))) {
-		LOG (LOG_ERROR, "SDL video out: Couldn't create an SDL-based YUV overlay");
-		return -1;
-	}
-	priv->framePlaneY = width * height;
-	priv->framePlaneUV = (width * height) >> 2;
-	priv->slicePlaneY = width << 4;
-	priv->slicePlaneUV = width << 2;
-	
-	/* Save the original Image size */
-	priv->windowsize.w = width;
-	priv->windowsize.h = height;
+	SDL_QuitSubSystem(SDL_INIT_VIDEO);
 	
 	return 0;
 }
 
 
 /**
- * Draw a frame to the SDL YUV overlay.
- *
- *   params : *src[] == the Y, U, and V planes that make up the frame.
- *  returns : non-zero on success, zero on error.
- **/
-
-static int sdl_draw_frame (frame_t *frame)
-{
-	struct sdl_priv_s *priv = &sdl_priv;
-
-	priv->current_frame = (SDL_Overlay*) frame->private;
-	SDL_UnlockYUVOverlay (priv->current_frame);
-
-	return 0;
-}
-
-
-/**
- * Draw a slice (16 rows of image) to the SDL YUV overlay.
- *
- *   params : *src[] == the Y, U, and V planes that make up the slice.
- *  returns : non-zero on error, zero on success.
- **/
-
-static int sdl_draw_slice (uint8_t *src[], int slice_num)
-{
-	struct sdl_priv_s *priv = &sdl_priv;
-	uint8_t *dst;
-
-	priv->current_frame = priv->overlay;
-	
-	if (SDL_LockYUVOverlay (priv->overlay)) {
-		LOG (LOG_ERROR, "SDL video out: Couldn't lock SDL-based YUV overlay");
-		return -1;
-	}
-
-	dst = (uint8_t *) *(priv->overlay->pixels) + (priv->slicePlaneY * slice_num);
-	memcpy (dst, src[0], priv->slicePlaneY);
-	dst = (uint8_t *) *(priv->overlay->pixels) + priv->framePlaneY + (priv->slicePlaneUV * slice_num);
-	memcpy (dst, src[1], priv->slicePlaneUV);
-	dst += priv->framePlaneUV;
-	memcpy (dst, src[2], priv->slicePlaneUV);
-	
-	SDL_UnlockYUVOverlay (priv->overlay);
-
-	return 0;
-}
-
-
-/**
- * Sets the specified fullscreen mode.
- *
- *   params : mode == index of the desired fullscreen mode
- *  returns : doesn't return
- **/
- 
-static void set_fullmode (int mode)
-{
-	struct sdl_priv_s *priv = &sdl_priv;
-	SDL_Surface *newsurface = NULL;
-	
-	
-	/* if we haven't set a fullmode yet, default to the lowest res fullmode first */
-	if (mode < 0) 
-		mode = priv->fullmode = findArrayEnd(priv->fullmodes) - 1;
-
-	/* change to given fullscreen mode and hide the mouse cursor*/
-	newsurface = SDL_SetVideoMode(priv->fullmodes[mode]->w, priv->fullmodes[mode]->h, priv->bpp, priv->sdlfullflags);
-	
-	/* if we were successfull hide the mouse cursor and save the mode */
-	if (newsurface) {
-		priv->surface = newsurface;
-		SDL_ShowCursor(0);
-	}
-}
-
-
-/**
- * Checks for SDL keypress and window resize events
+ * Checks for SDL window resize events.
  *
  *   params : none
  *  returns : doesn't return
  **/
- 
+
 static void check_events (void)
 {
-	struct sdl_priv_s *priv = &sdl_priv;
+	sdl_instance_t * this = &sdl_static_instance;
 	SDL_Event event;
-	SDLKey keypressed;
 	
-	/* Poll the waiting SDL Events */
-	while ( SDL_PollEvent(&event) ) {
-		switch (event.type) {
-
-			/* capture window resize events */
-			case SDL_VIDEORESIZE:
-				priv->surface = SDL_SetVideoMode(event.resize.w, event.resize.h, priv->bpp, priv->sdlflags);
-
-				/* save video extents, to restore them after going fullscreen */
-				priv->windowsize.w = priv->surface->w;
-				priv->windowsize.h = priv->surface->h;
-				
-				LOG (LOG_DEBUG, "SDL video out: Window resize");
-			break;
-			
-			
-			/* graphics more selection shortcuts */
-			case SDL_KEYDOWN:
-				keypressed = event.key.keysym.sym;
-				
-				/* plus key pressed. plus cycles through available fullscreenmodes, if we have some */
-				if ( ((keypressed == SDLK_PLUS) || (keypressed == SDLK_KP_PLUS)) && (priv->fullmodes) ) {
-					/* select next fullscreen mode */
-					priv->fullmode++;
-					if (priv->fullmode > (findArrayEnd(priv->fullmodes) - 1)) priv->fullmode = 0;
-					set_fullmode(priv->fullmode);
-	
-					LOG (LOG_DEBUG, "SDL video out: Set next available fullscreen mode.");
-				}
-
-				/* return or escape key pressed toggles/exits fullscreenmode */
-				else if ( (keypressed == SDLK_RETURN) || (keypressed == SDLK_ESCAPE) ) {
-				 	if (priv->surface->flags & SDL_FULLSCREEN) {
-						priv->surface = SDL_SetVideoMode(priv->windowsize.w, priv->windowsize.h, priv->bpp, priv->sdlflags);
-						SDL_ShowCursor(1);
-						
-						LOG (LOG_DEBUG, "SDL video out: Windowed mode");
-					} 
-					else if (priv->fullmodes){
-						set_fullmode(priv->fullmode);
-
-						LOG (LOG_DEBUG, "SDL video out: Set fullscreen mode.");
-					}
-				}
-				break;
-		}
+	/* capture window resize events */
+	while (SDL_PollEvent(&event)) {
+		if (event.type == SDL_VIDEORESIZE)
+			this->surface = SDL_SetVideoMode(event.resize.w, event.resize.h, this->bpp, this->sdlflags);
+		if (event.type == SDL_KEYDOWN)
+			SDL_Delay(4000);
 	}
 }
 
 
 /**
- * Display the surface we have written our data to and check for events.
+ * Draw a frame to the SDL YUV overlay and checks for events.
  *
- *   params : mode == index of the desired fullscreen mode
+ *   params : frame == frame_t to draw
  *  returns : doesn't return
  **/
 
-static void sdl_flip_page (void)
+static void sdl_draw_frame (frame_t * frame)
 {
-	struct sdl_priv_s *priv = &sdl_priv;
-
-	/* check and react on keypresses and window resizes */
-	check_events();
-
+	sdl_instance_t * this = &sdl_static_instance;
+	
 	/* blit to the YUV overlay */
-	SDL_DisplayYUVOverlay (priv->current_frame, &priv->surface->clip_rect);
-
-	/* check if we have a double buffered surface and flip() if we do. */
-	if ( priv->surface->flags & SDL_DOUBLEBUF )
-        	SDL_Flip(priv->surface);
+	SDL_DisplayYUVOverlay ((SDL_Overlay*) frame->private, &this->surface->clip_rect);
 	
-	SDL_LockYUVOverlay (priv->current_frame);
-}
-
-static frame_t* sdl_allocate_image_buffer(int width, int height)
-{
-	struct sdl_priv_s *priv = &sdl_priv;
-	frame_t	*frame;
-
-	if (!(frame = malloc (sizeof (frame_t))))
-		return NULL;
-
-	if (!(frame->private = (void*) SDL_CreateYUVOverlay (width, height, 
-			SDL_IYUV_OVERLAY, priv->surface)))
-	{
-		LOG (LOG_ERROR, "SDL video out: Couldn't create an SDL-based YUV overlay");
-		return NULL;
-	}
+	/* check for events */
+	check_events();
 	
-	frame->base[0] = (uint8_t*) ((SDL_Overlay*) (frame->private))->pixels[0];
-	frame->base[1] = (uint8_t*) ((SDL_Overlay*) (frame->private))->pixels[1];
-	frame->base[2] = (uint8_t*) ((SDL_Overlay*) (frame->private))->pixels[2];
-	
-	SDL_LockYUVOverlay ((SDL_Overlay*) frame->private);
-	return frame;
-}
-
-static void sdl_free_image_buffer(frame_t* frame)
-{
-	SDL_FreeYUVOverlay((SDL_Overlay*) frame->private);
-	free(frame);
+	/* Unlock the frame - the frame is 100% filled with data to display 
+	 * We Lock it again when the frame was displayed. */
+	SDL_UnlockYUVOverlay ((SDL_Overlay*) frame->private);
 }
 
 
-LIBVO_EXTERN (sdl, "sdl")
+vo_instance_t sdl_vo_instance = {
+    vo_sdl_setup, sdl_close, libvo_common_get_frame, sdl_draw_frame
+};
 
-#endif
+vo_instance_t sdlsw_vo_instance = {
+    vo_sdlsw_setup, sdl_close, libvo_common_get_frame, sdl_draw_frame
+};
+
+vo_instance_t sdlaa_vo_instance = {
+    vo_sdlaa_setup, sdl_close, libvo_common_get_frame, sdl_draw_frame
+};
+
