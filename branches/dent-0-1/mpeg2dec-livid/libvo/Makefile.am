@@ -1,25 +1,55 @@
-# # Process this file with automake to produce Makefile.in.
+##
+## Process this file with automake to produce Makefile.in
+##
 
-AUTOMAKE_OPTIONS = 1.3 foreign 
+AUTOMAKE_OPTIONS = 1.3 foreign no-dependencies
 
-CFLAGS = -g -O3 -Wall -Werror @LIBVO_CFLAGS@ @GLOBAL_CFLAGS@ @X_CFLAGS@
 
-lib_LTLIBRARIES = libvo.la
+DEFS = $(CFLAGS) @DEFS@ @X_CFLAGS@
+INCLUDES = -I$(top_builddir)/include
 
-include_HEADERS = video_out.h 
+## Libs
+if HAVE_X11
+DISPLAY_X11 = display_x11.la
+endif
 
-libvo_la_LIBADD =  @LIBVO_CONFIG_OBJS@ @LIBVO_CONFIG_LIBS@ @X_PRE_LIBS@ @X_LIBS@ -lXext
-libvo_la_DEPENDENCIES = @LIBVO_CONFIG_OBJS@
-libvo_la_LDFLAGS = -version-info 1:6:1 
+if HAVE_3DFX
+DISPLAY_3DFX = display_3dfx.la
+endif
 
-libvo_la_SOURCES =\
-	yuv2rgb.c\
-	video_out.c\
-	video_out_mga.c\
-	video_out_x11.c\
-	video_out_3dfx.c\
-	video_out_sdl.c
+if HAVE_MGA
+DISPLAY_MGA = display_mga.la
+endif
 
-EXTRA_libvo_la_SOURCES = yuv2rgb_mmx.c
+if HAVE_SDL
+DISPLAY_SDL = display_sdl.la
+endif
 
-noinst_HEADERS = video_out_internal.h yuv2rgb.h 
+lib_LTLIBRARIES = $(DISPLAY_X11) $(DISPLAY_3DFX) $(DISPLAY_MGA) $(DISPLAY_SDL)
+
+display_x11_la_SOURCES = video_out_x11.c yuv2rgb.c
+EXTRA_display_x11_la_SOURCES = yuv2rgb_mmx.c
+display_x11_la_LIBADD = @X_PRE_LIBS@ @X_LIBS@ -lXext
+display_x11_la_LDFLAGS = -avoid-version -module -Wl,-soname,display_x11
+
+display_3dfx_la_SOURCES = video_out_3dfx.c
+display_3dfx_la_LDFLAGS = -avoid-version -module -Wl,-soname,display_3dfx
+
+display_mga_la_SOURCES = video_out_mga.c
+display_mga_la_LDFLAGS = -avoid-version -module -Wl,-soname,display_mga
+
+display_sdl_la_SOURCES = video_out_sdl.c
+display_sdl_la_LDFLAGS = -avoid-version -module -Wl,-soname,display_sdl
+
+
+noinst_HEADERS = video_out.h video_out_internal.h mmx.h
+
+
+mostlyclean-generic:
+	-rm -f *~ \#* .*~ .\#*
+
+
+maintainer-clean-generic:
+	-@echo "This command is intended for maintainers to use;"
+	-@echo "it deletes files that may require special tools to rebuild."
+	-rm -f Makefile.in

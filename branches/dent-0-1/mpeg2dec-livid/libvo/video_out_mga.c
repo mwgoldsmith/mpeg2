@@ -48,15 +48,15 @@ static vo_info_t vo_info =
 };
 
 static mga_vid_config_t mga_vid_config;
-static uint_8 *vid_data, *frame0, *frame1;
+static u_int8_t *vid_data, *frame0, *frame1;
 static int next_frame = 0;
 static int f;
 
 static void
-write_frame_g200(uint_8 *y,uint_8 *cr, uint_8 *cb)
+write_frame_g200(u_int8_t *y,u_int8_t *cr, u_int8_t *cb)
 {
-	uint_8 *dest;
-	uint_32 bespitch,h,w;
+	u_int8_t *dest;
+	u_int32_t bespitch,h,w;
 
 	dest = vid_data;
 	bespitch = (mga_vid_config.src_width + 31) & ~31;
@@ -80,10 +80,10 @@ write_frame_g200(uint_8 *y,uint_8 *cr, uint_8 *cb)
 }
 
 static void
-write_frame_g400(uint_8 *y,uint_8 *cr, uint_8 *cb)
+write_frame_g400(u_int8_t *y,u_int8_t *cr, u_int8_t *cb)
 {
-	uint_8 *dest;
-	uint_32 bespitch,h;
+	u_int8_t *dest;
+	u_int32_t bespitch,h;
 
 	dest = vid_data;
 	bespitch = (mga_vid_config.src_width + 31) & ~31;
@@ -111,10 +111,10 @@ write_frame_g400(uint_8 *y,uint_8 *cr, uint_8 *cb)
 }
 
 static void
-write_slice_g200(uint_8 *y,uint_8 *cr, uint_8 *cb,uint_32 slice_num)
+write_slice_g200(u_int8_t *y,u_int8_t *cr, u_int8_t *cb,u_int32_t slice_num)
 {
-	uint_8 *dest;
-	uint_32 bespitch,h,w;
+	u_int8_t *dest;
+	u_int32_t bespitch,h,w;
 
 	bespitch = (mga_vid_config.src_width + 31) & ~31;
 	dest = vid_data + bespitch * 16 * slice_num;
@@ -141,10 +141,10 @@ write_slice_g200(uint_8 *y,uint_8 *cr, uint_8 *cb,uint_32 slice_num)
 }
 
 static void
-write_slice_g400(uint_8 *y,uint_8 *cr, uint_8 *cb,uint_32 slice_num)
+write_slice_g400(u_int8_t *y,u_int8_t *cr, u_int8_t *cb,u_int32_t slice_num)
 {
-	uint_8 *dest;
-	uint_32 bespitch,h;
+	u_int8_t *dest;
+	u_int32_t bespitch,h;
 
 	bespitch = (mga_vid_config.src_width + 31) & ~31;
 	dest = vid_data + bespitch * 16 * slice_num;
@@ -177,8 +177,8 @@ write_slice_g400(uint_8 *y,uint_8 *cr, uint_8 *cb,uint_32 slice_num)
 	}
 }
 
-uint_32
-draw_slice(uint_8 *src[], uint_32 slice_num)
+u_int32_t
+draw_slice(u_int8_t *src[], u_int32_t slice_num)
 {
 	if (mga_vid_config.card_type == MGA_G200)
 		write_slice_g200(src[0],src[2],src[1],slice_num);
@@ -201,8 +201,8 @@ flip_page(void)
 		vid_data = frame0;
 }
 
-static uint_32
-draw_frame(uint_8 *src[])
+static u_int32_t
+draw_frame(u_int8_t *src[])
 {
 	if (mga_vid_config.card_type == MGA_G200)
 		write_frame_g200(src[0], src[2], src[1]);
@@ -213,11 +213,11 @@ draw_frame(uint_8 *src[])
 	return 0;
 }
 
-static uint_32
-init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
+static u_int32_t
+init(u_int32_t width, u_int32_t height, u_int32_t fullscreen, char *title)
 {
 	char *frame_mem;
-	uint_32 frame_size;
+	u_int32_t frame_size;
 
 	f = open("/dev/mga_vid",O_RDWR);
 
@@ -264,7 +264,7 @@ get_info(void)
 //FIXME this should allocate AGP memory via agpgart and then we
 //can use AGP transfers to the framebuffer
 static vo_image_buffer_t* 
-allocate_image_buffer(uint_32 height, uint_32 width, uint_32 format)
+allocate_image_buffer(u_int32_t height, u_int32_t width, u_int32_t format)
 {
 	//use the generic fallback
 	return allocate_image_buffer_common(height,width,format);

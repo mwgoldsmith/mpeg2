@@ -58,40 +58,40 @@ static vo_info_t vo_info =
 	""
 };
 
-static uint_32 is_fullscreen = 1;
+static u_int32_t is_fullscreen = 1;
 
-static uint_32 vidwidth;
-static uint_32 vidheight;
+static u_int32_t vidwidth;
+static u_int32_t vidheight;
 
-static uint_32 screenwidth;
-static uint_32 screenheight;
-static uint_32 screendepth = 2; //Only 16bpp supported right now
+static u_int32_t screenwidth;
+static u_int32_t screenheight;
+static u_int32_t screendepth = 2; //Only 16bpp supported right now
 
-static uint_32 dispwidth = 1280; // You can change these to whatever you want
-static uint_32 dispheight = 720; // 16:9 screen ratio??
-static uint_32 dispx;
-static uint_32 dispy;
+static u_int32_t dispwidth = 1280; // You can change these to whatever you want
+static u_int32_t dispheight = 720; // 16:9 screen ratio??
+static u_int32_t dispx;
+static u_int32_t dispy;
 
-static uint_32 *vidpage0;
-static uint_32 *vidpage1;
-static uint_32 *vidpage2;
+static u_int32_t *vidpage0;
+static u_int32_t *vidpage1;
+static u_int32_t *vidpage2;
 
-static uint_32 vidpage0offset;
-static uint_32 vidpage1offset;
-static uint_32 vidpage2offset;
+static u_int32_t vidpage0offset;
+static u_int32_t vidpage1offset;
+static u_int32_t vidpage2offset;
 
 // Current pointer into framebuffer where display is located
-static uint_32 targetoffset;
+static u_int32_t targetoffset;
 
-static uint_32 page_space;
+static u_int32_t page_space;
 
 static voodoo_io_reg *reg_IO;
 static voodoo_2d_reg *reg_2d;
 static voodoo_yuv_reg *reg_YUV;
 static voodoo_yuv_fb *fb_YUV;
 
-static uint_32 *memBase0, *memBase1;
-static uint_32 baseAddr0, baseAddr1;
+static u_int32_t *memBase0, *memBase1;
+static u_int32_t baseAddr0, baseAddr1;
 
 
 /* X11 related variables */
@@ -137,7 +137,7 @@ restore_regs(voodoo_2d_reg *regs)
 	reg_2d->command = 0;
 }
 
-static uint_32 
+static u_int32_t 
 create_window(Display *display) 
 {
 	int screen;
@@ -215,7 +215,7 @@ create_window(Display *display)
 }
 
 static void 
-dump_yuv_planar(uint_32 *y, uint_32 *u, uint_32 *v, uint_32 to, uint_32 width, uint_32 height) 
+dump_yuv_planar(u_int32_t *y, u_int32_t *u, u_int32_t *v, u_int32_t to, u_int32_t width, u_int32_t height) 
 {
 	// YUV conversion works like this:
 	//
@@ -226,8 +226,8 @@ dump_yuv_planar(uint_32 *y, uint_32 *u, uint_32 *v, uint_32 to, uint_32 width, u
 	//		 of the data on page 2 onto page 1, converting it to 16 bpp RGB as it goes.
 	//		 The result is a nice image on page 1 ready for display. 
 
-	uint_32 j;
-	uint_32 y_imax, uv_imax, jmax;
+	u_int32_t j;
+	u_int32_t y_imax, uv_imax, jmax;
 
 	reg_YUV->yuvBaseAddr = to;
 	reg_YUV->yuvStride = screenwidth*2;
@@ -240,16 +240,16 @@ dump_yuv_planar(uint_32 *y, uint_32 *u, uint_32 *v, uint_32 to, uint_32 width, u
 	for (j=0;j<jmax;j++) 
 	{
 		//change from wmemcpy to memcpy. was memcpy supposed to be faster? - ah
-		memcpy(fb_YUV->U + (uint_32) VOODOO_YUV_STRIDE*  j       , u + (uint_32) uv_imax*  j       , uv_imax);
-		memcpy(fb_YUV->V + (uint_32) VOODOO_YUV_STRIDE*  j       , v + (uint_32) uv_imax*  j       , uv_imax);
-		memcpy(fb_YUV->Y + (uint_32) VOODOO_YUV_STRIDE* (j<<1)   , y + (uint_32) y_imax * (j<<1)   , y_imax);
-		memcpy(fb_YUV->Y + (uint_32) VOODOO_YUV_STRIDE*((j<<1)+1), y + (uint_32) y_imax *((j<<1)+1), y_imax);
+		memcpy(fb_YUV->U + (u_int32_t) VOODOO_YUV_STRIDE*  j       , u + (u_int32_t) uv_imax*  j       , uv_imax);
+		memcpy(fb_YUV->V + (u_int32_t) VOODOO_YUV_STRIDE*  j       , v + (u_int32_t) uv_imax*  j       , uv_imax);
+		memcpy(fb_YUV->Y + (u_int32_t) VOODOO_YUV_STRIDE* (j<<1)   , y + (u_int32_t) y_imax * (j<<1)   , y_imax);
+		memcpy(fb_YUV->Y + (u_int32_t) VOODOO_YUV_STRIDE*((j<<1)+1), y + (u_int32_t) y_imax *((j<<1)+1), y_imax);
 	}
   LOG("video_out_3dfx: done planar dump\n");
 }
 
 static void 
-screen_to_screen_stretch_blt(uint_32 to, uint_32 from, uint_32 width, uint_32 height) 
+screen_to_screen_stretch_blt(u_int32_t to, u_int32_t from, u_int32_t width, u_int32_t height) 
 {
 	//FIXME - this function should be called by a show_frame function that
 	//        uses a series of blts to show only those areas not covered
@@ -293,15 +293,15 @@ screen_to_screen_stretch_blt(uint_32 to, uint_32 from, uint_32 width, uint_32 he
 static void 
 update_target(void) 
 {
-	uint_32 xp, yp, w, h, b, d;
+	u_int32_t xp, yp, w, h, b, d;
 	Window root;
 
 	XGetGeometry(display,mywindow,&root,&xp,&yp,&w,&h,&b,&d);
 	XTranslateCoordinates(display,mywindow,root,0,0,&xp,&yp,&root);
-	dispx = (uint_32) xp;
-	dispy = (uint_32) yp;
-	dispwidth = (uint_32) w;
-	dispheight = (uint_32) h;
+	dispx = (u_int32_t) xp;
+	dispy = (u_int32_t) yp;
+	dispwidth = (u_int32_t) w;
+	dispheight = (u_int32_t) h;
 
 	if (is_fullscreen) 
 		targetoffset = vidpage0offset + (screenheight - dispheight)/2*screenwidth*screendepth + (screenwidth-dispwidth)/2*screendepth;
@@ -309,13 +309,13 @@ update_target(void)
 		targetoffset = vidpage0offset + (dispy*screenwidth + dispx)*screendepth;
 }
 
-static uint_32 
-init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title) 
+static u_int32_t 
+init(u_int32_t width, u_int32_t height, u_int32_t fullscreen, char *title) 
 {
 	int fd;
 	char *name = ":0.0";
 	pioData data;
-	uint_32 retval;
+	u_int32_t retval;
 
 	if(getenv("DISPLAY"))
 		name = getenv("DISPLAY");
@@ -372,7 +372,7 @@ init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 	// Map all 3dfx memory areas
 	memBase0 = mmap(0,0x1000000,PROT_READ | PROT_WRITE,MAP_SHARED,fd,baseAddr0);
 	memBase1 = mmap(0,3*page_space,PROT_READ | PROT_WRITE,MAP_SHARED,fd,baseAddr1);
-	if (memBase0 == (uint_32 *) 0xFFFFFFFF || memBase1 == (uint_32 *) 0xFFFFFFFF) 
+	if (memBase0 == (u_int32_t *) 0xFFFFFFFF || memBase1 == (u_int32_t *) 0xFFFFFFFF) 
 	{
 		printf("Couldn't map 3dfx memory areas: %p,%p,%d\n", 
 		 memBase0,memBase1,errno);
@@ -425,26 +425,26 @@ get_info(void)
 	return &vo_info;
 }
 
-static uint_32 
-draw_frame(uint_8 *src[]) 
+static u_int32_t 
+draw_frame(u_int8_t *src[]) 
 {
 	LOG("video_out_3dfx: starting display_frame\n");
 
 	// Put packed data onto page 2
-	dump_yuv_planar((uint_32 *)src[0],(uint_32 *)src[1],(uint_32 *)src[2],
+	dump_yuv_planar((u_int32_t *)src[0],(u_int32_t *)src[1],(u_int32_t *)src[2],
 			vidpage2offset,vidwidth,vidheight);
 
 	LOG("video_out_3dfx: done display_frame\n");
 	return 0;
 }
 
-static uint_32 
-draw_slice(uint_8 *src[], uint_32 slice_num) 
+static u_int32_t 
+draw_slice(u_int8_t *src[], u_int32_t slice_num) 
 {
-	uint_32 target;
+	u_int32_t target;
 
 	target = vidpage2offset + (screenwidth*2 * 16*slice_num);
-	dump_yuv_planar((uint_32 *)src[0],(uint_32 *)src[1],(uint_32 *)src[2],target,vidwidth,16);
+	dump_yuv_planar((u_int32_t *)src[0],(u_int32_t *)src[1],(u_int32_t *)src[2],target,vidwidth,16);
 	return 0;
 }
 
@@ -459,7 +459,7 @@ flip_page(void)
 }
 
 static vo_image_buffer_t* 
-allocate_image_buffer(uint_32 height, uint_32 width, uint_32 format)
+allocate_image_buffer(u_int32_t height, u_int32_t width, u_int32_t format)
 {
 	//use the generic fallback
 	return allocate_image_buffer_common(height,width,format);

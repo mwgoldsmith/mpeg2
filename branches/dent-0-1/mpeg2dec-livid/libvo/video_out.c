@@ -37,18 +37,10 @@ extern vo_functions_t video_out_3dfx;
 
 vo_functions_t* video_out_drivers[] = 
 {
-#ifdef HAVE_X11
-	&video_out_x11,
-#endif
-#ifdef HAVE_MGA
 	&video_out_mga,
-#endif
-#ifdef HAVE_3DFX
-	&video_out_3dfx,
-#endif
-#ifdef HAVE_SDL
+	&video_out_x11,
 	&video_out_sdl,
-#endif
+	&video_out_3dfx,
 	NULL
 };
 

@@ -106,14 +106,14 @@ static void DeInstallXErrorHandler()
 #endif
 
 
-static uint_32 image_width;
-static uint_32 image_height;
+static u_int32_t image_width;
+static u_int32_t image_height;
 
 /* connect to server, create and map window,
  * allocate colors and (shared) memory
  */
-static uint_32 
-init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
+static u_int32_t 
+init(u_int32_t width, u_int32_t height, u_int32_t fullscreen, char *title)
 {
 	int screen;
 	unsigned int fg, bg;
@@ -445,7 +445,7 @@ Terminate_Display_Process(void)
 }
 
 static void 
-Display_Image(XImage *myximage, uint_8 *ImageData)
+Display_Image(XImage *myximage, u_int32_t *ImageData)
 {
 #ifdef SH_MEM
 	if (Shmem_Flag) 
@@ -510,10 +510,10 @@ flip_page(void)
 }
 
 #if HAVE_XV
-static inline uint_32
-draw_slice_xv(uint_8 *src[], uint_32 slice_num)
+static inline u_int32_t
+draw_slice_xv(u_int8_t *src[], u_int32_t slice_num)
 {
-	uint_8 *dst;
+	u_int8_t *dst;
 
 	dst = xvimage1->data + image_width * 16 * slice_num;
 
@@ -527,10 +527,10 @@ draw_slice_xv(uint_8 *src[], uint_32 slice_num)
 }
 #endif
 
-static inline uint_32
-draw_slice_x11(uint_8 *src[], uint_32 slice_num)
+static inline u_int32_t
+draw_slice_x11(u_int8_t *src[], u_int32_t slice_num)
 {
-	uint_8 *dst;
+	u_int8_t *dst;
 
 	dst = ImageData + image_width * 16 * (bpp/8) * slice_num;
 
@@ -543,8 +543,8 @@ draw_slice_x11(uint_8 *src[], uint_32 slice_num)
 	return 0;
 }
 
-static uint_32
-draw_slice(uint_8 *src[], uint_32 slice_num)
+static u_int32_t
+draw_slice(u_int8_t *src[], u_int32_t slice_num)
 {
 #if HAVE_XV
 	if (xv_port != 0)
@@ -555,8 +555,8 @@ draw_slice(uint_8 *src[], uint_32 slice_num)
 }
 
 #ifdef HAVE_XV
-static inline uint_32 
-draw_frame_xv(uint_8 *src[])
+static inline u_int32_t 
+draw_frame_xv(u_int8_t *src[])
 {
 	Window root;
 	XEvent event;
@@ -592,8 +592,8 @@ draw_frame_xv(uint_8 *src[])
 }
 #endif
 
-static inline uint_32 
-draw_frame_x11(uint_8 *src[])
+static inline u_int32_t 
+draw_frame_x11(u_int8_t *src[])
 {
 	yuv2rgb(ImageData, src[0], src[1], src[2],
 		image_width, image_height, 
@@ -603,8 +603,8 @@ draw_frame_x11(uint_8 *src[])
 	return 0; 
 }
 
-static uint_32
-draw_frame(uint_8 *src[])
+static u_int32_t
+draw_frame(u_int8_t *src[])
 {
 #if HAVE_XV
 	if (xv_port != 0)
@@ -617,7 +617,7 @@ draw_frame(uint_8 *src[])
 //FIXME this should allocate AGP memory via agpgart and then we
 //can use AGP transfers to the framebuffer
 static vo_image_buffer_t* 
-allocate_image_buffer(uint_32 height, uint_32 width, uint_32 format)
+allocate_image_buffer(u_int32_t height, u_int32_t width, u_int32_t format)
 {
 	//use the generic fallback
 	return allocate_image_buffer_common(height,width,format);

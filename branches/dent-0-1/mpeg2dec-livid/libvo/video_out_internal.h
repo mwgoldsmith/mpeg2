@@ -21,12 +21,12 @@
  *
  */
 
-static uint_32 init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title);
+static u_nit32_t init(u_nit32_t width, u_nit32_t height, u_nit32_t fullscreen, char *title);
 static const vo_info_t* get_info(void);
-static uint_32 draw_frame(uint_8 *src[]);
-static uint_32 draw_slice(uint_8 *src[], uint_32 slice_num);
+static u_nit32_t draw_frame(u_int8_t *src[]);
+static u_nit32_t draw_slice(u_int8_t *src[], u_nit32_t slice_num);
 static void flip_page(void);
-static vo_image_buffer_t* allocate_image_buffer(uint_32 width, uint_32 height, uint_32 format);
+static vo_image_buffer_t* allocate_image_buffer(u_nit32_t width, u_nit32_t height, u_nit32_t format);
 static void free_image_buffer(vo_image_buffer_t* image);
 
 #define LIBVO_EXTERN(x) vo_functions_t video_out_##x =\
@@ -41,7 +41,7 @@ static void free_image_buffer(vo_image_buffer_t* image);
 };
 
 #define LIBVO_DUMMY_FUNCTIONS(x)\
-static uint_32 init(uint_32 width, uint_32 height, uint_32 fullscreen,\
+static u_nit32_t init(u_nit32_t width, u_nit32_t height, u_nit32_t fullscreen,\
 		char *title)\
 {\
 	fprintf(stderr,"Sorry libvo was not compiled with support for " #x "\n");\
@@ -49,14 +49,14 @@ static uint_32 init(uint_32 width, uint_32 height, uint_32 fullscreen,\
 	return 0;\
 }\
 static const vo_info_t* get_info(void){return (vo_info_t*)0;}\
-static uint_32 draw_frame(uint_8 *src[]){return 0;}\
-static uint_32 draw_slice(uint_8 *src[], uint_32 slice_num){return 0;}\
+static u_nit32_t draw_frame(u_int8_t *src[]){return 0;}\
+static u_nit32_t draw_slice(u_int8_t *src[], u_nit32_t slice_num){return 0;}\
 static void flip_page(void){}\
-static vo_image_buffer_t* allocate_image_buffer(uint_32 width, uint_32 height, uint_32 format){return 0;}\
+static vo_image_buffer_t* allocate_image_buffer(u_nit32_t width, u_nit32_t height, u_nit32_t format){return 0;}\
 static void free_image_buffer(vo_image_buffer_t* image){}
 
 //
 // Generic fallback routines used by some drivers
 //
-vo_image_buffer_t* allocate_image_buffer_common(uint_32 width, uint_32 height, uint_32 format);
+vo_image_buffer_t* allocate_image_buffer_common(u_nit32_t width, u_nit32_t height, u_nit32_t format);
 void	free_image_buffer_common(vo_image_buffer_t* image);
