@@ -345,12 +345,10 @@ static inline int get_chroma_dc_dct_diff (slice_t * slice)
 #undef bit_ptr
 }
 
-#define SATURATE(val)		\
-do {				\
-    if (val > 2047)		\
-	val = 2047;		\
-    else if (val < -2048)	\
-	val = -2048;		\
+#define SATURATE(val)			\
+do {					\
+    if ((uint32_t)(val + 2048) > 4095)	\
+	val = (val > 0) ? 2047 : -2048;	\
 } while (0)
 
 static void get_intra_block_B14 (picture_t * picture, slice_t * slice,
