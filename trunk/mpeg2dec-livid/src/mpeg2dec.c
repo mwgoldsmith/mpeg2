@@ -182,14 +182,15 @@ static void ps_loop (void)
 	    // check start code
 	    if (buf[0] || buf[1] || (buf[2] != 0x01)) {
 		if (complain_loudly) {
-		    fprintf (stderr, "missing start code at %lx\n",
+		    fprintf (stderr, "missing start code at %#lx\n",
 			     ftell (in_file) - (end - buf));
 		    if ((buf[0] == 0) && (buf[1] == 0) && (buf[2] == 0))
 			fprintf (stderr, "this stream appears to use "
 				 "zero-byte padding before start codes,\n"
 				 "which is not correct according to the "
 				 "mpeg system standard.\n"
-				 "mp1e is one encoder known to do this.\n");
+				 "mp1e was one encoder known to do this "
+				 "before version 1.8.0.\n");
 		    complain_loudly = 0;
 		}
 		buf++;
