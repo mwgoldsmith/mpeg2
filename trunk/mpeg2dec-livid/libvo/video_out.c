@@ -102,6 +102,7 @@ int libvo_common_alloc_frames (vo_instance_t * _this, int width, int height,
 	this->frame_ptr[i]->base[1] = alloc + 4 * size;
 	this->frame_ptr[i]->base[2] = alloc + 5 * size;
 	this->frame_ptr[i]->copy = NULL;
+	this->frame_ptr[i]->field = NULL;
 	this->frame_ptr[i]->draw = draw;
 	this->frame_ptr[i]->this = (vo_instance_t *)this;
 	alloc += 6 * size;
@@ -118,15 +119,14 @@ void libvo_common_free_frames (vo_instance_t * _this)
     free (this->frame_ptr[0]->base[0]);
 }
 
-vo_frame_t * libvo_common_get_frame (vo_instance_t * _this, int prediction)
+vo_frame_t * libvo_common_get_frame (vo_instance_t * _this, int flags)
 {
     common_instance_t * this;
 
     this = (common_instance_t *)_this;
-    if (!prediction)
-	return this->frame_ptr[2];
-    else {
+    if (flags & VO_PREDICTION_FLAG) {
 	this->prediction_index ^= 1;
 	return this->frame_ptr[this->prediction_index];
-    }
+    } else
+	return this->frame_ptr[2];
 }

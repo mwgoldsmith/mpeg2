@@ -46,8 +46,10 @@ int XShmGetEventBase (Display *);
 
 typedef struct x11_frame_s {
     vo_frame_t vo;
-    int slice_num;
     XImage * ximage;
+    uint8_t * rgb_ptr;
+    int rgb_stride;
+    int yuv_stride;
 
 #ifdef LIBVO_XV
     XvImage * xvimage;
@@ -259,29 +261,53 @@ static void x11_draw_frame (vo_frame_t * _frame)
     XFlush (this->display);
 }
 
+    uint8_t * rgb_ptr;
+    int rgb_stride;
+    int yuv_stride;
+
 static void x11_copy_slice (vo_frame_t * _frame, uint8_t ** src)
 {
     x11_frame_t * frame;
     x11_instance_t * this;
 
-    frame = (x11_frame_t *)_frame;
+    frame = (x11_frame_t *) _frame;
     this = (x11_instance_t *) frame->vo.this;
 
-    yuv2rgb (frame->ximage->data + frame->ximage->bytes_per_line * 16 * frame->slice_num,
-	     src[0], src[1], src[2], this->width, 16,
-	     frame->ximage->bytes_per_line, this->width, this->width >> 1);
-
-    frame->slice_num++;
+    yuv2rgb (frame->rgb_ptr, src[0], src[1], src[2], this->width, 16,
+	     frame->rgb_stride, frame->yuv_stride, frame->yuv_stride >> 1);
+    frame->rgb_ptr += frame->rgb_stride << 4;
 }
 
-static vo_frame_t * x11_get_frame (vo_instance_t * this, int prediction)
+static void x11_field (vo_frame_t * _frame, int flags)
 {
     x11_frame_t * frame;
 
-    frame = (x11_frame_t *)libvo_common_get_frame (this, prediction);
+    frame = (x11_frame_t *) _frame;
+    frame->rgb_ptr = frame->ximage->data;
+    if ((flags & VO_TOP_FIELD) == 0)
+	frame->rgb_ptr += frame->ximage->bytes_per_line;;
+}
+
+static vo_frame_t * x11_get_frame (vo_instance_t * _this, int flags)
+{
+    x11_instance_t * this;
+    x11_frame_t * frame;
+
+    this = (x11_instance_t *) _this;
+    frame = (x11_frame_t *) libvo_common_get_frame ((vo_instance_t *) this,
+						    flags);
     frame->vo.copy = x11_copy_slice;
-    frame->slice_num = 0;
-    return (vo_frame_t *)frame;
+    frame->vo.field = x11_field;
+    frame->rgb_ptr = frame->ximage->data;
+    frame->rgb_stride = frame->ximage->bytes_per_line;
+    frame->yuv_stride = this->width;
+    if ((flags & VO_TOP_FIELD) == 0)
+	frame->rgb_ptr += frame->rgb_stride;
+    if ((flags & VO_BOTH_FIELDS) != VO_BOTH_FIELDS) {
+	frame->rgb_stride <<= 1;
+	frame->yuv_stride <<= 1;
+    }
+    return (vo_frame_t *) frame;
 }
 
 static void x11_close (vo_instance_t * _this)
@@ -567,6 +593,7 @@ static int xv_alloc_frames (x11_instance_t * this, int width, int height)
 	this->frame[i].vo.base[1] = alloc + 5 * size;
 	this->frame[i].vo.base[2] = alloc + 4 * size;
 	this->frame[i].vo.copy = NULL;
+	this->frame[i].vo.field = NULL;
 	this->frame[i].vo.draw = xv_draw_frame;
 	this->frame[i].vo.this = (vo_instance_t *)this;
 	this->frame[i].xvimage = XvCreateImage (this->display, this->port,

@@ -138,17 +138,24 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 		    exit (1);
 		}
 		picture->forward_reference_frame =
-		    vo_get_frame (mpeg2dec->output, 1);
+		    vo_get_frame (mpeg2dec->output,
+				  VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
 		picture->backward_reference_frame =
-		    vo_get_frame (mpeg2dec->output, 1);
+		    vo_get_frame (mpeg2dec->output,
+				  VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
 	    }
-	    if (!(picture->second_field)) {
+	    if (picture->second_field)
+		vo_field (picture->current_frame, picture->picture_structure);
+	    else {
 		if (picture->picture_coding_type == B_TYPE)
 		    picture->current_frame =
-			vo_get_frame (mpeg2dec->output, 0);
+			vo_get_frame (mpeg2dec->output,
+				      picture->picture_structure);
 		else {
 		    picture->current_frame =
-			vo_get_frame (mpeg2dec->output, 1);
+			vo_get_frame (mpeg2dec->output,
+				      (VO_PREDICTION_FLAG |
+				       picture->picture_structure));
 		    picture->forward_reference_frame =
 			picture->backward_reference_frame;
 		    picture->backward_reference_frame = picture->current_frame;

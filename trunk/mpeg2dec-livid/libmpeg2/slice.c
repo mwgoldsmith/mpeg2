@@ -1452,13 +1452,13 @@ do {									\
 
 #define CHECK_DISPLAY							\
 do {									\
-    if (offset == width) {						\
-	slice.f_motion.ref[0][0] += 16 * offset;			\
-	slice.f_motion.ref[0][1] += 4 * offset;				\
-	slice.f_motion.ref[0][2] += 4 * offset;				\
-	slice.b_motion.ref[0][0] += 16 * offset;			\
-	slice.b_motion.ref[0][1] += 4 * offset;				\
-	slice.b_motion.ref[0][2] += 4 * offset;				\
+    if (offset == picture->coded_picture_width) {			\
+	slice.f_motion.ref[0][0] += 16 * stride;			\
+	slice.f_motion.ref[0][1] += 4 * stride;				\
+	slice.f_motion.ref[0][2] += 4 * stride;				\
+	slice.b_motion.ref[0][0] += 16 * stride;			\
+	slice.b_motion.ref[0][1] += 4 * stride;				\
+	slice.b_motion.ref[0][2] += 4 * stride;				\
 	do { /* just so we can use the break statement */		\
 	    if (picture->current_frame->copy) {				\
 		picture->current_frame->copy (picture->current_frame,	\
@@ -1466,9 +1466,9 @@ do {									\
 		if (picture->picture_coding_type == B_TYPE)		\
 		    break;						\
 	    }								\
-	    dest[0] += 16 * offset;					\
-	    dest[1] += 4 * offset;					\
-	    dest[2] += 4 * offset;					\
+	    dest[0] += 16 * stride;					\
+	    dest[1] += 4 * stride;					\
+	    dest[2] += 4 * stride;					\
 	} while (0);							\
 	offset = 0;							\
     }									\
@@ -1481,13 +1481,13 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 #define bit_ptr (slice.bitstream_ptr)
     slice_t slice;
     int macroblock_modes;
-    int width;
+    int stride;
     uint8_t * dest[3];
     int offset;
     uint8_t ** forward_ref[2];
 
-    width = picture->coded_picture_width;
-    offset = (code - 1) * width * 4;
+    stride = picture->coded_picture_width;
+    offset = (code - 1) * stride * 4;
 
     forward_ref[0] = picture->forward_reference_frame->base;
     if (picture->picture_structure != FRAME_PICTURE) {
@@ -1498,15 +1498,17 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	    (picture->picture_coding_type != B_TYPE))
 	    forward_ref[picture->picture_structure == TOP_FIELD] =
 		picture->current_frame->base;
-	slice.f_motion.ref[1][0] = forward_ref[1][0] + offset * 4 + width;
-	slice.f_motion.ref[1][1] = forward_ref[1][1] + offset + (width >> 1);
-	slice.f_motion.ref[1][2] = forward_ref[1][2] + offset + (width >> 1);
-	slice.b_motion.ref[1][0] =
-	    picture->backward_reference_frame->base[0] + offset * 4 + width;
+	slice.f_motion.ref[1][0] = forward_ref[1][0] + offset * 4 + stride;
+	slice.f_motion.ref[1][1] = forward_ref[1][1] + offset + (stride >> 1);
+	slice.f_motion.ref[1][2] = forward_ref[1][2] + offset + (stride >> 1);
+	slice.b_motion.ref[1][0] = 
+	    picture->backward_reference_frame->base[0] + offset * 4 + stride;
 	slice.b_motion.ref[1][1] =
-	    picture->backward_reference_frame->base[1] + offset + (width >> 1);
+	    (picture->backward_reference_frame->base[1] +
+	     offset + (stride >> 1));
 	slice.b_motion.ref[1][2] =
-	    picture->backward_reference_frame->base[2] + offset + (width >> 1);
+	    (picture->backward_reference_frame->base[2] +
+	     offset + (stride >> 1));
     }
 
     slice.f_motion.ref[0][0] = forward_ref[0][0] + offset * 4;
@@ -1537,17 +1539,17 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 
     switch (picture->picture_structure) {
     case BOTTOM_FIELD:
-	dest[0] += width;
-	dest[1] += width >> 1;
-	dest[2] += width >> 1;
+	dest[0] += stride;
+	dest[1] += stride >> 1;
+	dest[2] += stride >> 1;
 	/* follow thru */
     case TOP_FIELD:
-	width <<= 1;
+	stride <<= 1;
     }
 
     /* reset intra dc predictor */
-    slice.dc_dct_pred[0]=slice.dc_dct_pred[1]=slice.dc_dct_pred[2]= 
-	1<< (picture->intra_dc_precision + 7) ;
+    slice.dc_dct_pred[0] = slice.dc_dct_pred[1] = slice.dc_dct_pred[2] =
+	1 << (picture->intra_dc_precision + 7);
 
     bitstream_init (&slice, buffer);
 
@@ -1594,11 +1596,11 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	    }
 
 	    if (macroblock_modes & DCT_TYPE_INTERLACED) {
-		DCT_offset = width;
-		DCT_stride = width * 2;
+		DCT_offset = stride;
+		DCT_stride = stride * 2;
 	    } else {
-		DCT_offset = width * 8;
-		DCT_stride = width;
+		DCT_offset = stride * 8;
+		DCT_stride = stride;
 	    }
 
 	    /* Decode lum blocks */
@@ -1613,9 +1615,9 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 
 	    /* Decode chroma blocks */
 	    slice_intra_DCT (picture, &slice, 1,
-			     dest[1] + (offset>>1), width>>1);
+			     dest[1] + (offset >> 1), stride >> 1);
 	    slice_intra_DCT (picture, &slice, 2,
-			     dest[2] + (offset>>1), width>>1);
+			     dest[2] + (offset >> 1), stride >> 1);
 
 	    if (picture->picture_coding_type == D_TYPE) {
 		NEEDBITS (bit_buf, bits, bit_ptr);
@@ -1626,31 +1628,31 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	    if (picture->mpeg1) {
 		if ((macroblock_modes & MOTION_TYPE_MASK) == MC_FRAME)
 		    MOTION (motion_mp1, macroblock_modes, slice,
-			    dest, offset,width);
+			    dest, offset, stride);
 		else {
 		    /* non-intra mb without forward mv in a P picture */
 		    slice.f_motion.pmv[0][0] = slice.f_motion.pmv[0][1] = 0;
 		    slice.f_motion.pmv[1][0] = slice.f_motion.pmv[1][1] = 0;
 
 		    MOTION (motion_fr_zero, MACROBLOCK_MOTION_FORWARD, slice,
-			    dest, offset, width);
+			    dest, offset, stride);
 		}
 	    } else if (picture->picture_structure == FRAME_PICTURE)
 		switch (macroblock_modes & MOTION_TYPE_MASK) {
 		case MC_FRAME:
 		    MOTION (motion_fr_frame, macroblock_modes, slice,
-			    dest, offset, width);
+			    dest, offset, stride);
 		    break;
 
 		case MC_FIELD:
 		    MOTION (motion_fr_field, macroblock_modes, slice,
-			    dest, offset, width);
+			    dest, offset, stride);
 		    break;
 
 		case MC_DMV:
 		    motion_dmv_top_field_first = picture->top_field_first;
 		    MOTION (motion_fr_dmv, MACROBLOCK_MOTION_FORWARD, slice,
-			    dest, offset, width);
+			    dest, offset, stride);
 		    break;
 
 		case 0:
@@ -1659,25 +1661,25 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		    slice.f_motion.pmv[1][0] = slice.f_motion.pmv[1][1] = 0;
 
 		    MOTION (motion_fr_zero, MACROBLOCK_MOTION_FORWARD, slice,
-			    dest, offset, width);
+			    dest, offset, stride);
 		    break;
 		}
 	    else
 		switch (macroblock_modes & MOTION_TYPE_MASK) {
 		case MC_FIELD:
 		    MOTION (motion_fi_field, macroblock_modes, slice,
-			    dest, offset, width);
+			    dest, offset, stride);
 		    break;
 
 		case MC_16X8:
 		    MOTION (motion_fi_16x8, macroblock_modes, slice,
-			    dest, offset, width);
+			    dest, offset, stride);
 		    break;
 
 		case MC_DMV:
 		    motion_dmv_top_field_first = picture->top_field_first;
 		    MOTION (motion_fi_dmv, MACROBLOCK_MOTION_FORWARD, slice,
-			    dest, offset, width);
+			    dest, offset, stride);
 		    break;
 
 		case 0:
@@ -1686,7 +1688,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		    slice.f_motion.pmv[1][0] = slice.f_motion.pmv[1][1] = 0;
 
 		    MOTION (motion_fi_zero, MACROBLOCK_MOTION_FORWARD, slice,
-			    dest, offset, width);
+			    dest, offset, stride);
 		    break;
 		}
 
@@ -1696,11 +1698,11 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		int DCT_offset, DCT_stride;
 
 		if (macroblock_modes & DCT_TYPE_INTERLACED) {
-		    DCT_offset = width;
-		    DCT_stride = width * 2;
+		    DCT_offset = stride;
+		    DCT_stride = stride * 2;
 		} else {
-		    DCT_offset = width * 8;
-		    DCT_stride = width;
+		    DCT_offset = stride * 8;
+		    DCT_stride = stride;
 		}
 
 		coded_block_pattern = get_coded_block_pattern (&slice);
@@ -1726,10 +1728,10 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 
 		if (coded_block_pattern & 0x2)
 		    slice_non_intra_DCT (picture, &slice,
-					 dest[1] + (offset>>1), width >> 1);
+					 dest[1] + (offset >> 1), stride >> 1);
 		if (coded_block_pattern & 0x1)
 		    slice_non_intra_DCT (picture, &slice,
-					 dest[2] + (offset>>1), width >> 1);
+					 dest[2] + (offset >> 1), stride >> 1);
 	    }
 
 	    slice.dc_dct_pred[0]=slice.dc_dct_pred[1]=slice.dc_dct_pred[2]=
@@ -1763,10 +1765,10 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		do {
 		    if (picture->picture_structure == FRAME_PICTURE)
 			MOTION (motion_fr_zero, MACROBLOCK_MOTION_FORWARD,
-				slice, dest, offset, width);
+				slice, dest, offset, stride);
 		    else
 			MOTION (motion_fi_zero, MACROBLOCK_MOTION_FORWARD,
-				slice, dest, offset, width);
+				slice, dest, offset, stride);
 
 		    offset += 16;
 		    CHECK_DISPLAY;
@@ -1775,13 +1777,13 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		do {
 		    if (picture->mpeg1)
 			MOTION (motion_mp1_reuse, macroblock_modes,
-				slice, dest, offset, width);
+				slice, dest, offset, stride);
 		    else if (picture->picture_structure == FRAME_PICTURE)
 			MOTION (motion_fr_reuse, macroblock_modes,
-				slice, dest, offset, width);
+				slice, dest, offset, stride);
 		    else
 			MOTION (motion_fi_reuse, macroblock_modes,
-				slice, dest, offset, width);
+				slice, dest, offset, stride);
 
 		    offset += 16;
 		    CHECK_DISPLAY;
