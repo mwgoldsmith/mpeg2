@@ -501,26 +501,49 @@ int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec)
 
 void mpeg2_header_slice (mpeg2dec_t * mpeg2dec)
 {
-    fbuf_t * backward_fbuf;
-    fbuf_t * forward_fbuf;
-
-    mpeg2dec->info.current_fbuf = backward_fbuf = mpeg2dec->fbuf;
+    mpeg2dec->info.current_fbuf = mpeg2dec->fbuf;
     if (mpeg2dec->decoder.coding_type == B_TYPE) {
 	mpeg2dec->info.display_fbuf = mpeg2dec->fbuf;
 	mpeg2dec->info.discard_fbuf = mpeg2dec->fbuf;
-	backward_fbuf = mpeg2dec->fbuf + 1;
     }
-    forward_fbuf = backward_fbuf + 1;
-
-    mpeg2dec->decoder.convert =
-	(void *)(((vo_frame_t *)(mpeg2dec->fbuf->id))->copy);
-    mpeg2dec->decoder.fbuf_id = mpeg2dec->fbuf->id;
-    mpeg2_init_fbuf (&(mpeg2dec->decoder), mpeg2dec->fbuf->buf,
-		     forward_fbuf->buf, backward_fbuf->buf);
 
     mpeg2dec->state = ((mpeg2dec->picture->nb_fields > 1 ||
 			mpeg2dec->state == STATE_PICTURE_2ND) ?
 		       STATE_SLICE : STATE_SLICE_1ST);
+
+    if (mpeg2dec->convert_start) {
+	mpeg2dec->decoder.convert = mpeg2dec->convert_copy;
+	mpeg2dec->decoder.fbuf_id = mpeg2dec->convert_id;
+
+	mpeg2dec->convert_start (mpeg2dec->convert_id, mpeg2dec->decoder.width,
+				 mpeg2dec->fbuf->buf, 0);
+
+	if (mpeg2dec->decoder.coding_type == B_TYPE)
+	    mpeg2_init_fbuf (&(mpeg2dec->decoder), mpeg2dec->yuv_buf[2],
+			     mpeg2dec->yuv_buf[mpeg2dec->yuv_index ^ 1],
+			     mpeg2dec->yuv_buf[mpeg2dec->yuv_index]);
+	else {
+	    mpeg2_init_fbuf (&(mpeg2dec->decoder),
+			     mpeg2dec->yuv_buf[mpeg2dec->yuv_index ^ 1],
+			     mpeg2dec->yuv_buf[mpeg2dec->yuv_index],
+			     mpeg2dec->yuv_buf[mpeg2dec->yuv_index]);
+	    if (mpeg2dec->state == STATE_SLICE)
+		mpeg2dec->yuv_index ^= 1;
+	}
+    } else {
+	fbuf_t * backward_fbuf;
+	fbuf_t * forward_fbuf;
+
+	mpeg2dec->decoder.convert =
+	    (void *)(((vo_frame_t *)(mpeg2dec->fbuf->id))->copy);
+	mpeg2dec->decoder.fbuf_id = mpeg2dec->fbuf->id;
+
+	backward_fbuf =
+	    mpeg2dec->fbuf + (mpeg2dec->decoder.coding_type == B_TYPE);
+	forward_fbuf = backward_fbuf + 1;
+	mpeg2_init_fbuf (&(mpeg2dec->decoder), mpeg2dec->fbuf->buf,
+			 forward_fbuf->buf, backward_fbuf->buf);
+    }
 }
 
 void mpeg2_header_end (mpeg2dec_t * mpeg2dec)
