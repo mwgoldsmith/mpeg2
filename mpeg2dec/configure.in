@@ -39,7 +39,7 @@ elif test x"$GCC" = x"yes"; then
 
     dnl arch-specific flags
     case "$host" in
-    i?86-* | k?-*)
+    i?86-* | k?-* | x86_64-*)
 	AC_DEFINE([ARCH_X86],,[x86 architecture])
 	case "$host" in
 	i386-*) OPT_CFLAGS="$CFLAGS -mcpu=i386";;
