@@ -104,7 +104,7 @@ static void md5_draw_frame (frame_t * frame)
     if (filename == NULL)
 	return;
 
-    sprintf (buf, "md5sum %s", filename);
+    sprintf (buf, "md5sum -b %s", filename);
     pipe = popen (buf, "r");
     i = fread (buf, 1, sizeof(buf), pipe);
     pclose (pipe);
