@@ -21,6 +21,10 @@
  *
  */
 
+//FIXME normally I wouldn't nest includes, but we'll leave this here until I get
+//another chance to move things around
+#include "libvo/video_out.h"
+
 #ifndef AARONS_TYPES
 #define AARONS_TYPES
 //typedef to appropriate type for your architecture
@@ -48,21 +52,5 @@ typedef struct mpeg2_config_s
   void   (*fill_buffer_callback)(uint_8 **, uint_8 **);
 } mpeg2_config_t;
 
-typedef struct mpeg2_frame_s
-{
-	uint_32 width;
-	uint_32 height;
-	uint_8  *frame[3];
-} mpeg2_frame_t;
-
-typedef struct mpeg2_display_s
-{
-	uint_32 (*init)(uint_32 width, uint_32 height, uint_32 fullscreen, char *title);
-	uint_32 (*draw_frame)(uint_8 *src[]);
-	uint_32 (*draw_slice)(uint_8 *src[],uint_32 slice_num);
-	void		(*flip_page)(void);
-	void*   (*allocate_buffer)(uint_32 num_bytes);
-} mpeg2_display_t;
-
-void mpeg2_init(mpeg2_display_t*);
+void mpeg2_init(vo_functions_t*);
 uint_32 mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end);

@@ -1,5 +1,5 @@
 /* 
- *    display_mga_vid.c
+ *    video_out_mga.c
  *
  *	Copyright (C) Aaron Holtzman - Aug 1999
  *
@@ -21,21 +21,23 @@
  *
  */
 
-#include <stddef.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "config.h"
+#include "video_out.h"
+#include "video_out_internal.h"
+
+LIBVO_EXTERN(mga)
+
+#ifdef HAVE_MGA
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 
-#include "libmpeg2/debug.h"
-#include "libmpeg2/mpeg2.h"
-//FIXME
-#include "libmpeg2/mpeg2_internal.h"
-
 #include "drivers/mga_vid.h"
-#include "display.h"
 
 static mga_vid_config_t mga_vid_config;
 static uint_8 *vid_data, *frame0, *frame1;
@@ -168,7 +170,7 @@ write_slice_g400(uint_8 *y,uint_8 *cr, uint_8 *cb,uint_32 slice_num)
 }
 
 uint_32
-display_slice(uint_8 *src[], uint_32 slice_num)
+draw_slice(uint_8 *src[], uint_32 slice_num)
 {
 	if (mga_vid_config.card_type == MGA_G200)
 		write_slice_g200(src[0],src[2],src[1],slice_num);
@@ -179,7 +181,7 @@ display_slice(uint_8 *src[], uint_32 slice_num)
 }
 
 void
-display_flip_page(void)
+flip_page(void)
 {
 	ioctl(f,MGA_VID_FSEL,&next_frame);
 
@@ -192,19 +194,19 @@ display_flip_page(void)
 }
 
 uint_32
-display_frame(uint_8 *src[])
+draw_frame(uint_8 *src[])
 {
 	if (mga_vid_config.card_type == MGA_G200)
 		write_frame_g200(src[0], src[2], src[1]);
 	else
 		write_frame_g400(src[0], src[2], src[1]);
 
-	display_flip_page();
-	return(-1);  // non-zero == success.
+	flip_page();
+	return 0;
 }
 
 uint_32
-display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
+init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 {
 	char *frame_mem;
 	uint_32 frame_size;
@@ -213,8 +215,8 @@ display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 
 	if(f == -1)
 	{
-		fprintf(stderr,"Couldn't open /dev/mga_vid\n");
-        return(0);
+		fprintf(stderr,"Couldn't open /dev/mga_vid\n"); 
+		return(-1);
 	}
 
 	mga_vid_config.src_width = width;
@@ -242,14 +244,19 @@ display_init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 	//clear the buffer
 	memset(frame_mem,0x80,frame_size*2);
 
-	dprintf("(display) mga_vid initialized %p\n",vid_data);
-  return(-1);  // non-zero == success.
+  return 0;
 }
 
 //FIXME this should allocate AGP memory via agpgart and then we
 //can use AGP transfers to the framebuffer
 void* 
-display_allocate_buffer(uint_32 num_bytes)
+allocate_buffer(uint_32 num_bytes)
 {
 	return(malloc(num_bytes));	
 }
+
+#else /* HAVE_MGA */
+
+LIBVO_DUMMY_FUNCTIONS(mga);
+
+#endif
