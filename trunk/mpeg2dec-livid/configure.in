@@ -19,25 +19,6 @@ AC_LIBTOOL_DLOPEN
 AM_DISABLE_STATIC
 AM_PROG_LIBTOOL
 
-
-dnl
-dnl Add pathname where linux header files are (optional)
-dnl
-AC_ARG_WITH(kernel-includes,
-    [  --with-kernel-includes  using kernel header files],
-    [case "$withval" in
-      yes)
-        KERNEL_INCLUDES="-I/usr/src/linux/include"
-      ;;
-      *)
-        KERNEL_INCLUDES="-I$withval"
-      ;;
-    esac],[
-    KERNEL_INCLUDES="-I/usr/src/linux/include"
-])
-AC_SUBST(KERNEL_INCLUDES)
-
-
 dnl 
 dnl Display driver probing...
 dnl
@@ -170,5 +151,15 @@ AC_SUBST(GLOBAL_CFLAGS)
 AC_SUBST(ROOT_CFLAGS)
 AC_SUBST(LIBMPEG2_CFLAGS)
 AC_SUBST(TOOLS_CFLAGS)
+
+dnl
+dnl get location of kernel headers
+dnl
+AC_ARG_WITH(kernel-headers,
+        [  --with-kernel-headers   specify the location of the kernel headers 
+                           [/usr/src/linux/include] ],
+[KERNEL_INCLUDES=$withval],				    
+[KERNEL_INCLUDES=/usr/src/linux/include])
+AC_SUBST(KERNEL_INCLUDES)
 
 AC_OUTPUT( libmpeg2/Makefile tools/Makefile drivers/Makefile Makefile ) 
