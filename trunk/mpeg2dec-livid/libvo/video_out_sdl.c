@@ -295,7 +295,7 @@ static vo_image_buffer_t*
 allocate_image_buffer()
 {
 	//use the generic fallback
-	return allocate_image_buffer_common(dispSize.h,dispSize.w,0x32315956);
+	return allocate_image_buffer_common(dispSize.h,dispSize.w,0x32315659);
 }
 
 static void	

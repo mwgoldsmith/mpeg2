@@ -36,7 +36,7 @@ static vo_info_t vo_info =
 	""
 };
 
-static uint32_t vidwidth, vidheight;
+static uint32_t image_width, image_height;
 
 static uint32_t
 draw_slice(uint8_t *src[], uint32_t slice_num)
@@ -58,8 +58,8 @@ draw_frame(uint8_t *src[])
 static uint32_t
 init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title, uint32_t format)
 {
-	vidwidth = width;
-	vidheight = height;
+	image_width = width;
+	image_height = height;
 	return 0;
 }
 
@@ -73,7 +73,7 @@ static vo_image_buffer_t*
 allocate_image_buffer()
 {
 	//use the generic fallback
-	return allocate_image_buffer_common(vidheight,vidwidth,0x32315956);
+	return allocate_image_buffer_common(image_height,image_width,0x32315659);
 }
 
 static void	

@@ -72,7 +72,7 @@ allocate_image_buffer_common(uint32_t width, uint32_t height, uint32_t format)
 	uint32_t image_size;
 
 	//we only know how to do YV12 right now
-	if(format != 0x32315659) return NULL;
+	if (format != 0x32315659) return NULL;
 	
 	image = malloc(sizeof(vo_image_buffer_t));
 
