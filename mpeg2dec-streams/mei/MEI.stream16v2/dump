@@ -1,11 +1,11 @@
       10 S- --- --- - SEQUENCE CONST PROG 352x240 chroma 176x120 fps 30 maxBps 143750 vbv 40960 picture 352x240 display 352x240 pixel 8x9
       18 SG --- --- - GOP  0: 0: 0: 0
-      20 SG AA- --- ? PICTURE I fields 2 time_ref 0 offset 0/0
+      20 SG AA- --- ? PICTURE I PROG fields 2 time_ref 0 offset 0/0
     45f7 SG aa- --- ? SLICE
-    4600 SG BB- aa- ? PICTURE P fields 2 time_ref 3 offset 0/0
+    4600 SG BB- aa- ? PICTURE P PROG fields 2 time_ref 3 offset 0/0
     6a02 SG bb- aa- ? SLICE
-    6a0b SG CC- CC- C PICTURE B fields 2 time_ref 1 offset 0/0
+    6a0b SG CC- CC- C PICTURE B PROG fields 2 time_ref 1 offset 0/0
     7c05 SG cc- cc- c SLICE
-    7c0e SG DD- DD- D PICTURE B fields 2 time_ref 2 offset 0/0
+    7c0e SG DD- DD- D PICTURE B PROG fields 2 time_ref 2 offset 0/0
     885a SG dd- dd- d SLICE
     885a SG --- bb- a END
