@@ -125,8 +125,10 @@ display_init(uint_32 width, uint_32 height)
 	mga_vid_config.src_height= height;
 	mga_vid_config.dest_width = width;
 	mga_vid_config.dest_height= height;
-	mga_vid_config.x_org= 10;
-	mga_vid_config.y_org= 10;
+	//mga_vid_config.dest_width = 1280;
+	//mga_vid_config.dest_height= 1024;
+	mga_vid_config.x_org= 0;
+	mga_vid_config.y_org= 0;
 
 	if (ioctl(f,MGA_VID_CONFIG,&mga_vid_config))
 	{

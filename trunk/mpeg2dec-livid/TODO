@@ -1,2 +1,21 @@
--Change y_blocks,cr_blocks,and cb_blocks in macroblock_t  and just do
- blocks[]. I think this could potentially make a lot of code simpler.
+- rewrite the library interface to take a chunk of data at a time
+  and return something useful if we finished a frame. -ah
+- Do idct after motion_comp and add the motion comp block where
+  appropriate. The idea here is to get rid of the intermediate
+  s16 write for every idct block. Convert this to mmx when it's working. -ah
+- rewrite yuv2rgb to use lut for intermediate results - ml DONE
+- process frames one slice at a time and write the results immediately
+  to the output. (this reduces the cache footprint significantly).
+  this actually ties in with (1)
+- Tweak the mc mmx code to use the previous bottom line as the next top
+  line in the y interp case. (partially done) -ah
+- try and see if interlacing U and V is better -ml
+- implement the missing mpeg features... DMV motion compensation, field
+  pictures, etc... and eventually try to use the mpeg conformance
+  verification bitstreams
+- DGA display support
+- Fix the mlib/sparc stuff once the interfaces have settled down
+  a bit.
+- Separate the display_* stuff into libvo (vo for video-out)
+- Change y_blocks,cr_blocks,and cb_blocks in macroblock_t  and just do
+  blocks[]. I think this could potentially make a lot of code simpler.
