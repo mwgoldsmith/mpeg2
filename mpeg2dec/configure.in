@@ -46,6 +46,10 @@ elif test x"$GCC" = x"yes"; then
 	AC_TRY_CFLAGS([$TRY_CFLAGS $CFLAGS],[OPT_CFLAGS="$TRY_CFLAGS"])
     fi
 
+    dnl -fno-common
+    TRY_CFLAGS="$OPT_CFLAGS -fno-common"
+    AC_TRY_CFLAGS([$TRY_CFLAGS $CFLAGS],[OPT_CFLAGS="$TRY_CFLAGS"])
+
     dnl arch-specific flags
     case "$host" in
     i?86-* | k?-* | x86_64-*)
