@@ -63,7 +63,7 @@ LIBS = -L/usr/X11R6/lib -lXext -lX11 -lXv
 CC = gcc
 CFLAGS = -O2 $(USE_DISP) $(USE_SHMEM) $(INCLUDEDIR) $(TRACE) $(VERBOSE) $(VERIFY) $(WARNINGS)
 
-IDCT = idct.o idctref.o idct_c.o idct_mmx.o
+IDCT = idct.o idctref.o idct_c.o idct_mmx.o idct_altivec.o
 
 OBJ = mpeg2dec.o getpic.o motion.o getvlc.o gethdr.o getblk.o getbits.o store.o recon.o spatscal.o display_x11.o systems.o subspic.o verify.o yuv2rgb.o $(IDCT)
 
