@@ -1248,14 +1248,12 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 #define bits (slice.bitstream_bits)
 #define bit_ptr (slice.bitstream_ptr)
     slice_t slice;
-    int mba; 
     int macroblock_modes;
     int width;
     uint8_t * dest[3];
     int offset;
 
     width = picture->coded_picture_width;
-    mba = (code - 1) * (picture->coded_picture_width >> 4);
     offset = (code - 1) * width * 4;
 
     slice.f_motion.ref_frame[0] =
@@ -1301,9 +1299,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     }
     DUMPBITS (bit_buf, bits, 1);
 
-    offset = get_macroblock_address_increment (&slice);
-    mba += offset;
-    offset <<= 4;
+    offset = get_macroblock_address_increment (&slice) << 4;
 
     while (1) {
 	NEEDBITS (bit_buf, bits, bit_ptr);
@@ -1433,7 +1429,6 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		1 << (picture->intra_dc_precision + 7);
 	}
 
-	mba++;
 	offset += 16;
 	CHECK_DISPLAY;
 
@@ -1462,7 +1457,6 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		    MOTION (motion_zero, MACROBLOCK_MOTION_FORWARD,
 			    slice, dest, offset, width);
 
-		    mba++;
 		    offset += 16;
 		    CHECK_DISPLAY;
 		} while (--mba_inc);
@@ -1471,7 +1465,6 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		    MOTION (motion_reuse, macroblock_modes,
 			    slice, dest, offset, width);
 
-		    mba++;
 		    offset += 16;
 		    CHECK_DISPLAY;
 		} while (--mba_inc);
@@ -1479,7 +1472,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	}
     }
 
-    return (mba > picture->last_mba);
+    return 0;
 #undef bit_buf
 #undef bits
 #undef bit_ptr
