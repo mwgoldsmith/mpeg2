@@ -21,9 +21,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef VIDEO_OUT_H
-#define VIDEO_OUT_H
-
 struct convert_init_s;
 typedef struct {
     void (* convert) (int, int, uint32_t, void *, struct convert_init_s *);
@@ -54,5 +51,3 @@ void vo_accel (uint32_t accel);
 
 /* return NULL terminated array of all drivers */
 vo_driver_t * vo_drivers (void);
-
-#endif /* VIDEO_OUT_H */
