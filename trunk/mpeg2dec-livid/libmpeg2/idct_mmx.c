@@ -33,7 +33,7 @@
 
 #include "idct.h"
 
-#define SSE	// only define if you have SSE
+//#define SSE	// only define if you have SSE
 
 #define ROW_SHIFT 11
 #define COL_SHIFT 6
