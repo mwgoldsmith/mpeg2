@@ -6,11 +6,7 @@
 *.o
 Makefile
 Makefile.in
-configure
 .deps
 .libs
-aclocal.m4
-config.log
-config.cache
-libtool
-config.status
+mpeg2dec
+extract_mpeg2
