@@ -113,6 +113,7 @@ typedef struct {
 typedef struct mpeg2dec_s mpeg2dec_t;
 typedef struct decoder_s decoder_t;
 
+#define STATE_BUFFER 0
 #define STATE_SEQUENCE 1
 #define STATE_SEQUENCE_REPEATED 2
 #define STATE_GOP 3

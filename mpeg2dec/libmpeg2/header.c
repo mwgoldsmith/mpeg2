@@ -693,7 +693,7 @@ int mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec)
 			 mpeg2dec->fbuf[b_type]->buf);
     }
     mpeg2dec->action = NULL;
-    return 0;
+    return -1;
 }
 
 int mpeg2_header_end (mpeg2dec_t * mpeg2dec)
@@ -705,7 +705,7 @@ int mpeg2_header_end (mpeg2dec_t * mpeg2dec)
     if (mpeg2dec->picture < picture + 2)
 	picture = mpeg2dec->pictures + 2;
 
-    mpeg2dec->state = STATE_INVALID;
+    mpeg2dec->state = STATE_END;
     reset_info (&(mpeg2dec->info));
     b_type = (mpeg2dec->decoder.coding_type == B_TYPE);
     if (!(mpeg2dec->sequence.flags & SEQ_FLAG_LOW_DELAY)) {
