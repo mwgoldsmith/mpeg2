@@ -48,6 +48,7 @@
 #include "mb_buffer.h"
 #include "idct.h"
 #include "idct_mmx.h"
+#include "idct_mlib.h"
 
 
 #define W1 2841 /* 2048*sqrt(2)*cos(1*pi/16) */
@@ -84,6 +85,11 @@ idct_init(void)
 #ifdef __i386__
 	if(config.flags & MPEG2_MMX_ENABLE)
 		idct = idct_mmx;
+	else
+#endif
+#ifdef HAVE_MLIB
+	if(1 || config.flags & MPEG2_MLIB_ENABLE) // Fix me
+		idct = idct_mlib;
 	else
 #endif
 		idct = idct_c;

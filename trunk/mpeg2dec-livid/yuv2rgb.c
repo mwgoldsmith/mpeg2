@@ -34,6 +34,7 @@
 #include "mpeg2.h"
 #include "mpeg2_internal.h" // Only for config.flags
 #include "yuv2rgb.h"
+#include "yuv2rgb_mlib.h"
 
 uint_32 matrix_coefficients = 6;
 
@@ -63,6 +64,11 @@ void yuv2rgb_init(uint_32 bpp, uint_32 mode)
   else
 #endif
 */
+#ifdef HAVE_MLIB
+  if(1 || config.flags & MPEG2_MLIB_ENABLE) // Fix me
+    yuv2rgb = yuv2rgb_mlib_init(bpp, mode);
+  else
+#endif
     ;
   
   if( yuv2rgb == NULL ) {

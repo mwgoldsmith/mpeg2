@@ -33,13 +33,17 @@ if test x$DISPLAY_DRIVER = x -a x$enable_mga = xyes; then
   fi
 fi
 
-AC_ARG_ENABLE(gatos, 
-  [  --disable-gatos         make a version not using GATOS],
+AC_ARG_ENABLE(gatos, [  --disable-gatos         make a version not using GATOS],
   enable_gatos=no, enable_gatos=yes)
 if test x$DISPLAY_DRIVER = x -a x$enable_gatos = xyes; then
-   AC_CHECK_LIB(gatos, main, 
-     [ DISPLAY_DRIVER=display_gatos.o
-       LIBS="$LIBS -lgatos" ], , -L/usr/X11R6/lib -L/usr/lib -L/usr/local/lib)
+   AC_CHECK_LIB(gatos, main, [ DISPLAY_DRIVER=display_gatos.o 
+	   LIBS="$LIBS -lgatos" ], , -L/usr/X11R6/lib -L/usr/lib -L/usr/local/lib)
+fi
+
+AC_ARG_ENABLE(xil, [  --disable-xil           make a version not using XIL],
+  enable_xil=no, enable_xil=yes)
+if test x$DISPLAY_DRIVER = x -a x$enable_xil = xyes; then
+  AC_CHECK_LIB(xil, main, [ DISPLAY_DRIVER=display_xil.o LIBS="$LIBS -lxil" ])
 fi
 
 if test x$DISPLAY_DRIVER = x; then
@@ -47,7 +51,22 @@ if test x$DISPLAY_DRIVER = x; then
   DISPLAY_DRIVER=display_x11.o
 fi
 
-CONFIG_OBJS="$CONFIG_OBJS $DISPLAY_DRIVER"
+dnl
+dnl Other extentions
+dnl
+
+AC_ARG_ENABLE(mlib,
+  [  --disable-mlib          make a version not using mediaLib],
+  enable_mlib=no, enable_mlib=yes)
+if test x$enable_mlib = xyes; then
+  AC_CHECK_LIB(mlib, main,
+    [ EXTENSION_DRIVER="$EXTENSION_DRIVER yuv2rgb_mlib.o idct_mlib.o"
+      LIBS="$LIBS -L/opt/SUNWmlib/lib -R/opt/SUNWmlib/lib -lmlib"
+      CFLAGS="$CFLAGS -I/opt/SUNWmlib/include"
+      AC_DEFINE(HAVE_MLIB)], , -L/opt/SUNWmlib/lib )
+fi
+
+CONFIG_OBJS="$CONFIG_OBJS $DISPLAY_DRIVER $EXTENSION_DRIVER"
 AC_SUBST(CONFIG_OBJS)
 AC_SUBST(DRIVERS)
 
