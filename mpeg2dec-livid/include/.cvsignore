@@ -6,11 +6,9 @@
 *.o
 Makefile
 Makefile.in
-configure
 .deps
 .libs
-aclocal.m4
-config.log
-config.cache
-libtool
-config.status
+config.h.in
+stamp-h.in
+config.h
+stamp-h
