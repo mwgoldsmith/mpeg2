@@ -1,4 +1,3 @@
-
 /* 
  *    display_gatos.c by - Stea Greene - Aug 1999
  *
@@ -108,26 +107,44 @@ void display_frame(uint_8 *src[]) {
 
 #ifdef GATOS_R128_LINEAR
   unsigned char *Y=src[0], *Cb1=src[1], *Cr1=src[2], *Cb2=src[1], *Cr2=src[2];
-  unsigned long *dest1=(unsigned long *)(ATIFB+CAP0_BUF0_OFFSET);
+  unsigned long *dest=(unsigned long *)(ATIFB+CAP0_BUF0_OFFSET);
   unsigned long buf[2];  
   unsigned char *cbuf;
   int h, w;
 
   for (h=0; h!=vertical_size;) {
     ++h;
-    for(w=0; w!=horizontal_size>>2;) {
-      ++w;
-      cbuf = (unsigned char *)buf;
-      (*cbuf++) = *Cb1++;
-      (*cbuf++) = *Y++;
-      (*cbuf++) = *Cr1++;  
-      (*cbuf++) = *Y++;
-      (*dest1++) = *buf;
-      (*cbuf++) = *Cb1++;
-      (*cbuf++) = *Y++;
-      (*cbuf++) = *Cr1++;
-      (*cbuf++) = *Y++;
-      (*dest1++) = buf[1];
+    if(h&1) {
+      for(w=0; w!=horizontal_size>>2;) {
+        ++w;
+        cbuf = (unsigned char *)buf;
+        (*cbuf++) = *Cb2++;
+        (*cbuf++) = *Y++;
+        (*cbuf++) = *Cr2++;
+        (*cbuf++) = *Y++;
+        (*dest++) = *buf;
+        (*cbuf++) = *Cb2++;
+        (*cbuf++) = *Y++;
+        (*cbuf++) = *Cr2++;
+        (*cbuf++) = *Y++;
+        (*dest++) = buf[1];
+        }
+      }
+    else {
+      for(w=0; w!=horizontal_size>>2;) {
+        ++w;
+        cbuf = (unsigned char *)buf;
+        (*cbuf++) = *Cb1++;
+        (*cbuf++) = *Y++;
+        (*cbuf++) = *Cr1++;  
+        (*cbuf++) = *Y++;
+        (*dest++) = *buf;
+        (*cbuf++) = *Cb1++;
+        (*cbuf++) = *Y++;
+        (*cbuf++) = *Cr1++;
+        (*cbuf++) = *Y++;
+        (*dest++) = buf[1];
+        }
       }
     }
 #endif
@@ -189,7 +206,7 @@ void display_init(uint_32 width, uint_32 height) {
 #ifdef GATOS_RAGE_INTERLACED
   gatos_setcapturesize(width, height);
 #endif
-#ifdef GATOS_R128_LINER
+#ifdef GATOS_R128_LINEAR
   gatos_setcapturesize(width, height);
 #endif
 #ifdef GATOS_R128_INTERLACED
