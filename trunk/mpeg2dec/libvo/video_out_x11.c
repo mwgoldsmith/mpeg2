@@ -348,7 +348,7 @@ static int x11_alloc_frames (x11_instance_t * instance)
     if (libvo_common_alloc_frames ((vo_instance_t *) instance,
 				   instance->width, instance->height,
 				   sizeof (x11_frame_t), x11_copy_slice,
-				   x11_field, x11_draw_frame)) {
+				   x11_field)) {
 	fprintf (stderr, "Can not allocate yuv backing buffers\n");
 	return 1;
     }
@@ -491,7 +491,6 @@ static int xv_alloc_frames (x11_instance_t * instance)
 	instance->frame[i].vo.base[2] = alloc + 4 * size;
 	instance->frame[i].vo.copy = NULL;
 	instance->frame[i].vo.field = NULL;
-	instance->frame[i].vo.draw = xv_draw_frame;
 	instance->frame[i].vo.instance = (vo_instance_t *) instance;
 	instance->frame[i].wait_completion = 0;
 	instance->frame[i].xvimage =
@@ -542,6 +541,7 @@ static int common_setup (x11_instance_t * instance, int width, int height,
 	    return 1;
 	instance->vo.close = xv_close;
 	instance->vo.set_frame = xv_set_frame;
+	instance->vo.draw = xv_draw_frame;
     } else
 #endif
     {
@@ -549,6 +549,7 @@ static int common_setup (x11_instance_t * instance, int width, int height,
 	    return 1;
 	instance->vo.close = x11_close;
 	instance->vo.set_frame = x11_set_frame;
+	instance->vo.draw = x11_draw_frame;
     }
 
     XMapWindow (instance->display, instance->window);

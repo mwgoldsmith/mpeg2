@@ -104,7 +104,6 @@ static int sdl_alloc_frames (sdl_instance_t * instance, int width, int height)
 	instance->frame[i].vo.base[2] = instance->frame[i].overlay->pixels[1];
 	instance->frame[i].vo.copy = NULL;
 	instance->frame[i].vo.field = NULL;
-	instance->frame[i].vo.draw = sdl_draw_frame;
 	instance->frame[i].vo.instance = (vo_instance_t *) instance;
     }
 
@@ -156,6 +155,7 @@ vo_instance_t * vo_sdl_open (void)
     instance->vo.setup = sdl_setup;
     instance->vo.close = sdl_close;
     instance->vo.set_frame = sdl_set_frame;
+    instance->vo.draw = sdl_draw_frame;
 
     instance->surface = NULL;
     instance->sdlflags = SDL_HWSURFACE | SDL_RESIZABLE;
