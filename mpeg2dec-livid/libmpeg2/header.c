@@ -131,8 +131,8 @@ int header_process_sequence_header (picture_t * picture, uint8_t * buffer)
     h_size = ((v_size >> 12) + 15) & ~15;
     v_size = ((v_size & 0xfff) + 15) & ~15;
 
-    if ((h_size > 720) || (v_size > 576))
-	return 1;	// MP@ML size restrictions
+    if ((h_size > 768) || (v_size > 576))
+	return 1;	// size restrictions for MP@ML or MPEG1
 
     //XXX this needs field fixups
     picture->coded_picture_width = h_size;

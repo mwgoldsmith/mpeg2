@@ -691,6 +691,9 @@ static void get_mpeg1_intra_block (picture_t * picture, slice_t * slice,
 	    bits += tab->len + 1;
 	    val = (tab->level * quantizer_scale * quant_matrix[j]) >> 4;
 
+	    // oddification
+	    val = (val - 1) | 1;
+
 	    // if (bitstream_get (1)) val = -val;
 	    val = (val ^ SBITS (bit_buf, 1)) - SBITS (bit_buf, 1);
 
@@ -726,6 +729,9 @@ static void get_mpeg1_intra_block (picture_t * picture, slice_t * slice,
 		val = UBITS (bit_buf, 8) + 2 * val;
 	    }
 	    val = (val * quantizer_scale * quant_matrix[j]) / 16;
+
+	    // oddification
+	    val = (val + ~SBITS (val, 1)) | 1;
 
 	    SATURATE (val);
 	    dest[j] = val;
@@ -806,6 +812,9 @@ static void get_mpeg1_non_intra_block (picture_t * picture, slice_t * slice,
 	    bits += tab->len + 1;
 	    val = ((2*tab->level+1) * quantizer_scale * quant_matrix[j]) >> 5;
 
+	    // oddification
+	    val = (val - 1) | 1;
+
 	    // if (bitstream_get (1)) val = -val;
 	    val = (val ^ SBITS (bit_buf, 1)) - SBITS (bit_buf, 1);
 
@@ -845,6 +854,9 @@ static void get_mpeg1_non_intra_block (picture_t * picture, slice_t * slice,
 	    }
 	    val = 2 * (val + SBITS (val, 1)) + 1;
 	    val = (val * quantizer_scale * quant_matrix[j]) / 32;
+
+	    // oddification
+	    val = (val + ~SBITS (val, 1)) | 1;
 
 	    SATURATE (val);
 	    dest[j] = val;
