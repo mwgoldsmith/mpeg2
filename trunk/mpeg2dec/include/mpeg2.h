@@ -112,7 +112,7 @@ typedef struct decoder_s decoder_t;
 
 struct convert_init_s;
 void mpeg2_convert (mpeg2dec_t * mpeg2dec,
-		    void (* convert) (int, int, void *,
+		    void (* convert) (int, int, uint32_t, void *,
 				      struct convert_init_s *), void * arg);
 void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id);
 void mpeg2_custom_fbuf (mpeg2dec_t * mpeg2dec, int custom_fbuf);
