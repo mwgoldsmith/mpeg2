@@ -87,27 +87,31 @@ void mpeg2_init (void)
 static void decode_allocate_image_buffers (vo_functions_t *video_out, picture_t * picture)
 {
     int frame_size;
-    int slice_size;
     vo_image_buffer_t * tmp;
 
     frame_size = picture->coded_picture_width * picture->coded_picture_height;
-    slice_size = picture->coded_picture_width * 16;
 
-    //FIXME the next step is to give a vo_image_buffer_t* to dislay_slice (or eqiv)
-    tmp = video_out->allocate_image_buffer (16,picture->coded_picture_width,0);
+    tmp = video_out->allocate_image_buffer (picture->coded_picture_height,
+					    picture->coded_picture_width, 0);
     picture->throwaway_frame[0] = tmp->base;
-    picture->throwaway_frame[1] = picture->throwaway_frame[0] + slice_size;
-    picture->throwaway_frame[2] = picture->throwaway_frame[1] + slice_size/4;
+    picture->throwaway_frame[1] = picture->throwaway_frame[0] + frame_size;
+    picture->throwaway_frame[2] = picture->throwaway_frame[1] + frame_size/4;
 
-    tmp = video_out->allocate_image_buffer (picture->coded_picture_height,picture->coded_picture_width,0);
+    tmp = video_out->allocate_image_buffer (picture->coded_picture_height,
+					    picture->coded_picture_width, 0);
     picture->backward_reference_frame[0] = tmp->base;
-    picture->backward_reference_frame[1] = picture->backward_reference_frame[0] + frame_size;
-    picture->backward_reference_frame[2] = picture->backward_reference_frame[1] + frame_size/4;
+    picture->backward_reference_frame[1] =
+	picture->backward_reference_frame[0] + frame_size;
+    picture->backward_reference_frame[2] =
+	picture->backward_reference_frame[1] + frame_size/4;
 
-    tmp = video_out->allocate_image_buffer (picture->coded_picture_height,picture->coded_picture_width,0);
+    tmp = video_out->allocate_image_buffer (picture->coded_picture_height,
+					    picture->coded_picture_width, 0);
     picture->forward_reference_frame[0] = tmp->base;
-    picture->forward_reference_frame[1] = picture->forward_reference_frame[0] + frame_size;
-    picture->forward_reference_frame[2] = picture->forward_reference_frame[1] + frame_size/4;
+    picture->forward_reference_frame[1] =
+	picture->forward_reference_frame[0] + frame_size;
+    picture->forward_reference_frame[2] =
+	picture->forward_reference_frame[1] + frame_size/4;
 }
 
 
@@ -121,9 +125,13 @@ static void decode_reorder_frames (void)
 	picture.current_frame[2] = picture.forward_reference_frame[2];
 
 	//make the backward reference frame the new forward reference frame
-	picture.forward_reference_frame[0] = picture.backward_reference_frame[0];
-	picture.forward_reference_frame[1] = picture.backward_reference_frame[1];
-	picture.forward_reference_frame[2] = picture.backward_reference_frame[2];
+	picture.forward_reference_frame[0] =
+	    picture.backward_reference_frame[0];
+	picture.forward_reference_frame[1] =
+	    picture.backward_reference_frame[1];
+	picture.forward_reference_frame[2] =
+	    picture.backward_reference_frame[2];
+
 	picture.backward_reference_frame[0] = picture.current_frame[0];
 	picture.backward_reference_frame[1] = picture.current_frame[1];
 	picture.backward_reference_frame[2] = picture.current_frame[2];
@@ -170,30 +178,32 @@ static int parse_chunk (vo_functions_t *video_out, int code, uint8_t *buffer)
 
     default:
 	if ((code < 0xb0) && code) {
+	    uint8_t ** bar;
+
 	    is_frame_done = slice_process (&picture, code, buffer);
 
-	    if (picture.picture_coding_type == B_TYPE) {
-		video_out->draw_slice (picture.throwaway_frame, code - 1);
+	    if (picture.picture_coding_type == B_TYPE)
+		bar = picture.throwaway_frame;
+	    else
+		bar = picture.forward_reference_frame;
 
-		picture.current_frame[0] = picture.throwaway_frame[0] -
-		    code * 16 * picture.coded_picture_width;
-		picture.current_frame[1] = picture.throwaway_frame[1] -
-		    code * 8 * picture.coded_picture_width/2;
-		picture.current_frame[2] = picture.throwaway_frame[2] -
-		    code * 8 * picture.coded_picture_width/2;
-	    } else {
-		uint8_t *foo[3];
+	    if (HACK_MODE < 2) {
 
-		foo[0] = picture.forward_reference_frame[0] + (code-1) * 16 *
-		    picture.coded_picture_width;
-		foo[1] = picture.forward_reference_frame[1] + (code-1) * 8 *
-		    picture.coded_picture_width/2;
-		foo[2] = picture.forward_reference_frame[2] + (code-1) * 8 *
-		    picture.coded_picture_width/2;
+		uint8_t * foo[3];
+		int offset;
+
+		offset = (code-1) * 4 * picture.coded_picture_width;
+		if ((! HACK_MODE) && (picture.picture_coding_type == B_TYPE))
+		    offset = 0;
+
+		foo[0] = bar[0] + 4 * offset;
+		foo[1] = bar[1] + offset;
+		foo[2] = bar[2] + offset;
 
 		video_out->draw_slice (foo, code-1);
-		//video_out->draw_frame (picture.forward_reference_frame);
-	    }
+
+	    } else if (is_frame_done)
+		video_out->draw_frame (bar);
 
 	    if (is_frame_done)
 		video_out->flip_page ();
@@ -203,8 +213,8 @@ static int parse_chunk (vo_functions_t *video_out, int code, uint8_t *buffer)
     return is_frame_done;
 }
 
-
-int mpeg2_decode_data (vo_functions_t *video_out, uint8_t * current, uint8_t * end) 
+int mpeg2_decode_data (vo_functions_t * video_out,
+		       uint8_t * current, uint8_t * end)
 {
     static uint8_t code = 0xff;
     //static uint8_t chunk_buffer[65536];
