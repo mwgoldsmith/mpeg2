@@ -102,8 +102,7 @@ AC_DEFUN([AC_LIBTOOL_NON_PIC],
 	../libtool --mode=compile $CC $CFLAGS -prefer-non-pic \
 		-c g.c >/dev/null 2>&1 && \
 	../libtool --mode=link $CC $CFLAGS -prefer-non-pic -o libfoo.la \
-		f.lo g.lo >/dev/null 2>&1 && \
-    ac_cv_libtool_non_pic=yes
+		f.lo g.lo >/dev/null 2>&1 && ac_cv_libtool_non_pic=yes
     cd ..; rm -fr ac_test_libtool; AC_MSG_RESULT([$ac_cv_libtool_non_pic])
     if test x"$ac_cv_libtool_non_pic" = x"yes"; then
 	ifelse([$1],[],[:],[$1])
