@@ -43,6 +43,7 @@
 
 #include <stdio.h>
 #include <inttypes.h>
+#include <stdlib.h>
 
 #include "mpeg2_internal.h"
 #include "mm_accel.h"
@@ -89,9 +90,18 @@ void idct_init (void)
 #endif
 #ifdef LIBMPEG2_MLIB
     if (config.flags & MM_ACCEL_MLIB) {
-	fprintf (stderr, "Using mlib for IDCT transform\n");
-	idct_block_copy = idct_block_copy_mlib;
-	idct_block_add = idct_block_add_mlib;
+	char * env_var;
+
+	env_var = getenv ("MLIB_NON_IEEE");
+
+	if (env_var == NULL) {
+	    fprintf (stderr, "Using mlib for IDCT transform\n");
+	    idct_block_add = idct_block_add_mlib;
+	} else {
+	    fprintf (stderr, "Using non-IEEE mlib for IDCT transform\n");
+	    idct_block_add = idct_block_add_mlib_non_ieee;
+	}
+	idct_block_copy = idct_block_copy_mlib_non_ieee;
     } else
 #endif
     {

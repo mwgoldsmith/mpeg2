@@ -156,8 +156,11 @@ int header_process_extension (picture_t * picture, uint8_t * buffer);
 void idct_init (void);
 
 /* idct_mlib.c */
-void idct_block_copy_mlib (int16_t * block, uint8_t * dest, int stride);
 void idct_block_add_mlib (int16_t * block, uint8_t * dest, int stride);
+void idct_block_copy_mlib_non_ieee (int16_t * block, uint8_t * dest,
+				    int stride);
+void idct_block_add_mlib_non_ieee (int16_t * block, uint8_t * dest,
+				   int stride);
 
 /* idct_mmx.c */
 void idct_block_copy_mmxext (int16_t * block, uint8_t * dest, int stride);
