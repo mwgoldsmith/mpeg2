@@ -44,14 +44,14 @@ static inline uint64_t avg2(uint64_t a, uint64_t b)
 	uint64_t _r = ldq_u(addr + 16);			\
 	ret_l = extql(_l, addr) | extqh(_m, addr);	\
 	ret_r = extql(_m, addr) | extqh(_r, addr);	\
-    } while (0);
+    } while (0)
 
 // Load two aligned quadwords from addr.
 #define ALOAD16(ret_l, ret_r, addr)			\
     do {						\
 	ret_l = ldq(addr);				\
 	ret_r = ldq(addr + 8);				\
-    } while (0);
+    } while (0)
 
 #define OP8(LOAD, LOAD16, STORE)		\
     do {					\
@@ -95,9 +95,10 @@ static inline uint64_t avg2(uint64_t a, uint64_t b)
 
 #define OP8_Y2(LOAD, LOAD16, STORE)		\
     do {					\
-	uint64_t p0 = LOAD(pixels);		\
+	uint64_t p0, p1;			\
+	p0 = LOAD(pixels);			\
 	pixels += line_size;			\
-	uint64_t p1 = LOAD(pixels);		\
+	p1 = LOAD(pixels);			\
 	do {					\
 	    uint64_t av = avg2(p0, p1);		\
 	    if (--h == 0) line_size = 0;	\
