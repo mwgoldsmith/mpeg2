@@ -33,39 +33,6 @@
 
 #define BUFFER_SIZE (1194 * 1024)
 
-mpeg2dec_t * mpeg2_init (uint32_t mm_accel)
-{
-    static int do_init = 1;
-    mpeg2dec_t * mpeg2dec;
-
-    mpeg2dec = (mpeg2dec_t *) mpeg2_malloc (sizeof (mpeg2dec_t),
-					    ALLOC_MPEG2DEC);
-    if (mpeg2dec == NULL)
-	return NULL;
-
-    if (do_init) {
-	do_init = 0;
-	mpeg2_cpu_state_init (mm_accel);
-	mpeg2_idct_init (mm_accel);
-	mpeg2_mc_init (mm_accel);
-    }
-
-    memset (mpeg2dec, 0, sizeof (mpeg2dec_t));
-
-    mpeg2dec->chunk_ptr = mpeg2dec->chunk_start = mpeg2dec->chunk_buffer =
-	(uint8_t *) mpeg2_malloc (BUFFER_SIZE + 4, ALLOC_CHUNK);
-
-    mpeg2dec->shift = 0xffffff00;
-    mpeg2dec->state = STATE_INVALID;
-    mpeg2dec->code = 0xb4;
-    mpeg2dec->skip = 0;
-
-    /* initialize substructures */
-    mpeg2_header_state_init (mpeg2dec);
-
-    return mpeg2dec;
-}
-
 const mpeg2_info_t * mpeg2_info (mpeg2dec_t * mpeg2dec)
 {
     return &(mpeg2dec->info);
@@ -294,6 +261,39 @@ void mpeg2_pts (mpeg2dec_t * mpeg2dec, uint32_t pts)
     mpeg2dec->pts_current = pts;
     mpeg2dec->num_pts++;
     mpeg2dec->bytes_since_pts = 0;
+}
+
+mpeg2dec_t * mpeg2_init (uint32_t mm_accel)
+{
+    static int do_init = 1;
+    mpeg2dec_t * mpeg2dec;
+
+    mpeg2dec = (mpeg2dec_t *) mpeg2_malloc (sizeof (mpeg2dec_t),
+					    ALLOC_MPEG2DEC);
+    if (mpeg2dec == NULL)
+	return NULL;
+
+    if (do_init) {
+	do_init = 0;
+	mpeg2_cpu_state_init (mm_accel);
+	mpeg2_idct_init (mm_accel);
+	mpeg2_mc_init (mm_accel);
+    }
+
+    memset (mpeg2dec, 0, sizeof (mpeg2dec_t));
+
+    mpeg2dec->chunk_ptr = mpeg2dec->chunk_start = mpeg2dec->chunk_buffer =
+	(uint8_t *) mpeg2_malloc (BUFFER_SIZE + 4, ALLOC_CHUNK);
+
+    mpeg2dec->shift = 0xffffff00;
+    mpeg2dec->state = STATE_INVALID;
+    mpeg2dec->code = 0xb4;
+    mpeg2dec->skip = 0;
+
+    /* initialize substructures */
+    mpeg2_header_state_init (mpeg2dec);
+
+    return mpeg2dec;
 }
 
 void mpeg2_close (mpeg2dec_t * mpeg2dec)
