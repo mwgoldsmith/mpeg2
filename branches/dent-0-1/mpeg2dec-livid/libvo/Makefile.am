@@ -2,19 +2,25 @@
 ## Process this file with automake to produce Makefile.in
 ##
 
-AUTOMAKE_OPTIONS = 1.3 foreign no-dependencies
+AUTOMAKE_OPTIONS = no-dependencies foreign
 
 
 DEFS = $(CFLAGS) @DEFS@ @X_CFLAGS@
-INCLUDES = -I$(top_builddir)/include
+INCLUDES = -I$(top_builddir)/include/oms -I$(top_builddir)/include
+libdir = $(OMS_PLUGINDIR)
+
 
 ## Libs
 if HAVE_X11
 DISPLAY_X11 = display_x11.la
+else
+DISPLAY_X11 = 
 endif
 
 if HAVE_3DFX
 DISPLAY_3DFX = display_3dfx.la
+else
+DISPLAY_3DFX =
 endif
 
 if HAVE_MGA
@@ -23,7 +29,10 @@ endif
 
 if HAVE_SDL
 DISPLAY_SDL = display_sdl.la
+else
+DISPLAY_SDL =
 endif
+
 
 lib_LTLIBRARIES = $(DISPLAY_X11) $(DISPLAY_3DFX) $(DISPLAY_MGA) $(DISPLAY_SDL)
 

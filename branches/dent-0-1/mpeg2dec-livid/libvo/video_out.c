@@ -72,8 +72,7 @@ allocate_image_buffer_common(uint_32 width, uint_32 height, uint_32 format)
 	image_size = width * height * 3 / 2;
 	image->base = malloc(image_size);
 
-	if(!image->base)
-	{
+	if(!image->base) {
 		free(image);
 		return NULL;
 	}
