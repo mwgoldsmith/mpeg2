@@ -1046,36 +1046,25 @@ static void motion_mp1 (picture_t * picture, motion_t * motion,
     unsigned int pos_x, pos_y, xy_half, offset;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    motion_x = motion->pmv[0][0] + get_motion_delta (picture,
-						     motion->f_code[0]);
-    motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
+    motion_x = (motion->pmv[0][0] +
+		(get_motion_delta (picture,
+				   motion->f_code[0]) << motion->f_code[1]));
+    motion_x = bound_motion_vector (motion_x,
+				    motion->f_code[0] + motion->f_code[1]);
     motion->pmv[0][0] = motion_x;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    motion_y = motion->pmv[0][1] + get_motion_delta (picture,
-						     motion->f_code[0]);
-    motion_y = bound_motion_vector (motion_y, motion->f_code[0]);
+    motion_y = (motion->pmv[0][1] +
+		(get_motion_delta (picture,
+				   motion->f_code[0]) << motion->f_code[1]));
+    motion_y = bound_motion_vector (motion_y,
+				    motion->f_code[0] + motion->f_code[1]);
     motion->pmv[0][1] = motion_y;
-
-    motion_x <<= motion->f_code[1];	/* full-pixel MC */
-    motion_y <<= motion->f_code[1];
 
     MOTION (table, motion->ref[0], motion_x, motion_y, 16, 0);
 #undef bit_buf
 #undef bits
 #undef bit_ptr
-}
-
-static void motion_mp1_reuse (picture_t * picture, motion_t * motion,
-			      void (** table) (uint8_t *, uint8_t *, int, int))
-{
-    int motion_x, motion_y;
-    unsigned int pos_x, pos_y, xy_half, offset;
-
-    motion_x = motion->pmv[0][0] << motion->f_code[1];	/* full-pixel MC */
-    motion_y = motion->pmv[0][1] << motion->f_code[1];
-
-    MOTION (table, motion->ref[0], motion_x, motion_y, 16, 0);
 }
 
 static void motion_fr_frame (picture_t * picture, motion_t * motion,
@@ -1660,21 +1649,13 @@ void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer)
 	    }
 	} else {
 
-	    if (picture->mpeg1) {
-		if ((macroblock_modes & MOTION_TYPE_MASK) == MC_FRAME)
-		    MOTION_CALL (motion_mp1, macroblock_modes);
-		else {
-		    /* non-intra mb without forward mv in a P picture */
-		    picture->f_motion.pmv[0][0] = 0;
-		    picture->f_motion.pmv[0][1] = 0;
-		    picture->f_motion.pmv[1][0] = 0;
-		    picture->f_motion.pmv[1][1] = 0;
-		    MOTION_CALL (motion_zero, MACROBLOCK_MOTION_FORWARD);
-		}
-	    } else if (picture->picture_structure == FRAME_PICTURE)
+	    if (picture->picture_structure == FRAME_PICTURE)
 		switch (macroblock_modes & MOTION_TYPE_MASK) {
 		case MC_FRAME:
-		    MOTION_CALL (motion_fr_frame, macroblock_modes);
+		    if (picture->mpeg1)
+			MOTION_CALL (motion_mp1, macroblock_modes);
+		    else
+			MOTION_CALL (motion_fr_frame, macroblock_modes);
 		    break;
 
 		case MC_FIELD:
@@ -1802,11 +1783,7 @@ void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer)
 		} while (--mba_inc);
 	    } else {
 		do {
-		    if (picture->mpeg1)
-			MOTION_CALL (motion_mp1_reuse, macroblock_modes);
-		    else
-			MOTION_CALL (motion_reuse, macroblock_modes);
-
+		    MOTION_CALL (motion_reuse, macroblock_modes);
 		    NEXT_MACROBLOCK;
 		} while (--mba_inc);
 	    }
