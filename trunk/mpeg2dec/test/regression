@@ -3,7 +3,7 @@
 if test x"$srcdir" != x""; then
     builddir="."	# running from make check, but it does not define that
 else
-    srcdir=`echo "$0" | sed s,[^/]*$,,`
+    srcdir=`echo "$0" | sed 's,[^/]*$,,'`
     test "$srcdir" = "$0" && srcdir=.
     test -z "$srcdir" && srcdir=.
     builddir="$srcdir"	# running manually, have to assume
@@ -15,7 +15,7 @@ builddir=`cd $builddir;pwd`
 testfile="$srcdir/tests"
 if [ $# -ge 1 ]; then testfile="$1"; fi
 
-dirs=`awk -F '#' '{print $1}' $testfile`
+dirs=`cut -d '#' -f 1 $testfile`
 
 basedir=`head -n 1 $testfile | awk '{print $2}'`
 cd $srcdir; if [ ! -d $basedir ]; then
