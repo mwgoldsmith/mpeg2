@@ -10,15 +10,18 @@ if test x$enable_3dfx = xyes; then
 	AC_MSG_CHECKING(for /dev/3dfx)
 
 	if test -c "/dev/3dfx"; then
+		have_3dfx=yes
 		AC_MSG_RESULT(found)
 		X_LIBS="$X_LIBS -lXxf86dga"
 		LIBS_VIDEO_OUTPUT="$LIBS_VIDEO_OUTPUT display_3dfx.la"
 		AC_DEFINE(HAVE_3DFX,1,[Define if MGA GX00 is installed])
 	else
+		have_3dfx=no
 		AC_MSG_RESULT(not found)
-		AM_CONDITIONAL(HAVE_3DFX,false)
 	fi
 fi
+
+AM_CONDITIONAL(HAVE_3DFX, test x$have_3dfx = "xyes")
 
 
 dnl
@@ -32,15 +35,18 @@ if test x$enable_mga = xyes; then
 	AC_MSG_CHECKING(for /dev/mga_vid)
 
 	if test -c "/dev/mga_vid"; then
+		have_mga=yes
 		AC_MSG_RESULT(found)
 		LIBS_VIDEO_OUTPUT="$LIBS_VIDEO_OUTPUT display_mga.la"
 		AC_DEFINE(HAVE_MGA,1,[Define if MGA GX00 is installed])
 	else
+		have_mga=no
 		AC_MSG_RESULT(not found)
-		AC_MSG_WARN("to create /dev/mga_vid - use mknod /dev/mga_vid c 178 0")
+dnl		AC_MSG_WARN("to create /dev/mga_vid - use mknod /dev/mga_vid c 178 0")
 	fi
 fi
 
+AM_CONDITIONAL(HAVE_MGA, test x$have_mga = "xyes")
 
 
 dnl SDL option added by Ryan C. Gordon 04/23/2000
@@ -54,13 +60,17 @@ if test "x$enable_sdl" = xyes; then
 	AC_CHECK_PROG(SDLCONFIG, sdl-config, yes)
 
 	if test "x$SDLCONFIG" = xyes; then
+		have_sdl=yes
 		AC_DEFINE(HAVE_SDL)
 		LIBS_VIDEO_OUTPUT="$LIBS_VIDEO_OUTPUT display_sdl.la"
 		LIBVO_CFLAGS="$LIBVO_CFLAGS `sdl-config --cflags`"
 		LIBVO_CONFIG_LIBS="$LIBVO_CONFIG_LIBS `sdl-config --libs`"
+	else
+		have_sdl=no
 	fi
 fi
 
+AM_CONDITIONAL(HAVE_SDL, test x$have_sdl = "xyes")
 
 dnl
 dnl Check for X11 lib
@@ -71,37 +81,32 @@ dnl AC_PATH_X
 dnl AC_PATH_XTRA
 
 if test "x$no_x" = "xyes"; then
-	have_x11_lib=no
+	have_x11=no
 else
-	have_x11_lib=yes
+	have_x11=yes
 fi
 
+
+AM_CONDITIONAL(HAVE_X11,test x$have_x11 = "xyes")
 
 if test "x$have_x11_lib" = "xyes"; then
 	AC_DEFINE(HAVE_X11)
-	X_X11_LIB="-lX11"
 	LIBS_VIDEO_OUTPUT="$LIBS_VIDEO_OUTPUT display_x11.la"
-else
-	AC_DEFINE(HAVE_X11)
-	X_X11_LIB=""
-	AM_CONDITIONAL(HAVE_X11,false)
 fi
-X_X11_INC=$x_includes
-
-AC_SUBST(X_X11_LIB)
-AC_SUBST(X_X11_INC)
 
 
 dnl
 dnl Checks for libraries. (Xv)
 dnl
 
+have_xv=no
 AC_ARG_ENABLE(xv,
   [  --disable-xv		make a version not using Xv],
   enable_xv=no, enable_xv=yes)
 if test "x$enable_xv" = "xyes"; then
 AC_CHECK_LIB(Xv, XvShmCreateImage, 
 	X_LIBS="$X_LIBS -lXv"
+	have_xv=yes
 	AC_DEFINE(HAVE_XV),,
 		-L$x_libraries -lXext -lX11)
 fi
@@ -111,35 +116,16 @@ dnl
 dnl Checks for libraries. (Xxf86dga)
 dnl
 
+have_dga=no
 AC_ARG_ENABLE(dga,
   [  --disable-dga		make a version not using DGA],
   enable_dga=no, enable_dga=yes)
 if test "x$enable_dga" = "xyes"; then
 	AC_CHECK_LIB(Xxf86dga, XF86DGAQueryExtension,
 		X_LIBS="$X_LIBS -lXxf86dga"
+		have_dga=yes
 		AC_DEFINE(HAVE_DGA),,
 		-L$x_libraries -lXext -lX11)
-fi
-
-
-dnl
-dnl MLIB support
-dnl
-
-if test x$enable_mlib = x; then
-AC_ARG_ENABLE(mlib,
-	[  --disable-mlib          make a version not using mediaLib],
-	enable_mlib=no, enable_mlib=yes)
-fi
-if test x$enable_mlib = xyes; then
-	AC_CHECK_LIB(mlib, main,
-		[ YUV_ACCEL_OBJS="$YUV_ACCEL_OBJS yuv2rgb_mlib.lo"
-		  YUV_ACCEL_LIBS="$YUV_ACCEL_LIBS -L/opt/SUNWmlib/lib -R/opt/SUNWmlib/lib -lmlib"
-		X_CFLAGS="$X_CFLAGS -I/opt/SUNWmlib/include"
-		AC_DEFINE(HAVE_MLIB) ],
-	, -L/opt/SUNWmlib/lib)
-else
-	AM_CONDITIONAL(HAVE_MLIB,false)
 fi
 
 
@@ -158,34 +144,18 @@ fi
 
 
 dnl
-dnl Do the right thing for architecture specific goodness
-dnl
-
-case "$host_alias" in
-i?86-* | k?-*) dnl catch i386,i486,i586,i686,k6,k7
-	YUV_ACCEL_OBJS="$YUV_ACCEL_OBJS yuv2rgb_mmx.lo";;	
-alpha*-*) ;;
-sparc-*) ;;
-ppc-*) ;;
-esac
-
-
-dnl
 dnl fill in all libraries which should be built
 dnl
 
 AC_SUBST(LIBS_VIDEO_OUTPUT)
-AC_SUBST(YUV_ACCEL_OBJS)
-AC_SUBST(YUV_ACCEL_LIBS)
 
 echo "
 output video
 ------------
-mlib			: ${HAVE_MLIB}
-x11			: ${HAVE_X11}
-	xv		: ${HAVE_XV}
-	dga		: ${HAVE_DGA}
-SDL			: ${HAVE_SDL}
-3dfx			: ${HAVE_3DFX}
-matrox g200/g400	: ${HAVE_MGA}
+x11			: ${have_x11}
+	xv		: ${have_xv}
+	dga		: ${have_dga}
+SDL			: ${have_sdl}
+3dfx			: ${have_3dfx}
+matrox g200/g400	: ${have_mga}
 " >> config

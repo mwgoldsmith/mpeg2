@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "config.h"
-#include <mmx.h>
+#include "mmx.h"
 #include "debug.h"
 #include "mpeg2.h"
 #include "mpeg2_internal.h"

@@ -47,6 +47,15 @@ uint64_t *buffer_end;
 
 static inline void bitstream_fill_current()
 {
+#if 0
+	if ((buffer_start+1) > buffer_end) {
+		// free old entry->mem here
+		demuxBufGet_blocking (buf, BUF_VIDEO, &entry);
+		buffer_start = (uint64_t *) (entry.data);
+		buffer_end = (uint64_t *) (entry.data+entry.data_len)
+	}
+#endif
+
 	current_word = bswap_64 (*buffer_start++);
 }
 
