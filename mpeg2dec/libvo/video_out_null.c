@@ -70,7 +70,8 @@ static void nullslice_start (void * id, uint8_t * const * dest, int flags)
 {
 }
 
-static void nullslice_copy (void * id, uint8_t * const * src)
+static void nullslice_copy (void * id, uint8_t * const * src,
+			    unsigned int v_offset)
 {
 }
 

@@ -34,34 +34,37 @@
 #include "convert.h"
 #include "convert_internal.h"
 
-static void mlib_YUV2ARGB420_32 (void * _id, uint8_t * const * src)
+static void mlib_YUV2ARGB420_32 (void * _id, uint8_t * const * src,
+				 unsigned int v_offset)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
 
-    mlib_VideoColorYUV2ARGB420 (id->rgb_ptr, src[0], src[1], src[2],
+    mlib_VideoColorYUV2ARGB420 (id->rgb_ptr + id->rgb_stride * v_offset,
+				src[0], src[1], src[2],
 				id->width, 16, id->rgb_stride,
 				id->uv_stride << 1, id->uv_stride);
-    id->rgb_ptr += id->rgb_stride << 4;
 }
 
-static void mlib_YUV2ABGR420_32 (void * _id, uint8_t * const * src)
+static void mlib_YUV2ABGR420_32 (void * _id, uint8_t * const * src,
+				 unsigned int v_offset)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
 
-    mlib_VideoColorYUV2ABGR420 (id->rgb_ptr, src[0], src[1], src[2],
+    mlib_VideoColorYUV2ABGR420 (id->rgb_ptr + id->rgb_stride * v_offset,
+				src[0], src[1], src[2],
 				id->width, 16, id->rgb_stride,
 				id->uv_stride << 1, id->uv_stride);
-    id->rgb_ptr += id->rgb_stride << 4;
 }
 
-static void mlib_YUV2RGB420_24 (void * _id, uint8_t * const * src)
+static void mlib_YUV2RGB420_24 (void * _id, uint8_t * const * src,
+				unsigned int v_offset)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
 
-    mlib_VideoColorYUV2RGB420 (id->rgb_ptr, src[0], src[1], src[2],
+    mlib_VideoColorYUV2RGB420 (id->rgb_ptr + id->rgb_stride * v_offset,
+			       src[0], src[1], src[2],
 			       id->width, 16, id->rgb_stride,
 			       id->uv_stride << 1, id->uv_stride);
-    id->rgb_ptr += id->rgb_stride << 4;
 }
 
 yuv2rgb_copy * yuv2rgb_init_mlib (int order, int bpp)

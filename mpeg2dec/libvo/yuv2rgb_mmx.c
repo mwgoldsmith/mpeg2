@@ -263,42 +263,46 @@ static inline void yuv420_argb32 (uint8_t * image, uint8_t * py,
     } while (--height);
 }
 
-static void mmxext_rgb16 (void * _id, uint8_t * const * src)
+static void mmxext_rgb16 (void * _id, uint8_t * const * src,
+			  unsigned int v_offset)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
 
-    yuv420_rgb16 (id->rgb_ptr, src[0], src[1], src[2], id->width, 16,
+    yuv420_rgb16 (id->rgb_ptr + id->rgb_stride * v_offset,
+		  src[0], src[1], src[2], id->width, 16,
 		  id->rgb_stride, id->uv_stride << 1, id->uv_stride,
 		  CPU_MMXEXT);
-    id->rgb_ptr += id->rgb_stride << 4;
 }
 
-static void mmxext_argb32 (void * _id, uint8_t * const * src)
+static void mmxext_argb32 (void * _id, uint8_t * const * src,
+			   unsigned int v_offset)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
 
-    yuv420_argb32 (id->rgb_ptr, src[0], src[1], src[2], id->width, 16,
+    yuv420_argb32 (id->rgb_ptr + id->rgb_stride * v_offset,
+		   src[0], src[1], src[2], id->width, 16,
 		  id->rgb_stride, id->uv_stride << 1, id->uv_stride,
 		  CPU_MMXEXT);
-    id->rgb_ptr += id->rgb_stride << 4;
 }
 
-static void mmx_rgb16 (void * _id, uint8_t * const * src)
+static void mmx_rgb16 (void * _id, uint8_t * const * src,
+		       unsigned int v_offset)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
 
-    yuv420_rgb16 (id->rgb_ptr, src[0], src[1], src[2], id->width, 16,
+    yuv420_rgb16 (id->rgb_ptr + id->rgb_stride * v_offset,
+		  src[0], src[1], src[2], id->width, 16,
 		  id->rgb_stride, id->uv_stride << 1, id->uv_stride, CPU_MMX);
-    id->rgb_ptr += id->rgb_stride << 4;
 }
 
-static void mmx_argb32 (void * _id, uint8_t * const * src)
+static void mmx_argb32 (void * _id, uint8_t * const * src,
+			unsigned int v_offset)
 {
     convert_rgb_t * id = (convert_rgb_t *) _id;
 
-    yuv420_argb32 (id->rgb_ptr, src[0], src[1], src[2], id->width, 16,
+    yuv420_argb32 (id->rgb_ptr + id->rgb_stride * v_offset,
+		   src[0], src[1], src[2], id->width, 16,
 		  id->rgb_stride, id->uv_stride << 1, id->uv_stride, CPU_MMX);
-    id->rgb_ptr += id->rgb_stride << 4;
 }
 
 yuv2rgb_copy * yuv2rgb_init_mmxext (int order, int bpp)
