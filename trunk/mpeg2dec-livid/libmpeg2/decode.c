@@ -45,6 +45,23 @@
 
 #include "mmx.h"
 
+//
+// This (temporary?) hack makes the new libvo interface work
+// with the non-reentrant OMS interface
+// 1. If we compile for OMS we do not add the user_data pointer
+// 2. we set the initstructure types
+#ifdef __OMS__
+#define USERDATA
+#define INITTYPE    plugin_output_video_t
+#define ATTR_TYPE   plugin_output_video_attr_t 
+#else
+static void* user_data=NULL;
+
+#define USERDATA    ,(user_data)
+#define INITTYPE    vo_functions_t
+#define ATTR_TYPE   vo_output_video_attr_t
+#endif
+
 //this is where we keep the state of the decoder
 picture_t picture;
 
@@ -81,11 +98,8 @@ void mpeg2_init (void)
     motion_comp_init ();
 }
 
-#ifdef __OMS__
-static void decode_allocate_image_buffers (plugin_output_video_t *output, picture_t *picture)
-#else
-static void decode_allocate_image_buffers (vo_functions_t * output, picture_t * picture)
-#endif
+static void decode_allocate_image_buffers (INITTYPE * output, 
+					   picture_t * picture)
 {
     int frame_size;
     vo_image_buffer_t *tmp = NULL;
@@ -93,29 +107,24 @@ static void decode_allocate_image_buffers (vo_functions_t * output, picture_t * 
     frame_size = picture->coded_picture_width * picture->coded_picture_height;
 
     // allocate images in YV12 format
-#ifdef __OMS__
-    tmp = output->allocate_image_buffer (picture->coded_picture_width, picture->coded_picture_height, 0x32315659);
-#else
-    tmp = output->allocate_image_buffer();
-#endif
+    tmp = output->allocate_image_buffer2 (picture->coded_picture_width, 
+					  picture->coded_picture_height, 
+					  0x32315659 USERDATA );
+
     picture->throwaway_frame[0] = tmp->base;
     picture->throwaway_frame[1] = tmp->base + frame_size * 5 / 4;
     picture->throwaway_frame[2] = tmp->base + frame_size;
 
-#ifdef __OMS__
-    tmp = output->allocate_image_buffer(picture->coded_picture_width, picture->coded_picture_height, 0x32315659);
-#else
-    tmp = output->allocate_image_buffer();
-#endif
+    tmp = output->allocate_image_buffer2 (picture->coded_picture_width, 
+					  picture->coded_picture_height, 
+					  0x32315659 USERDATA );
     picture->backward_reference_frame[0] = tmp->base;
     picture->backward_reference_frame[1] = tmp->base + frame_size * 5 / 4;
     picture->backward_reference_frame[2] = tmp->base + frame_size;
     
-#ifdef __OMS__
-    tmp = output->allocate_image_buffer(picture->coded_picture_width, picture->coded_picture_height, 0x32315659);
-#else
-    tmp = output->allocate_image_buffer();
-#endif
+    tmp = output->allocate_image_buffer2 (picture->coded_picture_width, 
+					  picture->coded_picture_height, 
+					  0x32315659 USERDATA );
     picture->forward_reference_frame[0] = tmp->base;
     picture->forward_reference_frame[1] = tmp->base + frame_size * 5 / 4;
     picture->forward_reference_frame[2] = tmp->base + frame_size;
@@ -153,11 +162,7 @@ static void decode_reorder_frames (void)
 }
 
 
-#ifdef __OMS__
-static int parse_chunk (plugin_output_video_t *output, int code, uint8_t *buffer)
-#else
-static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
-#endif
+static int parse_chunk (INITTYPE * output, int code, uint8_t * buffer)
 {
     int is_frame_done;
 
@@ -208,20 +213,21 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 	is_sequence_needed = 0;
 
 	if (!is_display_initialized) {
-#ifdef __OMS__
-	    plugin_output_video_attr_t attr;
+
+	    ATTR_TYPE attr;
 	    attr.width = picture.coded_picture_width;
 	    attr.height = picture.coded_picture_height;
 	    attr.fullscreen = 0;
 	    attr.title = NULL;
-
-	    output->setup (&attr);
-#else
-	    if (output->init (picture.coded_picture_width,picture.coded_picture_height,0,0,0x32315659)) {
-		printf ("display init failed\n");
-		exit (1);
-	    }
+#ifndef __OMS__
+            attr.format = 0x32315659;
 #endif
+
+	    if (output->setup (&attr USERDATA)) {
+	      printf ("display init failed\n");
+	      exit (1);
+	    }
+
 	    decode_allocate_image_buffers (output, &picture);
 	    is_display_initialized = 1;
 	}
@@ -282,11 +288,7 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 }
 
 
-#ifdef __OMS__
-int mpeg2_decode_data (plugin_output_video_t *output, uint8_t *current, uint8_t *end)
-#else
-int mpeg2_decode_data (vo_functions_t *output, uint8_t *current, uint8_t *end)
-#endif
+int mpeg2_decode_data (INITTYPE *output, uint8_t *current, uint8_t *end)
 {
     static uint8_t code = 0xff;
     //static uint8_t chunk_buffer[65536];
@@ -322,11 +324,7 @@ int mpeg2_decode_data (vo_functions_t *output, uint8_t *current, uint8_t *end)
     return ret;
 }
 
-#ifdef __OMS__
-void mpeg2_close (plugin_output_video_t * output)
-#else
-void mpeg2_close (vo_functions_t * output)
-#endif
+void mpeg2_close (INITTYPE * output)
 {
     static uint8_t finalizer[] = {0,0,1,0};
 

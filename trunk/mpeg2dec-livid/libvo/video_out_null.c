@@ -39,46 +39,54 @@ static vo_info_t vo_info =
 
 static uint32_t image_width, image_height;
 
+#include "video_out_porting_old.h"
+
+
 static uint32_t
-draw_slice(uint8_t *src[], int slice_num)
+draw_slice2(uint8_t *src[], int slice_num,void* user_data)
 {
 	return 0;
 }
 
 static void
-flip_page(void)
+flip_page2(void* user_data)
 {
 }
 
 static uint32_t
-draw_frame(uint8_t *src[])
+draw_frame2(uint8_t *src[], void* user_data)
 {
 	return 0;
 }
 
+
 static uint32_t
-init(int width, int height, int fullscreen, char *title, uint32_t format)
-{
-	image_width = width;
-	image_height = height;
-	return 0;
+setup(vo_output_video_attr_t * attr, void* user_data)
+{	
+        image_height = attr->height;
+	image_width = attr->width;
+        return 0;
 }
+
+
 
 static const vo_info_t*
-get_info(void)
+get_info2(void* user_data)
 {
 	return &vo_info;
 }
 
 static vo_image_buffer_t* 
-allocate_image_buffer()
+allocate_image_buffer2(uint32_t height, uint32_t width, 
+		       uint32_t format, void* user_data)
 {
 	//use the generic fallback
-	return allocate_image_buffer_common(image_height,image_width,0x32315659);
+	return allocate_image_buffer_common(image_height,image_width,
+					    0x32315659);
 }
 
 static void	
-free_image_buffer(vo_image_buffer_t* image)
+free_image_buffer2(vo_image_buffer_t* image, void* user_data)
 {
 	//use the generic fallback
 	free_image_buffer_common(image);

@@ -29,6 +29,8 @@
 
 LIBVO_EXTERN (md5)
 
+#include "video_out_porting_old.h"
+
 static vo_info_t vo_info = 
 {
 	"MD5",
@@ -42,31 +44,33 @@ extern vo_functions_t video_out_pgm;
 static FILE * md5_file;
 static int framenum = -2;
 
+
 static uint32_t
-init(int width, int height, int fullscreen, char *title, uint32_t format)
-{
-    md5_file = fopen ("md5", "w");
-    return video_out_pgm.init (width, height, fullscreen, title, format);
+setup(vo_output_video_attr_t * attr, void* user_data)
+{    
+     md5_file = fopen ("md5", "w");
+     
+     return video_out_pgm.setup (attr,user_data);
 }
 
 static const vo_info_t*
-get_info(void)
+get_info2(void* user_data)
 {
     return &vo_info;
 }
 
-static void flip_page (void)
+static void flip_page2 (void* user_data)
 {
 }
 
-static uint32_t draw_slice(uint8_t * src[], int slice_num)
+static uint32_t draw_slice2(uint8_t * src[], int slice_num, void* user_data)
 {
     return 0;
 }
 
 extern uint32_t output_pgm_frame (char * fname, uint8_t * src[]);
 
-static uint32_t draw_frame(uint8_t * src[])
+static uint32_t draw_frame2(uint8_t * src[], void* user_data)
 {
     char buf[100];
     char buf2[100];
@@ -91,13 +95,14 @@ static uint32_t draw_frame(uint8_t * src[])
 }
 
 static vo_image_buffer_t* 
-allocate_image_buffer()
+allocate_image_buffer2(uint32_t height, uint32_t width, 
+		       uint32_t format, void* user_data)
 {
     return video_out_pgm.allocate_image_buffer ();
 }
 
 static void	
-free_image_buffer(vo_image_buffer_t* image)
+free_image_buffer2(vo_image_buffer_t* image, void* user_data)
 {
     return video_out_pgm.free_image_buffer (image);
 }

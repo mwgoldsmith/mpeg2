@@ -99,6 +99,9 @@ static XWindowAttributes attribs;
 static int X_already_started = 0;
 
 
+#include "video_out_porting_old.h"
+
+
 static void restore (void) 
 {
     //reg_IO->vidDesktopStartAddr = vidpage0offset;
@@ -302,8 +305,8 @@ update_target(void)
 	targetoffset = vidpage0offset + (dispy*screenwidth + dispx)*screendepth;
 }
 
-static uint32_t 
-init(int width, int height, int fullscreen, char *title, uint32_t format) 
+static uint32_t
+setup(vo_output_video_attr_t * attr, void* user_data)
 {
     int fd;
     char *name = ":0.0";
@@ -332,10 +335,10 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
     }
 
     // Store sizes for later
-    vidwidth = width;
-    vidheight = height;
+    vidwidth = attr->width;
+    vidheight = attr->height;
 
-    is_fullscreen = fullscreen = 0;
+    is_fullscreen = attr->fullscreen = 0;
     if (!is_fullscreen) 
 	create_window (display);
 
@@ -409,13 +412,13 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
 }
 
 static const vo_info_t*
-get_info(void)
+get_info2(void* user_data)
 {
     return &vo_info;
 }
 
 static uint32_t 
-draw_frame(uint8_t *src[]) 
+draw_frame2(uint8_t *src[],void* user_data) 
 {
     LOG ("video_out_3dfx: starting display_frame\n");
 
@@ -428,7 +431,7 @@ draw_frame(uint8_t *src[])
 }
 
 static uint32_t 
-draw_slice(uint8_t *src[], int slice_num) 
+draw_slice2(uint8_t *src[], int slice_num, void* user_data) 
 {
     uint32_t target;
 
@@ -439,7 +442,7 @@ draw_slice(uint8_t *src[], int slice_num)
 }
 
 static void 
-flip_page(void) 
+flip_page2(void* user_data) 
 {
     //FIXME - update_target() should be called by event handler when window
     //        is resized or moved
@@ -449,14 +452,15 @@ flip_page(void)
 }
 
 static vo_image_buffer_t* 
-allocate_image_buffer()
+allocate_image_buffer2(uint32_t height, uint32_t width, 
+		       uint32_t format, void* user_data)
 {
     //use the generic fallback
     return allocate_image_buffer_common (vidheight, vidwidth, 0x32315659);
 }
 
 static void	
-free_image_buffer(vo_image_buffer_t* image)
+free_image_buffer2(vo_image_buffer_t* image, void* user_data)
 {
     //use the generic fallback
     free_image_buffer_common (image);

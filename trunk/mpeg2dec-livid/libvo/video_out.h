@@ -44,6 +44,15 @@ typedef struct vo_image_buffer_s
 	void *private;
 } vo_image_buffer_t;
 
+typedef struct vo_output_video_attr_s 
+{
+	uint32_t width;
+	uint32_t height;
+	uint32_t fullscreen;
+	char     *title;
+	uint32_t format;
+} vo_output_video_attr_t;
+
 typedef struct vo_functions_s
 {
 	/*
@@ -66,7 +75,7 @@ typedef struct vo_functions_s
 	 *              by terminating.
 	 */
 
-	uint32_t (*init)(int width, int height, int fullscreen, char *title, uint32_t format);
+	uint32_t (*setup)(vo_output_video_attr_t* attr, void *user_data);
 
 	/*
 	 * Return driver information.
@@ -78,6 +87,8 @@ typedef struct vo_functions_s
 	 */
 
 	const vo_info_t* (*get_info)(void);
+	const vo_info_t* (*get_info2)(void *user_data);
+	
 
 	/*
 	 * Display a new frame of the video to the screen. This may get called very
@@ -99,6 +110,7 @@ typedef struct vo_functions_s
 	 */
 
 	uint32_t (*draw_frame)(uint8_t *src[]);
+	uint32_t (*draw_frame2)(uint8_t *src[], void *user_data);
 
 	/*
 	 * Update a section of the offscreen buffer. A "slice" is an area of the
@@ -125,6 +137,7 @@ typedef struct vo_functions_s
 	 */
 
 	uint32_t (*draw_slice)(uint8_t *src[], int slice_num);
+	uint32_t (*draw_slice2)(uint8_t *src[], int slice_num, void* user_data);
 
 	/*
 	 * Draw the current image buffer to the screen. There may be several
@@ -140,6 +153,8 @@ typedef struct vo_functions_s
 	 */
 
 	void (*flip_page)(void);
+	void (*flip_page2)(void* user_data);
+	
 
 	/*
 	 * Allocate an image buffer. This may allow, for some drivers, some
@@ -152,6 +167,10 @@ typedef struct vo_functions_s
 	 */
 
 	vo_image_buffer_t* (*allocate_image_buffer)();
+	vo_image_buffer_t* (*allocate_image_buffer2)(uint32_t height,
+						     uint32_t width, 
+						     uint32_t format,
+						     void *user_data);
 
 	/*
 	 * Free an image buffer allocated with allocate_image_buffer.
@@ -159,8 +178,8 @@ typedef struct vo_functions_s
 	 *    params : image == image buffer to be freed
 	 *   returns : none
 	 */
-
 	void	(*free_image_buffer)(vo_image_buffer_t* image);
+	void	(*free_image_buffer2)(vo_image_buffer_t* image, void *user_data);
 } vo_functions_t;
 
 // NULL terminated array of all drivers 
