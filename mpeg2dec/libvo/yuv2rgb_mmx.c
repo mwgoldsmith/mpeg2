@@ -1,6 +1,6 @@
 /*
  * yuv2rgb_mmx.c
- * Copyright (C) 2000-2002 Silicon Integrated System Corp.
+ * Copyright (C) 2000-2003 Silicon Integrated System Corp.
  * All Rights Reserved.
  *
  * Author: Olie Lho <ollie@sis.com.tw>

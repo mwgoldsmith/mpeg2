@@ -1,6 +1,6 @@
 /*
  * Alpha assembly macros
- * Copyright (c) 2002 Falk Hueffner <falk@debian.org>
+ * Copyright (c) 2002-2003 Falk Hueffner <falk@debian.org>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
  * See http://libmpeg2.sourceforge.net/ for updates.

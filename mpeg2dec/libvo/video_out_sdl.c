@@ -1,7 +1,7 @@
 /*
  * video_out_sdl.c
  *
- * Copyright (C) 2000-2002 Ryan C. Gordon <icculus@lokigames.com> and
+ * Copyright (C) 2000-2003 Ryan C. Gordon <icculus@lokigames.com> and
  *                         Dominik Schnitzer <aeneas@linuxvideo.org>
  *
  * SDL info, source, and binaries can be found at http://www.libsdl.org/
