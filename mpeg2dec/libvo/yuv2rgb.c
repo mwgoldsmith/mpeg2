@@ -407,7 +407,7 @@ static void convert_internal (int order, int bpp, int width, int height,
 	id->uv_stride_frame = width >> 1;
 	id->rgb_stride_frame = ((bpp + 7) >> 3) * width;
 
-	result->buf_size[0] = id->rgb_stride * height;
+	result->buf_size[0] = id->rgb_stride_frame * height;
 	result->buf_size[1] = result->buf_size[2] = 0;
 	result->start = convert_start;
 
