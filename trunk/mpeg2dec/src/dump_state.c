@@ -149,6 +149,8 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
     int i;
     int nb_pos;
 
+    if (state == STATE_BUFFER)
+	return;
     fprintf (f, "%8x", offset);
     if (verbose > 1) {
 	if (state == STATE_PICTURE) {
