@@ -131,7 +131,7 @@ static inline int seek_chunk (mpeg2dec_t * mpeg2dec)
     return 0;
 }
 
-int mpeg2_seek_header (mpeg2dec_t * mpeg2dec)
+static int seek_header (mpeg2dec_t * mpeg2dec)
 {
     while (mpeg2dec->code != 0xb3 &&
 	   ((mpeg2dec->code != 0xb7 && mpeg2dec->code != 0xb8 &&
@@ -139,13 +139,14 @@ int mpeg2_seek_header (mpeg2dec_t * mpeg2dec)
 	if (seek_chunk (mpeg2dec))
 	    return -1;
     mpeg2dec->chunk_start = mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
-    return mpeg2_parse_header (mpeg2dec);
+    return (mpeg2dec->code ? mpeg2_parse_header (mpeg2dec) :
+	    mpeg2_header_picture_start (mpeg2dec));
 }
 
 int mpeg2_seek_sequence (mpeg2dec_t * mpeg2dec)
 {
     mpeg2dec->sequence.width = -1;
-    return mpeg2_seek_header (mpeg2dec);
+    return seek_header (mpeg2dec);
 }
 
 #define RECEIVED(code,state) (((state) << 8) + (code))
@@ -197,23 +198,22 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	    return -1;
     }
 
-    switch (RECEIVED (mpeg2dec->code, mpeg2dec->state)) {
-    case RECEIVED (0x00, STATE_SLICE_1ST):
-    case RECEIVED (0x00, STATE_SLICE):
+    switch (mpeg2dec->code) {
+    case 0x00:
 	mpeg2dec->action = mpeg2_header_picture_start;
-	break;
-    case RECEIVED (0xb7, STATE_SLICE):
+	return mpeg2dec->state;
+    case 0xb7:
 	mpeg2dec->action = mpeg2_header_end;
 	break;
-    case RECEIVED (0xb3, STATE_SLICE):
-    case RECEIVED (0xb8, STATE_SLICE):
+    case 0xb3:
+    case 0xb8:
 	mpeg2dec->action = mpeg2_parse_header;
 	break;
     default:
-	mpeg2dec->action = mpeg2_seek_header;
+	mpeg2dec->action = seek_chunk;
 	return STATE_INVALID;
     }
-    return mpeg2dec->state;
+    return (mpeg2dec->state == STATE_SLICE) ? STATE_SLICE : STATE_INVALID;
 }
 
 int mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
@@ -242,7 +242,7 @@ int mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
 		/* filled the chunk buffer without finding a start code */
 		mpeg2dec->bytes_since_pts += size_chunk;
 		mpeg2dec->code = 0xb4;
-		mpeg2dec->action = mpeg2_seek_header;
+		mpeg2dec->action = seek_header;
 		return STATE_INVALID;
 	    }
 	}
@@ -250,7 +250,7 @@ int mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
 
 	if (process_header[mpeg2dec->code & 0x0b] (mpeg2dec)) {
 	    mpeg2dec->code = mpeg2dec->buf_start[-1];
-	    mpeg2dec->action = mpeg2_seek_header;
+	    mpeg2dec->action = seek_header;
 	    return STATE_INVALID;
 	}
 
@@ -286,7 +286,7 @@ int mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
 	    continue;
 
 	default:
-	    mpeg2dec->action = mpeg2_seek_header;
+	    mpeg2dec->action = seek_header;
 	    return STATE_INVALID;
 	}
 
