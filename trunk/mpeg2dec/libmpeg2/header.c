@@ -345,7 +345,6 @@ static mpeg2_state_t invalid_end_action (mpeg2dec_t * mpeg2dec)
     mpeg2_header_state_init (mpeg2dec);
     reset_info (&(mpeg2dec->info));
     mpeg2dec->sequence = mpeg2dec->new_sequence;
-    mpeg2dec->info.sequence = &(mpeg2dec->sequence);
     mpeg2dec->action = mpeg2_seek_header;
     mpeg2dec->state = STATE_SEQUENCE;
     return STATE_SEQUENCE;
@@ -525,13 +524,16 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 			(uint8_t *) mpeg2_malloc (mpeg2dec->convert_size[2],
 						  MPEG2_ALLOC_CONVERTED);
 		} else {
-		    int size;
-		    size = mpeg2dec->decoder.width * mpeg2dec->decoder.height;
-		    fbuf->buf[0] = (uint8_t *) mpeg2_malloc (size,
+		    int y_size, uv_size;
+		    y_size = (mpeg2dec->sequence.width *
+			      mpeg2dec->sequence.height);
+		    uv_size = (mpeg2dec->sequence.chroma_width *
+			       mpeg2dec->sequence.chroma_height);
+		    fbuf->buf[0] = (uint8_t *) mpeg2_malloc (y_size,
 							     MPEG2_ALLOC_YUV);
-		    fbuf->buf[1] = (uint8_t *) mpeg2_malloc (size >> 2,
+		    fbuf->buf[1] = (uint8_t *) mpeg2_malloc (uv_size,
 							     MPEG2_ALLOC_YUV);
-		    fbuf->buf[2] = (uint8_t *) mpeg2_malloc (size >> 2,
+		    fbuf->buf[2] = (uint8_t *) mpeg2_malloc (uv_size,
 							     MPEG2_ALLOC_YUV);
 		}
 	    }
@@ -757,7 +759,7 @@ mpeg2_state_t mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec)
     else if (mpeg2dec->convert_start) {
 	mpeg2dec->convert_start (mpeg2dec->convert_id, mpeg2dec->fbuf[0],
 				 mpeg2dec->picture, mpeg2dec->info.gop,
-				 mpeg2dec->info.sequence);
+				 &(mpeg2dec->sequence));
 
 	mpeg2dec->decoder.convert = mpeg2dec->convert_copy;
 	mpeg2dec->decoder.fbuf_id = mpeg2dec->convert_id;
