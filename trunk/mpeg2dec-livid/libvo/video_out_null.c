@@ -26,7 +26,7 @@
 #include "video_out.h"
 #include "video_out_internal.h"
 
-static int null_close (void * plugin)
+static int null_close (void)
 {
     return 0;
 }

@@ -34,7 +34,7 @@ static char header[1024];
 static int framenum = -2;
 static FILE * md5_file;
 
-static int md5_close (void * dummy)
+static int md5_close (void)
 {
     return 0;
 }

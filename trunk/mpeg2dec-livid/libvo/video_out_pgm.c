@@ -33,7 +33,7 @@ static int image_height;
 static char header[1024];
 static int framenum = -2;
 
-static int pgm_close (void * plugin)
+static int pgm_close (void)
 {
     return 0;
 }
