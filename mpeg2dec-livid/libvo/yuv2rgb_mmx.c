@@ -24,6 +24,10 @@
  *
  */
 
+#include "config.h"
+
+#ifdef ARCH_X86
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -428,3 +432,5 @@ yuv2rgb_fun yuv2rgb_init_mmx (int bpp, int mode)
 
     return NULL; // Fallback to C.
 }
+
+#endif

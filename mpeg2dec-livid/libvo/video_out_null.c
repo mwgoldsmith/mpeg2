@@ -39,7 +39,7 @@ static vo_info_t vo_info =
 static uint32_t image_width, image_height;
 
 static uint32_t
-draw_slice(uint8_t *src[], uint32_t slice_num)
+draw_slice(uint8_t *src[], int slice_num)
 {
 	return 0;
 }
@@ -56,7 +56,7 @@ draw_frame(uint8_t *src[])
 }
 
 static uint32_t
-init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title, uint32_t format)
+init(int width, int height, int fullscreen, char *title, uint32_t format)
 {
 	image_width = width;
 	image_height = height;

@@ -1,74 +1,65 @@
-dnl Autoconf configuration script mpeg2dec
-dnl 
-dnl Aaron Holtzman - May 1999
-dnl
-AC_INIT(mpeg2dec.c)
-AC_CANONICAL_HOST
+dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.13)
-AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE(mpeg2dec, 0.1.7-cvs)
-
+AC_INIT(src/mpeg2dec.c)
+AC_CONFIG_AUX_DIR(autotools)
+AM_INIT_AUTOMAKE(mpeg2dec,0.1.7-alpha)
+AM_CONFIG_HEADER(include/config.h)
 AM_MAINTAINER_MODE
+
+dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_GCC_TRADITIONAL
-AC_PROG_RANLIB
-AC_PROG_LN_S
-AC_C_BIGENDIAN
-
-AC_LIBTOOL_DLOPEN
 AM_DISABLE_SHARED
 AM_PROG_LIBTOOL
 
-AC_SUBST(GLOBAL_CFLAGS)
-AC_SUBST(ROOT_CFLAGS)
-AC_SUBST(TOOLS_CFLAGS)
+dnl Checks for libraries.
 
-dnl Figure out which OS we're on and what to do about it
-case "$host" in
-*-linux*) ;;
-*-solaris*) ;;
-*) ;;
-esac
+dnl Checks for header files.
+AC_CHECK_GENERATE_INTTYPES(include)
 
-dnl Set the appropriate architecture define
-case "$host_alias" in
-i?86-* | k?-*) dnl catch i386,i486,i586,i686,k6,k7
-	AC_DEFINE(__i386__) 
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_C_INLINE
+
+dnl Checks for library functions.
+
+dnl GCC-specific flags
+if test x"$GCC" = x"yes"; then
+
+    dnl compiler warnings
+    OPT_CFLAGS="$CFLAGS -Wall -Werror"
+    AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS])
+
+    dnl -O3
+    changequote(<<,>>)
+    OPT_CFLAGS=`echo "$CFLAGS"|sed "s/-O[0-9]*//g;"`
+    changequote([,])
+    OPT_CFLAGS="$OPT_CFLAGS -O3"
+    AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS])
+
+    dnl -fomit-frame-pointer
+    OPT_CFLAGS="$CFLAGS -fomit-frame-pointer"
+    AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS])
+
+    dnl arch-specific flags
+    case "$host_alias" in
+    i?86-* | k?-*)
+	AC_DEFINE([ARCH_X86],,[x86 architecture])
 	case "$host_alias" in
-		i386-*) dnl who are we kidding?
-			GLOBAL_CFLAGS="$GLOBAL_CFLAGS -march=m386";;
-		i486-*)
-			GLOBAL_CFLAGS="$GLOBAL_CFLAGS -march=m486";;
-		i586-*)
-			GLOBAL_CFLAGS="$GLOBAL_CFLAGS -march=pentium";;
-		i686-*)
-			GLOBAL_CFLAGS="$GLOBAL_CFLAGS -march=pentiumpro";;
-		k6-*)
-			GLOBAL_CFLAGS="$GLOBAL_CFLAGS -march=k6";;
-		k7-*)
-			GLOBAL_CFLAGS="$GLOBAL_CFLAGS -march=k7";;
-	esac;;
-alpha*-*) AC_DEFINE(__alpha__);;
-sparc-*) 
-	AC_DEFINE(__sparc__)
-	GLOBAL_CFLAGS="$GLOBAL_CFLAGS -mcpu=ultrasparc -mvis";;
-ppc-*) AC_DEFINE(__ppc__);;
-powerpc-*) AC_DEFINE(__ppc__);;
-*) echo "$host is not currently supported by mpeg2dec"; exit 1;;
-esac
+	i386-*) OPT_CFLAGS="$CFLAGS -mcpu=i386";;
+	i486-*) OPT_CFLAGS="$CFLAGS -mcpu=i486";;
+	i586-*) OPT_CFLAGS="$CFLAGS -mcpu=pentium";;
+	i686-*) OPT_CFLAGS="$CFLAGS -mcpu=pentiumpro";;
+	k6-*)   OPT_CFLAGS="$CFLAGS -mcpu=k6";;
+	esac
+	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
+    sparc-*)
+	OPT_CFLAGS="$CFLAGS -mcpu=ultrasparc -mvis"
+	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
+    esac
+fi
 
+builtin([include],[libmpeg2/configure.incl])
+builtin([include],[libvo/configure.incl])
 
-dnl
-dnl get location of kernel headers
-dnl
-AC_ARG_WITH(kernel-headers,
-        [  --with-kernel-headers   specify the location of the kernel headers 
-                           [/usr/src/linux/include] ],
-[KERNEL_INCLUDES=$withval],				    
-[KERNEL_INCLUDES=/usr/src/linux/include])
-AC_SUBST(KERNEL_INCLUDES)
-
-builtin(include,libmpeg2/configure.incl)
-builtin(include,libvo/configure.incl)
-
-AC_OUTPUT( libvo/Makefile libmpeg2/Makefile tools/Makefile drivers/Makefile Makefile ) 
+AC_OUTPUT(Makefile autotools/Makefile include/Makefile test/Makefile src/Makefile libmpeg2/Makefile libvo/Makefile)

@@ -21,6 +21,10 @@
  *
  */
 
+#include "config.h"
+
+#ifdef LIBMPEG2_MLIB
+
 #include <stdio.h>
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
@@ -43,3 +47,5 @@ void idct_block_add_mlib (int16_t * block, uint8_t * dest, int stride)
     mlib_VideoIDCT8x8_S16_S16 (block, block);
     mlib_VideoAddBlock_U8_S16 (dest, block, stride);
 }
+
+#endif

@@ -21,30 +21,30 @@
  *
  */
 
+#include "config.h"
+
+#ifdef LIBVO_MGA
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "config.h"
-#include "video_out.h"
-#include "video_out_internal.h"
-
-LIBVO_EXTERN(mga)
-
-#ifdef HAVE_MGA
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 
+#include "video_out.h"
+#include "video_out_internal.h"
 #include "drivers/mga_vid.h"
+
+LIBVO_EXTERN(mga)
 
 static vo_info_t vo_info = 
 {
-	"Matrox Millennium G200/G400 (/dev/mgavid)",
-	"mga",
-	"Aaron Holtzman <aholtzma@ess.engr.uvic.ca>",
-	""
+    "Matrox Millennium G200/G400 (/dev/mgavid)",
+    "mga",
+    "Aaron Holtzman <aholtzma@ess.engr.uvic.ca>",
+    ""
 };
 
 static mga_vid_config_t mga_vid_config;
@@ -178,7 +178,7 @@ write_slice_g400(uint8_t *y,uint8_t *cr, uint8_t *cb,uint32_t slice_num)
 }
 
 static uint32_t
-draw_slice(uint8_t *src[], uint32_t slice_num)
+draw_slice(uint8_t *src[], int slice_num)
 {
 	if (mga_vid_config.card_type == MGA_G200)
 		write_slice_g200(src[0],src[2],src[1],slice_num);
@@ -214,7 +214,7 @@ draw_frame(uint8_t *src[])
 }
 
 static uint32_t
-init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title, uint32_t format)
+init(int width, int height, int fullscreen, char *title, uint32_t format)
 {
 	char *frame_mem;
 	uint32_t frame_size;
@@ -276,9 +276,5 @@ free_image_buffer(vo_image_buffer_t* image)
 	//use the generic fallback
 	free_image_buffer_common(image);
 }
-
-#else /* HAVE_MGA */
-
-LIBVO_DUMMY_FUNCTIONS(mga);
 
 #endif

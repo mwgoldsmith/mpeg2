@@ -1,7 +1,14 @@
+#include "config.h"
+
 #include <inttypes.h>
 #include "oms_accel.h"
 
-#ifdef __i386__
+#ifdef ARCH_X86
+static uint32_t x86_accel (void)
+{
+    uint32_t eax, ebx, ecx, edx;
+    int AMD;
+    uint32_t caps;
 
 #define cpuid(op,eax,ebx,ecx,edx)	\
     asm ("cpuid"			\
@@ -11,12 +18,6 @@
 	   "=d" (edx)			\
 	 : "a" (op)			\
 	 : "cc")
-
-static uint32_t x86_accel (void)
-{
-    uint32_t eax, ebx, ecx, edx;
-    int AMD;
-    uint32_t caps;
 
     asm ("pushfl\n\t"
 	 "popl %0\n\t"
@@ -62,12 +63,11 @@ static uint32_t x86_accel (void)
 
     return caps;
 }
-
 #endif
 
 uint32_t oms_cpu_accel (void)
 {
-#ifdef __i386__
+#ifdef ARCH_X86
     static int got_accel = 0;
     static uint32_t accel;
 

@@ -15,27 +15,27 @@
  * Xv image suuport by Gerd Knorr <kraxel@goldbach.in-berlin.de>
  */
 
+#include "config.h"
+
+#ifdef LIBVO_X11
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "config.h"
-#include "video_out.h"
-#include "video_out_internal.h"
-
-LIBVO_EXTERN(x11)
-
-#ifdef HAVE_X11
-
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/XShm.h>
 #include <errno.h>
+
+#include "video_out.h"
+#include "video_out_internal.h"
 #include "yuv2rgb.h"
+
+LIBVO_EXTERN(x11)
 
 static vo_info_t vo_info = 
 {
-#ifdef HAVE_XV
+#ifdef LIBVO_XV
 	"X11 (Xv)",
 #else
 	"X11",
@@ -63,7 +63,7 @@ static int depth, bpp, mode;
 static XWindowAttributes attribs;
 static int X_already_started = 0;
 
-#ifdef HAVE_XV
+#ifdef LIBVO_XV
 #include <X11/extensions/Xv.h>
 #include <X11/extensions/Xvlib.h>
 // FIXME: dynamically allocate this stuff
@@ -93,7 +93,7 @@ static void DeInstallXErrorHandler (void);
 
 static int Shmem_Flag;
 static int Quiet_Flag;
-#ifdef HAVE_XV
+#ifdef LIBVO_XV
 static XShmSegmentInfo Shminfo[MAX_BUFFERS];
 #else
 static XShmSegmentInfo Shminfo[1];
@@ -122,7 +122,7 @@ static uint32_t image_height;
  * allocate colors and (shared) memory
  */
 static uint32_t 
-init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title, uint32_t format)
+init(int width, int height, int fullscreen, char *title, uint32_t format)
 {
 	int screen;
 	unsigned int fg, bg;
@@ -235,7 +235,7 @@ init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title, uint32_t
 
 	mygc = XCreateGC(mydisplay, mywindow, 0L, &xgcv);
 
-#ifdef HAVE_XV
+#ifdef LIBVO_XV
 	xv_port = 0;
 	if (Success == XvQueryExtension(mydisplay,&ver,&rel,&req,&ev,&err)) 
 	{
@@ -422,7 +422,7 @@ get_info(void)
 	return &vo_info;
 }
 
-#ifdef HAVE_XV
+#ifdef LIBVO_XV
 static void
 allocate_xvimage(int foo)
 {
@@ -446,6 +446,7 @@ allocate_xvimage(int foo)
 }
 #endif
 
+#if 0
 static void 
 Terminate_Display_Process(void) 
 {
@@ -462,6 +463,7 @@ Terminate_Display_Process(void)
 	XCloseDisplay(mydisplay);
 	X_already_started = 0;
 }
+#endif
 
 static void 
 Display_Image(XImage *myximage, uint8_t *ImageData)
@@ -484,7 +486,7 @@ Display_Image(XImage *myximage, uint8_t *ImageData)
 #endif
 }
 
-#ifdef HAVE_XV
+#ifdef LIBVO_XV
 static void
 check_events(void)
 {
@@ -502,7 +504,7 @@ check_events(void)
 }
 #endif
 
-#ifdef HAVE_XV
+#ifdef LIBVO_XV
 static inline void
 flip_page_xv(void)
 {
@@ -529,7 +531,7 @@ flip_page_x11(void)
 static void
 flip_page(void)
 {
-#if HAVE_XV
+#ifdef LIBVO_XV
 	if (xv_port != 0)
 		return flip_page_xv();
 	else
@@ -537,9 +539,9 @@ flip_page(void)
 		return flip_page_x11();
 }
 
-#if HAVE_XV
+#ifdef LIBVO_XV
 static inline uint32_t
-draw_slice_xv(uint8_t *src[], uint32_t slice_num)
+draw_slice_xv(uint8_t *src[], int slice_num)
 {
 	uint8_t *dst;
 
@@ -556,7 +558,7 @@ draw_slice_xv(uint8_t *src[], uint32_t slice_num)
 #endif
 
 static inline uint32_t
-draw_slice_x11(uint8_t *src[], uint32_t slice_num)
+draw_slice_x11(uint8_t *src[], int slice_num)
 {
 	uint8_t *dst;
 
@@ -569,9 +571,9 @@ draw_slice_x11(uint8_t *src[], uint32_t slice_num)
 }
 
 static uint32_t
-draw_slice(uint8_t *src[], uint32_t slice_num)
+draw_slice(uint8_t *src[], int slice_num)
 {
-#if HAVE_XV
+#ifdef LIBVO_XV
 	if (xv_port != 0)
 		return draw_slice_xv(src,slice_num);
 	else
@@ -579,7 +581,7 @@ draw_slice(uint8_t *src[], uint32_t slice_num)
 		return draw_slice_x11(src,slice_num);
 }
 
-#ifdef HAVE_XV
+#ifdef LIBVO_XV
 static inline uint32_t 
 draw_frame_xv(uint8_t *src[])
 {
@@ -618,7 +620,7 @@ draw_frame_x11(uint8_t *src[])
 static uint32_t
 draw_frame(uint8_t *src[])
 {
-#if HAVE_XV
+#ifdef LIBVO_XV
 	if (xv_port != 0)
 		return draw_frame_xv(src);
 	else
@@ -629,7 +631,7 @@ draw_frame(uint8_t *src[])
 static vo_image_buffer_t* 
 allocate_image_buffer()
 {
-#ifdef HAVE_XV
+#ifdef LIBVO_XV
 	xvimage_counter++;
 	
 	if ((xv_port != 0) && (xvimage_counter < MAX_BUFFERS))
@@ -659,7 +661,7 @@ allocate_image_buffer()
 static void	
 free_image_buffer(vo_image_buffer_t* image)
 {
-#ifdef HAVE_XV
+#ifdef LIBVO_XV
 	if (xv_port != 0)
 	{
 		// FIXME: properly deallocate XvImages
@@ -671,9 +673,5 @@ free_image_buffer(vo_image_buffer_t* image)
 		free_image_buffer_common(image);
 	}
 }
-
-#else /* HAVE_X11 */
-
-LIBVO_DUMMY_FUNCTIONS(x11);
 
 #endif

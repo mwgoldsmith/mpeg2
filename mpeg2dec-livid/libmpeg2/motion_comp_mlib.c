@@ -21,6 +21,10 @@
  *
  */
 
+#include "config.h"
+
+#ifdef LIBMPEG2_MLIB
+
 #include <stdlib.h>
 #include <stdio.h>
 #include "config.h"
@@ -180,3 +184,5 @@ static void motion_comp_avg_xy_8x8_mlib (uint8_t * dest, uint8_t * ref,
 }
 
 MOTION_COMP_EXTERN (mlib)
+
+#endif

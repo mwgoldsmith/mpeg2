@@ -25,9 +25,12 @@
  *
  */
 
+#include "config.h"
+
+#ifdef ARCH_X86
+
 #include <stdlib.h>
 #include <stdio.h>
-#include "config.h"
 #include <mmx.h>
 #include "debug.h"
 #include "mpeg2.h"
@@ -522,3 +525,5 @@ motion_comp_put_y_8x8_mmx (uint8_t * dest, uint8_t * ref,
 
 
 MOTION_COMP_EXTERN (mmx)
+
+#endif

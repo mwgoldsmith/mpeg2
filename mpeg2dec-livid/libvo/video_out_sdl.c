@@ -27,17 +27,17 @@
  *
  */
 
+#include "config.h"
+
+#ifdef LIBVO_SDL
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "config.h"
 #include "video_out.h"
 #include "video_out_internal.h"
 
 LIBVO_EXTERN(sdl)
-
-#ifdef HAVE_SDL
 
 #include "SDL.h"
 
@@ -74,7 +74,7 @@ findArrayEnd(SDL_Rect **array)
 } // findArrayEnd
 
 static uint32_t 
-init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title, uint32_t format)
+init(int width, int height, int fullscreen, char *title, uint32_t format)
 /*
  * Initialize an SDL surface and an SDL YUV overlay.
  *
@@ -249,7 +249,7 @@ draw_frame(uint8_t *src[])
 
 
 static uint32_t 
-draw_slice(uint8_t *src[], uint32_t slice_num)
+draw_slice(uint8_t *src[], int slice_num)
 /*
  * Draw a slice (16 rows of image) to the SDL YUV overlay.
  *
@@ -304,9 +304,5 @@ free_image_buffer(vo_image_buffer_t* image)
 	//use the generic fallback
 	free_image_buffer_common(image);
 }
-
-#else /* HAVE_SDL*/
-
-LIBVO_DUMMY_FUNCTIONS(sdl);
 
 #endif
