@@ -54,7 +54,7 @@ static void sample1 (FILE * file)
     uint8_t buffer[BUFFER_SIZE];
     mpeg2dec_t * mpeg2dec;
     const mpeg2_info_t * info;
-    int state;
+    state_t state;
     int size;
     int framenum = 0;
 
@@ -76,6 +76,8 @@ static void sample1 (FILE * file)
 	    if (info->display_fbuf)
 		save_pgm (info->sequence->width, info->sequence->height,
 			  info->display_fbuf->buf, framenum++);
+	    break;
+	default:
 	    break;
 	}
     } while (size);

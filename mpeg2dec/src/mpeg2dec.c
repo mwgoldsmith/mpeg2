@@ -218,7 +218,7 @@ static void handle_args (int argc, char ** argv)
 static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 {
     const mpeg2_info_t * info;
-    int state;
+    state_t state;
     vo_setup_result_t setup_result;
 
     mpeg2_buffer (mpeg2dec, current, end);
@@ -274,9 +274,6 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 		output->start_fbuf (output, info->current_fbuf->buf,
 				    info->current_fbuf->id);
 	    break;
-	case STATE_PICTURE_2ND:
-	    /* should not do anything */
-	    break;
 	case STATE_SLICE:
 	case STATE_END:
 	    /* draw current picture */
@@ -289,6 +286,8 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 	    if (output->discard && info->discard_fbuf)
 		output->discard (output, info->discard_fbuf->buf,
 				 info->discard_fbuf->id);
+	    break;
+	default:
 	    break;
 	}
     }
