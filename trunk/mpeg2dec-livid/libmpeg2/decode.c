@@ -33,12 +33,11 @@
 #ifndef __OMS__
 #include "video_out.h"
 #endif
+
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
-#include <mm_accel.h>
-
+#include "mm_accel.h"
 #include "attributes.h"
-
 #include "mmx.h"
 
 //

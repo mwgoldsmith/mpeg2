@@ -43,7 +43,7 @@
 #include <inttypes.h>
 
 #include "mpeg2_internal.h"
-#include <mm_accel.h>
+#include "mm_accel.h"
 
 #define W1 2841 /* 2048*sqrt (2)*cos (1*pi/16) */
 #define W2 2676 /* 2048*sqrt (2)*cos (2*pi/16) */
