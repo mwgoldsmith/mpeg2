@@ -200,6 +200,7 @@ int Get_macroblock_address_increment (void)
 	}
 
 	bitstream_flush (11);
+	needbits ();
     }
 
     /* macroblock_address_increment == 1 */

@@ -27,61 +27,57 @@ uint32_t bitstream_buffer;
 int32_t bitstream_avail_bits;
 uint8_t * bitstream_ptr;
 
-static inline void bitstream_init (uint8_t *start)
+static inline void bitstream_init (uint8_t * start)
 {
-	bitstream_ptr = start;
-	bitstream_avail_bits = 16;
-	bitstream_buffer = 0; 
+    bitstream_ptr = start;
+    bitstream_avail_bits = 16;
+    bitstream_buffer = 0; 
 }
 
 static inline uint32_t getword (void)
 {
-	uint32_t value;
+    uint32_t value;
 
-	value = (bitstream_ptr[0] << 8) | bitstream_ptr[1];
-	bitstream_ptr += 2;
-	return value;
+    value = (bitstream_ptr[0] << 8) | bitstream_ptr[1];
+    bitstream_ptr += 2;
+    return value;
 }
 
-static inline void needbits (uint32_t num_bits)
+static inline void needbits (void)
 {
-	if (bitstream_avail_bits > 0)
-	{
-		bitstream_buffer |= getword () << bitstream_avail_bits;
-		bitstream_avail_bits -= 16;
-	}
+    if (bitstream_avail_bits > 0) {
+	bitstream_buffer |= getword () << bitstream_avail_bits;
+	bitstream_avail_bits -= 16;
+    }
 }
 
 static inline void dumpbits (uint32_t num_bits)
 {
-	bitstream_buffer <<= num_bits;
-	bitstream_avail_bits += num_bits;
+    bitstream_buffer <<= num_bits;
+    bitstream_avail_bits += num_bits;
 }
 
 static inline uint32_t 
 bitstream_show (uint32_t num_bits)
 {
-	needbits (num_bits);
-	return bitstream_buffer >> (32 - num_bits);
+    //needbits ();
+    return bitstream_buffer >> (32 - num_bits);
 }
 
 static inline uint32_t 
 bitstream_get (uint32_t num_bits)
 {
-	uint32_t result;
+    uint32_t result;
 
-	needbits (num_bits);
-	result = bitstream_buffer >> (32 - num_bits);
-	dumpbits (num_bits);
+    //needbits ();
+    result = bitstream_buffer >> (32 - num_bits);
+    dumpbits (num_bits);
 
-	return result;
+    return result;
 }
 
 static inline void 
 bitstream_flush (uint32_t num_bits)
 {
-	// assume we only ever flush bits that we have already shown
-	//needbits (num_bits);
-
-	dumpbits (num_bits);
+    dumpbits (num_bits);
 }

@@ -47,9 +47,154 @@ typedef struct {
     char run, level, len;
 } DCTtab;
 
-extern DCTtab DCTtabfirst[],DCTtabnext[],DCTtab0[],DCTtab1[];
-extern DCTtab DCTtab2[],DCTtab3[],DCTtab4[],DCTtab5[],DCTtab6[];
-extern DCTtab DCTtab0a[],DCTtab1a[];
+//extern DCTtab DCTtabfirst[],DCTtabnext[],DCTtab0[],DCTtab1[];
+//extern DCTtab DCTtab2[],DCTtab3[],DCTtab4[],DCTtab5[],DCTtab6[];
+//extern DCTtab DCTtab0a[],DCTtab1a[];
+
+DCTtab DCT_16 [] = {
+    { 1,18,16}, { 1,17,16}, { 1,16,16}, { 1,15,16},
+    { 6, 3,16}, {16, 2,16}, {15, 2,16}, {14, 2,16},
+    {13, 2,16}, {12, 2,16}, {11, 2,16}, {31, 1,16},
+    {30, 1,16}, {29, 1,16}, {28, 1,16}, {27, 1,16}
+};
+
+DCTtab DCT_15 [] = {
+    { 0,40,15}, { 0,39,15}, { 0,38,15}, { 0,37,15},
+    { 0,36,15}, { 0,35,15}, { 0,34,15}, { 0,33,15},
+    { 0,32,15}, { 1,14,15}, { 1,13,15}, { 1,12,15},
+    { 1,11,15}, { 1,10,15}, { 1, 9,15}, { 1, 8,15},
+    { 0,31,14}, { 0,31,14}, { 0,30,14}, { 0,30,14},
+    { 0,29,14}, { 0,29,14}, { 0,28,14}, { 0,28,14},
+    { 0,27,14}, { 0,27,14}, { 0,26,14}, { 0,26,14},
+    { 0,25,14}, { 0,25,14}, { 0,24,14}, { 0,24,14},
+    { 0,23,14}, { 0,23,14}, { 0,22,14}, { 0,22,14},
+    { 0,21,14}, { 0,21,14}, { 0,20,14}, { 0,20,14},
+    { 0,19,14}, { 0,19,14}, { 0,18,14}, { 0,18,14},
+    { 0,17,14}, { 0,17,14}, { 0,16,14}, { 0,16,14}
+};
+
+DCTtab DCT_13 [] = {
+    {10, 2,13}, { 9, 2,13}, { 5, 3,13}, { 3, 4,13},
+    { 2, 5,13}, { 1, 7,13}, { 1, 6,13}, { 0,15,13},
+    { 0,14,13}, { 0,13,13}, { 0,12,13}, {26, 1,13},
+    {25, 1,13}, {24, 1,13}, {23, 1,13}, {22, 1,13},
+    { 0,11,12}, { 0,11,12}, { 8, 2,12}, { 8, 2,12},
+    { 4, 3,12}, { 4, 3,12}, { 0,10,12}, { 0,10,12},
+    { 2, 4,12}, { 2, 4,12}, { 7, 2,12}, { 7, 2,12},
+    {21, 1,12}, {21, 1,12}, {20, 1,12}, {20, 1,12},
+    { 0, 9,12}, { 0, 9,12}, {19, 1,12}, {19, 1,12},
+    {18, 1,12}, {18, 1,12}, { 1, 5,12}, { 1, 5,12},
+    { 3, 3,12}, { 3, 3,12}, { 0, 8,12}, { 0, 8,12},
+    { 6, 2,12}, { 6, 2,12}, {17, 1,12}, {17, 1,12}
+};
+
+DCTtab DCT_B14_10 [] = {
+    {16, 1,10}, { 5, 2,10}, { 0, 7,10}, { 2, 3,10},
+    { 1, 4,10}, {15, 1,10}, {14, 1,10}, { 4, 2,10}
+};
+
+DCTtab DCT_B14_8 [] = {
+    {65, 0, 6}, {65, 0, 6}, {65, 0, 6}, {65, 0, 6},
+    { 2, 2, 7}, { 2, 2, 7}, { 9, 1, 7}, { 9, 1, 7},
+    { 0, 4, 7}, { 0, 4, 7}, { 8, 1, 7}, { 8, 1, 7},
+    { 7, 1, 6}, { 7, 1, 6}, { 7, 1, 6}, { 7, 1, 6},
+    { 6, 1, 6}, { 6, 1, 6}, { 6, 1, 6}, { 6, 1, 6},
+    { 1, 2, 6}, { 1, 2, 6}, { 1, 2, 6}, { 1, 2, 6},
+    { 5, 1, 6}, { 5, 1, 6}, { 5, 1, 6}, { 5, 1, 6},
+    {13, 1, 8}, { 0, 6, 8}, {12, 1, 8}, {11, 1, 8},
+    { 3, 2, 8}, { 1, 3, 8}, { 0, 5, 8}, {10, 1, 8}
+};
+
+DCTtab DCT_B14AC_5 [] = {
+		{ 0, 3, 5}, { 4, 1, 5}, { 3, 1, 5},
+    { 0, 2, 4}, { 0, 2, 4}, { 2, 1, 4}, { 2, 1, 4},
+    { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3},
+    {64, 0, 2}, {64, 0, 2}, {64, 0, 2}, {64, 0, 2},
+    {64, 0, 2}, {64, 0, 2}, {64, 0, 2}, {64, 0, 2},
+    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
+    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}
+};
+
+DCTtab DCT_B14DC_5 [] = {
+		{ 0, 3, 5}, { 4, 1, 5}, { 3, 1, 5},
+    { 0, 2, 4}, { 0, 2, 4}, { 2, 1, 4}, { 2, 1, 4},
+    { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3},
+    { 0, 1, 1}, { 0, 1, 1}, { 0, 1, 1}, { 0, 1, 1},
+    { 0, 1, 1}, { 0, 1, 1}, { 0, 1, 1}, { 0, 1, 1},
+    { 0, 1, 1}, { 0, 1, 1}, { 0, 1, 1}, { 0, 1, 1},
+    { 0, 1, 1}, { 0, 1, 1}, { 0, 1, 1}, { 0, 1, 1}
+};
+
+DCTtab DCT_B15_10 [] = {
+    { 5, 2, 9}, { 5, 2, 9}, {14, 1, 9}, {14, 1, 9},
+    { 2, 4,10}, {16, 1,10}, {15, 1, 9}, {15, 1, 9}
+};
+
+DCTtab DCT_B15_8 [] = {
+    {65, 0, 6}, {65, 0, 6}, {65, 0, 6}, {65, 0, 6},
+    { 7, 1, 7}, { 7, 1, 7}, { 8, 1, 7}, { 8, 1, 7},
+    { 6, 1, 7}, { 6, 1, 7}, { 2, 2, 7}, { 2, 2, 7},
+    { 0, 7, 6}, { 0, 7, 6}, { 0, 7, 6}, { 0, 7, 6},
+    { 0, 6, 6}, { 0, 6, 6}, { 0, 6, 6}, { 0, 6, 6},
+    { 4, 1, 6}, { 4, 1, 6}, { 4, 1, 6}, { 4, 1, 6},
+    { 5, 1, 6}, { 5, 1, 6}, { 5, 1, 6}, { 5, 1, 6},
+    { 1, 5, 8}, {11, 1, 8}, { 0,11, 8}, { 0,10, 8},
+    {13, 1, 8}, {12, 1, 8}, { 3, 2, 8}, { 1, 4, 8},
+    { 2, 1, 5}, { 2, 1, 5}, { 2, 1, 5}, { 2, 1, 5},
+    { 2, 1, 5}, { 2, 1, 5}, { 2, 1, 5}, { 2, 1, 5},
+    { 1, 2, 5}, { 1, 2, 5}, { 1, 2, 5}, { 1, 2, 5},
+    { 1, 2, 5}, { 1, 2, 5}, { 1, 2, 5}, { 1, 2, 5},
+    { 3, 1, 5}, { 3, 1, 5}, { 3, 1, 5}, { 3, 1, 5},
+    { 3, 1, 5}, { 3, 1, 5}, { 3, 1, 5}, { 3, 1, 5},
+    { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3},
+    { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3},
+    { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3},
+    { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3},
+    { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3},
+    { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3},
+    { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3},
+    { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3}, { 1, 1, 3},
+    {64, 0, 4}, {64, 0, 4}, {64, 0, 4}, {64, 0, 4},
+    {64, 0, 4}, {64, 0, 4}, {64, 0, 4}, {64, 0, 4},
+    {64, 0, 4}, {64, 0, 4}, {64, 0, 4}, {64, 0, 4},
+    {64, 0, 4}, {64, 0, 4}, {64, 0, 4}, {64, 0, 4},
+    { 0, 3, 4}, { 0, 3, 4}, { 0, 3, 4}, { 0, 3, 4},
+    { 0, 3, 4}, { 0, 3, 4}, { 0, 3, 4}, { 0, 3, 4},
+    { 0, 3, 4}, { 0, 3, 4}, { 0, 3, 4}, { 0, 3, 4},
+    { 0, 3, 4}, { 0, 3, 4}, { 0, 3, 4}, { 0, 3, 4},
+    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
+    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
+    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
+    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
+    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
+    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
+    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
+    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
+    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
+    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
+    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
+    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
+    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
+    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
+    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
+    { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2}, { 0, 1, 2},
+    { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3},
+    { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3},
+    { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3},
+    { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3},
+    { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3},
+    { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3},
+    { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3},
+    { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3}, { 0, 2, 3},
+    { 0, 4, 5}, { 0, 4, 5}, { 0, 4, 5}, { 0, 4, 5},
+    { 0, 4, 5}, { 0, 4, 5}, { 0, 4, 5}, { 0, 4, 5},
+    { 0, 5, 5}, { 0, 5, 5}, { 0, 5, 5}, { 0, 5, 5},
+    { 0, 5, 5}, { 0, 5, 5}, { 0, 5, 5}, { 0, 5, 5},
+    { 9, 1, 7}, { 9, 1, 7}, { 1, 3, 7}, { 1, 3, 7},
+    {10, 1, 7}, {10, 1, 7}, { 0, 8, 7}, { 0, 8, 7},
+    { 0, 9, 7}, { 0, 9, 7}, { 0,12, 8}, { 0,13, 8},
+    { 2, 3, 8}, { 4, 2, 8}, { 0,14, 8}, { 0,15, 8}
+};
 
 static int non_linear_quantizer_scale[32] =
 {
@@ -71,87 +216,22 @@ static inline int get_quantizer_scale (int q_scale_type)
 	return quantizer_scale_code << 1;
 }
 
-//This needs to be rewritten
-static inline int slice_get_block_coeff (uint16_t * run, int16_t * val,
-					 int non_intra_dc,
-					 int intra_vlc_format)
-{
-    uint32_t code;
-    DCTtab * tab;
-
-    //this routines handles intra AC and non-intra AC/DC coefficients
-    code = bitstream_show (16);
- 
-    //FIXME use a pointer to the right vlc format table based on
-    //intra_vlc_format
-    if (code>=16384 && !intra_vlc_format) {
-	if (non_intra_dc)
-	    tab = &DCTtabfirst[ (code>>12)-4];
-	else
-	    tab = &DCTtabnext[ (code>>12)-4];
-    } else if (code>=1024) {
-	if (intra_vlc_format)
-	    tab = &DCTtab0a[ (code>>8)-4];
-	else
-	    tab = &DCTtab0[ (code>>8)-4];
-    } else if (code>=512) {
-	if (intra_vlc_format)
-	    tab = &DCTtab1a[ (code>>6)-8];
-	else
-	    tab = &DCTtab1[ (code>>6)-8];
-    } else if (code>=256)
-	tab = &DCTtab2[ (code>>4)-16];
-    else if (code>=128)
-	tab = &DCTtab3[ (code>>3)-16];
-    else if (code>=64)
-	tab = &DCTtab4[ (code>>2)-16];
-    else if (code>=32)
-	tab = &DCTtab5[ (code>>1)-16];
-    else if (code>=16)
-	tab = &DCTtab6[code-16];
-    else {
-	fprintf (stderr,
-		 "(vlc) invalid huffman code 0x%x in vlc_get_block_coeff ()\n",
-		 code);
-	exit (1);
-	return 0;
-    }
-
-    bitstream_flush (tab->len);
-
-    if (tab->run==64) // end_of_block 
-	return 0;
-
-    if (tab->run==65) /* escape */ {
-	*run = bitstream_get (6);
-
-	*val = bitstream_get (12);
-	if (*val >= 2048)
-	    *val = *val - 4096;
-    } else {
-	*run = tab->run;
-
-	*val = tab->level;	 
-	if (bitstream_get (1)) //sign bit
-	    *val = -*val;
-    }
-
-    return 1;
-}
-
 static void slice_get_intra_block (const picture_t * picture,
 				   slice_t * slice,
 				   int16_t * dest, int cc)
 {
-    uint32_t i = 1;
-    uint32_t j;
-    uint16_t run;
-    int16_t val;
-    const uint8_t *scan = picture->scan;
-    uint8_t *quant_matrix = picture->intra_quantizer_matrix;
-    int16_t quantizer_scale = slice->quantizer_scale;
-    int16_t mismatch;
+    int i = 1;
+    int j;
+    int run;
+    int val;
+    const uint8_t * scan = picture->scan;
+    uint8_t * quant_matrix = picture->intra_quantizer_matrix;
+    int quantizer_scale = slice->quantizer_scale;
+    int mismatch;
+    uint32_t code;
+    DCTtab * tab;
 
+    needbits ();
     //Get the intra DC coefficient and inverse quantize it
     if (cc == 0)
 	dest[0] = (slice->dc_dct_pred[0] += Get_Luma_DC_dct_diff ()) <<
@@ -162,7 +242,72 @@ static void slice_get_intra_block (const picture_t * picture,
 
     i = 1;
     mismatch = ~dest[0];
-    while ((slice_get_block_coeff (&run,&val,0,picture->intra_vlc_format))) {
+
+    while (1) {
+	needbits ();
+	code = bitstream_show (16);
+
+	if (picture->intra_vlc_format) {
+	    if (code >= 0x0400)
+		tab = DCT_B15_8 - 4 + (code >> 8);
+	    else if (code >= 0x0200)
+		tab = DCT_B15_10 - 8 + (code >> 6);
+	    else if (code >= 0x0080)
+		tab = DCT_13 - 16 + (code >> 3);
+	    else if (code >= 0x0020)
+		tab = DCT_15 - 16 + (code >> 1);
+	    else if (code >= 0x0010)
+		tab = DCT_16 - 16 + code;
+	    else {
+		fprintf (stderr,
+			 "(vlc) invalid huffman code 0x%x in vlc_get_block_coeff ()\n",
+			 code);
+		exit (1);
+		break;
+	    }
+	} else {
+	    if (code >= 0x2800)
+		tab = DCT_B14AC_5 - 5 + (code >> 11);
+	    else if (code >= 0x0400)
+		tab = DCT_B14_8 - 4 + (code >> 8);
+	    else if (code >= 0x0200)
+		tab = DCT_B14_10 - 8 + (code >> 6);
+	    else if (code >= 0x0080)
+		tab = DCT_13 - 16 + (code >> 3);
+	    else if (code >= 0x0020)
+		tab = DCT_15 - 16 + (code >> 1);
+	    else if (code >= 0x0010)
+		tab = DCT_16 - 16 + code;
+	    else {
+		fprintf (stderr,
+			 "(vlc) invalid huffman code 0x%x in vlc_get_block_coeff ()\n",
+			 code);
+		exit (1);
+		break;
+	    }
+	}
+
+	bitstream_flush (tab->len);
+
+	if (tab->run==64) // end_of_block 
+	    break;
+
+	if (tab->run==65) /* escape */ {
+	    run = bitstream_get (6);
+
+	    needbits ();
+	    val = bitstream_get (12);
+	    if (val >= 2048)
+		val = val - 4096;
+	} else {
+	    run = tab->run;
+
+	    val = tab->level;
+	    needbits ();	// FIXME get rid of this one
+	    if (bitstream_get (1)) //sign bit
+		val = -val;
+	}
+
 	i += run;
 	j = scan[i++];
 	mismatch ^= dest[j] = (val * quantizer_scale * quant_matrix[j]) / 16;
@@ -173,19 +318,93 @@ static void slice_get_intra_block (const picture_t * picture,
 static void slice_get_non_intra_block (const picture_t * picture,
 				       slice_t * slice, int16_t * dest)
 {
-    uint32_t i;
-    uint32_t j;
-    uint16_t run;
-    int16_t val;
-    const uint8_t *scan = picture->scan;
-    uint8_t *quant_matrix = picture->non_intra_quantizer_matrix;
-    int16_t quantizer_scale = slice->quantizer_scale;
+    int i;
+    int j;
+    int run;
+    int val;
+    const uint8_t * scan = picture->scan;
+    uint8_t * quant_matrix = picture->non_intra_quantizer_matrix;
+    int quantizer_scale = slice->quantizer_scale;
     int k;
-    int16_t mismatch;
+    int mismatch;
+    uint32_t code;
+    DCTtab * tab;
 
     i = 0;
     mismatch = 1;
-    while ((slice_get_block_coeff (&run,&val,i==0,0))) {
+
+    needbits ();
+    code = bitstream_show (16);
+
+    if (code >= 0x2800)
+	tab = DCT_B14DC_5 - 5 + (code >> 11);
+    else if (code >= 0x0400)
+	tab = DCT_B14_8 - 4 + (code >> 8);
+    else if (code >= 0x0200)
+	tab = DCT_B14_10 - 8 + (code >> 6);
+    else if (code >= 0x0080)
+	tab = DCT_13 - 16 + (code >> 3);
+    else if (code >= 0x0020)
+	tab = DCT_15 - 16 + (code >> 1);
+    else if (code >= 0x0010)
+	tab = DCT_16 - 16 + code;
+    else {
+	fprintf (stderr,
+		 "(vlc) invalid huffman code 0x%x in vlc_get_block_coeff ()\n",
+		 code);
+	exit (1);
+	return;
+    }
+
+    goto gotit;
+ 
+    while (1) {
+	needbits ();
+	code = bitstream_show (16);
+
+	if (code >= 0x2800)
+	    tab = DCT_B14AC_5 - 5 + (code >> 11);
+	else if (code >= 0x0400)
+	    tab = DCT_B14_8 - 4 + (code >> 8);
+	else if (code >= 0x0200)
+	    tab = DCT_B14_10 - 8 + (code >> 6);
+	else if (code >= 0x0080)
+	    tab = DCT_13 - 16 + (code >> 3);
+	else if (code >= 0x0020)
+	    tab = DCT_15 - 16 + (code >> 1);
+	else if (code >= 0x0010)
+	    tab = DCT_16 - 16 + code;
+	else {
+	    fprintf (stderr,
+		     "(vlc) invalid huffman code 0x%x in vlc_get_block_coeff ()\n",
+		     code);
+	    exit (1);
+	    break;
+	}
+
+    gotit:
+
+	bitstream_flush (tab->len);
+
+	if (tab->run==64) // end_of_block 
+	    break;
+
+	if (tab->run==65) /* escape */ {
+	    run = bitstream_get (6);
+
+	    needbits ();
+	    val = bitstream_get (12);
+	    if (val >= 2048)
+		val = val - 4096;
+	} else {
+	    run = tab->run;
+
+	    val = tab->level;
+	    needbits ();	// FIXME get rid of this one
+	    if (bitstream_get (1)) //sign bit
+		val = -val;
+	}
+
 	i += run;
 	j = scan[i++];
 	k = (val > 0) ? 1 : ((val < 0) ? -1 : 0);
@@ -220,8 +439,10 @@ static int get_motion_delta (int f_code)
 	return 0;
 
     motion_residual = 0;
-    if (f_code != 0)
+    if (f_code != 0) {
+	needbits ();
 	motion_residual = bitstream_get (f_code);
+    }
 
     if (motion_code > 0)
 	return ((motion_code - 1) << f_code) + motion_residual + 1;
@@ -252,10 +473,12 @@ static void motion_frame (motion_t * motion, uint8_t * dest[3],
 {
     int motion_x, motion_y;
 
+    needbits ();
     motion_x = motion->pmv[0][0] + get_motion_delta (motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[1][0] = motion->pmv[0][0] = motion_x;
 
+    needbits ();
     motion_y = motion->pmv[0][1] + get_motion_delta (motion->f_code[1]);
     motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
     motion->pmv[1][1] = motion->pmv[0][1] = motion_y;
@@ -271,12 +494,14 @@ static void motion_field (motion_t * motion, uint8_t * dest[3],
     int vertical_field_select;
     int motion_x, motion_y;
 
+    needbits ();
     vertical_field_select = bitstream_get (1);
 
     motion_x = motion->pmv[0][0] + get_motion_delta (motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[0][0] = motion_x;
 
+    needbits ();
     motion_y = (motion->pmv[0][1] >> 1) + get_motion_delta (motion->f_code[1]);
     //motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
     motion->pmv[0][1] = motion_y << 1;
@@ -285,12 +510,14 @@ static void motion_field (motion_t * motion, uint8_t * dest[3],
 		  motion->ref_frame, offset + vertical_field_select * width,
 		  width * 2, 8);
 
+    needbits ();
     vertical_field_select = bitstream_get (1);
 
     motion_x = motion->pmv[1][0] + get_motion_delta (motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[1][0] = motion_x;
 
+    needbits ();
     motion_y = (motion->pmv[1][1] >> 1) + get_motion_delta (motion->f_code[1]);
     //motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
     motion->pmv[1][1] = motion_y << 1;
@@ -323,17 +550,18 @@ static void motion_conceal (motion_t * motion)
 {
     int tmp;
 
+    needbits ();
     tmp = motion->pmv[0][0] + get_motion_delta (motion->f_code[0]);
     tmp = bound_motion_vector (tmp, motion->f_code[0]);
     motion->pmv[1][0] = motion->pmv[0][0] = tmp;
 
+    needbits ();
     tmp = motion->pmv[0][1] + get_motion_delta (motion->f_code[1]);
     tmp = bound_motion_vector (tmp, motion->f_code[1]);
     motion->pmv[1][1] = motion->pmv[0][1] = tmp;
 
     bitstream_flush (1); // remove marker_bit
 }
-
 
 #define MOTION(routine,direction,slice,dest,offset,stride)	\
 do {								\
@@ -412,17 +640,22 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 
     bitstream_init (buffer);
 
+    needbits ();
     slice.quantizer_scale = get_quantizer_scale (picture->q_scale_type);
 
     //Ignore intra_slice and all the extra data
-    while (bitstream_get (1))
+    while (bitstream_get (1)) {
 	bitstream_flush (8);
+	needbits ();
+    }
 
     mba_inc = Get_macroblock_address_increment () - 1;
     mba += mba_inc;
     offset = 16 * mba_inc;
 
     while (1) {
+	needbits ();
+
 	macroblock_modes =
 	    get_macroblock_modes (picture->picture_coding_type,
 				  picture->frame_pred_frame_dct);
@@ -504,6 +737,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		    DCT_stride = width;
 		}
 
+		needbits ();
 		coded_block_pattern = Get_coded_block_pattern ();
 
 		// Decode lum blocks
@@ -540,6 +774,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	mba++;
 	offset += 16;
 
+	needbits ();
 	if (! bitstream_show (11))
 	    break;
 
