@@ -310,9 +310,11 @@ void mpeg2_close (vo_functions_t * output)
 	if (is_display_initialized)
 		output->draw_frame (picture.backward_reference_frame);
 
+#ifdef __OMS__
 	output->free_image_buffer (picture.backward_reference_frame);
 	output->free_image_buffer (picture.forward_reference_frame);
 	output->free_image_buffer (picture.throwaway_frame);
+#endif
 }
 
 void mpeg2_drop (int flag)
