@@ -233,17 +233,20 @@ dump_yuv_planar(uint32_t *y, uint32_t *u, uint32_t *v, uint32_t to, uint32_t wid
 	reg_YUV->yuvStride = screenwidth*2;
 
 	LOG("video_out_3dfx: starting planar dump\n");
-	jmax = height>>1; // vidheight/2, height of U and V planes
-	y_imax = width; // Y plane is twice as wide as U and V planes
-	uv_imax = width>>1;  // vidwidth/2/4, width of U and V planes in 32-bit words
+	jmax = height>>1;	// vidheight/2, height of U and V planes
+	y_imax = width>>2;	// Y plane is twice as wide as U and V planes
+	uv_imax = width>>3;	// vidwidth/2/4, width of U and V planes in 32-bit words
 
 	for (j=0;j<jmax;j++) 
 	{
-		//change from wmemcpy to memcpy. was memcpy supposed to be faster? - ah
-		memcpy(fb_YUV->U + (uint32_t) VOODOO_YUV_STRIDE*  j       , u + (uint32_t) uv_imax*  j       , uv_imax);
-		memcpy(fb_YUV->V + (uint32_t) VOODOO_YUV_STRIDE*  j       , v + (uint32_t) uv_imax*  j       , uv_imax);
-		memcpy(fb_YUV->Y + (uint32_t) VOODOO_YUV_STRIDE* (j<<1)   , y + (uint32_t) y_imax * (j<<1)   , y_imax);
-		memcpy(fb_YUV->Y + (uint32_t) VOODOO_YUV_STRIDE*((j<<1)+1), y + (uint32_t) y_imax *((j<<1)+1), y_imax);
+		memcpy(fb_YUV->U + (uint_32) VOODOO_YUV_STRIDE*  j       ,
+			u + (uint_32) uv_imax*  j       , uv_imax<<2);
+		memcpy(fb_YUV->V + (uint_32) VOODOO_YUV_STRIDE*  j       ,
+			v + (uint_32) uv_imax*  j       , uv_imax<<2);
+		memcpy(fb_YUV->Y + (uint_32) VOODOO_YUV_STRIDE* (j<<1)   ,
+			y + (uint_32) y_imax * (j<<1)   , y_imax<<2);
+		memcpy(fb_YUV->Y + (uint_32) VOODOO_YUV_STRIDE*((j<<1)+1),
+			y + (uint_32) y_imax *((j<<1)+1), y_imax<<2);
 	}
   LOG("video_out_3dfx: done planar dump\n");
 }

@@ -19,3 +19,6 @@
 /* Have MLIB */
 #undef HAVE_MLIB
 
+/* Have MMX */
+#undef HAVE_MMX
+
