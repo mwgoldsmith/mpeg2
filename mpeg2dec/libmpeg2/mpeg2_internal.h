@@ -286,5 +286,4 @@ extern mpeg2_mc_t mpeg2_mc_mmxext;
 extern mpeg2_mc_t mpeg2_mc_3dnow;
 extern mpeg2_mc_t mpeg2_mc_altivec;
 extern mpeg2_mc_t mpeg2_mc_alpha;
-extern mpeg2_mc_t mpeg2_mc_mlib;
 extern mpeg2_mc_t mpeg2_mc_vis;

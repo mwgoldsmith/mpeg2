@@ -34,19 +34,6 @@ case $enable_directx in
 		fi;;
 esac
 
-dnl check for mlib
-AC_ARG_ENABLE([mlib],
-    [  --disable-mlib          make a version not using mediaLib])
-if test x"$enable_mlib" != x"no"; then
-    cflags_save="$CFLAGS"
-    CFLAGS="$OPT_CFLAGS -L/opt/SUNWmlib/lib -R/opt/SUNWmlib/lib $CFLAGS"
-    AC_CHECK_LIB([mlib],[mlib_VideoColorYUV2RGB420],
-	[AC_DEFINE([LIBVO_MLIB],,[libvo mediaLib support])
-	LIBVO_CFLAGS="$LIBVO_CFLAGS -I/opt/SUNWmlib/include"
-	LIBVO_LIBS="$LIBVO_LIBS -L/opt/SUNWmlib/lib -R/opt/SUNWmlib/lib -lmlib"])
-    CFLAGS="$cflags_save"
-fi
-
 dnl check for SDL
 AC_ARG_ENABLE([sdl],[  --disable-sdl           make a version not using SDL])
 if test x"$enable_sdl" != x"no"; then

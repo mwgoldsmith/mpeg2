@@ -520,10 +520,6 @@ static void convert_internal (int order, int bpp, int width, int height,
 	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_SPARC_VIS))
 	    result->copy = yuv2rgb_init_vis (order, bpp);
 #endif
-#ifdef LIBVO_MLIB
-	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_MLIB))
-	    result->copy = yuv2rgb_init_mlib (order, bpp);
-#endif
 	if (result->copy == NULL) {
 	    result->copy = convert_yuv2rgb_c;
 	    id->yuv2rgb = yuv2rgb_c_init (order, bpp);

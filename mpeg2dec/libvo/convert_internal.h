@@ -37,4 +37,3 @@ typedef void yuv2rgb_copy (void * id, uint8_t * const * src,
 yuv2rgb_copy * yuv2rgb_init_mmxext (int bpp, int mode);
 yuv2rgb_copy * yuv2rgb_init_mmx (int bpp, int mode);
 yuv2rgb_copy * yuv2rgb_init_vis (int bpp, int mode);
-yuv2rgb_copy * yuv2rgb_init_mlib (int bpp, int mode);
