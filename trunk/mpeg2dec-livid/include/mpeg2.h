@@ -65,4 +65,3 @@ int mpeg2_decode_data (mpeg2dec_t * mpeg2dec,
 		       uint8_t * data_start, uint8_t * data_end);
 
 void mpeg2_drop (mpeg2dec_t * mpeg2dec, int flag);
-void mpeg2_output_init (mpeg2dec_t * mpeg2dec, int flag);
