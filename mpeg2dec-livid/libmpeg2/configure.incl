@@ -1,7 +1,7 @@
 AC_SUBST(LIBMPEG2_CFLAGS)
 AC_SUBST(LIBMPEG2_CONFIG_OBJS)
 
-LIBMPEG2_CFLAGS = -I../libvo
+LIBMPEG2_CFLAGS=-I../libvo
 
 dnl Do the right thing for architecture specific goodness
 case "$host_alias" in
