@@ -1,5 +1,6 @@
 /*
  * sample1.c
+ * Copyright (C) 2003      Regis Duchesne <hpreg@zoy.org>
  * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
@@ -19,6 +20,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ * This program reads a MPEG-2 stream, and saves each of its frames as
+ * an image file using the PGM format (black and white).
+ *
+ * It demonstrates how to use the following features of libmpeg2:
+ * - Output buffers use the YUV 4:2:0 planar format.
+ * - Output buffers are allocated and managed by the library.
  */
 
 #include <stdio.h>
@@ -35,8 +43,10 @@ static void save_pgm (int width, int height, uint8_t * const * buf, int num)
 
     sprintf (filename, "%d.pgm", num);
     pgmfile = fopen (filename, "wb");
-    if (!pgmfile)
-	return;
+    if (!pgmfile) {
+	fprintf (stderr, "Could not open file \"%s\".\n", filename);
+	exit (1);
+    }
     fprintf (pgmfile, "P5\n%d %d\n255\n", width, height * 3 / 2);
     fwrite (buf[0], width, height, pgmfile);
     width >>= 1;
@@ -48,28 +58,30 @@ static void save_pgm (int width, int height, uint8_t * const * buf, int num)
     fclose (pgmfile);
 }
 
-static void sample1 (FILE * file)
+static void sample1 (FILE * mpgfile)
 {
 #define BUFFER_SIZE 4096
     uint8_t buffer[BUFFER_SIZE];
-    mpeg2dec_t * mpeg2dec;
+    mpeg2dec_t * decoder;
     const mpeg2_info_t * info;
     mpeg2_state_t state;
-    int size;
+    size_t size;
     int framenum = 0;
 
-    mpeg2dec = mpeg2_init ();
-    if (mpeg2dec == NULL)
+    decoder = mpeg2_init ();
+    if (decoder == NULL) {
+	fprintf (stderr, "Could not allocate a decoder object.\n");
 	exit (1);
-    info = mpeg2_info (mpeg2dec);
+    }
+    info = mpeg2_info (decoder);
 
-    size = BUFFER_SIZE;
+    size = -1;
     do {
-	state = mpeg2_parse (mpeg2dec);
+	state = mpeg2_parse (decoder);
 	switch (state) {
 	case STATE_BUFFER:
-	    size = fread (buffer, 1, BUFFER_SIZE, file);
-	    mpeg2_buffer (mpeg2dec, buffer, buffer + size);
+	    size = fread (buffer, 1, BUFFER_SIZE, mpgfile);
+	    mpeg2_buffer (decoder, buffer, buffer + size);
 	    break;
 	case STATE_SLICE:
 	case STATE_END:
@@ -82,23 +94,23 @@ static void sample1 (FILE * file)
 	}
     } while (size);
 
-    mpeg2_close (mpeg2dec);
+    mpeg2_close (decoder);
 }
 
 int main (int argc, char ** argv)
 {
-    FILE * file;
+    FILE * mpgfile;
 
     if (argc > 1) {
-	file = fopen (argv[1], "rb");
-	if (!file) {
-	    fprintf (stderr, "Could not open file %s\n", argv[1]);
+	mpgfile = fopen (argv[1], "rb");
+	if (!mpgfile) {
+	    fprintf (stderr, "Could not open file \"%s\".\n", argv[1]);
 	    exit (1);
 	}
     } else
-	file = stdin;
+	mpgfile = stdin;
 
-    sample1 (file);
+    sample1 (mpgfile);
 
     return 0;
 }
