@@ -89,6 +89,7 @@ idct_init(void)
 #ifdef __i386__
 	if(config.flags & MPEG2_MMX_ENABLE)
 	{
+		fprintf (stderr, "Using MMX for IDCT transform\n");
 		idct_block = idct_block_mmx;
 		idct_end = idct_end_mmx;
 	}
@@ -97,12 +98,14 @@ idct_init(void)
 #ifdef HAVE_MLIB
 	if(config.flags & MPEG2_MLIB_ENABLE)
 	{
+		fprintf (stderr, "Using mlib for IDCT transform\n");
 		idct_block = idct_block_mlib;
 		idct_end = idct_end_mlib;
 	}
 	else
 #endif
 	{
+		fprintf (stderr, "No accelerated IDCT transform found\n");
 		idct_block = idct_block_c;
 		idct_end = idct_end_c;
 	}
