@@ -37,10 +37,10 @@
 #include "stats.h"
 
 
-//storage for dct coded blocks plus one row and column of overshoot
-static sint_16 y_blocks[4 * 64 ] ALIGN_16_BYTE;
-static sint_16 cr_blocks[64] ALIGN_16_BYTE;
-static sint_16 cb_blocks[64] ALIGN_16_BYTE;
+// storage for dct coded blocks
+// y at blocks, cr at blocks + 4 * 64, cb at blocks + 5 * 64 
+static sint_16 blocks[6 * 64 ] ALIGN_16_BYTE;
+
 
 //XXX put these on the stack in slice_process?
 static slice_t slice;
@@ -442,33 +442,33 @@ slice_get_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
 		mb->coded_block_pattern = 0x3f;
 
 		// Decode lum blocks 
-		slice_get_intra_block(picture,slice,&mb->y_blocks[0*64],0);
-		slice_get_intra_block(picture,slice,&mb->y_blocks[1*64],0);
-		slice_get_intra_block(picture,slice,&mb->y_blocks[2*64],0);
-		slice_get_intra_block(picture,slice,&mb->y_blocks[3*64],0);
+		slice_get_intra_block(picture,slice,&mb->blocks[0*64],0);
+		slice_get_intra_block(picture,slice,&mb->blocks[1*64],0);
+		slice_get_intra_block(picture,slice,&mb->blocks[2*64],0);
+		slice_get_intra_block(picture,slice,&mb->blocks[3*64],0);
 		// Decode chroma blocks 
-		slice_get_intra_block(picture,slice,mb->cr_blocks,1);
-		slice_get_intra_block(picture,slice,mb->cb_blocks,2);
+		slice_get_intra_block(picture,slice,&mb->blocks[4*64],1);
+		slice_get_intra_block(picture,slice,&mb->blocks[5*64],2);
 	}
 	//coded_block_pattern is set only if there are blocks in bitstream
 	else if(mb->coded_block_pattern)
 	{
 		// Decode lum blocks 
 		if (mb->coded_block_pattern & 0x20)
-			slice_get_non_intra_block(picture,slice,&mb->y_blocks[0*64],0);
+			slice_get_non_intra_block(picture,slice,&mb->blocks[0*64],0);
 		if (mb->coded_block_pattern & 0x10)
-			slice_get_non_intra_block(picture,slice,&mb->y_blocks[1*64],0);
+			slice_get_non_intra_block(picture,slice,&mb->blocks[1*64],0);
 		if (mb->coded_block_pattern & 0x08)
-			slice_get_non_intra_block(picture,slice,&mb->y_blocks[2*64],0);
+			slice_get_non_intra_block(picture,slice,&mb->blocks[2*64],0);
 		if (mb->coded_block_pattern & 0x04)
-			slice_get_non_intra_block(picture,slice,&mb->y_blocks[3*64],0);
+			slice_get_non_intra_block(picture,slice,&mb->blocks[3*64],0);
 		
 		// Decode chroma blocks 
 		if (mb->coded_block_pattern & 0x2)
-			slice_get_non_intra_block(picture,slice,mb->cr_blocks,1);
+			slice_get_non_intra_block(picture,slice,&mb->blocks[4*64],1);
 
 		if (mb->coded_block_pattern & 0x1)
-			slice_get_non_intra_block(picture,slice,mb->cb_blocks,2);
+			slice_get_non_intra_block(picture,slice,&mb->blocks[5*64],2);
 	}
 
 	// 7.2.1 DC coefficients in intra blocks 
@@ -512,9 +512,7 @@ slice_get_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
 void
 slice_init(void)
 {
-	mb.y_blocks = y_blocks;
-	mb.cr_blocks = cr_blocks;
-	mb.cb_blocks = cb_blocks;
+	mb.blocks = blocks;
 }
 
 

@@ -143,7 +143,7 @@ stats_sequence_ext(picture_t *picture)
 
 void stats_sequence_display_ext(picture_t *picture)
 {
-	dprintf("(seq dsp ext) ");
+	dprintf("(seq_dsp_ext) ");
 	dprintf("video_format %d, color_description %d",
 			picture->video_format,picture->color_description);
 	dprintf("\n");
