@@ -79,7 +79,7 @@ static void decode_allocate_image_buffers (mpeg2dec_t * mpeg2dec)
 {
     int width;
     int height;
-    frame_t * (* allocate) (int, int, uint32_t);
+    img_buf_t * (* allocate) (int, int, uint32_t);
 
     width = mpeg2dec->picture->coded_picture_width;
     height = mpeg2dec->picture->coded_picture_height;
@@ -95,7 +95,7 @@ static void decode_allocate_image_buffers (mpeg2dec_t * mpeg2dec)
 static void decode_reorder_frames (mpeg2dec_t * mpeg2dec)
 {
     picture_t * picture;
-    frame_t * current_frame;
+    img_buf_t * current_frame;
     int i;
 
     picture = mpeg2dec->picture;
@@ -214,7 +214,7 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 
 	    if ((HACK_MODE < 2) && (!(picture->mpeg1))) {
 		uint8_t * foo[3];
-		frame_t * bar;
+		img_buf_t * bar;
 		int offset;
 
 		if (picture->picture_coding_type == B_TYPE)
