@@ -3,10 +3,12 @@ dnl Do nothing if the compiler accepts the restrict keyword.
 dnl Otherwise define restrict to __restrict__ or __restrict if one of
 dnl those work, otherwise define restrict to be empty.
 AC_DEFUN([AC_C_RESTRICT],
-    [ac_cv_c_restrict=no
+    [AC_MSG_CHECKING([for restrict])
+    ac_cv_c_restrict=no
     for ac_kw in restrict __restrict__ __restrict; do
 	AC_TRY_COMPILE([],[char * $ac_kw p;],[ac_cv_c_restrict=$ac_kw; break])
     done
+    AC_MSG_RESULT([$ac_cv_c_restrict])
     case $ac_cv_c_restrict in
 	restrict) ;;
 	no)	AC_DEFINE([restrict],,
@@ -14,6 +16,24 @@ AC_DEFUN([AC_C_RESTRICT],
 		    it, or to nothing if it is not supported.]) ;;
 	*)	AC_DEFINE_UNQUOTED([restrict],$ac_cv_c_restrict) ;;
     esac])
+
+dnl AC_C_ALWAYS_INLINE
+dnl Define inline to something appropriate, including the new always_inline
+dnl attribute from gcc 3.1
+AC_DEFUN([AC_C_ALWAYS_INLINE],
+    [AC_C_INLINE
+    if test x"$GCC" = x"yes" -a x"$ac_cv_c_inline" = x"inline"; then
+	AC_MSG_CHECKING([for always_inline])
+	SAVE_CFLAGS="$CFLAGS"
+	CFLAGS="$CFLAGS -Wall -Werror"
+	AC_TRY_COMPILE([],[__attribute__ ((__always_inline__)) void f (void);],
+	    [ac_cv_always_inline=yes],[ac_cv_always_inline=no])
+	CFLAGS="$SAVE_CFLAGS"
+	AC_MSG_RESULT([$ac_cv_always_inline])
+	if test x"$ac_cv_always_inline" = x"yes"; then
+	    AC_DEFINE_UNQUOTED([inline],[__attribute__ ((__always_inline__))])
+	fi
+    fi])
 
 dnl AC_C_ATTRIBUTE_ALIGNED
 dnl define ATTRIBUTE_ALIGNED_MAX to the maximum alignment if this is supported
