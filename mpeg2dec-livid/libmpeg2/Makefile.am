@@ -10,5 +10,6 @@ libmpeg2_la_SOURCES = decode.c header.c stats.c slice.c \
 # libmpeg2_la_SOURCES = slice.c header.c stats.c idct.c motion_comp.c \
 # decode.c idct_mmx.c motion_comp_mmx.c
 libmpeg2_la_LIBADD = @LIBMPEG2_LIBS@
+libmpeg2_la_LDFLAGS = -no-undefined
 
 EXTRA_DIST = configure.incl vlc.h mpeg2_internal.h

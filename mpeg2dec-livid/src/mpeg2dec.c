@@ -36,6 +36,7 @@
 
 #include "video_out.h"
 #include "mpeg2.h"
+#include "mm_accel.h"
 
 #define BUFFER_SIZE 262144
 static uint8_t buffer[BUFFER_SIZE];
@@ -159,7 +160,7 @@ static void handle_args (int argc, char * argv[])
     } else
 	in_file = stdin;
 
-    mpeg2_init (&mpeg2dec, output_setup);
+    mpeg2_init (&mpeg2dec, mm_accel () | MM_ACCEL_MLIB, output_setup);
 }
 
 static void ps_loop (void)

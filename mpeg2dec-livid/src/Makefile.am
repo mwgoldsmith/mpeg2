@@ -7,3 +7,4 @@ extract_mpeg2_SOURCES = extract_mpeg2.c
 
 lib_LTLIBRARIES = libmpeg2dec.la
 libmpeg2dec_la_SOURCES = cpu_accel.c
+libmpeg2dec_la_LDFLAGS = -no-undefined
