@@ -3,7 +3,7 @@ AM_CFLAGS = $(MPEG2DEC_CFLAGS) $(LIBVO_CFLAGS)
 bin_PROGRAMS = mpeg2dec extract_mpeg2 corrupt_mpeg2
 mpeg2dec_SOURCES = mpeg2dec.c getopt.c gettimeofday.c
 mpeg2dec_LDADD = $(top_builddir)/libmpeg2/libmpeg2.la \
-		 $(top_builddir)/libvo/libvo.a @LIBVO_LIBS@
+		 $(top_builddir)/libvo/libvo.a $(LIBVO_LIBS)
 extract_mpeg2_SOURCES = extract_mpeg2.c getopt.c
 corrupt_mpeg2_SOURCES = corrupt_mpeg2.c getopt.c
 
