@@ -35,7 +35,7 @@
 
 #define BUFFER_SIZE 262144
 static uint8_t buffer[BUFFER_SIZE];
-static FILE *in_file;
+static FILE * in_file;
 static uint32_t frame_counter = 0;
 
 static struct timeval tv_beg, tv_end, tv_start;
@@ -44,7 +44,7 @@ static uint32_t total_elapsed;
 static uint32_t last_count = 0;
 static uint32_t demux_dvd = 0;
 static mpeg2dec_t mpeg2dec;
-static vo_output_video_t* video_out;
+static vo_output_video_t * video_out;
 
 static void print_fps (int final) 
 {
@@ -102,7 +102,7 @@ static void signal_handler (int sig)
 
 static void print_usage (char * argv[])
 {
-    uint32_t i = 0;
+    int i = 0;
 
     fprintf (stderr,"usage: %s [-o mode] [-s] file\n"
 	     "\t-s\tsystem stream (.vob file)\n"
