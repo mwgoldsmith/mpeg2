@@ -76,7 +76,7 @@ static int in_slice = 0;
 
 void mpeg2_init (void)
 {
-    config.flags = mm_accel ();		// | MM_ACCEL_MLIB;
+    config.flags = mm_accel () | MM_ACCEL_MLIB;
 	/*try this if you have problems: replace mm_accel () with one of
 	MM_ACCEL_MLIB
 	MM_ACCEL_X86_MMX
@@ -271,17 +271,11 @@ static int parse_chunk (INITTYPE * output, int code, uint8_t * buffer)
 	drop_frame |= drop_flag && (picture.picture_coding_type == B_TYPE);
 	
 	if (!drop_frame) {
-	    uint8_t ** bar;
-
 	    slice_process (&picture, code, buffer);
-
-	    if (picture.picture_coding_type == B_TYPE)
-		bar = picture.throwaway_frame;
-	    else
-		bar = picture.forward_reference_frame;
 
 	    if ((HACK_MODE < 2) && (!picture.mpeg1)) {
 		uint8_t * foo[3];
+		uint8_t ** bar;
 		int offset;
 
 		if (picture.picture_coding_type == B_TYPE)
