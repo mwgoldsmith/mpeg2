@@ -454,9 +454,24 @@ display_slice(uint_8 *src[], uint_32 slice_num)
 
 	dst = ImageData + image_width * 16 * (bpp/8) * slice_num;
 
-	yuv2rgb(dst , src[0], src[1], src[2], 
-			image_width, 16, 
-			image_width*4, image_width, image_width/2 );
+	if (bpp==32)
+	{
+		yuv2rgb(dst, src[0], src[1], src[2],
+				image_width, 16,
+				image_width*4, image_width, image_width/2 );
+	}
+	else if (bpp == 24)
+	{
+		yuv2rgb(dst, src[0], src[1], src[2],
+				image_width, 16,
+				image_width*3, image_width, image_width/2 );
+	}
+	else if (bpp == 15 || bpp == 16)
+	{
+		yuv2rgb(dst, src[0], src[1], src[2],
+				image_width, 16,
+				image_width*2, image_width, image_width/2 );
+	}
 
 	return 0;
 }
