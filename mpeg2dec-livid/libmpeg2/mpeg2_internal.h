@@ -40,12 +40,12 @@
 #define MC_16X8 (2*64)
 #define MC_DMV (3*64)
 
-/*picture structure */
+/* picture structure */
 #define TOP_FIELD 1
 #define BOTTOM_FIELD 2
 #define FRAME_PICTURE 3
 
-/*picture coding type */
+/* picture coding type */
 #define I_TYPE 1
 #define P_TYPE 2
 #define B_TYPE 3
