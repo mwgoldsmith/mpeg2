@@ -33,6 +33,9 @@
 #include <fcntl.h>
 #include <io.h>
 #endif
+#ifdef LIBVO_SDL
+#include <SDL/SDL.h>
+#endif
 #include <inttypes.h>
 
 #include "mpeg2.h"
