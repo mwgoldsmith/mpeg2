@@ -132,8 +132,8 @@ typedef enum {
 
 typedef struct mpeg2_convert_init_s {
     void * id;
-    int id_size;
-    int buf_size[3];
+    unsigned int id_size;
+    unsigned int buf_size[3];
     void (* start) (void * id, const mpeg2_fbuf_t * fbuf,
 		    const mpeg2_picture_t * picture, const mpeg2_gop_t * gop);
     void (* copy) (void * id, uint8_t * const * src, unsigned int v_offset);
