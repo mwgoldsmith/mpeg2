@@ -155,7 +155,7 @@ static void handle_args (int argc, char * argv[])
     } else
 	in_file = stdin;
 
-    mpeg2_init (&mpeg2dec, video_out, NULL);
+    mpeg2_init (&mpeg2dec, video_out);
 }
 
 static void ps_loop (void)
