@@ -36,7 +36,7 @@ static vo_info_t vo_info =
 static int image_width;
 static int image_height;
 static char header[1024];
-static int framenum = 0;
+static int framenum = -2;
 
 static uint32_t
 init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title, uint32_t format)
@@ -70,7 +70,10 @@ static uint32_t draw_frame(uint8_t * src[])
     FILE * f;
     int i;
 
-    sprintf (buf, "%d.pgm", framenum++);
+    if (++framenum < 0)
+	return 0;
+
+    sprintf (buf, "%d.pgm", framenum);
     f = fopen (buf, "wb");
     if (f == NULL) return 1;
     fwrite (header, strlen (header), 1, f);

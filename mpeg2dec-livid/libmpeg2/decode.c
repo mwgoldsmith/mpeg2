@@ -283,3 +283,13 @@ int mpeg2_decode_data (vo_functions_t *output, uint8_t *current, uint8_t *end)
 
     return ret;
 }
+
+#ifdef __OMS__
+void mpeg2_close (plugin_output_video_t * output)
+#else
+void mpeg2_close (vo_functions_t * output)
+#endif
+{
+    if (is_display_initialized)
+	output->draw_frame (picture.backward_reference_frame);
+}
