@@ -72,107 +72,66 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
     mpeg2_header_state_init (mpeg2dec->decoder);
 }
 
-static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
-			       uint8_t * buffer)
+static inline int crap1 (mpeg2dec_t * mpeg2dec)
 {
-    decoder_t * decoder;
-    int is_frame_done;
+    decoder_t * decoder = mpeg2dec->decoder;
+    int is_frame_done = 0;
 
-    /* wait for sequence_header_code */
-    if (mpeg2dec->is_sequence_needed && (code != 0xb3))
-	return 0;
-
-    mpeg2_stats (code, buffer);
-
-    decoder = mpeg2dec->decoder;
-    is_frame_done = 0;
-
-    if (mpeg2dec->in_slice && ((!code) || (code >= 0xb0))) {
-	mpeg2dec->in_slice = 0;
-
-	if (((decoder->picture_structure == FRAME_PICTURE) ||
-	     (decoder->second_field)) &&
-	    (!(mpeg2dec->drop_frame))) {
-	    is_frame_done = 1;
-	    vo_draw ((decoder->coding_type == B_TYPE) ?
-		     decoder->current_frame :
-		     decoder->forward_reference_frame);
-	}
+    if (((decoder->picture_structure == FRAME_PICTURE) ||
+	 (decoder->second_field)) &&
+	(!(mpeg2dec->drop_frame))) {
+	is_frame_done = 1;
+	vo_draw ((decoder->coding_type == B_TYPE) ?
+		 decoder->current_frame :
+		 decoder->forward_reference_frame);
     }
-
-    switch (code) {
-    case 0x00:	/* picture_start_code */
-	if (mpeg2_header_picture (buffer, &(mpeg2dec->info.picture),
-				  decoder)) {
-	    fprintf (stderr, "bad picture header\n");
-	    exit (1);
-	}
-	mpeg2dec->drop_frame =
-	    mpeg2dec->drop_flag && (decoder->coding_type == B_TYPE);
-	break;
-
-    case 0xb3:	/* sequence_header_code */
-	if (mpeg2_header_sequence (buffer, &(mpeg2dec->info.sequence),
-				   decoder)) {
-	    fprintf (stderr, "bad sequence header\n");
-	    exit (1);
-	}
-	if (mpeg2dec->is_sequence_needed) {
-	    mpeg2dec->is_sequence_needed = 0;
-	    if (vo_setup (mpeg2dec->output, decoder->width, decoder->height)) {
-		fprintf (stderr, "display setup failed\n");
-		exit (1);
-	    }
-	    decoder->forward_reference_frame =
-		vo_get_frame (mpeg2dec->output,
-			      VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
-	    decoder->backward_reference_frame =
-		vo_get_frame (mpeg2dec->output,
-			      VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
-	}
-	break;
-
-    case 0xb5:	/* extension_start_code */
-	if (mpeg2_header_extension (buffer, &(mpeg2dec->info), decoder)) {
-	    fprintf (stderr, "bad extension\n");
-	    exit (1);
-	}
-	break;
-
-    default:
-	if (code >= 0xb9)
-	    fprintf (stderr, "stream not demultiplexed ?\n");
-
-	if (code >= 0xb0)
-	    break;
-
-	if (!(mpeg2dec->in_slice)) {
-	    mpeg2dec->in_slice = 1;
-
-	    if (decoder->second_field)
-		vo_field (decoder->current_frame, decoder->picture_structure);
-	    else {
-		if (decoder->coding_type == B_TYPE)
-		    decoder->current_frame =
-			vo_get_frame (mpeg2dec->output,
-				      decoder->picture_structure);
-		else {
-		    decoder->current_frame =
-			vo_get_frame (mpeg2dec->output,
-				      (VO_PREDICTION_FLAG |
-				       decoder->picture_structure));
-		    decoder->forward_reference_frame =
-			decoder->backward_reference_frame;
-		    decoder->backward_reference_frame = decoder->current_frame;
-		}
-	    }
-	}
-
-	if (!(mpeg2dec->drop_frame))
-	    mpeg2_slice (decoder, code, buffer);
-    }
-
     return is_frame_done;
+}
+
+static inline void crap2 (mpeg2dec_t * mpeg2dec)
+{
+    decoder_t * decoder = mpeg2dec->decoder;
+
+    if (mpeg2dec->is_sequence_needed) {
+	mpeg2dec->is_sequence_needed = 0;
+	if (vo_setup (mpeg2dec->output, decoder->width, decoder->height)) {
+	    fprintf (stderr, "display setup failed\n");
+	    exit (1);
+	}
+	decoder->forward_reference_frame =
+	    vo_get_frame (mpeg2dec->output,
+			  VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
+	decoder->backward_reference_frame =
+	    vo_get_frame (mpeg2dec->output,
+			  VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
+    }
+}
+
+static inline void crap3 (mpeg2dec_t * mpeg2dec)
+{
+    decoder_t * decoder = mpeg2dec->decoder;
+
+    if (!(mpeg2dec->in_slice)) {
+	mpeg2dec->in_slice = 1;
+
+	if (decoder->second_field)
+	    vo_field (decoder->current_frame, decoder->picture_structure);
+	else {
+	    if (decoder->coding_type == B_TYPE)
+		decoder->current_frame =
+		    vo_get_frame (mpeg2dec->output,
+				  decoder->picture_structure);
+	    else {
+		decoder->current_frame =
+		    vo_get_frame (mpeg2dec->output,
+				  (VO_PREDICTION_FLAG |
+				   decoder->picture_structure));
+		decoder->forward_reference_frame =
+		    decoder->backward_reference_frame;
+		decoder->backward_reference_frame = decoder->current_frame;
+	    }
+	}
+    }
 }
 
 static inline uint8_t * copy_chunk (mpeg2dec_t * mpeg2dec,
@@ -233,6 +192,7 @@ int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
 {
     int ret;
     uint8_t code;
+    decoder_t * decoder;
 
     ret = 0;
 
@@ -241,7 +201,59 @@ int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
 	current = copy_chunk (mpeg2dec, current, end);
 	if (current == NULL)
 	    return ret;
-	ret += parse_chunk (mpeg2dec, code, mpeg2dec->chunk_buffer);
+
+	/* wait for sequence_header_code */
+	if (mpeg2dec->is_sequence_needed && (code != 0xb3))
+	    continue;
+
+	mpeg2_stats (code, mpeg2dec->chunk_buffer);
+
+	decoder = mpeg2dec->decoder;
+
+	if (mpeg2dec->in_slice && ((!code) || (code >= 0xb0))) {
+	    mpeg2dec->in_slice = 0;
+	    ret += crap1 (mpeg2dec);
+	}
+
+	switch (code) {
+	case 0x00:	/* picture_start_code */
+	    if (mpeg2_header_picture (mpeg2dec->chunk_buffer,
+				      &(mpeg2dec->info.picture), decoder)) {
+		fprintf (stderr, "bad picture header\n");
+		exit (1);
+	    }
+	    mpeg2dec->drop_frame =
+		mpeg2dec->drop_flag && (decoder->coding_type == B_TYPE);
+	    break;
+
+	case 0xb3:	/* sequence_header_code */
+	    if (mpeg2_header_sequence (mpeg2dec->chunk_buffer,
+				       &(mpeg2dec->info.sequence), decoder)) {
+		fprintf (stderr, "bad sequence header\n");
+		exit (1);
+	    }
+	    crap2 (mpeg2dec);
+	    break;
+
+	case 0xb5:	/* extension_start_code */
+	    if (mpeg2_header_extension (mpeg2dec->chunk_buffer,
+					&(mpeg2dec->info), decoder)) {
+		fprintf (stderr, "bad extension\n");
+		exit (1);
+	    }
+	    break;
+
+	default:
+	    if (code >= 0xb9)
+		fprintf (stderr, "stream not demultiplexed ?\n");
+
+	    if (code >= 0xb0)
+		break;
+
+	    crap3 (mpeg2dec);
+	    if (!(mpeg2dec->drop_frame))
+		mpeg2_slice (decoder, code, mpeg2dec->chunk_buffer);
+	}
     }
     return ret;
 }
