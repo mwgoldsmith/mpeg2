@@ -44,8 +44,8 @@ if test x"$GCC" = x"yes"; then
 	OPT_CFLAGS="$CFLAGS -Wa,-m7400"
 	AC_TRY_CFLAGS([$OPT_CFLAGS],
 	    [CFLAGS=$OPT_CFLAGS; AC_DEFINE([ARCH_PPC],,[ppc architecture])]);;
-    sparc-*)
-	OPT_CFLAGS="$CFLAGS -mcpu=ultrasparc -mvis"
+    sparc-* | sparc64-*)
+	OPT_CFLAGS="$CFLAGS -mcpu=ultrasparc -mvis -Wa,-Av9"
 	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
     mips-sgi-irix6.*)	dnl do we need to be that specific ?
 	OPT_CFLAGS="$CFLAGS -mabi=64"
