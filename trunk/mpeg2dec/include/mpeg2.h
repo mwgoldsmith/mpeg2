@@ -126,7 +126,8 @@ typedef enum {
     STATE_PICTURE_2ND = 6,
     STATE_SLICE = 7,
     STATE_END = 8,
-    STATE_INVALID = 9
+    STATE_INVALID = 9,
+    STATE_INVALID_END = 10
 } mpeg2_state_t;
 
 struct convert_init_s;
