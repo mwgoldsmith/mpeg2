@@ -23,8 +23,8 @@ CFG=libmpeg2 - Win32 Debug
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
-# PROP Scc_ProjName ""$/MPEG Decoding Accelerator/mpeg2dec-accel/libmpeg2", DACAAAAA"
-# PROP Scc_LocalPath "..\..\mpeg2dec-accel\libmpeg2"
+# PROP Scc_ProjName ""
+# PROP Scc_LocalPath ""
 CPP=cl.exe
 RSC=rc.exe
 
