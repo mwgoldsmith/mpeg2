@@ -75,31 +75,34 @@ static inline int foo (mpeg2dec_t * mpeg2dec, int bytes)
 
 static inline int copy_chunk (mpeg2dec_t * mpeg2dec)
 {
-    int size, copied;
+    int size_buffer, size_chunk, copied;
 
-    size = mpeg2dec->chunk_buffer + BUFFER_SIZE - mpeg2dec->chunk_ptr;
-    if (size > mpeg2dec->buf_end - mpeg2dec->buf_start)
-	size = mpeg2dec->buf_end - mpeg2dec->buf_start;
-
-    copied = foo (mpeg2dec, size);
-
-    if (copied) {
-	mpeg2dec->bytes_since_pts += copied;
-	mpeg2dec->code = mpeg2dec->buf_start[-1];
-	return 0;
-    }
-
-    mpeg2dec->bytes_since_pts += size;
-    mpeg2dec->buf_start += size;
-    if (mpeg2dec->buf_start == mpeg2dec->buf_end) {
-	mpeg2dec->chunk_ptr += size;
-	return 1;
+    size_buffer = mpeg2dec->buf_end - mpeg2dec->buf_start;
+    size_chunk = mpeg2dec->chunk_buffer + BUFFER_SIZE - mpeg2dec->chunk_ptr;
+    if (size_buffer <= size_chunk) {
+	copied = foo (mpeg2dec, size_buffer);
+	if (!copied) {
+	    mpeg2dec->bytes_since_pts += size_buffer;
+	    mpeg2dec->buf_start += size_buffer;
+	    mpeg2dec->chunk_ptr += size_buffer;
+	    return 1;
+	}
     } else {
-	/* we filled the chunk buffer without finding a start code */
-	mpeg2dec->chunk_start = mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
-	mpeg2dec->code = 0xb4;	/* sequence_error_code */
-	return 0;
+	copied = foo (mpeg2dec, size_chunk);
+	if (!copied) {
+	    /* we filled the chunk buffer without finding a start code */
+	    mpeg2dec->bytes_since_pts += size_chunk;
+	    mpeg2dec->buf_start += size_chunk;
+	    mpeg2dec->chunk_start = mpeg2dec->chunk_ptr =
+		mpeg2dec->chunk_buffer;
+	    mpeg2dec->code = 0xb4;	/* sequence_error_code */
+	    return 0;
+	}
     }
+
+    mpeg2dec->bytes_since_pts += copied;
+    mpeg2dec->code = mpeg2dec->buf_start[-1];
+    return 0;
 }
 
 void mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t * start, uint8_t * end)
