@@ -174,10 +174,10 @@ print_usage(char *argv[])
 static void 
 handle_args (int argc, char *argv[])
 {
-	char c;
+	int c;
 	uint_32 i;
 
-	while((c = getopt(argc,argv,"so:")) != EOF)
+	while((c = getopt(argc,argv,"so:")) != -1)
 	{
 		switch (c)
 		{
