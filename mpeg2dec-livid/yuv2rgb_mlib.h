@@ -23,4 +23,4 @@
  * 
  */
 
-void yuv2rgb_mlib_init(int bpp, int mode);
+yuv2rgb_fun yuv2rgb_mlib_init(int bpp, int mode);

@@ -494,51 +494,24 @@ static int mga_vid_find_card(void)
 	pci_read_config_dword(dev,  0x40, &card_option);
 	printk("OPTION word: 0x%08x\n", card_option);
 
-	temp = (card_option & 0x1c00) >> 10;
+	temp = (card_option >> 10) & 0x17;
+
 	if (is_g400)
 	{
-		// We are using a G400.  Using docs dated June 2, 1999 faithfully...
-		if (temp == 0)
+		switch(temp)
 		{
-			if (card_option & (1<<14))  // HARDPWMSK bit
-				//FIXME! hack to 16 megs cuz autodetect is still borked -AH
-				// SGRAM, a 32 megger
+			default:
 				mga_ram_size = 16;
-			else
-				// SDRAM, a 16 megger 
-				mga_ram_size = 16;
-		}
-		else
-		{
-			switch(temp)
-			{
-				case 1:
-				case 2:
-					mga_ram_size = 16;
-				break;
-
-				case 3:
-				case 5:
-					mga_ram_size = 64;
-				break;
-				case 4:
-					mga_ram_size = 32;
-				break;
-
-				default:
-				// something wierd is going on. set to smallest size, just in case.
-					mga_ram_size = 8;
-				break;
-			}
 		}
 	}
 	else
 	{
-		// We are using a G200.  Docs dated november 30, 1998 seem incorrect. This works for me, YMMV.
-		if (0 == (temp & 0x3)) 
-			mga_ram_size = 8;
-		else
-			mga_ram_size = 16;
+		// a g200
+		switch(temp)
+		{
+			default:
+				mga_ram_size = 8;
+		}
 	}
       
 	printk("mga_vid: RAMSIZE seems to be %d MB\n", (unsigned int) mga_ram_size);

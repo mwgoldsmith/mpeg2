@@ -125,8 +125,6 @@ motion_comp_non_intra_frame(picture_t *picture,mb_buffer_t *mb_buffer)
 	//just do backward prediction for now
 	for(i=0;i<num_blocks;i++)
 	{
-		//if(mb[i].skipped)
-			//continue;
 
 		//handle interlaced blocks
 		if (mb[i].dct_type) 
@@ -141,65 +139,73 @@ motion_comp_non_intra_frame(picture_t *picture,mb_buffer_t *mb_buffer)
 		}
 
 		//FIXME I'd really to take these two divides out.
-		//maybe do fixed point mult with a LUT of the 16.16 inverse
-		//of common widths
+		//maybe do 16.16 fixed point mult 
 		x = mb[i].mba % mb_width;
 		y = mb[i].mba / mb_width;
 
 		if(mb[i].macroblock_type & MACROBLOCK_MOTION_BACKWARD)
 		{
       //fprintf(stderr,"(motion_comp) backward_mv %d,%d\n",mb[i].b_motion_vectors[0][0] >> 1,mb[i].b_motion_vectors[0][1] >> 1);
-			x_pred = (mb[i].b_motion_vectors[0][0] >> 1) + x;
-			y_pred = (mb[i].b_motion_vectors[0][1] >> 1) + y;
+			x_pred = (mb[i].b_motion_vectors[0][0] >> 1) + x * 16;
+			y_pred = (mb[i].b_motion_vectors[0][1] >> 1) + y * 16;
 
 			//Do y component
 			dst = &picture->current_frame[0][x * 16 + y * width * 16];
-			pred =&picture->backward_reference_frame[0][x_pred * 16 + y_pred * width * 16];
+			pred =&picture->backward_reference_frame[0][x_pred + y_pred * width];
 
 			motion_comp_block_1mv_intra(pred               , mb[i].y_blocks       , dst                , pitch);
 			motion_comp_block_1mv_intra(pred + 8            , mb[i].y_blocks +   64, dst + 8            , pitch);
 			motion_comp_block_1mv_intra(pred + width * 8    , mb[i].y_blocks + 2*64, dst + width * d    , pitch);
 			motion_comp_block_1mv_intra(pred + width * 8 + 8, mb[i].y_blocks + 3*64, dst + width * d + 8, pitch);
 
+			x_pred = (mb[i].b_motion_vectors[0][0] >> 2) + x * 8;
+			y_pred = (mb[i].b_motion_vectors[0][1] >> 2) + y * 8;
+
 			//Do Cr component
 			dst = &picture->current_frame[1][x * 8 + y * width/2 * 8];
-			pred =&picture->backward_reference_frame[0][x_pred * 8 + y_pred * width/2 * 8];
+			pred =&picture->backward_reference_frame[1][x_pred + y_pred * width/2];
 			motion_comp_block_1mv_intra(pred, mb[i].cr_blocks, dst, width/2);
 			
 
 			//Do Cb component
 			dst = &picture->current_frame[2][x * 8 + y * width/2 * 8];
-			pred =&picture->backward_reference_frame[0][x_pred * 8 + y_pred * width/2 * 8];
+			pred =&picture->backward_reference_frame[2][x_pred + y_pred * width/2];
 			motion_comp_block_1mv_intra(pred, mb[i].cb_blocks, dst, width/2);
 		}
 		else if(mb[i].macroblock_type & MACROBLOCK_MOTION_FORWARD)
 		{
       //fprintf(stderr,"(motion_comp) forward_mv %d,%d\n",mb[i].f_motion_vectors[0][0] >> 1,mb[i].f_motion_vectors[0][1] >> 1);
-			x_pred = (mb[i].f_motion_vectors[0][0] >> 1) + x;
-			y_pred = (mb[i].f_motion_vectors[0][1] >> 1) + y;
+			x_pred = (mb[i].f_motion_vectors[0][0] >> 1) + x * 16;
+			y_pred = (mb[i].f_motion_vectors[0][1] >> 1) + y * 16;
 
 			//Do y component
 			dst = &picture->current_frame[0][x * 16 + y * width * 16];
-			pred =&picture->forward_reference_frame[0][x_pred * 16 + y_pred * width * 16];
+			pred =&picture->forward_reference_frame[0][x_pred + y_pred * width];
 
 			motion_comp_block_1mv_intra(pred               , mb[i].y_blocks       , dst                , pitch);
 			motion_comp_block_1mv_intra(pred + 8            , mb[i].y_blocks +   64, dst + 8            , pitch);
 			motion_comp_block_1mv_intra(pred + width * 8    , mb[i].y_blocks + 2*64, dst + width * d    , pitch);
 			motion_comp_block_1mv_intra(pred + width * 8 + 8, mb[i].y_blocks + 3*64, dst + width * d + 8, pitch);
 
+			x_pred = (mb[i].f_motion_vectors[0][0] >> 2) + x * 8;
+			y_pred = (mb[i].f_motion_vectors[0][1] >> 2) + y * 8;
+
 			//Do Cr component
 			dst = &picture->current_frame[1][x * 8 + y * width/2 * 8];
-			pred =&picture->forward_reference_frame[0][x_pred * 8 + y_pred * width/2 * 8];
+			pred =&picture->forward_reference_frame[1][x_pred + y_pred * width/2];
 			motion_comp_block_1mv_intra(pred, mb[i].cr_blocks, dst, width/2);
 			
 
 			//Do Cb component
 			dst = &picture->current_frame[2][x * 8 + y * width/2 * 8];
-			pred =&picture->forward_reference_frame[0][x_pred * 8 + y_pred * width/2 * 8];
+			pred =&picture->forward_reference_frame[2][x_pred + y_pred * width/2];
 			motion_comp_block_1mv_intra(pred, mb[i].cb_blocks, dst, width/2);
 		}
-		else
+		else if(mb[i].macroblock_type & MACROBLOCK_INTRA)
 		{
+			//if(mb[i].skipped)
+				//fprintf(stderr,"(motion_comp) doing skipped block\n");
+
 			//Do y component
 			dst = &picture->current_frame[0][x * 16 + y * width * 16];
 
@@ -216,6 +222,27 @@ motion_comp_non_intra_frame(picture_t *picture,mb_buffer_t *mb_buffer)
 			//Do Cb component
 			dst = &picture->current_frame[2][x * 8 + y * width/2 * 8];
 			motion_comp_block(0, mb[i].cb_blocks, dst, width/2);
+		}
+		else if(mb[i].macroblock_type & MACROBLOCK_PATTERN)
+		{
+			//Do y component
+			dst = &picture->current_frame[0][x * 16 + y * width * 16];
+			pred =&picture->forward_reference_frame[0][x * 16 + y * width * 16];
+
+			motion_comp_block_1mv_intra(pred               , mb[i].y_blocks       , dst                , pitch);
+			motion_comp_block_1mv_intra(pred + 8            , mb[i].y_blocks +   64, dst + 8            , pitch);
+			motion_comp_block_1mv_intra(pred + width * 8    , mb[i].y_blocks + 2*64, dst + width * d    , pitch);
+			motion_comp_block_1mv_intra(pred + width * 8 + 8, mb[i].y_blocks + 3*64, dst + width * d + 8, pitch);
+
+			//Do Cr component
+			dst = &picture->current_frame[1][x * 8 + y * width/2 * 8];
+			pred =&picture->forward_reference_frame[1][x * 8 + y * width/2 * 8];
+			motion_comp_block_1mv_intra(pred, mb[i].cr_blocks, dst, width/2);
+
+			//Do Cb component
+			dst = &picture->current_frame[2][x * 8 + y * width/2 * 8];
+			pred =&picture->forward_reference_frame[2][x * 8 + y * width/2 * 8];
+			motion_comp_block_1mv_intra(pred, mb[i].cb_blocks, dst, width/2);
 		}
 	}
 }

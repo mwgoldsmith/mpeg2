@@ -25,11 +25,28 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <signal.h>
+#include <sys/time.h>
 #include "config.h"
 #include "mpeg2.h"
 
 uint_32 buf[2048/4];
 FILE *in_file;
+static struct timeval tv_beg;
+static uint_32 frame_counter = 0;
+
+static void sighandler(int sig) 
+{
+	struct timeval tv_end;
+	
+	gettimeofday(&tv_end, NULL);
+	printf("Caught sig %d, %u frame in %ld seconds done ( %ld/sec. )\n", 
+		sig, frame_counter, tv_end.tv_sec - tv_beg.tv_sec, 
+		frame_counter / (tv_end.tv_sec - tv_beg.tv_sec));
+
+	signal(sig, SIG_DFL);
+	raise(sig);
+}
  
 void fill_buffer(uint_32 **start,uint_32 **end)
 {
@@ -46,7 +63,6 @@ void fill_buffer(uint_32 **start,uint_32 **end)
 
 int main(int argc,char *argv[])
 {
-	uint_32 frame_counter = 0;
 	mpeg2_frame_t *my_frame;
 
 	if(argc < 2)
@@ -71,16 +87,23 @@ int main(int argc,char *argv[])
 	else
 		in_file = stdin;
 
-	//FIXME this doesn't go here later
+	signal(SIGINT, sighandler);
+
+	//FIXME this should go in mpeg2_init
 	bitstream_init(fill_buffer);
 
 	mpeg2_init();
 
+	gettimeofday(&tv_beg, NULL);
 	while(1)
 	{
 		my_frame = mpeg2_decode_frame();
-		display_frame(my_frame->frame);
-		printf("frame_counter = %d\n",frame_counter++);
+		//XXX remove
+		if( my_frame  != NULL ) 
+		{
+			display_frame(my_frame->frame);
+			printf("frame_counter = %d\n",frame_counter++);
+		}
 	}
 
   return 0;
