@@ -21,6 +21,8 @@
 	* once we have sync, call draw_frame before decoding I or P not after
 
 * local optimizations
+	* avoid 8-bit accesses particularly on alpha
+	* use 64-bit shift register for parsing on 64-bit arches
 	* use restrict (__restrict__) pointers: int * restrict p;
 	* reschedule altivec IDCT and MC routines for 7450 chips
 	* try feig IDCT instead of MSSG c IDCT ?
