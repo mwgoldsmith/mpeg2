@@ -39,14 +39,16 @@ void * mpeg2_malloc (unsigned size, mpeg2_alloc_t reason)
 	    return buf;
     }
 
-    buf = (char *) malloc (size + 63 + sizeof (void **));
-    if (buf) {
-	char * align_buf;
+    if (size) {
+	buf = (char *) malloc (size + 63 + sizeof (void **));
+	if (buf) {
+	    char * align_buf;
 
-	align_buf = buf + 63 + sizeof (void **);
-	align_buf -= (long)align_buf & 63;
-	*(((void **)align_buf) - 1) = buf;
-	return align_buf;
+	    align_buf = buf + 63 + sizeof (void **);
+	    align_buf -= (long)align_buf & 63;
+	    *(((void **)align_buf) - 1) = buf;
+	    return align_buf;
+	}
     }
     return NULL;
 }
@@ -56,7 +58,8 @@ void mpeg2_free (void * buf)
     if (free_hook && free_hook (buf))
 	return;
 
-    free (*(((void **)buf) - 1));
+    if (buf)
+	free (*(((void **)buf) - 1));
 }
 
 void mpeg2_malloc_hooks (void * (* malloc) (unsigned, mpeg2_alloc_t),
