@@ -165,14 +165,17 @@ void mpeg2_init_fbuf (mpeg2_decoder_t * decoder, uint8_t * current_fbuf[3],
 		      uint8_t * forward_fbuf[3], uint8_t * backward_fbuf[3]);
 void mpeg2_slice (mpeg2_decoder_t * decoder, int code, const uint8_t * buffer);
 
-#define MPEG2_ALLOC_MPEG2DEC 0
-#define MPEG2_ALLOC_CHUNK 1
-#define MPEG2_ALLOC_YUV 2
-#define MPEG2_ALLOC_CONVERT_ID 3
-#define MPEG2_ALLOC_CONVERTED 4
-void * mpeg2_malloc (unsigned size, int reason);
+typedef enum {
+    MPEG2_ALLOC_MPEG2DEC = 0,
+    MPEG2_ALLOC_CHUNK = 1,
+    MPEG2_ALLOC_YUV = 2,
+    MPEG2_ALLOC_CONVERT_ID = 3,
+    MPEG2_ALLOC_CONVERTED = 4
+} mpeg2_alloc_t;
+
+void * mpeg2_malloc (unsigned size, mpeg2_alloc_t reason);
 void mpeg2_free (void * buf);
-void mpeg2_malloc_hooks (void * (* malloc) (unsigned, int),
+void mpeg2_malloc_hooks (void * (* malloc) (unsigned, mpeg2_alloc_t),
 			 int (* free) (void *));
 
 #endif /* MPEG2_H */
