@@ -115,7 +115,7 @@ typedef struct picture_s {
 } picture_t;
 
 typedef struct motion_s {
-    uint8_t * ref_frame[3];
+    uint8_t * ref[1][3];
     int pmv[2][2];
     int f_code[2];
 } motion_t;
