@@ -432,8 +432,7 @@ mpeg2dec_t * mpeg2_init (void)
 	return NULL;
 
     memset (mpeg2dec->decoder.DCTblock, 0, 64 * sizeof (int16_t));
-    memset (mpeg2dec->intra_quantizer_matrix, 0, 64 * sizeof (uint8_t));
-    memset (mpeg2dec->non_intra_quantizer_matrix, 0, 64 * sizeof (uint8_t));
+    memset (mpeg2dec->quantizer_matrix, 0, 4 * 64 * sizeof (uint8_t));
 
     mpeg2dec->chunk_buffer = (uint8_t *) mpeg2_malloc (BUFFER_SIZE + 4,
 						       MPEG2_ALLOC_CHUNK);
@@ -446,9 +445,6 @@ mpeg2dec_t * mpeg2_init (void)
 
 void mpeg2_close (mpeg2dec_t * mpeg2dec)
 {
-    /* static uint8_t finalizer[] = {0,0,1,0xb4}; */
-    /* mpeg2_decode_data (mpeg2dec, finalizer, finalizer+4); */
-
     mpeg2_header_state_init (mpeg2dec);
     mpeg2_free (mpeg2dec->chunk_buffer);
     mpeg2_free (mpeg2dec);
