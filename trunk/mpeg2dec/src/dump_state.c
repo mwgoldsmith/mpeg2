@@ -210,7 +210,7 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
 		 int offset, int verbose)
 {
     static char * state_name[] = {
-	"BUFFER", "SEQUENCE", "SEQUENCE_REPEATED", "GOP",
+	"BUFFER", "SEQUENCE", "SEQUENCE_REPEATED", "SEQUENCE_MODIFIED", "GOP",
 	"PICTURE", "SLICE_1ST", "PICTURE_2ND", "SLICE", "END",
 	"INVALID", "INVALID_END"
     };
@@ -252,11 +252,17 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
 	case STATE_PICTURE_2ND:
 	    pic_code_add (info->current_picture_2nd, f);
 	    break;
+	case STATE_SEQUENCE_MODIFIED:
+	    if (last_sequence.value.width != seq->width ||
+		last_sequence.value.height != seq->height ||
+		last_sequence.value.chroma_width != seq->chroma_width ||
+		last_sequence.value.chroma_height != seq->chroma_height ||
+		((last_sequence.value.flags & SEQ_FLAG_LOW_DELAY) !=
+		 (seq->flags & SEQ_FLAG_LOW_DELAY)))
+		fprintf (f, " (INVALID)");
 	case STATE_SEQUENCE:
 	    sequence_save (seq);
 	    break;
-	case STATE_SEQUENCE_REPEATED:
-	    last_sequence.value.byte_rate = seq->byte_rate;
 	    break;
 	case STATE_GOP:
 	    gop_save (gop);
@@ -286,6 +292,7 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
     switch (state) {
     case STATE_SEQUENCE:
     case STATE_SEQUENCE_REPEATED:
+    case STATE_SEQUENCE_MODIFIED:
 	if (seq->flags & SEQ_FLAG_MPEG2)
 	    fprintf (f, " MPEG2");
 	if (0x10 <= seq->profile_level_id && seq->profile_level_id < 0x60 &&
