@@ -57,7 +57,8 @@
 
 /* idct main entry point  */
 void (* mpeg2_idct_copy) (int16_t * block, uint8_t * dest, int stride);
-void (* mpeg2_idct_add) (int16_t * block, uint8_t * dest, int stride);
+void (* mpeg2_idct_add) (int last, int16_t * block,
+			 uint8_t * dest, int stride);
 
 static uint8_t clip_lut[1024];
 #define CLIP(i) ((clip_lut+384)[ (i)])
@@ -232,8 +233,8 @@ static void mpeg2_idct_copy_c (int16_t * block, uint8_t * dest,
     } while (--i);
 }
 
-static void mpeg2_idct_add_c (int16_t * block, uint8_t * dest,
-			      const int stride)
+static void mpeg2_idct_add_c (const int last, int16_t * block,
+			      uint8_t * dest, const int stride)
 {
     int i;
 

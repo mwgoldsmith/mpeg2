@@ -697,8 +697,8 @@ void mpeg2_idct_copy_mmxext (int16_t * const block, uint8_t * const dest,
     block_zero (block);
 }
 
-void mpeg2_idct_add_mmxext (int16_t * const block, uint8_t * const dest,
-			    const int stride)
+void mpeg2_idct_add_mmxext (const int last, int16_t * const block,
+			    uint8_t * const dest, const int stride)
 {
     mmxext_idct (block);
     block_add (block, dest, stride);
@@ -717,8 +717,8 @@ void mpeg2_idct_copy_mmx (int16_t * const block, uint8_t * const dest,
     block_zero (block);
 }
 
-void mpeg2_idct_add_mmx (int16_t * const block, uint8_t * const dest,
-			 const int stride)
+void mpeg2_idct_add_mmx (const int last, int16_t * const block,
+			 uint8_t * const dest, const int stride)
 {
     mmx_idct (block);
     block_add (block, dest, stride);
