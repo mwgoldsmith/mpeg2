@@ -79,8 +79,9 @@ static void pgm_draw_frame (vo_instance_t * _instance,
     fclose (instance->file);
 }
 
-static int pgm_setup (vo_instance_t * _instance, int width, int height,
-		      vo_setup_result_t * result)
+static int pgm_setup (vo_instance_t * _instance, unsigned int width,
+		      unsigned int height, unsigned int chroma_width,
+		      unsigned int chroma_height, vo_setup_result_t * result)
 {
     pgm_instance_t * instance;
 

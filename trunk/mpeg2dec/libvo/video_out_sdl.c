@@ -99,8 +99,9 @@ static void sdl_close (vo_instance_t * _instance)
 }
 #endif
 
-static int sdl_setup (vo_instance_t * _instance, int width, int height,
-		      vo_setup_result_t * result)
+static int sdl_setup (vo_instance_t * _instance, unsigned int width,
+		      unsigned int height, unsigned int chroma_width,
+		      unsigned int chroma_height, vo_setup_result_t * result)
 {
     sdl_instance_t * instance;
 

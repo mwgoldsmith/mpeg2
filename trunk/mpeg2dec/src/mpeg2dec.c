@@ -247,7 +247,9 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 	    /* might set nb fbuf, convert format, stride */
 	    /* might set fbufs */
 	    if (output->setup (output, info->sequence->width,
-			       info->sequence->height, &setup_result)) {
+			       info->sequence->height,
+			       info->sequence->chroma_width,
+			       info->sequence->chroma_height, &setup_result)) {
 		fprintf (stderr, "display setup failed\n");
 		exit (1);
 	    }

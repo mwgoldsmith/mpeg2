@@ -164,7 +164,9 @@ static void mga_close (vo_instance_t * _instance)
     libvo_common_free_frames ((vo_instance_t *) instance);
 }
 
-static int mga_setup (vo_instance_t * _instance, int width, int height)
+static int mga_setup (vo_instance_t * _instance, unsigned int width,
+		      unsigned int height, unsigned int chroma_width,
+		      unsigned int chroma_height, vo_setup_result_t * result)
 {
     mga_instance_t * instance;
     char * frame_mem;

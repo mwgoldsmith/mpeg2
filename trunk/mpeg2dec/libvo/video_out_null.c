@@ -35,7 +35,9 @@ static void null_draw_frame (vo_instance_t * instance,
 {
 }
 
-static vo_instance_t * internal_open (int setup (vo_instance_t *, int, int,
+static vo_instance_t * internal_open (int setup (vo_instance_t *, unsigned int,
+						 unsigned int, unsigned int,
+						 unsigned int,
 						 vo_setup_result_t *))
 {
     vo_instance_t * instance;
@@ -55,8 +57,9 @@ static vo_instance_t * internal_open (int setup (vo_instance_t *, int, int,
     return instance;
 }
 
-static int null_setup (vo_instance_t * instance, int width, int height,
-		       vo_setup_result_t * result)
+static int null_setup (vo_instance_t * instance, unsigned int width,
+		       unsigned int height, unsigned int chroma_width,
+		       unsigned int chroma_height, vo_setup_result_t * result)
 {
     result->convert = NULL;
     return 0;
@@ -88,7 +91,9 @@ static void nullslice_convert (int width, int height, uint32_t accel,
     result->copy = nullslice_copy;
 }
 
-static int nullslice_setup (vo_instance_t * instance, int width, int height,
+static int nullslice_setup (vo_instance_t * instance, unsigned int width,
+			    unsigned int height, unsigned int chroma_width,
+			    unsigned int chroma_height,
 			    vo_setup_result_t * result)
 {
     result->convert = nullslice_convert;
@@ -100,14 +105,18 @@ vo_instance_t * vo_nullslice_open (void)
     return internal_open (nullslice_setup);
 }
 
-static int nullrgb16_setup (vo_instance_t * instance, int width, int height,
+static int nullrgb16_setup (vo_instance_t * instance, unsigned int width,
+			    unsigned int height, unsigned int chroma_width,
+			    unsigned int chroma_height,
 			    vo_setup_result_t * result)
 {
     result->convert = convert_rgb16;
     return 0;
 }
 
-static int nullrgb32_setup (vo_instance_t * instance, int width, int height,
+static int nullrgb32_setup (vo_instance_t * instance, unsigned int width,
+			    unsigned int height, unsigned int chroma_width,
+			    unsigned int chroma_height,
 			    vo_setup_result_t * result)
 {
     result->convert = convert_rgb32;
