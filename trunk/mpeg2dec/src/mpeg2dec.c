@@ -97,7 +97,7 @@ static void print_fps (int final)
 
     last_count = frame_counter;
 }
- 
+
 static RETSIGTYPE signal_handler (int sig)
 {
     print_fps (1);
@@ -128,10 +128,10 @@ static void handle_args (int argc, char * argv[])
     int i;
 
     drivers = vo_drivers ();
-    while ((c = getopt (argc,argv,"so:")) != -1) {
+    while ((c = getopt (argc, argv, "so:")) != -1) {
 	switch (c) {
 	case 'o':
-	    for (i=0; drivers[i].name != NULL; i++)
+	    for (i = 0; drivers[i].name != NULL; i++)
 		if (strcmp (drivers[i].name, optarg) == 0)
 		    output_open = drivers[i].open;
 	    if (output_open == NULL) {
