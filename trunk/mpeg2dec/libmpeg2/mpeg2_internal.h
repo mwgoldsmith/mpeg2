@@ -175,13 +175,14 @@ struct mpeg2dec_s {
     fbuf_t fbuf[3];	/* 0: current fbuf, 1-2: prediction fbufs */
 
     fbuf_alloc_t fbuf_alloc[3];
+    int custom_fbuf;
 
     uint8_t * yuv_buf[3][3]; 
     int yuv_index; 
     void * convert_id;
     int convert_size[3];
-    mpeg2_convert_start_t convert_start;
-    mpeg2_convert_copy_t convert_copy;
+    void (* convert_start) (void * id,  uint8_t * dest[3], int flags);
+    void (* convert_copy) (void * id, uint8_t * src[3]);
 };
 
 typedef struct {

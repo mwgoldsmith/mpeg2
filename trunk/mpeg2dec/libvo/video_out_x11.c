@@ -43,31 +43,23 @@ int XShmGetEventBase (Display *);
 #endif
 
 #include "video_out.h"
-#include "video_out_internal.h"
+#include "convert.h"
 
 typedef struct {
-    vo_frame_t vo;
-    uint8_t * rgb_ptr;
-    int rgb_stride;
-    int yuv_stride;
-    XImage * ximage;
+    void * data;
     int wait_completion;
+    XImage * ximage;
 #ifdef LIBVO_XV
-    XvImage * xvimage;	/* FIXME have only one ximage/xvimage pointer ? */
+    XvImage * xvimage;
 #endif
 } x11_frame_t;
 
 typedef struct {
     vo_instance_t vo;
-    int prediction_index;
-    vo_frame_t * frame_ptr[3];
     x11_frame_t frame[3];
-
-    /* local data */
+    int index;
     int width;
     int height;
-
-    /* X11 related variables */
     Display * display;
     Window window;
     GC gc;
@@ -202,7 +194,7 @@ static void destroy_shm (x11_instance_t * instance)
     shmctl (instance->shminfo.shmid, IPC_RMID, 0);
 }
 
-static void x11_event (x11_instance_t * instance)
+static void x11_event (x11_instance_t * instance)	/* XXXXXXXXXXX */
 {
     XEvent event;
     char * addr;
@@ -213,64 +205,39 @@ static void x11_event (x11_instance_t * instance)
 	addr = (instance->shminfo.shmaddr +
 		((XShmCompletionEvent *)&event)->offset);
 	for (i = 0; i < 3; i++)
-	    if (addr == instance->frame[i].ximage->data)
+	    if (addr == instance->frame[i].data)
 		instance->frame[i].wait_completion = 0;
     }
 }
 
-static void x11_set_frame (vo_instance_t * _instance, int flags)
+static void x11_start_fbuf (vo_instance_t * _instance,
+			    uint8_t * buf[3], void * id)
 {
-    x11_instance_t * instance;
-    x11_frame_t * frame;
-
-    instance = (x11_instance_t *) _instance;
-    frame = (x11_frame_t *) libvo_common_get_frame ((vo_instance_t *) instance,
-						    flags);
+    x11_instance_t * instance = (x11_instance_t *) _instance;
+    x11_frame_t * frame = (x11_frame_t *) id;
 
     while (frame->wait_completion)
 	x11_event (instance);
-
-    frame->rgb_ptr = frame->ximage->data;
-    frame->rgb_stride = frame->ximage->bytes_per_line;
-    frame->yuv_stride = instance->width;
-    if ((flags & VO_TOP_FIELD) == 0)
-	frame->rgb_ptr += frame->rgb_stride;
-    if ((flags & VO_BOTH_FIELDS) != VO_BOTH_FIELDS) {
-	frame->rgb_stride <<= 1;
-	frame->yuv_stride <<= 1;
-    }
 }
 
-static void x11_copy_slice (vo_frame_t * _frame, uint8_t ** src)
+static void x11_setup_fbuf (vo_instance_t * _instance,
+			    uint8_t * buf[3], void ** id)
+{
+    x11_instance_t * instance = (x11_instance_t *) _instance;
+
+    buf[0] = instance->frame[instance->index].data;
+    buf[1] = buf[2] = NULL;
+    *id = instance->frame + instance->index++;
+}
+
+static void x11_draw_frame (vo_instance_t * _instance,
+			    uint8_t * buf[3], void * id)
 {
     x11_frame_t * frame;
     x11_instance_t * instance;
 
-    frame = (x11_frame_t *) _frame;
-    instance = (x11_instance_t *) frame->vo.instance;
-
-    yuv2rgb (frame->rgb_ptr, src[0], src[1], src[2], instance->width, 16,
-	     frame->rgb_stride, frame->yuv_stride, frame->yuv_stride >> 1);
-    frame->rgb_ptr += frame->rgb_stride << 4;
-}
-
-static void x11_field (vo_frame_t * _frame, int flags)
-{
-    x11_frame_t * frame;
-
-    frame = (x11_frame_t *) _frame;
-    frame->rgb_ptr = frame->ximage->data;
-    if ((flags & VO_TOP_FIELD) == 0)
-	frame->rgb_ptr += frame->ximage->bytes_per_line;
-}
-
-static void x11_draw_frame (vo_frame_t * _frame)
-{
-    x11_frame_t * frame;
-    x11_instance_t * instance;
-
-    frame = (x11_frame_t *) _frame;
-    instance = (x11_instance_t *) frame->vo.instance;
+    frame = (x11_frame_t *) id;
+    instance = (x11_instance_t *) _instance;
 
     XShmPutImage (instance->display, instance->window, instance->gc,
 		  frame->ximage, 0, 0, 0, 0, instance->width, instance->height,
@@ -309,50 +276,10 @@ static int x11_alloc_frames (x11_instance_t * instance)
 	    return 1;
 	}
 
-	instance->frame[i].ximage->data = alloc;
+	instance->frame[i].ximage->data = instance->frame[i].data = alloc;
 	alloc += size;
     }
-
-#ifdef WORDS_BIGENDIAN
-    if (instance->frame[0].ximage->byte_order != MSBFirst) {
-	fprintf (stderr, "No support for non-native byte order\n");
-	return 1;
-    }
-#else
-    if (instance->frame[0].ximage->byte_order != LSBFirst) {
-	fprintf (stderr, "No support for non-native byte order\n");
-	return 1;
-    }
-#endif
-
-    /*
-     * depth in X11 terminology land is the number of bits used to
-     * actually represent the colour.
-     *
-     * bpp in X11 land means how many bits in the frame buffer per
-     * pixel.
-     *
-     * ex. 15 bit color is 15 bit depth and 16 bpp. Also 24 bit
-     *     color is 24 bit depth, but can be 24 bpp or 32 bpp.
-     *
-     * If we have blue in the lowest bit then "obviously" RGB
-     * (the guy who wrote this convention never heard of endianness ?)
-     */
-
-    yuv2rgb_init (((instance->vinfo.depth == 24) ?
-		   instance->frame[0].ximage->bits_per_pixel :
-		   instance->vinfo.depth),
-		  ((instance->frame[0].ximage->blue_mask & 0x01) ?
-		   MODE_RGB : MODE_BGR));
-
-    if (libvo_common_alloc_frames ((vo_instance_t *) instance,
-				   instance->width, instance->height,
-				   sizeof (x11_frame_t), x11_copy_slice,
-				   x11_field)) {
-	fprintf (stderr, "Can not allocate yuv backing buffers\n");
-	return 1;
-    }
-
+    instance->index = 0;
     return 0;
 }
 
@@ -361,7 +288,6 @@ static void x11_close (vo_instance_t * _instance)
     x11_instance_t * instance = (x11_instance_t *) _instance;
     int i;
 
-    libvo_common_free_frames ((vo_instance_t *) instance);
     for (i = 0; i < 3; i++) {
 	while (instance->frame[i].wait_completion)
 	    x11_event (instance);
@@ -374,42 +300,24 @@ static void x11_close (vo_instance_t * _instance)
 }
 
 #ifdef LIBVO_XV
-static void xv_event (x11_instance_t * instance)
+static void xv_setup_fbuf (vo_instance_t * _instance,
+			   uint8_t * buf[3], void ** id)
 {
-    XEvent event;
-    char * addr;
-    int i;
-
-    XNextEvent (instance->display, &event);
-    if (event.type == instance->completion_type) {
-	addr = (instance->shminfo.shmaddr +
-		((XShmCompletionEvent *)&event)->offset);
-	for (i = 0; i < 3; i++)
-	    if (addr == instance->frame[i].xvimage->data)
-		instance->frame[i].wait_completion = 0;
-    }
+    x11_instance_t * instance = (x11_instance_t *) _instance;
+    uint8_t * data;
+    
+    data = instance->frame[instance->index].xvimage->data;
+    buf[0] = data + instance->frame[instance->index].xvimage->offsets[0];
+    buf[1] = data + instance->frame[instance->index].xvimage->offsets[2];
+    buf[2] = data + instance->frame[instance->index].xvimage->offsets[1];
+    *id = instance->frame + instance->index++;
 }
 
-static void xv_set_frame (vo_instance_t * _instance, int flags)
+static void xv_draw_frame (vo_instance_t * _instance,
+			   uint8_t * buf[3], void * id)
 {
-    x11_instance_t * instance;
-    x11_frame_t * frame;
-
-    instance = (x11_instance_t *) _instance;
-    frame = (x11_frame_t *) libvo_common_get_frame ((vo_instance_t *) instance,
-						    flags);
-
-    while (frame->wait_completion)
-	xv_event (instance);
-}
-
-static void xv_draw_frame (vo_frame_t * _frame)
-{
-    x11_frame_t * frame;
-    x11_instance_t * instance;
-
-    frame = (x11_frame_t *) _frame;
-    instance = (x11_instance_t *) frame->vo.instance;
+    x11_frame_t * frame = (x11_frame_t *) id;
+    x11_instance_t * instance = (x11_instance_t *) _instance;
 
     XvShmPutImage (instance->display, instance->port, instance->window,
 		   instance->gc, frame->xvimage, 0, 0,
@@ -485,13 +393,6 @@ static int xv_alloc_frames (x11_instance_t * instance)
 	return 1;
 
     for (i = 0; i < 3; i++) {
-	instance->frame_ptr[i] = (vo_frame_t *) (instance->frame + i);
-	instance->frame[i].vo.base[0] = alloc;
-	instance->frame[i].vo.base[1] = alloc + 5 * size;
-	instance->frame[i].vo.base[2] = alloc + 4 * size;
-	instance->frame[i].vo.copy = NULL;
-	instance->frame[i].vo.field = NULL;
-	instance->frame[i].vo.instance = (vo_instance_t *) instance;
 	instance->frame[i].wait_completion = 0;
 	instance->frame[i].xvimage =
 	    XvShmCreateImage (instance->display, instance->port, FOURCC_YV12,
@@ -502,6 +403,7 @@ static int xv_alloc_frames (x11_instance_t * instance)
 	    fprintf (stderr, "Cannot create xvimage\n");
 	    return 1;
 	}
+	instance->frame[i].data = alloc;
 	alloc += 6 * size;
     }
 
@@ -515,7 +417,7 @@ static void xv_close (vo_instance_t * _instance)
 
     for (i = 0; i < 3; i++) {
 	while (instance->frame[i].wait_completion)
-	    xv_event (instance);
+	    x11_event (instance);
 	XFree (instance->frame[i].xvimage);
     }
     destroy_shm (instance);
@@ -527,8 +429,11 @@ static void xv_close (vo_instance_t * _instance)
 #endif
 
 static int common_setup (x11_instance_t * instance, int width, int height,
-			 int xv)
+			 vo_setup_result_t * result, int xv)
 {
+    instance->vo.set_fbuf = NULL;
+    instance->vo.discard = NULL;
+    instance->vo.start_fbuf = x11_start_fbuf;
     instance->width = width;
     instance->height = height;
 
@@ -539,17 +444,51 @@ static int common_setup (x11_instance_t * instance, int width, int height,
     if (xv && (! (xv_check_extension (instance)))) {
 	if (xv_alloc_frames (instance))
 	    return 1;
-	instance->vo.close = xv_close;
-	instance->vo.set_frame = xv_set_frame;
+	instance->vo.setup_fbuf = xv_setup_fbuf;
 	instance->vo.draw = xv_draw_frame;
+	instance->vo.close = xv_close;
+	result->convert = NULL;
     } else
 #endif
     {
 	if (x11_alloc_frames (instance))
 	    return 1;
-	instance->vo.close = x11_close;
-	instance->vo.set_frame = x11_set_frame;
+	instance->vo.setup_fbuf = x11_setup_fbuf;
 	instance->vo.draw = x11_draw_frame;
+	instance->vo.close = x11_close;
+
+#ifdef WORDS_BIGENDIAN
+	if (instance->frame[0].ximage->byte_order != MSBFirst) {
+	    fprintf (stderr, "No support for non-native byte order\n");
+	    return 1;
+	}
+#else
+	if (instance->frame[0].ximage->byte_order != LSBFirst) {
+	    fprintf (stderr, "No support for non-native byte order\n");
+	    return 1;
+	}
+#endif
+
+	/*
+	 * depth in X11 terminology land is the number of bits used to
+	 * actually represent the colour.
+	 *
+	 * bpp in X11 land means how many bits in the frame buffer per
+	 * pixel.
+	 *
+	 * ex. 15 bit color is 15 bit depth and 16 bpp. Also 24 bit
+	 *     color is 24 bit depth, but can be 24 bpp or 32 bpp.
+	 *
+	 * If we have blue in the lowest bit then "obviously" RGB
+	 * (the guy who wrote this convention never heard of endianness ?)
+	 */
+
+	result->convert =
+	    convert_rgb (((instance->frame[0].ximage->blue_mask & 1) ?
+			  CONVERT_RGB : CONVERT_BGR),
+			 ((instance->vinfo.depth == 24) ?
+			  instance->frame[0].ximage->bits_per_pixel :
+			  instance->vinfo.depth));
     }
 
     XMapWindow (instance->display, instance->window);
@@ -557,9 +496,10 @@ static int common_setup (x11_instance_t * instance, int width, int height,
     return 0;
 }
 
-static int x11_setup (vo_instance_t * instance, int width, int height)
+static int x11_setup (vo_instance_t * instance, int width, int height,
+		      vo_setup_result_t * result)
 {
-    return common_setup ((x11_instance_t *) instance, width, height, 0);
+    return common_setup ((x11_instance_t *)instance, width, height, result, 0);
 }
 
 vo_instance_t * vo_x11_open (void)
@@ -575,9 +515,10 @@ vo_instance_t * vo_x11_open (void)
 }
 
 #ifdef LIBVO_XV
-static int xv_setup (vo_instance_t * instance, int width, int height)
+static int xv_setup (vo_instance_t * instance, int width, int height,
+		     vo_setup_result_t * result)
 {
-    return common_setup ((x11_instance_t *) instance, width, height, 1);
+    return common_setup ((x11_instance_t *)instance, width, height, result, 1);
 }
 
 vo_instance_t * vo_xv_open (void)
