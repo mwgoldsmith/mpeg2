@@ -36,10 +36,9 @@
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 #include "oms_accel.h"
+#include "attributes.h"
 
-#ifdef ARCH_X86
 #include "mmx.h"
-#endif
 
 //this is where we keep the state of the decoder
 picture_t picture;
