@@ -118,7 +118,7 @@ static void sample6 (FILE * mpgfile)
 	    break;
 	case STATE_PICTURE:
 	    current_fbuf = get_fbuf ();
-	    mpeg2_set_buf (decoder, current_fbuf->rgb, current_buf);
+	    mpeg2_set_buf (decoder, current_fbuf->rgb, current_fbuf);
 	    break;
 	case STATE_SLICE:
 	case STATE_END:
