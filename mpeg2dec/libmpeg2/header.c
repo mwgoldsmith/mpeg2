@@ -1,6 +1,7 @@
 /*
  * header.c
  * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * Copyright (C) 2003      Regis Duchesne <hpreg@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
@@ -329,6 +330,17 @@ void mpeg2_header_matrix_finalize (mpeg2dec_t * mpeg2dec)
 		mpeg2dec->non_intra_quantizer_matrix[i];
 }
 
+static mpeg2_state_t invalid_end_action (mpeg2dec_t * mpeg2dec)
+{
+    mpeg2_header_state_init (mpeg2dec);
+    reset_info (&(mpeg2dec->info));
+    mpeg2dec->sequence = mpeg2dec->new_sequence;
+    mpeg2dec->info.sequence = &(mpeg2dec->sequence);
+    mpeg2dec->action = mpeg2_seek_header;
+    mpeg2dec->state = STATE_SEQUENCE;
+    return STATE_SEQUENCE;
+}
+
 void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
 {
     mpeg2_sequence_t * sequence = &(mpeg2dec->new_sequence);
@@ -342,23 +354,33 @@ void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
     decoder->height = sequence->height;
     decoder->vertical_position_extension = (sequence->picture_height > 2800);
 
-    /*
-     * according to 6.1.1.6, repeat sequence headers should be
-     * identical to the original. However some DVDs dont respect that
-     * and have different bitrates in the repeat sequence headers. So
-     * we'll ignore that in the comparison and still consider these as
-     * repeat sequence headers.
-     */
-    mpeg2dec->sequence.byte_rate = sequence->byte_rate;
-    if (!memcmp (&(mpeg2dec->sequence), sequence, sizeof (mpeg2_sequence_t)))
+    if (mpeg2dec->sequence.width != (unsigned)-1) {
+	unsigned int new_byte_rate;
+
+	/*
+	 * According to 6.1.1.6, repeat sequence headers should be
+	 * identical to the original. However some DVDs dont respect
+	 * that and have different bitrates in the repeat sequence
+	 * headers. So we'll ignore that in the comparison and still
+	 * consider these as repeat sequence headers.
+	 *
+	 * However, be careful not to alter the current sequence when
+	 * returning STATE_INVALID_END.
+	 */
+	new_byte_rate = sequence->byte_rate;
+	sequence->byte_rate = mpeg2dec->sequence.byte_rate;
+	if (memcmp (&(mpeg2dec->sequence), sequence,
+		    sizeof (mpeg2_sequence_t))) {
+	    sequence->byte_rate = new_byte_rate;
+	    mpeg2_header_end (mpeg2dec);
+	    mpeg2dec->action = invalid_end_action;
+	    mpeg2dec->state = STATE_INVALID_END;
+	    return;
+	}
+	sequence->byte_rate = new_byte_rate;
 	mpeg2dec->state = STATE_SEQUENCE_REPEATED;
-    else if (mpeg2dec->sequence.width != (unsigned)-1) {
-	mpeg2dec->action = mpeg2_seek_sequence;
-	mpeg2dec->state = STATE_INVALID;	/* XXXX STATE_INVALID_END ? */
-	return;
     }
     mpeg2dec->sequence = *sequence;
-
     mpeg2dec->info.sequence = &(mpeg2dec->sequence);
 }
 
