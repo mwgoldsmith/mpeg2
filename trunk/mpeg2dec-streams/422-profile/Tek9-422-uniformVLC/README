@@ -1,0 +1,69 @@
+Dear 4:2:2 profile conformance bitstream exchange AHG members,
+
+This is the short version of 4:2:2 profile test bitstream ID 11.  This sequence
+contains a flat (uniform) distribution of run/level VLC codes for non-intra
+macroblocks.  There are no escape sequences used in the coding of these
+macroblocks.  The purpose of this test is to verify that the decoder-under-test
+does not rely on the statistically low liklihood of the longer VLCs in the
+design of the VLD and rate buffer read bandwidth.
+
+The parameters for the sequence are as follows:
+
+Sequence:	29.97Hz, "Mobile & Calendar", 4 frames, IBBP
+Bitrate: 	50 Mbits/sec
+Picture size:	720 x 512
+VBV size:	9437184 bits
+Quant. scale:	Non-uniform (q_scale_type 1)
+Picture struct:	Frame
+Extras:		Sequence display extension,
+		Quantizer Matrix extension with 3 matrices
+		Lausanne slice extra information byte,
+		Intra DC precision of 11 bits.
+
+The format of the picture data is:
+
+	4:2:2 frame ("display" order) 8 bit samples per compenent.
+
+	width  = 720
+	height = 512
+
+
+                   <--------width--------->
+                  +------------------------+
+                  |                        |      ^
+                  |                        |      |
+                  |                        |      |
+                  |                        |      |
+                  |     Luminance Pels     |    height
+                  |                        |      |
+                  |                        |      |
+                  |                        |      V
+                  +-----------+------------+
+                  |           |      ^
+                  |           |      |
+                  |           |      |
+                  |  Cb pels  |    height
+                  |           |      |
+                  |           |      |
+                  |           |      V
+                  +-----------+      -
+                  |           |      ^
+                  |           |      |
+                  |           |      |
+                  |  Cr pels  |    height
+                  |           |      |
+                  |           |      |
+                  |           |      V
+                  +-----------+      -
+                   <-width/2->
+
+Please email me with the results of your decoding -- also let me know if you
+find any errors in this bitstream.
+
+--------------------------------------------------------------------------------
+Bob Eifrig, M/S 50-490
+Video and Networking Technology          Tel:   +1 503 627 3762
+Tektronix Inc                            FAX:   +1 503 627 1736
+P. O. Box 500                            Email:  Bob.Eifrig@TEK.COM
+Beaverton, Oregon, 97077, USA     
+--------------------------------------------------------------------------------

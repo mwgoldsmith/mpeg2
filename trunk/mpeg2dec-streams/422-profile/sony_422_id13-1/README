@@ -1,0 +1,78 @@
+							 Jun 23 1995	
+                                                                Sony
+
+Dear 4:2:2 profile conformance testing AHG members,
+
+This bitstream is created for the 4:2:2 profile conformance testing.
+Parameters of the bitstream "sony_422_id13-1.bs" are the following:
+
+Bitstream ID:  13.
+Description:   Field-coded picture, all Dual Prime
+Stresses:      prediction bandwidth
+Justification: some designs may behave differently on fields than on frames
+Organizations: Sony
+Parameters:
+	
+        Bitstream file			sony_422_id13-1.bs
+        Reconstructed frames		sony_422_id13-1.pict
+	Trace file of Picture Layer	sony_422_id13-1.trace
+
+	Bit rate:               50 Mbit/sec 
+	Sampling dimensions:    720 x 512  29.97 Hz 
+	Number of frames:	60 frames 
+	IDCT:                   double precision
+        
+        *frame format:
+
+	4:2:2 frame ("display" order) 8 bit
+
+                   <--------width--------->
+                  +------------------------+
+                  |                        |      ^
+                  |                        |      |
+                  |                        |      |
+                  |                        |      |
+                  |     Luminance Pels     |    height
+                  |                        |      |
+                  |                        |      |
+                  |                        |      V
+                  +-----------+------------+
+                  |           |      ^
+                  |           |      |
+                  |           |      |
+                  |  Cb pels  |    height
+                  |           |      |
+                  |           |      |
+                  |           |      V
+                  +-----------+      -
+                  |           |      ^
+                  |           |      |
+                  |           |      |
+                  |  Cr pels  |    height
+                  |           |      |
+                  |           |      |
+                  |           |      V
+                  +-----------+      -
+                   <-width/2->
+
+
+
+Please check that you can decode it.  Thank-you.
+
+	Best regards,
+
+	Motoki Kato
+	Katsumi Tahara
+
+                        ======================================
+                        Phone   +81-3-5448-5605
+                        Fax     +81-3-5448-5611
+                        E-mail  mkato@av.crl.sony.co.jp
+                                tahara@av.crl.sony.co.jp
+
+                        Image Processing Technology Department
+                        Corporate Research Laboratories
+                        Sony Corporation
+                        Tokyo,Japan
+                        ======================================
+

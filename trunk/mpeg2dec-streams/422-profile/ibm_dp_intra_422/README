@@ -1,0 +1,90 @@
+Date: Thu, 2 Nov 1995 13:06:00 -0500
+From: elliotl@watson.ibm.COM (Elliot Linzer)
+To: bobe@metastable.LABS.TEK.COM
+
+
+
+Bitstream name: ibm_dp_intra_422.m2v
+Decoded files name: ibm_dp_intra_422.decoded[1-66].[yuv]
+
+This bit stream tests a decoder's ability to handle
+high bandwidth compressed data and motion comp data.
+The "high bandwidth" P frames contain a random mix of
+intra macro blocks and dual' macro blocks.  The intra
+macroblocks use 12275 bits of compressed data.  The dual'
+blocks use half pel interpolation to increase bandwidth
+requirements.  Each high bandwidth P frame uses a little less
+than tne vbv buffer size bits.  Note that the intra blocks
+are made up of synthetic data, and will be light green to black.
+
+Picture size:    720x512
+Frame rate:      29.970000
+Chroma:          4:2:2
+Bit rate:        50000000
+vbv buffer size: 9437184
+Dc precision:    11-bits
+Pic structure:   Frame
+No Frames:      66
+
+Frame
+0      I frame
+1      High bandwidth P frame
+2      P frame
+3      P frame
+4      P frame
+5      P frame
+6      P frame
+7      High bandwidth P frame
+8      P frame
+9      P frame
+10     P frame
+11     P frame
+12     P frame
+13     High bandwidth P frame
+14     P frame
+15     P frame
+:       :
+:       :
+
+
+The format of the reconstructed frames is:
+
+	4:2:2 frame ("display" order) 8 bit samples per compenent.
+
+	width  = 720
+	height = 512
+
+
+                   <--------width--------->
+                  +------------------------+
+                  |                        |      ^
+                  |                        |      |
+                  |                        |      |
+                  |                        |      |
+                  |     Luminance Pels     |    height
+                  |                        |      |
+                  |                        |      |
+                  |                        |      V
+                  +-----------+------------+
+                  |           |      ^
+                  |           |      |
+                  |           |      |
+                  |  Cb pels  |    height
+                  |           |      |
+                  |           |      |
+                  |           |      V
+                  +-----------+      -
+                  |           |      ^
+                  |           |      |
+                  |           |      |
+                  |  Cr pels  |    height
+                  |           |      |
+                  |           |      |
+                  |           |      V
+                  +-----------+      -
+                   <-width/2->
+
+
+
+
+
