@@ -1,5 +1,5 @@
 #FIXME should remove
-INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/libvo
+INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/video
 
 CFLAGS = @CFLAGS@ @LIBMPEG2_CFLAGS@
 

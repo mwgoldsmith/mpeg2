@@ -20,19 +20,6 @@
  */
 
 //
-// We should remove the typdefs in oms for vo_image_buffer_t 
-// plugin_output_video_attr_t and let OMS include
-// them from the video.
-// INCLUDES ="${INCLUDES} $video_lib_includes" and let video lib
-// define this :-)
-
-#ifdef __OMS__
-#include "../../output/video/output_video.h"
-#else
-#include "../video/output_video.h"
-#endif
-
-//
 // Structure for the mpeg2dec decoder.
 // 
 
@@ -57,24 +44,17 @@ void mpeg2_output_init (int flag);
 // Proposed new interface [START]
 //
 
-
-// forward declaration (hidden in mpeg2_internal.h)
-#ifndef __MPEG2_INTERNAL
-typedef void* picture_t;
-#endif
-
-
 typedef struct mpeg2dec_s {
-    vo_output_video_t* output;
+    vo_output_video_t * output;
     vo_output_video_attr_t attr;
-    void* user_data;
+    void * user_data;
 
     // here we store the allocated images, which we get from
     // the output interface
     img_buf_t * frame[3];
  
     // this is where we keep the state of the decoder
-    picture_t * picture;
+    struct picture_s * picture;
     
     uint32_t shift;
     int is_display_initialized;
@@ -89,12 +69,11 @@ typedef struct mpeg2dec_s {
     // (we make no pretenses ofdecoding anything more than that)
     // allocated in init gcc has problems allocating
     // such big structures
-    uint8_t* chunk_buffer;
+    uint8_t * chunk_buffer;
     // pointer to current position in chunk_buffer
-    uint8_t* chunk_ptr;
+    uint8_t * chunk_ptr;
     // last start code ?
     uint8_t code;
-
 } mpeg2dec_t ;
 
 
