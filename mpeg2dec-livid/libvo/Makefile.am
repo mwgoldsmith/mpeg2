@@ -12,9 +12,14 @@ libvo_la_LIBADD =  @LIBVO_CONFIG_OBJS@ @LIBVO_CONFIG_LIBS@ @X_PRE_LIBS@ @X_LIBS@
 libvo_la_DEPENDENCIES = @LIBVO_CONFIG_OBJS@
 libvo_la_LDFLAGS = -version-info 1:6:1 
 
-libvo_la_SOURCES = video_out.c video_out_x11.c yuv2rgb.c video_out_3dfx.c\
-	video_out_mga.c  video_out_sdl.c
+libvo_la_SOURCES =\
+	yuv2rgb.c\
+	video_out.c\
+	video_out_mga.c\
+	video_out_x11.c\
+	video_out_3dfx.c\
+	video_out_sdl.c
 
 EXTRA_libvo_la_SOURCES = yuv2rgb_mmx.c
 
-noinst_HEADERS =  video_out.h video_out_internal.h  yuv2rgb.h 
+noinst_HEADERS = video_out_internal.h yuv2rgb.h 

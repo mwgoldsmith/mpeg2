@@ -39,12 +39,20 @@ LIBVO_EXTERN(mga)
 
 #include "drivers/mga_vid.h"
 
+static vo_info_t vo_info = 
+{
+	"Matrox Millennium G200/G400 (/dev/mgavid)",
+	"mga",
+	"Aaron Holtzman <aholtzma@ess.engr.uvic.ca>",
+	""
+};
+
 static mga_vid_config_t mga_vid_config;
 static uint_8 *vid_data, *frame0, *frame1;
 static int next_frame = 0;
 static int f;
 
-void
+static void
 write_frame_g200(uint_8 *y,uint_8 *cr, uint_8 *cb)
 {
 	uint_8 *dest;
@@ -71,7 +79,7 @@ write_frame_g200(uint_8 *y,uint_8 *cr, uint_8 *cb)
 	}
 }
 
-void
+static void
 write_frame_g400(uint_8 *y,uint_8 *cr, uint_8 *cb)
 {
 	uint_8 *dest;
@@ -180,7 +188,7 @@ draw_slice(uint_8 *src[], uint_32 slice_num)
 	return 0;
 }
 
-void
+static void
 flip_page(void)
 {
 	ioctl(f,MGA_VID_FSEL,&next_frame);
@@ -193,7 +201,7 @@ flip_page(void)
 		vid_data = frame0;
 }
 
-uint_32
+static uint_32
 draw_frame(uint_8 *src[])
 {
 	if (mga_vid_config.card_type == MGA_G200)
@@ -205,7 +213,7 @@ draw_frame(uint_8 *src[])
 	return 0;
 }
 
-uint_32
+static uint_32
 init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 {
 	char *frame_mem;
@@ -225,8 +233,8 @@ init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
 	mga_vid_config.dest_height= height;
 	//mga_vid_config.dest_width = 1280;
 	//mga_vid_config.dest_height= 1024;
-	mga_vid_config.x_org= 16;
-	mga_vid_config.y_org= 16;
+	mga_vid_config.x_org= 0;
+	mga_vid_config.y_org= 0;
 
 	if (ioctl(f,MGA_VID_CONFIG,&mga_vid_config))
 	{
@@ -247,6 +255,11 @@ init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
   return 0;
 }
 
+static const vo_info_t*
+get_info(void)
+{
+	return &vo_info;
+}
 
 //FIXME this should allocate AGP memory via agpgart and then we
 //can use AGP transfers to the framebuffer

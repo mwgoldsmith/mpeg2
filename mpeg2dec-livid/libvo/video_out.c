@@ -26,6 +26,24 @@
 #include "config.h"
 #include "video_out.h"
 
+//
+// Externally visible list of all vo drivers
+//
+
+extern vo_functions_t video_out_mga;
+extern vo_functions_t video_out_x11;
+extern vo_functions_t video_out_sdl;
+extern vo_functions_t video_out_3dfx;
+
+vo_functions_t* video_out_drivers[] = 
+{
+	&video_out_mga,
+	&video_out_x11,
+	&video_out_sdl,
+	&video_out_3dfx,
+	NULL
+};
+
 
 //
 // Here are the generic fallback routines that could

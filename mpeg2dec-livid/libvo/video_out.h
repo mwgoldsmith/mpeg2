@@ -36,6 +36,17 @@ typedef signed short sint_16;
 typedef signed char sint_8;
 #endif
 
+typedef struct vo_info_s
+{
+	/* driver name ("Matrox Millennium G200/G400" */
+	const char *name;
+	/* short name (for config strings) ("mga") */
+	const char *short_name;
+	/* author ("Aaron Holtzman <aholtzma@ess.engr.uvic.ca>") */
+	const char *author;
+	/* any additional comments */
+	const char *comment;
+} vo_info_t;
 
 typedef struct vo_image_buffer_s
 {
@@ -66,9 +77,19 @@ typedef struct vo_functions_s
 	 *              The program will probably respond to an error condition
 	 *              by terminating.
 	 */
-		
+
 	uint_32 (*init)(uint_32 width, uint_32 height, uint_32 fullscreen, char *title);
 
+	/*
+	 * Return driver information.
+	 *
+	 *    params : none.
+	 *   returns : read-only pointer to a vo_info_t structure.
+	 *             Fields are non-NULL.
+	 *             Should not return NULL.
+	 */
+
+	const vo_info_t* (*get_info)(void);
 
 	/*
 	 * Display a new frame of the video to the screen. This may get called very
@@ -90,7 +111,6 @@ typedef struct vo_functions_s
 	 */
 
 	uint_32 (*draw_frame)(uint_8 *src[]);
-
 
 	/*
 	 * Update a section of the offscreen buffer. A "slice" is an area of the
@@ -118,7 +138,6 @@ typedef struct vo_functions_s
 
 	uint_32 (*draw_slice)(uint_8 *src[], uint_32 slice_num);
 
-
 	/*
 	 * Draw the current image buffer to the screen. There may be several
 	 *  display_slice() calls before display_flip_page() is used. Note that
@@ -131,6 +150,7 @@ typedef struct vo_functions_s
 	 *     params : void.
 	 *    returns : void.
 	 */
+
 	void (*flip_page)(void);
 
 	/*
@@ -157,11 +177,8 @@ typedef struct vo_functions_s
 	void	(*free_image_buffer)(vo_image_buffer_t* image);
 } vo_functions_t;
 
-
-extern vo_functions_t video_out_mga;
-extern vo_functions_t video_out_x11;
-extern vo_functions_t video_out_sdl;
-extern vo_functions_t video_out_3dfx;
+// NULL terminated array of all drivers 
+extern vo_functions_t* video_out_drivers[];
 
 #ifdef __cplusplus
 }
