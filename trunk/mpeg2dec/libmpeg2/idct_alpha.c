@@ -39,8 +39,8 @@
 #define W6 1108 /* 2048 * sqrt (2) * cos (6 * pi / 16) */
 #define W7 565  /* 2048 * sqrt (2) * cos (7 * pi / 16) */
 
-static uint8_t clip_lut[1024];
-#define CLIP(i) ((clip_lut+384)[(i)])
+extern uint8_t mpeg2_clip[14 * 1024 + 256];
+#define CLIP(i) ((mpeg2_clip + 7 * 1024)[i])
 
 #if 0
 #define BUTTERFLY(t0,t1,W0,W1,d0,d1)	\
@@ -360,15 +360,12 @@ void mpeg2_idct_add_alpha (const int last, int16_t * block,
     }
 }
 
-void mpeg2_idct_alpha_init(int no_mvi)
+void mpeg2_idct_alpha_init (void)
 {
     extern uint8_t mpeg2_scan_norm[64];
     extern uint8_t mpeg2_scan_alt[64];
     int i, j;
 
-    if (no_mvi)
-	for (i = -384; i < 640; i++)
-	    clip_lut[i + 384] = (i < 0) ? 0 : ((i > 255) ? 255 : i);
     for (i = 0; i < 64; i++) {
 	j = mpeg2_scan_norm[i];
 	mpeg2_scan_norm[i] = ((j & 0x36) >> 1) | ((j & 0x09) << 2);
