@@ -43,7 +43,12 @@
 #include <inttypes.h>
 
 #include "mpeg2_internal.h"
+
+#ifdef __OMS__
+#include <cpu_accel.h>
+#else
 #include "oms_accel.h"
+#endif
 
 #define W1 2841 /* 2048*sqrt (2)*cos (1*pi/16) */
 #define W2 2676 /* 2048*sqrt (2)*cos (2*pi/16) */

@@ -25,7 +25,11 @@
 #include <inttypes.h>
 
 #include "mpeg2_internal.h"
+#ifdef __OMS__
+#include <cpu_accel.h>
+#else
 #include "oms_accel.h"
+#endif
 
 mc_functions_t mc_functions;
 

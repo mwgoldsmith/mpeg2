@@ -35,7 +35,12 @@
 #endif
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
+#ifdef __OMS__
+#include <cpu_accel.h>
+#else
 #include "oms_accel.h"
+#endif
+
 #include "attributes.h"
 
 #include "mmx.h"
