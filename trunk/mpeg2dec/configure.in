@@ -79,8 +79,6 @@ else
     sparc-sun-solaris*)
 	OPT_CFLAGS="$CFLAGS -xCC -fast -xO5"
 	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
-    alpha*)
-	AC_DEFINE([ARCH_ALPHA],,[alpha architecture]);;
     esac
 fi
 

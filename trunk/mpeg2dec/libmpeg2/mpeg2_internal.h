@@ -261,10 +261,13 @@ void mpeg2_idct_add_altivec (int last, int16_t * block,
 void mpeg2_idct_altivec_init (void);
 
 /* idct_alpha.c */
+void mpeg2_idct_copy_mvi (int16_t * block, uint8_t * dest, int stride);
+void mpeg2_idct_add_mvi (int last, int16_t * block,
+			 uint8_t * dest, int stride);
 void mpeg2_idct_copy_alpha (int16_t * block, uint8_t * dest, int stride);
 void mpeg2_idct_add_alpha (int last, int16_t * block,
 			   uint8_t * dest, int stride);
-void mpeg2_idct_alpha_init(void);
+void mpeg2_idct_alpha_init(int no_mvi);
 
 /* motion_comp.c */
 void mpeg2_mc_init (uint32_t accel);
