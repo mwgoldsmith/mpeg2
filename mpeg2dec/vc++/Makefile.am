@@ -3,7 +3,7 @@ EXTRA_DIST = config.h inttypes.h libmpeg2.dsp libvo.dsp mpeg2dec.dsp \
 	     cpu_state.obj idct_mmx.obj motion_comp_mmx.obj
 
 WIN_GCC := i586-mingw32msvc-gcc -I$(top_srcdir)/vc++ -I$(top_srcdir)/include \
-	   -Wall -O3 -fomit-frame-pointer -mcpu=pentiumpro
+	   -Wall -Werror -O3 -fomit-frame-pointer -mcpu=pentiumpro
 
 cpu_accel.obj: FORCE
 	$(WIN_GCC) -c $(top_srcdir)/src/cpu_accel.c -o cpu_accel.obj
