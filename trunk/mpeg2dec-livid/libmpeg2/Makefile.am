@@ -1,5 +1,8 @@
 #FIXME should remove
-INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/video
+INCLUDES = \
+	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/video \
+	-I$(top_srcdir)/src/plugin/output/video
 
 CFLAGS = @CFLAGS@ @LIBMPEG2_CFLAGS@
 
