@@ -18,9 +18,6 @@
 #include <sys/mman.h>
 #include "mga_vid.h"
 
-//#define MGA_G200
-#define MGA_G400
-
 mga_vid_config_t config;
 uint_8 *mga_vid_base;
 uint_32 is_g400;
@@ -159,17 +156,6 @@ main(int argc, char *argv[])
 {
 	int f;
 
-	if(argv[0][strlen(argv[0]) - 3] == '4')
-	{
-		is_g400 = 1;
-		printf("Testing MGA G400 Backend Scaler\n");
-	}
-	else
-	{
-		is_g400 = 0;
-		printf("Testing MGA G200 Backend Scaler\n");
-	}
-
 	f = open("/dev/mga_vid",O_RDWR);
 
 	if(f == -1)
@@ -186,10 +172,20 @@ main(int argc, char *argv[])
 	config.y_org= 10;
 	config.colkey_on = 0;
 
-
 	if (ioctl(f,MGA_VID_CONFIG,&config))
 	{
 		perror("Error in config ioctl");
+	}
+
+	if (config.card_type == MGA_G200) 
+	{
+		printf("Testing MGA G200 Backend Scaler\n");
+	  is_g400 = 0;
+	}
+	else
+	{
+		printf("Testing MGA G400 Backend Scaler\n");
+	  is_g400 = 1;
 	}
 	
 	ioctl(f,MGA_VID_ON,0);

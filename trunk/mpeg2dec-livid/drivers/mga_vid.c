@@ -317,6 +317,7 @@ static int mga_vid_set_config(mga_vid_config_t *config)
 	//allocate 2 megs
 	//mga_src_base = mga_mem_base + (MGA_VIDMEM_SIZE-2) * 0x100000;
 	mga_src_base = (MGA_VIDMEM_SIZE-2) * 0x100000;
+
 	
 	//Setup the BES registers for a three plane 4:2:0 video source 
 	
@@ -407,6 +408,15 @@ static int mga_vid_ioctl(struct inode *inode, struct file *file, unsigned int cm
 				printk("mga_vid: failed copy from userspace\n");
 				return(-EFAULT);
 			}
+			if (is_g400) 
+			  mga_config.card_type = MGA_G400;
+			else
+			  mga_config.card_type = MGA_G200;
+			if (copy_to_user((mga_vid_config_t *) arg, &mga_config, sizeof(mga_vid_config_t)))
+			  {
+			    printk("mga_vid: failed copy to userspace\n");
+			    return(-EFAULT);
+			  }
 			return mga_vid_set_config(&mga_config);	
 		break;
 
