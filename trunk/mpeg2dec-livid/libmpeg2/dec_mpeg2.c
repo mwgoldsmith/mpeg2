@@ -17,20 +17,18 @@
 static int _mpeg2dec_open	(plugin_t *plugin, void *foo);
 static int _mpeg2dec_close	(plugin_t *plugin);
 static int _mpeg2dec_read	(plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t *buf_entry);
+static int _mpeg2dec_set_flag	(plugin_codec_video_t *plugin, uint flag, uint val);
 
 static plugin_codec_video_t codec_mpeg2dec = {
         open:		_mpeg2dec_open,
         close:		_mpeg2dec_close,
         read:		_mpeg2dec_read,
+	set_flag:	_mpeg2dec_set_flag,
 };
 
 
 /************************************************/
 
-
-/**
- *
- **/
 
 static int _mpeg2dec_open (plugin_t *plugin, void *foo)
 {
@@ -39,19 +37,11 @@ static int _mpeg2dec_open (plugin_t *plugin, void *foo)
 }
 
 
-/**
- *
- **/
-
 static int _mpeg2dec_close (plugin_t *plugin)
 {
 	return 0;
 }
 
-
-/**
- *
- **/
 
 static int _mpeg2dec_read (plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t *buf_entry)
 {
@@ -60,12 +50,23 @@ static int _mpeg2dec_read (plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t
 	return 0;
 }
 
+static int _mpeg2dec_set_flag	(plugin_codec_video_t *plugin, uint flag, uint val)
+{
+
+	switch (flag) {
+	case FLAG_VIDEO_DROP_FRAME:
+		fprintf (stderr, "%c", val ? '-':'+');
+		mpeg2_drop (val);
+		break;
+	default:
+		return -1;
+	}
+
+	return 0;
+}
+
+
 /*****************************************/
-
-
-/**
- * Initialize Plugin.
- **/
 
 
 int plugin_init (char *whoami)
@@ -80,10 +81,6 @@ int plugin_init (char *whoami)
 	return 0;
 }
 
-
-/**
- * Cleanup Plugin.
- **/
 
 void plugin_exit (void)
 {
