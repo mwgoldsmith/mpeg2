@@ -49,6 +49,11 @@ typedef struct mpeg2dec_s {
     /* last start code ? */
     uint8_t code;
 
+    /* PTS */
+    uint32_t pts, pts_current, pts_previous;
+    int num_pts;
+    int bytes_since_pts;
+
     /* ONLY for 0.2.x release - will not stay there later */
     int frame_rate_code;
 } mpeg2dec_t ;
@@ -66,6 +71,8 @@ void mpeg2_close (mpeg2dec_t * mpeg2dec);
 
 int mpeg2_decode_data (mpeg2dec_t * mpeg2dec,
 		       uint8_t * data_start, uint8_t * data_end);
+
+void mpeg2_pts (mpeg2dec_t * mpeg2dec, uint32_t pts);
 
 void mpeg2_drop (mpeg2dec_t * mpeg2dec, int flag);
 

@@ -1,5 +1,4 @@
 * things we dont implement yet
-	* export mpeg flags to the libvo
 	* export MC information (for XvMC or for error resilience)
 	* export quantizer information (for postprocessing filters)
 	* export header/picture/slice user data
@@ -21,14 +20,13 @@
 	* reschedule altivec IDCT and MC routines for 7450 chips
 	* try feig IDCT instead of MSSG c IDCT ?
 	* review the use of static inline functions
-	* rework the MC parsing code
 	* improve MMX motion comp inner routines
 	* optimize IDCT for very sparse input matrixes ?
 	* optimize startcode search loop ?
 	* bit parsing / DCT parsing optimizations
-	* clean up slice_process init (and get rid of video_out.h there)
 
 * clean up
 	* clean up header file usage
-	* clean up picture_t structure (some variables should be local ?)
 	* clean up yuv2rgb for interlaced pictures (handling of uv)
+	* clean up picture_t structure (some variables should be local ?)
+	* clean up slice_init
