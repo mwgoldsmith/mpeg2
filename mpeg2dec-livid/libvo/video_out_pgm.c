@@ -87,7 +87,7 @@ static uint32_t draw_frame(uint8_t * src[])
 static vo_image_buffer_t* 
 allocate_image_buffer()
 {
-    return allocate_image_buffer_common(image_height,image_width,0x32315956);
+    return allocate_image_buffer_common(image_height,image_width,0x32315659);
 }
 
 static void	

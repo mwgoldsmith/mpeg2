@@ -261,7 +261,7 @@ init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title, uint32_t
 				fprintf(stderr, "Xvideo image format: 0x%x (%4.4s) %s\n", fo[i].id, 
 						(char*)&fo[i].id, (fo[i].format == XvPacked) ? "packed" : "planar");
 
-				if (0x32315659 == fo[i].id) 
+				if (fo[i].id == format) 
 				{
 					xv_format = fo[i].id;
 					break;
