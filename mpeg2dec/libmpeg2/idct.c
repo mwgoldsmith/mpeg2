@@ -100,7 +100,7 @@ static void inline idct_row (int16_t * block)
     x8 = W3 * (x6 + x7);
     x6 = x8 - (W3 - W5) * x6;
     x7 = x8 - (W3 + W5) * x7;
- 
+
     /* second stage */
     x8 = x0 + x1;
     x0 -= x1;
@@ -111,7 +111,7 @@ static void inline idct_row (int16_t * block)
     x4 -= x6;
     x6 = x5 + x7;
     x5 -= x7;
- 
+
     /* third stage */
     x7 = x8 + x3;
     x8 -= x3;
@@ -119,7 +119,7 @@ static void inline idct_row (int16_t * block)
     x0 -= x2;
     x2 = (181 * (x4 + x5) + 128) >> 8;
     x4 = (181 * (x4 - x5) + 128) >> 8;
- 
+
     /* fourth stage */
     block[0] = (x7 + x1) >> 8;
     block[1] = (x3 + x2) >> 8;
@@ -171,7 +171,7 @@ static void inline idct_col (int16_t *block)
     x8 = W3 * (x6 + x7) + 4;
     x6 = (x8 - (W3 - W5) * x6) >> 3;
     x7 = (x8 - (W3 + W5) * x7) >> 3;
- 
+
     /* second stage */
     x8 = x0 + x1;
     x0 -= x1;
@@ -182,7 +182,7 @@ static void inline idct_col (int16_t *block)
     x4 -= x6;
     x6 = x5 + x7;
     x5 -= x7;
- 
+
     /* third stage */
     x7 = x8 + x3;
     x8 -= x3;
@@ -190,7 +190,7 @@ static void inline idct_col (int16_t *block)
     x0 -= x2;
     x2 = (181 * (x4 + x5) + 128) >> 8;
     x4 = (181 * (x4 - x5) + 128) >> 8;
- 
+
     /* fourth stage */
     block[8*0] = (x7 + x1) >> 14;
     block[8*1] = (x3 + x2) >> 14;

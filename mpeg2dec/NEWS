@@ -1,4 +1,4 @@
-mpeg2dec-0.2.1 Sun Mar 17 23:24:04 PST 2002 
+mpeg2dec-0.2.1 Sun Mar 17 23:24:04 PST 2002
 
 Two major new features: First, a much higher tolerance to corrupted
 streams. Instead of just segfaulting, we should now be able to keep
@@ -15,7 +15,7 @@ And, the libvo interface has been slightly extended so people can more
 easily make use of the various mpeg flags.
 
 
-mpeg2dec-0.2.0 Thu Feb 15 20:12:34 PST 2001 
+mpeg2dec-0.2.0 Thu Feb 15 20:12:34 PST 2001
 
 The most important new feature is the support for field
 pictures. mpeg2dec is now able to display any conformant

@@ -45,7 +45,7 @@ int XShmGetEventBase (Display *);
 #include "video_out.h"
 #include "video_out_internal.h"
 
-typedef struct x11_frame_s {
+typedef struct {
     vo_frame_t vo;
     uint8_t * rgb_ptr;
     int rgb_stride;
@@ -57,7 +57,7 @@ typedef struct x11_frame_s {
 #endif
 } x11_frame_t;
 
-typedef struct x11_instance_s {
+typedef struct {
     vo_instance_t vo;
     int prediction_index;
     vo_frame_t * frame_ptr[3];
@@ -300,7 +300,7 @@ static int x11_alloc_frames (x11_instance_t * instance)
 	    fprintf (stderr, "Cannot create ximage\n");
 	    return 1;
 	} else if (i == 0) {
-	    size = (instance->frame[0].ximage->bytes_per_line * 
+	    size = (instance->frame[0].ximage->bytes_per_line *
 		    instance->frame[0].ximage->height);
 	    alloc = create_shm (instance, 3 * size);
 	    if (alloc == NULL)
@@ -315,7 +315,7 @@ static int x11_alloc_frames (x11_instance_t * instance)
 	alloc += size;
     }
 
-#ifdef WORDS_BIGENDIAN 
+#ifdef WORDS_BIGENDIAN
     if (instance->frame[0].ximage->byte_order != MSBFirst) {
 	fprintf (stderr, "No support for non-native byte order\n");
 	return 1;
@@ -332,7 +332,7 @@ static int x11_alloc_frames (x11_instance_t * instance)
      * actually represent the colour.
      *
      * bpp in X11 land means how many bits in the frame buffer per
-     * pixel. 
+     * pixel.
      *
      * ex. 15 bit color is 15 bit depth and 16 bpp. Also 24 bit
      *     color is 24 bit depth, but can be 24 bpp or 32 bpp.

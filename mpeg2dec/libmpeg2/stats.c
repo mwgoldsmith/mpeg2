@@ -36,7 +36,7 @@ static int debug_level = -1;
 static int debug_is_on (void)
 {
     char * env_var;
-	
+
     if (debug_level < 0) {
 	env_var = getenv ("MPEG2_DEBUG");
 
@@ -45,7 +45,7 @@ static int debug_is_on (void)
 	else
 	    debug_level = 0;
     }
-	
+
     return debug_level;
 }
 
@@ -244,7 +244,7 @@ static void stats_picture_coding_extension (uint8_t * buffer)
 	     " (pic_ext) forward horizontal f_code % d, forward vertical f_code % d\n",
 	     f_code[0][0], f_code[0][1]);
     fprintf (stderr,
-	     " (pic_ext) backward horizontal f_code % d, backward vertical f_code % d\n", 
+	     " (pic_ext) backward horizontal f_code % d, backward vertical f_code % d\n",
 	     f_code[1][0], f_code[1][1]);
     fprintf (stderr,
 	     " (pic_ext) intra_dc_precision %d, top_field_first %d, frame_pred_frame_dct %d\n",

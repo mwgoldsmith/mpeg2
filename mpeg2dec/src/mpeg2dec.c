@@ -58,7 +58,7 @@ static RETSIGTYPE signal_handler (int sig)
     raise (sig);
 }
 
-static void print_fps (int final) 
+static void print_fps (int final)
 {
     static uint32_t frame_counter = 0;
     static struct timeval tv_beg, tv_start;
@@ -80,7 +80,7 @@ static void print_fps (int final)
 	(tv_end.tv_usec - tv_start.tv_usec) / 10000;
 
     if (final) {
-	if (total_elapsed) 
+	if (total_elapsed)
 	    tfps = frame_counter * 10000 / total_elapsed;
 	else
 	    tfps = 0;
@@ -485,7 +485,7 @@ static void ts_loop (void)
 static void es_loop (void)
 {
     uint8_t * end;
-		
+
     do {
 	end = buffer + fread (buffer, 1, BUFFER_SIZE, in_file);
 	decode_mpeg2 (buffer, end);

@@ -26,12 +26,12 @@
 
 /* Structure for the mpeg2dec decoder */
 
-typedef struct mpeg2dec_s {
+typedef struct {
     vo_instance_t * output;
 
     /* this is where we keep the state of the decoder */
-    struct picture_s * picture;
-    
+    struct decoder_s * decoder;
+
     uint32_t shift;
     int is_display_initialized;
     int is_sequence_needed;

@@ -31,7 +31,7 @@
 #include "video_out.h"
 #include "video_out_internal.h"
 
-typedef struct pgm_instance_s {
+typedef struct {
     vo_instance_t vo;
     int prediction_index;
     vo_frame_t * frame_ptr[3];

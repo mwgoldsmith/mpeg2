@@ -45,23 +45,23 @@ static int non_linear_quantizer_scale [] = {
     56, 64, 72, 80, 88, 96, 104, 112
 };
 
-static inline int get_macroblock_modes (picture_t * picture)
+static inline int get_macroblock_modes (decoder_t * decoder)
 {
-#define bit_buf (picture->bitstream_buf)
-#define bits (picture->bitstream_bits)
-#define bit_ptr (picture->bitstream_ptr)
+#define bit_buf (decoder->bitstream_buf)
+#define bits (decoder->bitstream_bits)
+#define bit_ptr (decoder->bitstream_ptr)
     int macroblock_modes;
     MBtab * tab;
 
-    switch (picture->picture_coding_type) {
+    switch (decoder->picture_coding_type) {
     case I_TYPE:
 
 	tab = MB_I + UBITS (bit_buf, 1);
 	DUMPBITS (bit_buf, bits, tab->len);
 	macroblock_modes = tab->modes;
 
-	if ((! (picture->frame_pred_frame_dct)) &&
-	    (picture->picture_structure == FRAME_PICTURE)) {
+	if ((! (decoder->frame_pred_frame_dct)) &&
+	    (decoder->picture_structure == FRAME_PICTURE)) {
 	    macroblock_modes |= UBITS (bit_buf, 1) * DCT_TYPE_INTERLACED;
 	    DUMPBITS (bit_buf, bits, 1);
 	}
@@ -74,13 +74,13 @@ static inline int get_macroblock_modes (picture_t * picture)
 	DUMPBITS (bit_buf, bits, tab->len);
 	macroblock_modes = tab->modes;
 
-	if (picture->picture_structure != FRAME_PICTURE) {
+	if (decoder->picture_structure != FRAME_PICTURE) {
 	    if (macroblock_modes & MACROBLOCK_MOTION_FORWARD) {
 		macroblock_modes |= UBITS (bit_buf, 2) * MOTION_TYPE_BASE;
 		DUMPBITS (bit_buf, bits, 2);
 	    }
 	    return macroblock_modes;
-	} else if (picture->frame_pred_frame_dct) {
+	} else if (decoder->frame_pred_frame_dct) {
 	    if (macroblock_modes & MACROBLOCK_MOTION_FORWARD)
 		macroblock_modes |= MC_FRAME;
 	    return macroblock_modes;
@@ -102,13 +102,13 @@ static inline int get_macroblock_modes (picture_t * picture)
 	DUMPBITS (bit_buf, bits, tab->len);
 	macroblock_modes = tab->modes;
 
-	if (picture->picture_structure != FRAME_PICTURE) {
+	if (decoder->picture_structure != FRAME_PICTURE) {
 	    if (! (macroblock_modes & MACROBLOCK_INTRA)) {
 		macroblock_modes |= UBITS (bit_buf, 2) * MOTION_TYPE_BASE;
 		DUMPBITS (bit_buf, bits, 2);
 	    }
 	    return macroblock_modes;
-	} else if (picture->frame_pred_frame_dct) {
+	} else if (decoder->frame_pred_frame_dct) {
 	    /* if (! (macroblock_modes & MACROBLOCK_INTRA)) */
 	    macroblock_modes |= MC_FRAME;
 	    return macroblock_modes;
@@ -138,18 +138,18 @@ static inline int get_macroblock_modes (picture_t * picture)
 #undef bit_ptr
 }
 
-static inline int get_quantizer_scale (picture_t * picture)
+static inline int get_quantizer_scale (decoder_t * decoder)
 {
-#define bit_buf (picture->bitstream_buf)
-#define bits (picture->bitstream_bits)
-#define bit_ptr (picture->bitstream_ptr)
+#define bit_buf (decoder->bitstream_buf)
+#define bits (decoder->bitstream_bits)
+#define bit_ptr (decoder->bitstream_ptr)
 
     int quantizer_scale_code;
 
     quantizer_scale_code = UBITS (bit_buf, 5);
     DUMPBITS (bit_buf, bits, 5);
 
-    if (picture->q_scale_type)
+    if (decoder->q_scale_type)
 	return non_linear_quantizer_scale [quantizer_scale_code];
     else
 	return quantizer_scale_code << 1;
@@ -158,11 +158,11 @@ static inline int get_quantizer_scale (picture_t * picture)
 #undef bit_ptr
 }
 
-static inline int get_motion_delta (picture_t * picture, int f_code)
+static inline int get_motion_delta (decoder_t * decoder, int f_code)
 {
-#define bit_buf (picture->bitstream_buf)
-#define bits (picture->bitstream_bits)
-#define bit_ptr (picture->bitstream_ptr)
+#define bit_buf (decoder->bitstream_buf)
+#define bits (decoder->bitstream_bits)
+#define bit_ptr (decoder->bitstream_ptr)
 
     int delta;
     int sign;
@@ -230,11 +230,11 @@ static inline int bound_motion_vector (int vector, int f_code)
 #endif
 }
 
-static inline int get_dmv (picture_t * picture)
+static inline int get_dmv (decoder_t * decoder)
 {
-#define bit_buf (picture->bitstream_buf)
-#define bits (picture->bitstream_bits)
-#define bit_ptr (picture->bitstream_ptr)
+#define bit_buf (decoder->bitstream_buf)
+#define bits (decoder->bitstream_bits)
+#define bit_ptr (decoder->bitstream_ptr)
 
     DMVtab * tab;
 
@@ -246,11 +246,11 @@ static inline int get_dmv (picture_t * picture)
 #undef bit_ptr
 }
 
-static inline int get_coded_block_pattern (picture_t * picture)
+static inline int get_coded_block_pattern (decoder_t * decoder)
 {
-#define bit_buf (picture->bitstream_buf)
-#define bits (picture->bitstream_bits)
-#define bit_ptr (picture->bitstream_ptr)
+#define bit_buf (decoder->bitstream_buf)
+#define bits (decoder->bitstream_bits)
+#define bit_ptr (decoder->bitstream_ptr)
 
     CBPtab * tab;
 
@@ -274,11 +274,11 @@ static inline int get_coded_block_pattern (picture_t * picture)
 #undef bit_ptr
 }
 
-static inline int get_luma_dc_dct_diff (picture_t * picture)
+static inline int get_luma_dc_dct_diff (decoder_t * decoder)
 {
-#define bit_buf (picture->bitstream_buf)
-#define bits (picture->bitstream_bits)
-#define bit_ptr (picture->bitstream_ptr)
+#define bit_buf (decoder->bitstream_buf)
+#define bits (decoder->bitstream_bits)
+#define bit_ptr (decoder->bitstream_ptr)
     DCtab * tab;
     int size;
     int dc_diff;
@@ -311,11 +311,11 @@ static inline int get_luma_dc_dct_diff (picture_t * picture)
 #undef bit_ptr
 }
 
-static inline int get_chroma_dc_dct_diff (picture_t * picture)
+static inline int get_chroma_dc_dct_diff (decoder_t * decoder)
 {
-#define bit_buf (picture->bitstream_buf)
-#define bits (picture->bitstream_bits)
-#define bit_ptr (picture->bitstream_ptr)
+#define bit_buf (decoder->bitstream_buf)
+#define bits (decoder->bitstream_bits)
+#define bit_ptr (decoder->bitstream_ptr)
     DCtab * tab;
     int size;
     int dc_diff;
@@ -354,14 +354,14 @@ do {					\
 	val = (val > 0) ? 2047 : -2048;	\
 } while (0)
 
-static void get_intra_block_B14 (picture_t * picture)
+static void get_intra_block_B14 (decoder_t * decoder)
 {
     int i;
     int j;
     int val;
-    uint8_t * scan = picture->scan;
-    uint8_t * quant_matrix = picture->intra_quantizer_matrix;
-    int quantizer_scale = picture->quantizer_scale;
+    uint8_t * scan = decoder->scan;
+    uint8_t * quant_matrix = decoder->intra_quantizer_matrix;
+    int quantizer_scale = decoder->quantizer_scale;
     int mismatch;
     DCTtab * tab;
     uint32_t bit_buf;
@@ -369,13 +369,13 @@ static void get_intra_block_B14 (picture_t * picture)
     uint8_t * bit_ptr;
     int16_t * dest;
 
-    dest = picture->DCTblock;
+    dest = decoder->DCTblock;
     i = 0;
     mismatch = ~dest[0];
 
-    bit_buf = picture->bitstream_buf;
-    bits = picture->bitstream_bits;
-    bit_ptr = picture->bitstream_ptr;
+    bit_buf = decoder->bitstream_buf;
+    bits = decoder->bitstream_bits;
+    bit_ptr = decoder->bitstream_ptr;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
 
@@ -463,19 +463,19 @@ static void get_intra_block_B14 (picture_t * picture)
     }
     dest[63] ^= mismatch & 1;
     DUMPBITS (bit_buf, bits, 2);	/* dump end of block code */
-    picture->bitstream_buf = bit_buf;
-    picture->bitstream_bits = bits;
-    picture->bitstream_ptr = bit_ptr;
+    decoder->bitstream_buf = bit_buf;
+    decoder->bitstream_bits = bits;
+    decoder->bitstream_ptr = bit_ptr;
 }
 
-static void get_intra_block_B15 (picture_t * picture)
+static void get_intra_block_B15 (decoder_t * decoder)
 {
     int i;
     int j;
     int val;
-    uint8_t * scan = picture->scan;
-    uint8_t * quant_matrix = picture->intra_quantizer_matrix;
-    int quantizer_scale = picture->quantizer_scale;
+    uint8_t * scan = decoder->scan;
+    uint8_t * quant_matrix = decoder->intra_quantizer_matrix;
+    int quantizer_scale = decoder->quantizer_scale;
     int mismatch;
     DCTtab * tab;
     uint32_t bit_buf;
@@ -483,13 +483,13 @@ static void get_intra_block_B15 (picture_t * picture)
     uint8_t * bit_ptr;
     int16_t * dest;
 
-    dest = picture->DCTblock;
+    dest = decoder->DCTblock;
     i = 0;
     mismatch = ~dest[0];
 
-    bit_buf = picture->bitstream_buf;
-    bits = picture->bitstream_bits;
-    bit_ptr = picture->bitstream_ptr;
+    bit_buf = decoder->bitstream_buf;
+    bits = decoder->bitstream_bits;
+    bit_ptr = decoder->bitstream_ptr;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
 
@@ -576,19 +576,19 @@ static void get_intra_block_B15 (picture_t * picture)
     }
     dest[63] ^= mismatch & 1;
     DUMPBITS (bit_buf, bits, 4);	/* dump end of block code */
-    picture->bitstream_buf = bit_buf;
-    picture->bitstream_bits = bits;
-    picture->bitstream_ptr = bit_ptr;
+    decoder->bitstream_buf = bit_buf;
+    decoder->bitstream_bits = bits;
+    decoder->bitstream_ptr = bit_ptr;
 }
 
-static void get_non_intra_block (picture_t * picture)
+static void get_non_intra_block (decoder_t * decoder)
 {
     int i;
     int j;
     int val;
-    uint8_t * scan = picture->scan;
-    uint8_t * quant_matrix = picture->non_intra_quantizer_matrix;
-    int quantizer_scale = picture->quantizer_scale;
+    uint8_t * scan = decoder->scan;
+    uint8_t * quant_matrix = decoder->non_intra_quantizer_matrix;
+    int quantizer_scale = decoder->quantizer_scale;
     int mismatch;
     DCTtab * tab;
     uint32_t bit_buf;
@@ -598,11 +598,11 @@ static void get_non_intra_block (picture_t * picture)
 
     i = -1;
     mismatch = 1;
-    dest = picture->DCTblock;
+    dest = decoder->DCTblock;
 
-    bit_buf = picture->bitstream_buf;
-    bits = picture->bitstream_bits;
-    bit_ptr = picture->bitstream_ptr;
+    bit_buf = decoder->bitstream_buf;
+    bits = decoder->bitstream_bits;
+    bit_ptr = decoder->bitstream_ptr;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
     if (bit_buf >= 0x28000000) {
@@ -699,19 +699,19 @@ static void get_non_intra_block (picture_t * picture)
     }
     dest[63] ^= mismatch & 1;
     DUMPBITS (bit_buf, bits, 2);	/* dump end of block code */
-    picture->bitstream_buf = bit_buf;
-    picture->bitstream_bits = bits;
-    picture->bitstream_ptr = bit_ptr;
+    decoder->bitstream_buf = bit_buf;
+    decoder->bitstream_bits = bits;
+    decoder->bitstream_ptr = bit_ptr;
 }
 
-static void get_mpeg1_intra_block (picture_t * picture)
+static void get_mpeg1_intra_block (decoder_t * decoder)
 {
     int i;
     int j;
     int val;
-    uint8_t * scan = picture->scan;
-    uint8_t * quant_matrix = picture->intra_quantizer_matrix;
-    int quantizer_scale = picture->quantizer_scale;
+    uint8_t * scan = decoder->scan;
+    uint8_t * quant_matrix = decoder->intra_quantizer_matrix;
+    int quantizer_scale = decoder->quantizer_scale;
     DCTtab * tab;
     uint32_t bit_buf;
     int bits;
@@ -719,11 +719,11 @@ static void get_mpeg1_intra_block (picture_t * picture)
     int16_t * dest;
 
     i = 0;
-    dest = picture->DCTblock;
+    dest = decoder->DCTblock;
 
-    bit_buf = picture->bitstream_buf;
-    bits = picture->bitstream_bits;
-    bit_ptr = picture->bitstream_ptr;
+    bit_buf = decoder->bitstream_buf;
+    bits = decoder->bitstream_bits;
+    bit_ptr = decoder->bitstream_ptr;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
 
@@ -818,19 +818,19 @@ static void get_mpeg1_intra_block (picture_t * picture)
 	break;	/* illegal, check needed to avoid buffer overflow */
     }
     DUMPBITS (bit_buf, bits, 2);	/* dump end of block code */
-    picture->bitstream_buf = bit_buf;
-    picture->bitstream_bits = bits;
-    picture->bitstream_ptr = bit_ptr;
+    decoder->bitstream_buf = bit_buf;
+    decoder->bitstream_bits = bits;
+    decoder->bitstream_ptr = bit_ptr;
 }
 
-static void get_mpeg1_non_intra_block (picture_t * picture)
+static void get_mpeg1_non_intra_block (decoder_t * decoder)
 {
     int i;
     int j;
     int val;
-    uint8_t * scan = picture->scan;
-    uint8_t * quant_matrix = picture->non_intra_quantizer_matrix;
-    int quantizer_scale = picture->quantizer_scale;
+    uint8_t * scan = decoder->scan;
+    uint8_t * quant_matrix = decoder->non_intra_quantizer_matrix;
+    int quantizer_scale = decoder->quantizer_scale;
     DCTtab * tab;
     uint32_t bit_buf;
     int bits;
@@ -838,11 +838,11 @@ static void get_mpeg1_non_intra_block (picture_t * picture)
     int16_t * dest;
 
     i = -1;
-    dest = picture->DCTblock;
+    dest = decoder->DCTblock;
 
-    bit_buf = picture->bitstream_buf;
-    bits = picture->bitstream_bits;
-    bit_ptr = picture->bitstream_ptr;
+    bit_buf = decoder->bitstream_buf;
+    bits = decoder->bitstream_bits;
+    bit_ptr = decoder->bitstream_ptr;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
     if (bit_buf >= 0x28000000) {
@@ -947,107 +947,107 @@ static void get_mpeg1_non_intra_block (picture_t * picture)
 	break;	/* illegal, check needed to avoid buffer overflow */
     }
     DUMPBITS (bit_buf, bits, 2);	/* dump end of block code */
-    picture->bitstream_buf = bit_buf;
-    picture->bitstream_bits = bits;
-    picture->bitstream_ptr = bit_ptr;
+    decoder->bitstream_buf = bit_buf;
+    decoder->bitstream_bits = bits;
+    decoder->bitstream_ptr = bit_ptr;
 }
 
-static inline void slice_intra_DCT (picture_t * picture, int cc,
+static inline void slice_intra_DCT (decoder_t * decoder, int cc,
 				    uint8_t * dest, int stride)
 {
-#define bit_buf (picture->bitstream_buf)
-#define bits (picture->bitstream_bits)  
-#define bit_ptr (picture->bitstream_ptr)
+#define bit_buf (decoder->bitstream_buf)
+#define bits (decoder->bitstream_bits)
+#define bit_ptr (decoder->bitstream_ptr)
     NEEDBITS (bit_buf, bits, bit_ptr);
     /* Get the intra DC coefficient and inverse quantize it */
     if (cc == 0)
-	picture->dc_dct_pred[0] += get_luma_dc_dct_diff (picture);
+	decoder->dc_dct_pred[0] += get_luma_dc_dct_diff (decoder);
     else
-	picture->dc_dct_pred[cc] += get_chroma_dc_dct_diff (picture);
-    picture->DCTblock[0] =
-	picture->dc_dct_pred[cc] << (3 - picture->intra_dc_precision);
-    memset (picture->DCTblock + 1, 0, 63 * sizeof (int16_t));
+	decoder->dc_dct_pred[cc] += get_chroma_dc_dct_diff (decoder);
+    decoder->DCTblock[0] =
+	decoder->dc_dct_pred[cc] << (3 - decoder->intra_dc_precision);
+    memset (decoder->DCTblock + 1, 0, 63 * sizeof (int16_t));
 
-    if (picture->mpeg1) {
-	if (picture->picture_coding_type != D_TYPE)
-	    get_mpeg1_intra_block (picture);
-    } else if (picture->intra_vlc_format)
-	get_intra_block_B15 (picture);
+    if (decoder->mpeg1) {
+	if (decoder->picture_coding_type != D_TYPE)
+	    get_mpeg1_intra_block (decoder);
+    } else if (decoder->intra_vlc_format)
+	get_intra_block_B15 (decoder);
     else
-	get_intra_block_B14 (picture);
-    mpeg2_idct_copy (picture->DCTblock, dest, stride);
+	get_intra_block_B14 (decoder);
+    mpeg2_idct_copy (decoder->DCTblock, dest, stride);
 #undef bit_buf
 #undef bits
 #undef bit_ptr
 }
 
-static inline void slice_non_intra_DCT (picture_t * picture, uint8_t * dest,
+static inline void slice_non_intra_DCT (decoder_t * decoder, uint8_t * dest,
 					int stride)
 {
-    memset (picture->DCTblock, 0, 64 * sizeof (int16_t));
-    if (picture->mpeg1)
-	get_mpeg1_non_intra_block (picture);
+    memset (decoder->DCTblock, 0, 64 * sizeof (int16_t));
+    if (decoder->mpeg1)
+	get_mpeg1_non_intra_block (decoder);
     else
-	get_non_intra_block (picture);
-    mpeg2_idct_add (picture->DCTblock, dest, stride);
+	get_non_intra_block (decoder);
+    mpeg2_idct_add (decoder->DCTblock, dest, stride);
 }
 
 #define MOTION(table,ref,motion_x,motion_y,size,y)			      \
-    pos_x = 2 * picture->offset + motion_x;				      \
-    pos_y = 2 * picture->v_offset + motion_y + 2 * y;			      \
-    if ((pos_x > picture->limit_x) || (pos_y > picture->limit_y_ ## size))    \
+    pos_x = 2 * decoder->offset + motion_x;				      \
+    pos_y = 2 * decoder->v_offset + motion_y + 2 * y;			      \
+    if ((pos_x > decoder->limit_x) || (pos_y > decoder->limit_y_ ## size))    \
 	return;								      \
     xy_half = ((pos_y & 1) << 1) | (pos_x & 1);				      \
-    table[xy_half] (picture->dest[0] + y * picture->stride + picture->offset, \
-		    ref[0] + (pos_x >> 1) + (pos_y >> 1) * picture->stride,   \
-		    picture->stride, size);				      \
+    table[xy_half] (decoder->dest[0] + y * decoder->stride + decoder->offset, \
+		    ref[0] + (pos_x >> 1) + (pos_y >> 1) * decoder->stride,   \
+		    decoder->stride, size);				      \
     motion_x /= 2;	motion_y /= 2;					      \
     xy_half = ((motion_y & 1) << 1) | (motion_x & 1);			      \
-    offset = (((picture->offset + motion_x) >> 1) +			      \
-	      ((((picture->v_offset + motion_y) >> 1) + y/2) *		      \
-	       picture->uv_stride));					      \
-    table[4+xy_half] (picture->dest[1] + y/2 * picture->uv_stride +	      \
-		      (picture->offset >> 1), ref[1] + offset,		      \
-		      picture->uv_stride, size/2);			      \
-    table[4+xy_half] (picture->dest[2] + y/2 * picture->uv_stride +	      \
-		      (picture->offset >> 1), ref[2] + offset,		      \
-		      picture->uv_stride, size/2)
+    offset = (((decoder->offset + motion_x) >> 1) +			      \
+	      ((((decoder->v_offset + motion_y) >> 1) + y/2) *		      \
+	       decoder->uv_stride));					      \
+    table[4+xy_half] (decoder->dest[1] + y/2 * decoder->uv_stride +	      \
+		      (decoder->offset >> 1), ref[1] + offset,		      \
+		      decoder->uv_stride, size/2);			      \
+    table[4+xy_half] (decoder->dest[2] + y/2 * decoder->uv_stride +	      \
+		      (decoder->offset >> 1), ref[2] + offset,		      \
+		      decoder->uv_stride, size/2)
 
 #define MOTION_FIELD(table,ref,motion_x,motion_y,dest_field,op,src_field)     \
-    pos_x = 2 * picture->offset + motion_x;				      \
-    pos_y = picture->v_offset + motion_y;				      \
-    if ((pos_x > picture->limit_x) || (pos_y > picture->limit_y))	      \
+    pos_x = 2 * decoder->offset + motion_x;				      \
+    pos_y = decoder->v_offset + motion_y;				      \
+    if ((pos_x > decoder->limit_x) || (pos_y > decoder->limit_y))	      \
 	return;								      \
     xy_half = ((pos_y & 1) << 1) | (pos_x & 1);				      \
-    table[xy_half] (picture->dest[0] + dest_field * picture->stride +	      \
-		    picture->offset,					      \
+    table[xy_half] (decoder->dest[0] + dest_field * decoder->stride +	      \
+		    decoder->offset,					      \
 		    (ref[0] + (pos_x >> 1) +				      \
-		     ((pos_y op) + src_field) * picture->stride),	      \
-		    2 * picture->stride, 8);				      \
+		     ((pos_y op) + src_field) * decoder->stride),	      \
+		    2 * decoder->stride, 8);				      \
     motion_x /= 2;	motion_y /= 2;					      \
     xy_half = ((motion_y & 1) << 1) | (motion_x & 1);			      \
-    offset = (((picture->offset + motion_x) >> 1) +			      \
-	      (((picture->v_offset >> 1) + (motion_y op) + src_field) *	      \
-	       picture->uv_stride));					      \
-    table[4+xy_half] (picture->dest[1] + dest_field * picture->uv_stride +    \
-		      (picture->offset >> 1), ref[1] + offset,		      \
-		      2 * picture->uv_stride, 4);			      \
-    table[4+xy_half] (picture->dest[2] + dest_field * picture->uv_stride +    \
-		      (picture->offset >> 1), ref[2] + offset,		      \
-		      2 * picture->uv_stride, 4)
+    offset = (((decoder->offset + motion_x) >> 1) +			      \
+	      (((decoder->v_offset >> 1) + (motion_y op) + src_field) *	      \
+	       decoder->uv_stride));					      \
+    table[4+xy_half] (decoder->dest[1] + dest_field * decoder->uv_stride +    \
+		      (decoder->offset >> 1), ref[1] + offset,		      \
+		      2 * decoder->uv_stride, 4);			      \
+    table[4+xy_half] (decoder->dest[2] + dest_field * decoder->uv_stride +    \
+		      (decoder->offset >> 1), ref[2] + offset,		      \
+		      2 * decoder->uv_stride, 4)
 
-static void motion_mp1 (picture_t * picture, motion_t * motion,
+static void motion_mp1 (decoder_t * decoder, motion_t * motion,
 			void (** table) (uint8_t *, uint8_t *, int, int))
 {
-#define bit_buf (picture->bitstream_buf)
-#define bits (picture->bitstream_bits)
-#define bit_ptr (picture->bitstream_ptr)
+#define bit_buf (decoder->bitstream_buf)
+#define bits (decoder->bitstream_bits)
+#define bit_ptr (decoder->bitstream_ptr)
     int motion_x, motion_y;
     unsigned int pos_x, pos_y, xy_half, offset;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
     motion_x = (motion->pmv[0][0] +
-		(get_motion_delta (picture,
+		(get_motion_delta (decoder,
 				   motion->f_code[0]) << motion->f_code[1]));
     motion_x = bound_motion_vector (motion_x,
 				    motion->f_code[0] + motion->f_code[1]);
@@ -1055,7 +1055,7 @@ static void motion_mp1 (picture_t * picture, motion_t * motion,
 
     NEEDBITS (bit_buf, bits, bit_ptr);
     motion_y = (motion->pmv[0][1] +
-		(get_motion_delta (picture,
+		(get_motion_delta (decoder,
 				   motion->f_code[0]) << motion->f_code[1]));
     motion_y = bound_motion_vector (motion_y,
 				    motion->f_code[0] + motion->f_code[1]);
@@ -1067,23 +1067,23 @@ static void motion_mp1 (picture_t * picture, motion_t * motion,
 #undef bit_ptr
 }
 
-static void motion_fr_frame (picture_t * picture, motion_t * motion,
+static void motion_fr_frame (decoder_t * decoder, motion_t * motion,
 			     void (** table) (uint8_t *, uint8_t *, int, int))
 {
-#define bit_buf (picture->bitstream_buf)
-#define bits (picture->bitstream_bits)
-#define bit_ptr (picture->bitstream_ptr)
+#define bit_buf (decoder->bitstream_buf)
+#define bits (decoder->bitstream_bits)
+#define bit_ptr (decoder->bitstream_ptr)
     int motion_x, motion_y;
     unsigned int pos_x, pos_y, xy_half, offset;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    motion_x = motion->pmv[0][0] + get_motion_delta (picture,
+    motion_x = motion->pmv[0][0] + get_motion_delta (decoder,
 						     motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[1][0] = motion->pmv[0][0] = motion_x;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    motion_y = motion->pmv[0][1] + get_motion_delta (picture,
+    motion_y = motion->pmv[0][1] + get_motion_delta (decoder,
 						     motion->f_code[1]);
     motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
     motion->pmv[1][1] = motion->pmv[0][1] = motion_y;
@@ -1094,12 +1094,12 @@ static void motion_fr_frame (picture_t * picture, motion_t * motion,
 #undef bit_ptr
 }
 
-static void motion_fr_field (picture_t * picture, motion_t * motion,
+static void motion_fr_field (decoder_t * decoder, motion_t * motion,
 			     void (** table) (uint8_t *, uint8_t *, int, int))
 {
-#define bit_buf (picture->bitstream_buf)
-#define bits (picture->bitstream_bits)
-#define bit_ptr (picture->bitstream_ptr)
+#define bit_buf (decoder->bitstream_buf)
+#define bits (decoder->bitstream_bits)
+#define bit_ptr (decoder->bitstream_ptr)
     int motion_x, motion_y, field;
     unsigned int pos_x, pos_y, xy_half, offset;
 
@@ -1107,13 +1107,13 @@ static void motion_fr_field (picture_t * picture, motion_t * motion,
     field = UBITS (bit_buf, 1);
     DUMPBITS (bit_buf, bits, 1);
 
-    motion_x = motion->pmv[0][0] + get_motion_delta (picture,
+    motion_x = motion->pmv[0][0] + get_motion_delta (decoder,
 						     motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[0][0] = motion_x;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    motion_y = (motion->pmv[0][1] >> 1) + get_motion_delta (picture,
+    motion_y = (motion->pmv[0][1] >> 1) + get_motion_delta (decoder,
 							    motion->f_code[1]);
     /* motion_y = bound_motion_vector (motion_y, motion->f_code[1]); */
     motion->pmv[0][1] = motion_y << 1;
@@ -1124,13 +1124,13 @@ static void motion_fr_field (picture_t * picture, motion_t * motion,
     field = UBITS (bit_buf, 1);
     DUMPBITS (bit_buf, bits, 1);
 
-    motion_x = motion->pmv[1][0] + get_motion_delta (picture,
+    motion_x = motion->pmv[1][0] + get_motion_delta (decoder,
 						     motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[1][0] = motion_x;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    motion_y = (motion->pmv[1][1] >> 1) + get_motion_delta (picture,
+    motion_y = (motion->pmv[1][1] >> 1) + get_motion_delta (decoder,
 							    motion->f_code[1]);
     /* motion_y = bound_motion_vector (motion_y, motion->f_code[1]); */
     motion->pmv[1][1] = motion_y << 1;
@@ -1141,73 +1141,73 @@ static void motion_fr_field (picture_t * picture, motion_t * motion,
 #undef bit_ptr
 }
 
-static void motion_fr_dmv (picture_t * picture, motion_t * motion,
+static void motion_fr_dmv (decoder_t * decoder, motion_t * motion,
 			   void (** table) (uint8_t *, uint8_t *, int, int))
 {
-#define bit_buf (picture->bitstream_buf)
-#define bits (picture->bitstream_bits)
-#define bit_ptr (picture->bitstream_ptr)
+#define bit_buf (decoder->bitstream_buf)
+#define bits (decoder->bitstream_bits)
+#define bit_ptr (decoder->bitstream_ptr)
     int motion_x, motion_y, dmv_x, dmv_y, m, other_x, other_y;
     unsigned int pos_x, pos_y, xy_half, offset;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    motion_x = motion->pmv[0][0] + get_motion_delta (picture,
+    motion_x = motion->pmv[0][0] + get_motion_delta (decoder,
 						     motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[1][0] = motion->pmv[0][0] = motion_x;
     NEEDBITS (bit_buf, bits, bit_ptr);
-    dmv_x = get_dmv (picture);
+    dmv_x = get_dmv (decoder);
 
-    motion_y = (motion->pmv[0][1] >> 1) + get_motion_delta (picture,
+    motion_y = (motion->pmv[0][1] >> 1) + get_motion_delta (decoder,
 							    motion->f_code[1]);
     /* motion_y = bound_motion_vector (motion_y, motion->f_code[1]); */
     motion->pmv[1][1] = motion->pmv[0][1] = motion_y << 1;
-    dmv_y = get_dmv (picture);
+    dmv_y = get_dmv (decoder);
 
-    m = picture->top_field_first ? 1 : 3;
+    m = decoder->top_field_first ? 1 : 3;
     other_x = ((motion_x * m + (motion_x > 0)) >> 1) + dmv_x;
     other_y = ((motion_y * m + (motion_y > 0)) >> 1) + dmv_y - 1;
     MOTION_FIELD (mpeg2_mc.put, motion->ref[0], other_x, other_y, 0, | 1, 0);
 
-    m = picture->top_field_first ? 3 : 1;
+    m = decoder->top_field_first ? 3 : 1;
     other_x = ((motion_x * m + (motion_x > 0)) >> 1) + dmv_x;
     other_y = ((motion_y * m + (motion_y > 0)) >> 1) + dmv_y + 1;
     MOTION_FIELD (mpeg2_mc.put, motion->ref[0], other_x, other_y, 1, & ~1, 0);
 
     xy_half = ((motion_y & 1) << 1) | (motion_x & 1);
-    offset = (picture->offset + (motion_x >> 1) +
-	      (picture->v_offset + (motion_y & ~1)) * picture->stride);
+    offset = (decoder->offset + (motion_x >> 1) +
+	      (decoder->v_offset + (motion_y & ~1)) * decoder->stride);
     mpeg2_mc.avg[xy_half]
-	(picture->dest[0] + picture->offset,
-	 motion->ref[0][0] + offset, 2 * picture->stride, 8);
+	(decoder->dest[0] + decoder->offset,
+	 motion->ref[0][0] + offset, 2 * decoder->stride, 8);
     mpeg2_mc.avg[xy_half]
-	(picture->dest[0] + picture->stride + picture->offset,
-	 motion->ref[0][0] + picture->stride + offset, 2 * picture->stride, 8);
+	(decoder->dest[0] + decoder->stride + decoder->offset,
+	 motion->ref[0][0] + decoder->stride + offset, 2 * decoder->stride, 8);
     motion_x /= 2;	motion_y /= 2;
     xy_half = ((motion_y & 1) << 1) | (motion_x & 1);
-    offset = (((picture->offset + motion_x) >> 1) +
-	      (((picture->v_offset >> 1) + (motion_y & ~1)) *
-	       picture->uv_stride));
+    offset = (((decoder->offset + motion_x) >> 1) +
+	      (((decoder->v_offset >> 1) + (motion_y & ~1)) *
+	       decoder->uv_stride));
     mpeg2_mc.avg[4+xy_half]
-	(picture->dest[1] + (picture->offset >> 1),
-	 motion->ref[0][1] + offset, 2 * picture->uv_stride, 4);
+	(decoder->dest[1] + (decoder->offset >> 1),
+	 motion->ref[0][1] + offset, 2 * decoder->uv_stride, 4);
     mpeg2_mc.avg[4+xy_half]
-	(picture->dest[1] + picture->uv_stride + (picture->offset >> 1),
-	 motion->ref[0][1] + picture->uv_stride + offset,
-	 2 * picture->uv_stride, 4);
+	(decoder->dest[1] + decoder->uv_stride + (decoder->offset >> 1),
+	 motion->ref[0][1] + decoder->uv_stride + offset,
+	 2 * decoder->uv_stride, 4);
     mpeg2_mc.avg[4+xy_half]
-	(picture->dest[2] + (picture->offset >> 1),
-	 motion->ref[0][2] + offset, 2 * picture->uv_stride, 4);
+	(decoder->dest[2] + (decoder->offset >> 1),
+	 motion->ref[0][2] + offset, 2 * decoder->uv_stride, 4);
     mpeg2_mc.avg[4+xy_half]
-	(picture->dest[2] + picture->uv_stride + (picture->offset >> 1),
-	 motion->ref[0][2] + picture->uv_stride + offset,
-	 2 * picture->uv_stride, 4);
+	(decoder->dest[2] + decoder->uv_stride + (decoder->offset >> 1),
+	 motion->ref[0][2] + decoder->uv_stride + offset,
+	 2 * decoder->uv_stride, 4);
 #undef bit_buf
 #undef bits
 #undef bit_ptr
 }
 
-static void motion_reuse (picture_t * picture, motion_t * motion,
+static void motion_reuse (decoder_t * decoder, motion_t * motion,
 			  void (** table) (uint8_t *, uint8_t *, int, int))
 {
     int motion_x, motion_y;
@@ -1219,43 +1219,43 @@ static void motion_reuse (picture_t * picture, motion_t * motion,
     MOTION (table, motion->ref[0], motion_x, motion_y, 16, 0);
 }
 
-static void motion_zero (picture_t * picture, motion_t * motion,
+static void motion_zero (decoder_t * decoder, motion_t * motion,
 			 void (** table) (uint8_t *, uint8_t *, int, int))
 {
     unsigned int offset;
 
-    table[0] (picture->dest[0] + picture->offset,
-	      (motion->ref[0][0] + picture->offset +
-	       picture->v_offset * picture->stride),
-	      picture->stride, 16);
+    table[0] (decoder->dest[0] + decoder->offset,
+	      (motion->ref[0][0] + decoder->offset +
+	       decoder->v_offset * decoder->stride),
+	      decoder->stride, 16);
 
-    offset = ((picture->offset >> 1) +
-	      (picture->v_offset >> 1) * picture->uv_stride);
-    table[4] (picture->dest[1] + (picture->offset >> 1),
-	      motion->ref[0][1] + offset, picture->uv_stride, 8);
-    table[4] (picture->dest[2] + (picture->offset >> 1),
-	      motion->ref[0][2] + offset, picture->uv_stride, 8);
+    offset = ((decoder->offset >> 1) +
+	      (decoder->v_offset >> 1) * decoder->uv_stride);
+    table[4] (decoder->dest[1] + (decoder->offset >> 1),
+	      motion->ref[0][1] + offset, decoder->uv_stride, 8);
+    table[4] (decoder->dest[2] + (decoder->offset >> 1),
+	      motion->ref[0][2] + offset, decoder->uv_stride, 8);
 }
 
 /* like motion_frame, but parsing without actual motion compensation */
-static void motion_fr_conceal (picture_t * picture)
+static void motion_fr_conceal (decoder_t * decoder)
 {
-#define bit_buf (picture->bitstream_buf)
-#define bits (picture->bitstream_bits)
-#define bit_ptr (picture->bitstream_ptr)
+#define bit_buf (decoder->bitstream_buf)
+#define bits (decoder->bitstream_bits)
+#define bit_ptr (decoder->bitstream_ptr)
     int tmp;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    tmp = (picture->f_motion.pmv[0][0] +
-	   get_motion_delta (picture, picture->f_motion.f_code[0]));
-    tmp = bound_motion_vector (tmp, picture->f_motion.f_code[0]);
-    picture->f_motion.pmv[1][0] = picture->f_motion.pmv[0][0] = tmp;
+    tmp = (decoder->f_motion.pmv[0][0] +
+	   get_motion_delta (decoder, decoder->f_motion.f_code[0]));
+    tmp = bound_motion_vector (tmp, decoder->f_motion.f_code[0]);
+    decoder->f_motion.pmv[1][0] = decoder->f_motion.pmv[0][0] = tmp;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    tmp = (picture->f_motion.pmv[0][1] +
-	   get_motion_delta (picture, picture->f_motion.f_code[1]));
-    tmp = bound_motion_vector (tmp, picture->f_motion.f_code[1]);
-    picture->f_motion.pmv[1][1] = picture->f_motion.pmv[0][1] = tmp;
+    tmp = (decoder->f_motion.pmv[0][1] +
+	   get_motion_delta (decoder, decoder->f_motion.f_code[1]));
+    tmp = bound_motion_vector (tmp, decoder->f_motion.f_code[1]);
+    decoder->f_motion.pmv[1][1] = decoder->f_motion.pmv[0][1] = tmp;
 
     DUMPBITS (bit_buf, bits, 1); /* remove marker_bit */
 #undef bit_buf
@@ -1263,12 +1263,12 @@ static void motion_fr_conceal (picture_t * picture)
 #undef bit_ptr
 }
 
-static void motion_fi_field (picture_t * picture, motion_t * motion,
+static void motion_fi_field (decoder_t * decoder, motion_t * motion,
 			     void (** table) (uint8_t *, uint8_t *, int, int))
 {
-#define bit_buf (picture->bitstream_buf)
-#define bits (picture->bitstream_bits)
-#define bit_ptr (picture->bitstream_ptr)
+#define bit_buf (decoder->bitstream_buf)
+#define bits (decoder->bitstream_bits)
+#define bit_ptr (decoder->bitstream_ptr)
     int motion_x, motion_y;
     uint8_t ** ref_field;
     unsigned int pos_x, pos_y, xy_half, offset;
@@ -1277,13 +1277,13 @@ static void motion_fi_field (picture_t * picture, motion_t * motion,
     ref_field = motion->ref2[UBITS (bit_buf, 1)];
     DUMPBITS (bit_buf, bits, 1);
 
-    motion_x = motion->pmv[0][0] + get_motion_delta (picture,
+    motion_x = motion->pmv[0][0] + get_motion_delta (decoder,
 						     motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[1][0] = motion->pmv[0][0] = motion_x;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    motion_y = motion->pmv[0][1] + get_motion_delta (picture,
+    motion_y = motion->pmv[0][1] + get_motion_delta (decoder,
 						     motion->f_code[1]);
     motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
     motion->pmv[1][1] = motion->pmv[0][1] = motion_y;
@@ -1294,12 +1294,12 @@ static void motion_fi_field (picture_t * picture, motion_t * motion,
 #undef bit_ptr
 }
 
-static void motion_fi_16x8 (picture_t * picture, motion_t * motion,
+static void motion_fi_16x8 (decoder_t * decoder, motion_t * motion,
 			    void (** table) (uint8_t *, uint8_t *, int, int))
 {
-#define bit_buf (picture->bitstream_buf)
-#define bits (picture->bitstream_bits)
-#define bit_ptr (picture->bitstream_ptr)
+#define bit_buf (decoder->bitstream_buf)
+#define bits (decoder->bitstream_bits)
+#define bit_ptr (decoder->bitstream_ptr)
     int motion_x, motion_y;
     uint8_t ** ref_field;
     unsigned int pos_x, pos_y, xy_half, offset;
@@ -1308,13 +1308,13 @@ static void motion_fi_16x8 (picture_t * picture, motion_t * motion,
     ref_field = motion->ref2[UBITS (bit_buf, 1)];
     DUMPBITS (bit_buf, bits, 1);
 
-    motion_x = motion->pmv[0][0] + get_motion_delta (picture,
+    motion_x = motion->pmv[0][0] + get_motion_delta (decoder,
 						     motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[0][0] = motion_x;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    motion_y = motion->pmv[0][1] + get_motion_delta (picture,
+    motion_y = motion->pmv[0][1] + get_motion_delta (decoder,
 						     motion->f_code[1]);
     motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
     motion->pmv[0][1] = motion_y;
@@ -1325,13 +1325,13 @@ static void motion_fi_16x8 (picture_t * picture, motion_t * motion,
     ref_field = motion->ref2[UBITS (bit_buf, 1)];
     DUMPBITS (bit_buf, bits, 1);
 
-    motion_x = motion->pmv[1][0] + get_motion_delta (picture,
+    motion_x = motion->pmv[1][0] + get_motion_delta (decoder,
 						     motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[1][0] = motion_x;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    motion_y = motion->pmv[1][1] + get_motion_delta (picture,
+    motion_y = motion->pmv[1][1] + get_motion_delta (decoder,
 						     motion->f_code[1]);
     motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
     motion->pmv[1][1] = motion_y;
@@ -1342,29 +1342,29 @@ static void motion_fi_16x8 (picture_t * picture, motion_t * motion,
 #undef bit_ptr
 }
 
-static void motion_fi_dmv (picture_t * picture, motion_t * motion,
+static void motion_fi_dmv (decoder_t * decoder, motion_t * motion,
 			   void (** table) (uint8_t *, uint8_t *, int, int))
 {
-#define bit_buf (picture->bitstream_buf)
-#define bits (picture->bitstream_bits)
-#define bit_ptr (picture->bitstream_ptr)
+#define bit_buf (decoder->bitstream_buf)
+#define bits (decoder->bitstream_bits)
+#define bit_ptr (decoder->bitstream_ptr)
     int motion_x, motion_y, other_x, other_y;
     unsigned int pos_x, pos_y, xy_half, offset;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    motion_x = motion->pmv[0][0] + get_motion_delta (picture,
+    motion_x = motion->pmv[0][0] + get_motion_delta (decoder,
 						     motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[1][0] = motion->pmv[0][0] = motion_x;
     NEEDBITS (bit_buf, bits, bit_ptr);
-    other_x = ((motion_x + (motion_x > 0)) >> 1) + get_dmv (picture);
+    other_x = ((motion_x + (motion_x > 0)) >> 1) + get_dmv (decoder);
 
-    motion_y = motion->pmv[0][1] + get_motion_delta (picture,
+    motion_y = motion->pmv[0][1] + get_motion_delta (decoder,
 						     motion->f_code[1]);
     motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
     motion->pmv[1][1] = motion->pmv[0][1] = motion_y;
-    other_y = (((motion_y + (motion_y > 0)) >> 1) + get_dmv (picture) +
-	       picture->dmv_offset);
+    other_y = (((motion_y + (motion_y > 0)) >> 1) + get_dmv (decoder) +
+	       decoder->dmv_offset);
 
     MOTION (mpeg2_mc.put, motion->ref[0], motion_x, motion_y, 16, 0);
     MOTION (mpeg2_mc.avg, motion->ref[1], other_x, other_y, 16, 0);
@@ -1373,26 +1373,26 @@ static void motion_fi_dmv (picture_t * picture, motion_t * motion,
 #undef bit_ptr
 }
 
-static void motion_fi_conceal (picture_t * picture)
+static void motion_fi_conceal (decoder_t * decoder)
 {
-#define bit_buf (picture->bitstream_buf)
-#define bits (picture->bitstream_bits)
-#define bit_ptr (picture->bitstream_ptr)
+#define bit_buf (decoder->bitstream_buf)
+#define bits (decoder->bitstream_bits)
+#define bit_ptr (decoder->bitstream_ptr)
     int tmp;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
     DUMPBITS (bit_buf, bits, 1); /* remove field_select */
 
-    tmp = (picture->f_motion.pmv[0][0] +
-	   get_motion_delta (picture, picture->f_motion.f_code[0]));
-    tmp = bound_motion_vector (tmp, picture->f_motion.f_code[0]);
-    picture->f_motion.pmv[1][0] = picture->f_motion.pmv[0][0] = tmp;
+    tmp = (decoder->f_motion.pmv[0][0] +
+	   get_motion_delta (decoder, decoder->f_motion.f_code[0]));
+    tmp = bound_motion_vector (tmp, decoder->f_motion.f_code[0]);
+    decoder->f_motion.pmv[1][0] = decoder->f_motion.pmv[0][0] = tmp;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    tmp = (picture->f_motion.pmv[0][1] +
-	   get_motion_delta (picture, picture->f_motion.f_code[1]));
-    tmp = bound_motion_vector (tmp, picture->f_motion.f_code[1]);
-    picture->f_motion.pmv[1][1] = picture->f_motion.pmv[0][1] = tmp;
+    tmp = (decoder->f_motion.pmv[0][1] +
+	   get_motion_delta (decoder, decoder->f_motion.f_code[1]));
+    tmp = bound_motion_vector (tmp, decoder->f_motion.f_code[1]);
+    decoder->f_motion.pmv[1][1] = decoder->f_motion.pmv[0][1] = tmp;
 
     DUMPBITS (bit_buf, bits, 1); /* remove marker_bit */
 #undef bit_buf
@@ -1403,128 +1403,128 @@ static void motion_fi_conceal (picture_t * picture)
 #define MOTION_CALL(routine,direction)				\
 do {								\
     if ((direction) & MACROBLOCK_MOTION_FORWARD)		\
-	routine (picture, &(picture->f_motion), mpeg2_mc.put);	\
+	routine (decoder, &(decoder->f_motion), mpeg2_mc.put);	\
     if ((direction) & MACROBLOCK_MOTION_BACKWARD)		\
-	routine (picture, &(picture->b_motion),			\
+	routine (decoder, &(decoder->b_motion),			\
 		 ((direction) & MACROBLOCK_MOTION_FORWARD ?	\
 		  mpeg2_mc.avg : mpeg2_mc.put));		\
 } while (0)
 
 #define NEXT_MACROBLOCK							\
 do {									\
-    picture->offset += 16;						\
-    if (picture->offset == picture->coded_picture_width) {		\
+    decoder->offset += 16;						\
+    if (decoder->offset == decoder->coded_picture_width) {		\
 	do { /* just so we can use the break statement */		\
-	    if (picture->current_frame->copy) {				\
-		picture->current_frame->copy (picture->current_frame,	\
-					      picture->dest);		\
-		if (picture->picture_coding_type == B_TYPE)		\
+	    if (decoder->current_frame->copy) {				\
+		decoder->current_frame->copy (decoder->current_frame,	\
+					      decoder->dest);		\
+		if (decoder->picture_coding_type == B_TYPE)		\
 		    break;						\
 	    }								\
-	    picture->dest[0] += 16 * picture->stride;			\
-	    picture->dest[1] += 4 * picture->stride;			\
-	    picture->dest[2] += 4 * picture->stride;			\
+	    decoder->dest[0] += 16 * decoder->stride;			\
+	    decoder->dest[1] += 4 * decoder->stride;			\
+	    decoder->dest[2] += 4 * decoder->stride;			\
 	} while (0);							\
-	picture->v_offset += 16;					\
-	if (picture->v_offset > picture->limit_y) {			\
+	decoder->v_offset += 16;					\
+	if (decoder->v_offset > decoder->limit_y) {			\
 	    if (mpeg2_cpu_state_restore)				\
 		mpeg2_cpu_state_restore (&cpu_state);			\
 	    return;							\
 	}								\
-	picture->offset = 0;						\
+	decoder->offset = 0;						\
     }									\
 } while (0)
 
-static inline int slice_init (picture_t * picture, int code)
+static inline int slice_init (decoder_t * decoder, int code)
 {
-#define bit_buf (picture->bitstream_buf)
-#define bits (picture->bitstream_bits)
-#define bit_ptr (picture->bitstream_ptr)
+#define bit_buf (decoder->bitstream_buf)
+#define bits (decoder->bitstream_bits)
+#define bit_ptr (decoder->bitstream_ptr)
     int offset, stride, height;
     MBAtab * mba;
 
-    stride = picture->coded_picture_width;
-    offset = picture->picture_structure == BOTTOM_FIELD ? stride : 0;
+    stride = decoder->coded_picture_width;
+    offset = decoder->picture_structure == BOTTOM_FIELD ? stride : 0;
 
-    picture->f_motion.ref[0][0] =
-	picture->forward_reference_frame->base[0] + offset;
-    picture->f_motion.ref[0][1] =
-	picture->forward_reference_frame->base[1] + (offset >> 1);
-    picture->f_motion.ref[0][2] =
-	picture->forward_reference_frame->base[2] + (offset >> 1);
+    decoder->f_motion.ref[0][0] =
+	decoder->forward_reference_frame->base[0] + offset;
+    decoder->f_motion.ref[0][1] =
+	decoder->forward_reference_frame->base[1] + (offset >> 1);
+    decoder->f_motion.ref[0][2] =
+	decoder->forward_reference_frame->base[2] + (offset >> 1);
 
-    picture->b_motion.ref[0][0] =
-	picture->backward_reference_frame->base[0] + offset;
-    picture->b_motion.ref[0][1] =
-	picture->backward_reference_frame->base[1] + (offset >> 1);
-    picture->b_motion.ref[0][2] =
-	picture->backward_reference_frame->base[2] + (offset >> 1);
+    decoder->b_motion.ref[0][0] =
+	decoder->backward_reference_frame->base[0] + offset;
+    decoder->b_motion.ref[0][1] =
+	decoder->backward_reference_frame->base[1] + (offset >> 1);
+    decoder->b_motion.ref[0][2] =
+	decoder->backward_reference_frame->base[2] + (offset >> 1);
 
-    if (picture->picture_structure != FRAME_PICTURE) {
+    if (decoder->picture_structure != FRAME_PICTURE) {
 	uint8_t ** forward_ref;
 	int bottom_field;
 
-	bottom_field = (picture->picture_structure == BOTTOM_FIELD);
-	picture->dmv_offset = bottom_field ? 1 : -1;
-	picture->f_motion.ref2[0] = picture->f_motion.ref[bottom_field];
-	picture->f_motion.ref2[1] = picture->f_motion.ref[!bottom_field];
-	picture->b_motion.ref2[0] = picture->b_motion.ref[bottom_field];
-	picture->b_motion.ref2[1] = picture->b_motion.ref[!bottom_field];
+	bottom_field = (decoder->picture_structure == BOTTOM_FIELD);
+	decoder->dmv_offset = bottom_field ? 1 : -1;
+	decoder->f_motion.ref2[0] = decoder->f_motion.ref[bottom_field];
+	decoder->f_motion.ref2[1] = decoder->f_motion.ref[!bottom_field];
+	decoder->b_motion.ref2[0] = decoder->b_motion.ref[bottom_field];
+	decoder->b_motion.ref2[1] = decoder->b_motion.ref[!bottom_field];
 	offset = bottom_field ? 0 : stride;
 
-	forward_ref = picture->forward_reference_frame->base;
-	if (picture->second_field && (picture->picture_coding_type != B_TYPE))
-	    forward_ref = picture->current_frame->base;
+	forward_ref = decoder->forward_reference_frame->base;
+	if (decoder->second_field && (decoder->picture_coding_type != B_TYPE))
+	    forward_ref = decoder->current_frame->base;
 
-	picture->f_motion.ref[1][0] = forward_ref[0] + offset;
-	picture->f_motion.ref[1][1] = forward_ref[1] + (offset >> 1);
-	picture->f_motion.ref[1][2] = forward_ref[2] + (offset >> 1);
+	decoder->f_motion.ref[1][0] = forward_ref[0] + offset;
+	decoder->f_motion.ref[1][1] = forward_ref[1] + (offset >> 1);
+	decoder->f_motion.ref[1][2] = forward_ref[2] + (offset >> 1);
 
-	picture->b_motion.ref[1][0] =
-	    picture->backward_reference_frame->base[0] + offset;
-	picture->b_motion.ref[1][1] =
-	    picture->backward_reference_frame->base[1] + (offset >> 1);
-	picture->b_motion.ref[1][2] =
-	    picture->backward_reference_frame->base[2] + (offset >> 1);
+	decoder->b_motion.ref[1][0] =
+	    decoder->backward_reference_frame->base[0] + offset;
+	decoder->b_motion.ref[1][1] =
+	    decoder->backward_reference_frame->base[1] + (offset >> 1);
+	decoder->b_motion.ref[1][2] =
+	    decoder->backward_reference_frame->base[2] + (offset >> 1);
     }
 
-    picture->f_motion.pmv[0][0] = picture->f_motion.pmv[0][1] = 0;
-    picture->f_motion.pmv[1][0] = picture->f_motion.pmv[1][1] = 0;
-    picture->b_motion.pmv[0][0] = picture->b_motion.pmv[0][1] = 0;
-    picture->b_motion.pmv[1][0] = picture->b_motion.pmv[1][1] = 0;
+    decoder->f_motion.pmv[0][0] = decoder->f_motion.pmv[0][1] = 0;
+    decoder->f_motion.pmv[1][0] = decoder->f_motion.pmv[1][1] = 0;
+    decoder->b_motion.pmv[0][0] = decoder->b_motion.pmv[0][1] = 0;
+    decoder->b_motion.pmv[1][0] = decoder->b_motion.pmv[1][1] = 0;
 
-    picture->v_offset = (code - 1) * 16;
+    decoder->v_offset = (code - 1) * 16;
     offset = (code - 1) * stride;
-    offset <<= picture->picture_structure == FRAME_PICTURE ? 2 : 3;
-    if (picture->current_frame->copy && picture->picture_coding_type == B_TYPE)
+    offset <<= decoder->picture_structure == FRAME_PICTURE ? 2 : 3;
+    if (decoder->current_frame->copy && decoder->picture_coding_type == B_TYPE)
 	offset = 0;
 
-    picture->dest[0] = picture->current_frame->base[0] + offset * 4;
-    picture->dest[1] = picture->current_frame->base[1] + offset;
-    picture->dest[2] = picture->current_frame->base[2] + offset;
+    decoder->dest[0] = decoder->current_frame->base[0] + offset * 4;
+    decoder->dest[1] = decoder->current_frame->base[1] + offset;
+    decoder->dest[2] = decoder->current_frame->base[2] + offset;
 
-    height = picture->coded_picture_height;
-    switch (picture->picture_structure) {
+    height = decoder->coded_picture_height;
+    switch (decoder->picture_structure) {
     case BOTTOM_FIELD:
-	picture->dest[0] += stride;
-	picture->dest[1] += stride >> 1;
-	picture->dest[2] += stride >> 1;
+	decoder->dest[0] += stride;
+	decoder->dest[1] += stride >> 1;
+	decoder->dest[2] += stride >> 1;
 	/* follow thru */
     case TOP_FIELD:
 	stride <<= 1;
 	height >>= 1;
     }
-    picture->stride = stride;
-    picture->uv_stride = stride >> 1;
-    picture->limit_x = 2 * picture->coded_picture_width - 32;
-    picture->limit_y_16 = 2 * height - 32;
-    picture->limit_y_8 = 2 * height - 16;
-    picture->limit_y = height - 16;
+    decoder->stride = stride;
+    decoder->uv_stride = stride >> 1;
+    decoder->limit_x = 2 * decoder->coded_picture_width - 32;
+    decoder->limit_y_16 = 2 * height - 32;
+    decoder->limit_y_8 = 2 * height - 16;
+    decoder->limit_y = height - 16;
 
-    picture->dc_dct_pred[0] = picture->dc_dct_pred[1] =
-	picture->dc_dct_pred[2] = 1 << (picture->intra_dc_precision + 7);
+    decoder->dc_dct_pred[0] = decoder->dc_dct_pred[1] =
+	decoder->dc_dct_pred[2] = 1 << (decoder->intra_dc_precision + 7);
 
-    picture->quantizer_scale = get_quantizer_scale (picture);
+    decoder->quantizer_scale = get_quantizer_scale (decoder);
 
     /* ignore intra_slice and all the extra data */
     while (bit_buf & 0x80000000) {
@@ -1557,19 +1557,19 @@ static inline int slice_init (picture_t * picture, int code)
 	}
     }
     DUMPBITS (bit_buf, bits, mba->len + 1);
-    picture->offset = (offset + mba->mba) << 4;
+    decoder->offset = (offset + mba->mba) << 4;
 
-    while (picture->offset - picture->coded_picture_width >= 0) {
-	picture->offset -= picture->coded_picture_width;
-	if ((picture->current_frame->copy == NULL) ||
-	    (picture->picture_coding_type != B_TYPE)) {
-	    picture->dest[0] += 16 * stride;
-	    picture->dest[1] += 4 * stride;
-	    picture->dest[2] += 4 * stride;
+    while (decoder->offset - decoder->coded_picture_width >= 0) {
+	decoder->offset -= decoder->coded_picture_width;
+	if ((decoder->current_frame->copy == NULL) ||
+	    (decoder->picture_coding_type != B_TYPE)) {
+	    decoder->dest[0] += 16 * stride;
+	    decoder->dest[1] += 4 * stride;
+	    decoder->dest[2] += 4 * stride;
 	}
-	picture->v_offset += 16;
+	decoder->v_offset += 16;
     }
-    if (picture->v_offset > picture->limit_y)
+    if (decoder->v_offset > decoder->limit_y)
 	return 1;
 
     return 0;
@@ -1578,16 +1578,16 @@ static inline int slice_init (picture_t * picture, int code)
 #undef bit_ptr
 }
 
-void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer)
+void mpeg2_slice (decoder_t * decoder, int code, uint8_t * buffer)
 {
-#define bit_buf (picture->bitstream_buf)
-#define bits (picture->bitstream_bits)
-#define bit_ptr (picture->bitstream_ptr)
+#define bit_buf (decoder->bitstream_buf)
+#define bits (decoder->bitstream_bits)
+#define bit_ptr (decoder->bitstream_ptr)
     cpu_state_t cpu_state;
 
-    bitstream_init (picture, buffer);
+    bitstream_init (decoder, buffer);
 
-    if (slice_init (picture, code))
+    if (slice_init (decoder, code))
 	return;
 
     if (mpeg2_cpu_state_save)
@@ -1600,11 +1600,11 @@ void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer)
 
 	NEEDBITS (bit_buf, bits, bit_ptr);
 
-	macroblock_modes = get_macroblock_modes (picture);
+	macroblock_modes = get_macroblock_modes (decoder);
 
 	/* maybe integrate MACROBLOCK_QUANT test into get_macroblock_modes ? */
 	if (macroblock_modes & MACROBLOCK_QUANT)
-	    picture->quantizer_scale = get_quantizer_scale (picture);
+	    decoder->quantizer_scale = get_quantizer_scale (decoder);
 
 	if (macroblock_modes & MACROBLOCK_INTRA) {
 
@@ -1612,47 +1612,47 @@ void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer)
 	    int offset;
 	    uint8_t * dest_y;
 
-	    if (picture->concealment_motion_vectors) {
-		if (picture->picture_structure == FRAME_PICTURE)
-		    motion_fr_conceal (picture);
+	    if (decoder->concealment_motion_vectors) {
+		if (decoder->picture_structure == FRAME_PICTURE)
+		    motion_fr_conceal (decoder);
 		else
-		    motion_fi_conceal (picture);
+		    motion_fi_conceal (decoder);
 	    } else {
-		picture->f_motion.pmv[0][0] = picture->f_motion.pmv[0][1] = 0;
-		picture->f_motion.pmv[1][0] = picture->f_motion.pmv[1][1] = 0;
-		picture->b_motion.pmv[0][0] = picture->b_motion.pmv[0][1] = 0;
-		picture->b_motion.pmv[1][0] = picture->b_motion.pmv[1][1] = 0;
+		decoder->f_motion.pmv[0][0] = decoder->f_motion.pmv[0][1] = 0;
+		decoder->f_motion.pmv[1][0] = decoder->f_motion.pmv[1][1] = 0;
+		decoder->b_motion.pmv[0][0] = decoder->b_motion.pmv[0][1] = 0;
+		decoder->b_motion.pmv[1][0] = decoder->b_motion.pmv[1][1] = 0;
 	    }
 
 	    if (macroblock_modes & DCT_TYPE_INTERLACED) {
-		DCT_offset = picture->stride;
-		DCT_stride = picture->stride * 2;
+		DCT_offset = decoder->stride;
+		DCT_stride = decoder->stride * 2;
 	    } else {
-		DCT_offset = picture->stride * 8;
-		DCT_stride = picture->stride;
+		DCT_offset = decoder->stride * 8;
+		DCT_stride = decoder->stride;
 	    }
 
-	    offset = picture->offset;
-	    dest_y = picture->dest[0] + offset;
-	    slice_intra_DCT (picture, 0, dest_y, DCT_stride);
-	    slice_intra_DCT (picture, 0, dest_y + 8, DCT_stride);
-	    slice_intra_DCT (picture, 0, dest_y + DCT_offset, DCT_stride);
-	    slice_intra_DCT (picture, 0, dest_y + DCT_offset + 8, DCT_stride);
-	    slice_intra_DCT (picture, 1, picture->dest[1] + (offset >> 1),
-			     picture->uv_stride);
-	    slice_intra_DCT (picture, 2, picture->dest[2] + (offset >> 1),
-			     picture->uv_stride);
+	    offset = decoder->offset;
+	    dest_y = decoder->dest[0] + offset;
+	    slice_intra_DCT (decoder, 0, dest_y, DCT_stride);
+	    slice_intra_DCT (decoder, 0, dest_y + 8, DCT_stride);
+	    slice_intra_DCT (decoder, 0, dest_y + DCT_offset, DCT_stride);
+	    slice_intra_DCT (decoder, 0, dest_y + DCT_offset + 8, DCT_stride);
+	    slice_intra_DCT (decoder, 1, decoder->dest[1] + (offset >> 1),
+			     decoder->uv_stride);
+	    slice_intra_DCT (decoder, 2, decoder->dest[2] + (offset >> 1),
+			     decoder->uv_stride);
 
-	    if (picture->picture_coding_type == D_TYPE) {
+	    if (decoder->picture_coding_type == D_TYPE) {
 		NEEDBITS (bit_buf, bits, bit_ptr);
 		DUMPBITS (bit_buf, bits, 1);
 	    }
 	} else {
 
-	    if (picture->picture_structure == FRAME_PICTURE)
+	    if (decoder->picture_structure == FRAME_PICTURE)
 		switch (macroblock_modes & MOTION_TYPE_MASK) {
 		case MC_FRAME:
-		    if (picture->mpeg1)
+		    if (decoder->mpeg1)
 			MOTION_CALL (motion_mp1, macroblock_modes);
 		    else
 			MOTION_CALL (motion_fr_frame, macroblock_modes);
@@ -1668,10 +1668,10 @@ void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer)
 
 		case 0:
 		    /* non-intra mb without forward mv in a P picture */
-		    picture->f_motion.pmv[0][0] = 0;
-		    picture->f_motion.pmv[0][1] = 0;
-		    picture->f_motion.pmv[1][0] = 0;
-		    picture->f_motion.pmv[1][1] = 0;
+		    decoder->f_motion.pmv[0][0] = 0;
+		    decoder->f_motion.pmv[0][1] = 0;
+		    decoder->f_motion.pmv[1][0] = 0;
+		    decoder->f_motion.pmv[1][1] = 0;
 		    MOTION_CALL (motion_zero, MACROBLOCK_MOTION_FORWARD);
 		    break;
 		}
@@ -1691,10 +1691,10 @@ void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer)
 
 		case 0:
 		    /* non-intra mb without forward mv in a P picture */
-		    picture->f_motion.pmv[0][0] = 0;
-		    picture->f_motion.pmv[0][1] = 0;
-		    picture->f_motion.pmv[1][0] = 0;
-		    picture->f_motion.pmv[1][1] = 0;
+		    decoder->f_motion.pmv[0][0] = 0;
+		    decoder->f_motion.pmv[0][1] = 0;
+		    decoder->f_motion.pmv[1][0] = 0;
+		    decoder->f_motion.pmv[1][1] = 0;
 		    MOTION_CALL (motion_zero, MACROBLOCK_MOTION_FORWARD);
 		    break;
 		}
@@ -1706,39 +1706,39 @@ void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer)
 		uint8_t * dest_y;
 
 		if (macroblock_modes & DCT_TYPE_INTERLACED) {
-		    DCT_offset = picture->stride;
-		    DCT_stride = picture->stride * 2;
+		    DCT_offset = decoder->stride;
+		    DCT_stride = decoder->stride * 2;
 		} else {
-		    DCT_offset = picture->stride * 8;
-		    DCT_stride = picture->stride;
+		    DCT_offset = decoder->stride * 8;
+		    DCT_stride = decoder->stride;
 		}
 
-		coded_block_pattern = get_coded_block_pattern (picture);
+		coded_block_pattern = get_coded_block_pattern (decoder);
 
-		offset = picture->offset;
-		dest_y = picture->dest[0] + offset;
+		offset = decoder->offset;
+		dest_y = decoder->dest[0] + offset;
 		if (coded_block_pattern & 0x20)
-		    slice_non_intra_DCT (picture, dest_y, DCT_stride);
+		    slice_non_intra_DCT (decoder, dest_y, DCT_stride);
 		if (coded_block_pattern & 0x10)
-		    slice_non_intra_DCT (picture, dest_y + 8, DCT_stride);
+		    slice_non_intra_DCT (decoder, dest_y + 8, DCT_stride);
 		if (coded_block_pattern & 0x08)
-		    slice_non_intra_DCT (picture, dest_y + DCT_offset,
+		    slice_non_intra_DCT (decoder, dest_y + DCT_offset,
 					 DCT_stride);
 		if (coded_block_pattern & 0x04)
-		    slice_non_intra_DCT (picture, dest_y + DCT_offset + 8,
+		    slice_non_intra_DCT (decoder, dest_y + DCT_offset + 8,
 					 DCT_stride);
 		if (coded_block_pattern & 0x2)
-		    slice_non_intra_DCT (picture,
-					 picture->dest[1] + (offset >> 1),
-					 picture->uv_stride);
+		    slice_non_intra_DCT (decoder,
+					 decoder->dest[1] + (offset >> 1),
+					 decoder->uv_stride);
 		if (coded_block_pattern & 0x1)
-		    slice_non_intra_DCT (picture,
-					 picture->dest[2] + (offset >> 1),
-					 picture->uv_stride);
+		    slice_non_intra_DCT (decoder,
+					 decoder->dest[2] + (offset >> 1),
+					 decoder->uv_stride);
 	    }
 
-	    picture->dc_dct_pred[0] = picture->dc_dct_pred[1] =
-		picture->dc_dct_pred[2] = 128 << picture->intra_dc_precision;
+	    decoder->dc_dct_pred[0] = decoder->dc_dct_pred[1] =
+		decoder->dc_dct_pred[2] = 128 << decoder->intra_dc_precision;
 	}
 
 	NEXT_MACROBLOCK;
@@ -1770,12 +1770,12 @@ void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer)
 	mba_inc += mba->mba;
 
 	if (mba_inc) {
-	    picture->dc_dct_pred[0] = picture->dc_dct_pred[1] =
-		picture->dc_dct_pred[2] = 128 << picture->intra_dc_precision;
+	    decoder->dc_dct_pred[0] = decoder->dc_dct_pred[1] =
+		decoder->dc_dct_pred[2] = 128 << decoder->intra_dc_precision;
 
-	    if (picture->picture_coding_type == P_TYPE) {
-		picture->f_motion.pmv[0][0] = picture->f_motion.pmv[0][1] = 0;
-		picture->f_motion.pmv[1][0] = picture->f_motion.pmv[1][1] = 0;
+	    if (decoder->picture_coding_type == P_TYPE) {
+		decoder->f_motion.pmv[0][0] = decoder->f_motion.pmv[0][1] = 0;
+		decoder->f_motion.pmv[1][0] = decoder->f_motion.pmv[1][1] = 0;
 
 		do {
 		    MOTION_CALL (motion_zero, MACROBLOCK_MOTION_FORWARD);

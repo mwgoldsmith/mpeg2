@@ -47,14 +47,14 @@
 #define B_TYPE 3
 #define D_TYPE 4
 
-typedef struct motion_s {
+typedef struct {
     uint8_t * ref[2][3];
     uint8_t ** ref2[2];
     int pmv[2][2];
     int f_code[2];
 } motion_t;
 
-typedef struct picture_s {
+typedef struct decoder_s {
     /* first, state that carries information from one macroblock to the */
     /* next inside a slice, and is never used outside of mpeg2_slice() */
 
@@ -103,9 +103,9 @@ typedef struct picture_s {
 
     /* what type of picture this is (I, P, B, D) */
     int picture_coding_type;
-	
+
     /* picture coding extension stuff */
-	
+
     /* quantization factor for intra dc coefficients */
     int intra_dc_precision;
     /* top/bottom/both fields */
@@ -143,9 +143,9 @@ typedef struct picture_s {
     int repeat_first_field;
     int progressive_frame;
     int bitrate;
-} picture_t;
+} decoder_t;
 
-typedef struct cpu_state_s {
+typedef struct {
 #ifdef ARCH_PPC
     uint8_t regv[12*16];
 #endif
@@ -156,10 +156,10 @@ typedef struct cpu_state_s {
 void mpeg2_cpu_state_init (uint32_t mm_accel);
 
 /* header.c */
-void mpeg2_header_state_init (picture_t * picture);
-int mpeg2_header_picture (picture_t * picture, uint8_t * buffer);
-int mpeg2_header_sequence (picture_t * picture, uint8_t * buffer);
-int mpeg2_header_extension (picture_t * picture, uint8_t * buffer);
+void mpeg2_header_state_init (decoder_t * decoder);
+int mpeg2_header_picture (decoder_t * decoder, uint8_t * buffer);
+int mpeg2_header_sequence (decoder_t * decoder, uint8_t * buffer);
+int mpeg2_header_extension (decoder_t * decoder, uint8_t * buffer);
 
 /* idct.c */
 void mpeg2_idct_init (uint32_t mm_accel);
@@ -186,7 +186,7 @@ void mpeg2_idct_altivec_init (void);
 /* motion_comp.c */
 void mpeg2_mc_init (uint32_t mm_accel);
 
-typedef struct mpeg2_mc_s {
+typedef struct {
     void (* put [8]) (uint8_t * dst, uint8_t *, int32_t, int32_t);
     void (* avg [8]) (uint8_t * dst, uint8_t *, int32_t, int32_t);
 } mpeg2_mc_t;
@@ -206,7 +206,7 @@ extern mpeg2_mc_t mpeg2_mc_altivec;
 extern mpeg2_mc_t mpeg2_mc_mlib;
 
 /* slice.c */
-void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer);
+void mpeg2_slice (decoder_t * decoder, int code, uint8_t * buffer);
 
 /* stats.c */
 void mpeg2_stats (int code, uint8_t * buffer);

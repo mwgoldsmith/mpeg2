@@ -117,7 +117,7 @@ static void yuv2g400_c (uint8_t * dst, uint8_t * py,
     } while (--i);
 }
 
-typedef struct mga_instance_s {
+typedef struct {
     vo_instance_t vo;
     int prediction_index;
     vo_frame_t * frame_ptr[3];
@@ -148,7 +148,7 @@ static void mga_draw_frame (vo_frame_t * frame)
     ioctl (instance->fd, MGA_VID_FSEL, &instance->next_frame);
 
     instance->next_frame ^= 2; /* switch between fields A1 and B1 */
-    if (instance->next_frame) 
+    if (instance->next_frame)
 	instance->vid_data = instance->frame1;
     else
 	instance->vid_data = instance->frame0;

@@ -69,12 +69,12 @@ uint8_t mpeg2_scan_alt[64] ATTR_ALIGN(16) =
     53,61,22,30,7,15,23,31,38,46,54,62,39,47,55,63
 };
 
-void mpeg2_header_state_init (picture_t * picture)
+void mpeg2_header_state_init (decoder_t * decoder)
 {
-    picture->scan = mpeg2_scan_norm;
+    decoder->scan = mpeg2_scan_norm;
 }
 
-int mpeg2_header_sequence (picture_t * picture, uint8_t * buffer)
+int mpeg2_header_sequence (decoder_t * decoder, uint8_t * buffer)
 {
     int width, height;
     int i;
@@ -90,46 +90,46 @@ int mpeg2_header_sequence (picture_t * picture, uint8_t * buffer)
     if ((width > 1920) || (height > 1152))
 	return 1;	/* size restrictions for MP@HL */
 
-    picture->coded_picture_width = width;
-    picture->coded_picture_height = height;
+    decoder->coded_picture_width = width;
+    decoder->coded_picture_height = height;
 
     /* this is not used by the decoder */
-    picture->aspect_ratio_information = buffer[3] >> 4;
-    picture->frame_rate_code = buffer[3] & 15;
-    picture->bitrate = (buffer[4]<<10)|(buffer[5]<<2)|(buffer[6]>>6);
+    decoder->aspect_ratio_information = buffer[3] >> 4;
+    decoder->frame_rate_code = buffer[3] & 15;
+    decoder->bitrate = (buffer[4]<<10)|(buffer[5]<<2)|(buffer[6]>>6);
 
     if (buffer[7] & 2) {
 	for (i = 0; i < 64; i++)
-	    picture->intra_quantizer_matrix[mpeg2_scan_norm[i]] =
+	    decoder->intra_quantizer_matrix[mpeg2_scan_norm[i]] =
 		(buffer[i+7] << 7) | (buffer[i+8] >> 1);
 	buffer += 64;
     } else
 	for (i = 0; i < 64; i++)
-	    picture->intra_quantizer_matrix[mpeg2_scan_norm[i]] =
+	    decoder->intra_quantizer_matrix[mpeg2_scan_norm[i]] =
 		default_intra_quantizer_matrix [i];
 
     if (buffer[7] & 1)
 	for (i = 0; i < 64; i++)
-	    picture->non_intra_quantizer_matrix[mpeg2_scan_norm[i]] =
+	    decoder->non_intra_quantizer_matrix[mpeg2_scan_norm[i]] =
 		buffer[i+8];
     else
 	for (i = 0; i < 64; i++)
-	    picture->non_intra_quantizer_matrix[i] = 16;
+	    decoder->non_intra_quantizer_matrix[i] = 16;
 
     /* MPEG1 - for testing only */
-    picture->mpeg1 = 1;
-    picture->intra_dc_precision = 0;
-    picture->frame_pred_frame_dct = 1;
-    picture->q_scale_type = 0;
-    picture->concealment_motion_vectors = 0;
-    /* picture->alternate_scan = 0; */
-    picture->picture_structure = FRAME_PICTURE;
-    /* picture->second_field = 0; */
+    decoder->mpeg1 = 1;
+    decoder->intra_dc_precision = 0;
+    decoder->frame_pred_frame_dct = 1;
+    decoder->q_scale_type = 0;
+    decoder->concealment_motion_vectors = 0;
+    /* decoder->alternate_scan = 0; */
+    decoder->picture_structure = FRAME_PICTURE;
+    /* decoder->second_field = 0; */
 
     return 0;
 }
 
-static int sequence_extension (picture_t * picture, uint8_t * buffer)
+static int sequence_extension (decoder_t * decoder, uint8_t * buffer)
 {
     /* check chroma format, size extensions, marker bit */
     if (((buffer[1] & 0x07) != 0x02) || (buffer[2] & 0xe0) ||
@@ -137,96 +137,96 @@ static int sequence_extension (picture_t * picture, uint8_t * buffer)
 	return 1;
 
     /* this is not used by the decoder */
-    picture->progressive_sequence = (buffer[1] >> 3) & 1;
+    decoder->progressive_sequence = (buffer[1] >> 3) & 1;
 
-    if (!(picture->progressive_sequence))
-	picture->coded_picture_height =
-	    (picture->coded_picture_height + 31) & ~31;
+    if (!(decoder->progressive_sequence))
+	decoder->coded_picture_height =
+	    (decoder->coded_picture_height + 31) & ~31;
 
     /* MPEG1 - for testing only */
-    picture->mpeg1 = 0;
+    decoder->mpeg1 = 0;
 
     return 0;
 }
 
-static int quant_matrix_extension (picture_t * picture, uint8_t * buffer)
+static int quant_matrix_extension (decoder_t * decoder, uint8_t * buffer)
 {
     int i;
 
     if (buffer[0] & 8) {
 	for (i = 0; i < 64; i++)
-	    picture->intra_quantizer_matrix[mpeg2_scan_norm[i]] =
+	    decoder->intra_quantizer_matrix[mpeg2_scan_norm[i]] =
 		(buffer[i] << 5) | (buffer[i+1] >> 3);
 	buffer += 64;
     }
 
     if (buffer[0] & 4)
 	for (i = 0; i < 64; i++)
-	    picture->non_intra_quantizer_matrix[mpeg2_scan_norm[i]] =
+	    decoder->non_intra_quantizer_matrix[mpeg2_scan_norm[i]] =
 		(buffer[i] << 6) | (buffer[i+1] >> 2);
 
     return 0;
 }
 
-static int picture_coding_extension (picture_t * picture, uint8_t * buffer)
+static int picture_coding_extension (decoder_t * decoder, uint8_t * buffer)
 {
     /* pre subtract 1 for use later in compute_motion_vector */
-    picture->f_motion.f_code[0] = (buffer[0] & 15) - 1;
-    picture->f_motion.f_code[1] = (buffer[1] >> 4) - 1;
-    picture->b_motion.f_code[0] = (buffer[1] & 15) - 1;
-    picture->b_motion.f_code[1] = (buffer[2] >> 4) - 1;
+    decoder->f_motion.f_code[0] = (buffer[0] & 15) - 1;
+    decoder->f_motion.f_code[1] = (buffer[1] >> 4) - 1;
+    decoder->b_motion.f_code[0] = (buffer[1] & 15) - 1;
+    decoder->b_motion.f_code[1] = (buffer[2] >> 4) - 1;
 
-    picture->intra_dc_precision = (buffer[2] >> 2) & 3;
-    picture->picture_structure = buffer[2] & 3;
-    picture->frame_pred_frame_dct = (buffer[3] >> 6) & 1;
-    picture->concealment_motion_vectors = (buffer[3] >> 5) & 1;
-    picture->q_scale_type = (buffer[3] >> 4) & 1;
-    picture->intra_vlc_format = (buffer[3] >> 3) & 1;
+    decoder->intra_dc_precision = (buffer[2] >> 2) & 3;
+    decoder->picture_structure = buffer[2] & 3;
+    decoder->frame_pred_frame_dct = (buffer[3] >> 6) & 1;
+    decoder->concealment_motion_vectors = (buffer[3] >> 5) & 1;
+    decoder->q_scale_type = (buffer[3] >> 4) & 1;
+    decoder->intra_vlc_format = (buffer[3] >> 3) & 1;
 
     if (buffer[3] & 4)	/* alternate_scan */
-	picture->scan = mpeg2_scan_alt;
+	decoder->scan = mpeg2_scan_alt;
     else
-	picture->scan = mpeg2_scan_norm;
+	decoder->scan = mpeg2_scan_norm;
 
     /* these are not used by the decoder */
-    picture->top_field_first = buffer[3] >> 7;
-    picture->repeat_first_field = (buffer[3] >> 1) & 1;
-    picture->progressive_frame = buffer[4] >> 7;
+    decoder->top_field_first = buffer[3] >> 7;
+    decoder->repeat_first_field = (buffer[3] >> 1) & 1;
+    decoder->progressive_frame = buffer[4] >> 7;
 
     return 0;
 }
 
-int mpeg2_header_extension (picture_t * picture, uint8_t * buffer)
+int mpeg2_header_extension (decoder_t * decoder, uint8_t * buffer)
 {
     switch (buffer[0] & 0xf0) {
     case 0x10:	/* sequence extension */
-	return sequence_extension (picture, buffer);
+	return sequence_extension (decoder, buffer);
 
     case 0x30:	/* quant matrix extension */
-	return quant_matrix_extension (picture, buffer);
+	return quant_matrix_extension (decoder, buffer);
 
     case 0x80:	/* picture coding extension */
-	return picture_coding_extension (picture, buffer);
+	return picture_coding_extension (decoder, buffer);
     }
 
     return 0;
 }
 
-int mpeg2_header_picture (picture_t * picture, uint8_t * buffer)
+int mpeg2_header_picture (decoder_t * decoder, uint8_t * buffer)
 {
-    picture->picture_coding_type = (buffer [1] >> 3) & 7;
+    decoder->picture_coding_type = (buffer [1] >> 3) & 7;
 
     /* forward_f_code and backward_f_code - used in mpeg1 only */
-    picture->f_motion.f_code[1] = (buffer[3] >> 2) & 1;
-    picture->f_motion.f_code[0] =
+    decoder->f_motion.f_code[1] = (buffer[3] >> 2) & 1;
+    decoder->f_motion.f_code[0] =
 	(((buffer[3] << 1) | (buffer[4] >> 7)) & 7) - 1;
-    picture->b_motion.f_code[1] = (buffer[4] >> 6) & 1;
-    picture->b_motion.f_code[0] = ((buffer[4] >> 3) & 7) - 1;
+    decoder->b_motion.f_code[1] = (buffer[4] >> 6) & 1;
+    decoder->b_motion.f_code[0] = ((buffer[4] >> 3) & 7) - 1;
 
     /* move in header_process_picture_header */
-        picture->second_field =
-            (picture->picture_structure != FRAME_PICTURE) &&
-            !(picture->second_field);
+        decoder->second_field =
+            (decoder->picture_structure != FRAME_PICTURE) &&
+            !(decoder->second_field);
 
     return 0;
 }

@@ -1,4 +1,4 @@
-/* 
+/*
  * video_out_null.c
  * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
@@ -29,14 +29,14 @@
 #include "video_out.h"
 #include "video_out_internal.h"
 
-typedef struct null_frame_s {
+typedef struct {
     vo_frame_t vo;
     uint8_t * rgb_ptr;
     int rgb_stride;
     int yuv_stride;
 } null_frame_t;
 
-typedef struct null_instance_s {
+typedef struct {
     vo_instance_t vo;
     int prediction_index;
     vo_frame_t * frame_ptr[3];
