@@ -46,7 +46,7 @@ int XShmGetEventBase (Display *);
 
 #include "mpeg2.h"
 #include "video_out.h"
-#include "convert.h"
+#include "mpeg2convert.h"
 
 typedef struct {
     int width;
@@ -631,11 +631,11 @@ static int common_setup (vo_instance_t * _instance, unsigned int width,
 	 */
 
 	result->convert =
-	    convert_rgb (((instance->frame[0].ximage->blue_mask & 1) ?
-			  CONVERT_RGB : CONVERT_BGR),
-			 ((instance->vinfo.depth == 24) ?
-			  instance->frame[0].ximage->bits_per_pixel :
-			  instance->vinfo.depth));
+	    mpeg2convert_rgb (((instance->frame[0].ximage->blue_mask & 1) ?
+			       MPEG2CONVERT_RGB : MPEG2CONVERT_BGR),
+			      ((instance->vinfo.depth == 24) ?
+			       instance->frame[0].ximage->bits_per_pixel :
+			       instance->vinfo.depth));
     }
 
     return 0;

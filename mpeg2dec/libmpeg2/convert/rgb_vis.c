@@ -28,7 +28,7 @@
 #include <inttypes.h>
 
 #include "mpeg2.h"
-#include "convert.h"
+#include "mpeg2convert.h"
 #include "convert_internal.h"
 #include "attributes.h"
 #include "vis.h"
@@ -368,13 +368,13 @@ static void vis_abgr32(void *_id, uint8_t * const *src,
 			  id->rgb_stride, id->y_stride, id->y_stride >> 1);
 }
 
-yuv2rgb_copy *yuv2rgb_init_vis(int order, int bpp,
-			       const mpeg2_sequence_t * seq)
+mpeg2convert_copy *mpeg2convert_rgb_vis(int order, int bpp,
+					const mpeg2_sequence_t * seq)
 {
 	if (bpp == 32 && seq->chroma_height < seq->height) {
-		if (order == CONVERT_RGB)
+		if (order == MPEG2CONVERT_RGB)
 			return vis_argb32;
-		if (order == CONVERT_BGR)
+		if (order == MPEG2CONVERT_BGR)
 			return vis_abgr32;
 	}
 

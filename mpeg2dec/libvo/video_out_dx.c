@@ -33,7 +33,7 @@
 
 #include "mpeg2.h"
 #include "video_out.h"
-#include "convert.h"
+#include "mpeg2convert.h"
 
 #include <ddraw.h>
 #include <initguid.h>
@@ -277,7 +277,7 @@ static int dxrgb_setup (vo_instance_t * _instance, unsigned int width,
     bpp = GetDeviceCaps (hdc, BITSPIXEL);
     ReleaseDC (NULL, hdc);
 
-    result->convert = convert_rgb (CONVERT_RGB, bpp);
+    result->convert = mpeg2convert_rgb (MPEG2CONVERT_RGB, bpp);
     return 0;
 }
 

@@ -21,22 +21,22 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef CONVERT_H
-#define CONVERT_H
+#ifndef MPEG2CONVERT_H
+#define MPEG2CONVERT_H
 
-mpeg2_convert_t convert_rgb32;
-mpeg2_convert_t convert_rgb24;
-mpeg2_convert_t convert_rgb16;
-mpeg2_convert_t convert_rgb15;
-mpeg2_convert_t convert_rgb8;
-mpeg2_convert_t convert_bgr32;
-mpeg2_convert_t convert_bgr24;
-mpeg2_convert_t convert_bgr16;
-mpeg2_convert_t convert_bgr15;
-mpeg2_convert_t convert_bgr8;
+mpeg2_convert_t mpeg2convert_rgb32;
+mpeg2_convert_t mpeg2convert_rgb24;
+mpeg2_convert_t mpeg2convert_rgb16;
+mpeg2_convert_t mpeg2convert_rgb15;
+mpeg2_convert_t mpeg2convert_rgb8;
+mpeg2_convert_t mpeg2convert_bgr32;
+mpeg2_convert_t mpeg2convert_bgr24;
+mpeg2_convert_t mpeg2convert_bgr16;
+mpeg2_convert_t mpeg2convert_bgr15;
+mpeg2_convert_t mpeg2convert_bgr8;
 
-#define CONVERT_RGB 0
-#define CONVERT_BGR 1
-mpeg2_convert_t * convert_rgb (int order, int bpp);
+#define MPEG2CONVERT_RGB 0
+#define MPEG2CONVERT_BGR 1
+mpeg2_convert_t * mpeg2convert_rgb (int order, int bpp);
 
-#endif /* CONVERT_H */
+#endif /* MPEG2CONVERT_H */

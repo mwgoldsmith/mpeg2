@@ -32,7 +32,7 @@
 #include <inttypes.h>
 
 #include "mpeg2.h"
-#include "convert.h"
+#include "mpeg2convert.h"
 #include "convert_internal.h"
 #include "attributes.h"
 #include "mmx.h"
@@ -285,10 +285,10 @@ static void mmx_argb32 (void * id, uint8_t * const * src,
     yuv420_argb32 (id, src, v_offset, CPU_MMX);
 }
 
-yuv2rgb_copy * yuv2rgb_init_mmxext (int order, int bpp,
-				    const mpeg2_sequence_t * seq)
+mpeg2convert_copy * mpeg2convert_rgb_mmxext (int order, int bpp,
+					     const mpeg2_sequence_t * seq)
 {
-    if (order == CONVERT_RGB && seq->chroma_width < seq->width) {
+    if (order == MPEG2CONVERT_RGB && seq->chroma_width < seq->width) {
 	if (bpp == 16)
 	    return mmxext_rgb16;
 	else if (bpp == 32)
@@ -297,10 +297,10 @@ yuv2rgb_copy * yuv2rgb_init_mmxext (int order, int bpp,
     return NULL;	/* Fallback to C */
 }
 
-yuv2rgb_copy * yuv2rgb_init_mmx (int order, int bpp,
-				 const mpeg2_sequence_t * seq)
+mpeg2convert_copy * mpeg2convert_rgb_mmx (int order, int bpp,
+					  const mpeg2_sequence_t * seq)
 {
-    if (order == CONVERT_RGB && seq->chroma_width < seq->width) {
+    if (order == MPEG2CONVERT_RGB && seq->chroma_width < seq->width) {
 	if (bpp == 16)
 	    return mmx_rgb16;
 	else if (bpp == 32)

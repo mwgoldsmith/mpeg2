@@ -30,12 +30,12 @@ typedef struct {
     int y_stride_frame, uv_stride_frame, rgb_stride_frame, convert420;
 } convert_rgb_t;
 
-typedef void yuv2rgb_copy (void * id, uint8_t * const * src,
-			   unsigned int v_offset);
+typedef void mpeg2convert_copy (void * id, uint8_t * const * src,
+				unsigned int v_offset);
 
-yuv2rgb_copy * yuv2rgb_init_mmxext (int bpp, int mode,
-				    const mpeg2_sequence_t * seq);
-yuv2rgb_copy * yuv2rgb_init_mmx (int bpp, int mode,
-				 const mpeg2_sequence_t * seq);
-yuv2rgb_copy * yuv2rgb_init_vis (int bpp, int mode,
-				 const mpeg2_sequence_t * seq);
+mpeg2convert_copy * mpeg2convert_rgb_mmxext (int bpp, int mode,
+					     const mpeg2_sequence_t * seq);
+mpeg2convert_copy * mpeg2convert_rgb_mmx (int bpp, int mode,
+					  const mpeg2_sequence_t * seq);
+mpeg2convert_copy * mpeg2convert_rgb_vis (int bpp, int mode,
+					  const mpeg2_sequence_t * seq);
