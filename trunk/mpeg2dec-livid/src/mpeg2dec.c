@@ -108,13 +108,15 @@ static void signal_handler (int sig)
 static void print_usage (char * argv[])
 {
     int i;
+    vo_driver_t * drivers;
 
     fprintf (stderr, "usage: %s [-o mode] [-s] file\n"
 	     "\t-s\tuse program stream demultiplexer\n"
 	     "\t-o\tvideo output mode\n", argv[0]);
 
-    for (i = 0; video_out_drivers[i].name; i++)
-	fprintf (stderr, "\t\t\t%s\n", video_out_drivers[i].name);
+    drivers = vo_drivers ();
+    for (i = 0; drivers[i].name; i++)
+	fprintf (stderr, "\t\t\t%s\n", drivers[i].name);
 
     exit (1);
 }
@@ -122,14 +124,16 @@ static void print_usage (char * argv[])
 static void handle_args (int argc, char * argv[])
 {
     int c;
+    vo_driver_t * drivers;
     int i;
 
+    drivers = vo_drivers ();
     while ((c = getopt (argc,argv,"so:")) != -1) {
 	switch (c) {
 	case 'o':
-	    for (i=0; video_out_drivers[i].name != NULL; i++) {
-		if (strcmp (video_out_drivers[i].name, optarg) == 0)
-		    output_setup = video_out_drivers[i].setup;
+	    for (i=0; drivers[i].name != NULL; i++) {
+		if (strcmp (drivers[i].name, optarg) == 0)
+		    output_setup = drivers[i].setup;
 	    }
 	    if (output_setup == NULL) {
 		fprintf (stderr, "Invalid video driver: %s\n", optarg);
@@ -148,7 +152,7 @@ static void handle_args (int argc, char * argv[])
 
     /* -o not specified, use a default driver */
     if (output_setup == NULL)
-	output_setup = video_out_drivers[0].setup;
+	output_setup = drivers[0].setup;
 
     if (optind < argc) {
 	in_file = fopen (argv[optind], "rb");

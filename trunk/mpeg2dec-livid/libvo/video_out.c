@@ -44,7 +44,7 @@ extern vo_setup_t vo_pgm_setup;
 extern vo_setup_t vo_pgmpipe_setup;
 extern vo_setup_t vo_md5_setup;
 
-vo_driver_t video_out_drivers[] =
+static vo_driver_t video_out_drivers[] =
 {
 #ifdef LIBVO_XV
     {"xvshm", vo_xvshm_setup},
@@ -71,6 +71,11 @@ vo_driver_t video_out_drivers[] =
     {"md5", vo_md5_setup},
     {NULL, NULL}
 };
+
+vo_driver_t * vo_drivers (void)
+{
+    return video_out_drivers;
+}
 
 typedef struct common_instance_s {
     vo_instance_t vo;
