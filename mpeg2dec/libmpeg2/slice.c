@@ -256,7 +256,7 @@ static inline int get_coded_block_pattern (picture_t * picture)
 
     if (bit_buf >= 0x20000000) {
 
-	tab = CBP_7 - 16 + UBITS (bit_buf, 7);
+	tab = CBP_7 + (UBITS (bit_buf, 7) - 16);
 	DUMPBITS (bit_buf, bits, tab->len);
 	return tab->cbp;
 
@@ -296,7 +296,7 @@ static inline int get_luma_dc_dct_diff (picture_t * picture)
 	    return 0;
 	}
     } else {
-	tab = DC_long - 0x1e0 + UBITS (bit_buf, 9);
+	tab = DC_long + (UBITS (bit_buf, 9) - 0x1e0);
 	size = tab->size;
 	DUMPBITS (bit_buf, bits, tab->len);
 	NEEDBITS (bit_buf, bits, bit_ptr);
@@ -333,7 +333,7 @@ static inline int get_chroma_dc_dct_diff (picture_t * picture)
 	    return 0;
 	}
     } else {
-	tab = DC_long - 0x3e0 + UBITS (bit_buf, 10);
+	tab = DC_long + (UBITS (bit_buf, 10) - 0x3e0);
 	size = tab->size;
 	DUMPBITS (bit_buf, bits, tab->len + 1);
 	NEEDBITS (bit_buf, bits, bit_ptr);
@@ -380,7 +380,7 @@ static void get_intra_block_B14 (picture_t * picture)
     while (1) {
 	if (bit_buf >= 0x28000000) {
 
-	    tab = DCT_B14AC_5 - 5 + UBITS (bit_buf, 5);
+	    tab = DCT_B14AC_5 + (UBITS (bit_buf, 5) - 5);
 
 	    i += tab->run;
 	    if (i >= 64)
@@ -406,7 +406,7 @@ static void get_intra_block_B14 (picture_t * picture)
 
 	} else if (bit_buf >= 0x04000000) {
 
-	    tab = DCT_B14_8 - 4 + UBITS (bit_buf, 8);
+	    tab = DCT_B14_8 + (UBITS (bit_buf, 8) - 4);
 
 	    i += tab->run;
 	    if (i < 64)
@@ -435,17 +435,17 @@ static void get_intra_block_B14 (picture_t * picture)
 	    continue;
 
 	} else if (bit_buf >= 0x02000000) {
-	    tab = DCT_B14_10 - 8 + UBITS (bit_buf, 10);
+	    tab = DCT_B14_10 + (UBITS (bit_buf, 10) - 8);
 	    i += tab->run;
 	    if (i < 64)
 		goto normal_code;
 	} else if (bit_buf >= 0x00800000) {
-	    tab = DCT_13 - 16 + UBITS (bit_buf, 13);
+	    tab = DCT_13 + (UBITS (bit_buf, 13) - 16);
 	    i += tab->run;
 	    if (i < 64)
 		goto normal_code;
 	} else if (bit_buf >= 0x00200000) {
-	    tab = DCT_15 - 16 + UBITS (bit_buf, 15);
+	    tab = DCT_15 + (UBITS (bit_buf, 15) - 16);
 	    i += tab->run;
 	    if (i < 64)
 		goto normal_code;
@@ -494,7 +494,7 @@ static void get_intra_block_B15 (picture_t * picture)
     while (1) {
 	if (bit_buf >= 0x04000000) {
 
-	    tab = DCT_B15_8 - 4 + UBITS (bit_buf, 8);
+	    tab = DCT_B15_8 + (UBITS (bit_buf, 8) - 4);
 
 	    i += tab->run;
 	    if (i < 64) {
@@ -548,17 +548,17 @@ static void get_intra_block_B15 (picture_t * picture)
 
 	    }
 	} else if (bit_buf >= 0x02000000) {
-	    tab = DCT_B15_10 - 8 + UBITS (bit_buf, 10);
+	    tab = DCT_B15_10 + (UBITS (bit_buf, 10) - 8);
 	    i += tab->run;
 	    if (i < 64)
 		goto normal_code;
 	} else if (bit_buf >= 0x00800000) {
-	    tab = DCT_13 - 16 + UBITS (bit_buf, 13);
+	    tab = DCT_13 + (UBITS (bit_buf, 13) - 16);
 	    i += tab->run;
 	    if (i < 64)
 		goto normal_code;
 	} else if (bit_buf >= 0x00200000) {
-	    tab = DCT_15 - 16 + UBITS (bit_buf, 15);
+	    tab = DCT_15 + (UBITS (bit_buf, 15) - 16);
 	    i += tab->run;
 	    if (i < 64)
 		goto normal_code;
@@ -604,7 +604,7 @@ static void get_non_intra_block (picture_t * picture)
 
     NEEDBITS (bit_buf, bits, bit_ptr);
     if (bit_buf >= 0x28000000) {
-	tab = DCT_B14DC_5 - 5 + UBITS (bit_buf, 5);
+	tab = DCT_B14DC_5 + (UBITS (bit_buf, 5) - 5);
 	goto entry_1;
     } else
 	goto entry_2;
@@ -612,7 +612,7 @@ static void get_non_intra_block (picture_t * picture)
     while (1) {
 	if (bit_buf >= 0x28000000) {
 
-	    tab = DCT_B14AC_5 - 5 + UBITS (bit_buf, 5);
+	    tab = DCT_B14AC_5 + (UBITS (bit_buf, 5) - 5);
 
 	entry_1:
 	    i += tab->run;
@@ -642,7 +642,7 @@ static void get_non_intra_block (picture_t * picture)
     entry_2:
 	if (bit_buf >= 0x04000000) {
 
-	    tab = DCT_B14_8 - 4 + UBITS (bit_buf, 8);
+	    tab = DCT_B14_8 + (UBITS (bit_buf, 8) - 4);
 
 	    i += tab->run;
 	    if (i < 64)
@@ -671,17 +671,17 @@ static void get_non_intra_block (picture_t * picture)
 	    continue;
 
 	} else if (bit_buf >= 0x02000000) {
-	    tab = DCT_B14_10 - 8 + UBITS (bit_buf, 10);
+	    tab = DCT_B14_10 + (UBITS (bit_buf, 10) - 8);
 	    i += tab->run;
 	    if (i < 64)
 		goto normal_code;
 	} else if (bit_buf >= 0x00800000) {
-	    tab = DCT_13 - 16 + UBITS (bit_buf, 13);
+	    tab = DCT_13 + (UBITS (bit_buf, 13) - 16);
 	    i += tab->run;
 	    if (i < 64)
 		goto normal_code;
 	} else if (bit_buf >= 0x00200000) {
-	    tab = DCT_15 - 16 + UBITS (bit_buf, 15);
+	    tab = DCT_15 + (UBITS (bit_buf, 15) - 16);
 	    i += tab->run;
 	    if (i < 64)
 		goto normal_code;
@@ -728,7 +728,7 @@ static void get_mpeg1_intra_block (picture_t * picture)
     while (1) {
 	if (bit_buf >= 0x28000000) {
 
-	    tab = DCT_B14AC_5 - 5 + UBITS (bit_buf, 5);
+	    tab = DCT_B14AC_5 + (UBITS (bit_buf, 5) - 5);
 
 	    i += tab->run;
 	    if (i >= 64)
@@ -756,7 +756,7 @@ static void get_mpeg1_intra_block (picture_t * picture)
 
 	} else if (bit_buf >= 0x04000000) {
 
-	    tab = DCT_B14_8 - 4 + UBITS (bit_buf, 8);
+	    tab = DCT_B14_8 + (UBITS (bit_buf, 8) - 4);
 
 	    i += tab->run;
 	    if (i < 64)
@@ -791,17 +791,17 @@ static void get_mpeg1_intra_block (picture_t * picture)
 	    continue;
 
 	} else if (bit_buf >= 0x02000000) {
-	    tab = DCT_B14_10 - 8 + UBITS (bit_buf, 10);
+	    tab = DCT_B14_10 + (UBITS (bit_buf, 10) - 8);
 	    i += tab->run;
 	    if (i < 64)
 		goto normal_code;
 	} else if (bit_buf >= 0x00800000) {
-	    tab = DCT_13 - 16 + UBITS (bit_buf, 13);
+	    tab = DCT_13 + (UBITS (bit_buf, 13) - 16);
 	    i += tab->run;
 	    if (i < 64)
 		goto normal_code;
 	} else if (bit_buf >= 0x00200000) {
-	    tab = DCT_15 - 16 + UBITS (bit_buf, 15);
+	    tab = DCT_15 + (UBITS (bit_buf, 15) - 16);
 	    i += tab->run;
 	    if (i < 64)
 		goto normal_code;
@@ -844,7 +844,7 @@ static void get_mpeg1_non_intra_block (picture_t * picture)
 
     NEEDBITS (bit_buf, bits, bit_ptr);
     if (bit_buf >= 0x28000000) {
-	tab = DCT_B14DC_5 - 5 + UBITS (bit_buf, 5);
+	tab = DCT_B14DC_5 + (UBITS (bit_buf, 5) - 5);
 	goto entry_1;
     } else
 	goto entry_2;
@@ -852,7 +852,7 @@ static void get_mpeg1_non_intra_block (picture_t * picture)
     while (1) {
 	if (bit_buf >= 0x28000000) {
 
-	    tab = DCT_B14AC_5 - 5 + UBITS (bit_buf, 5);
+	    tab = DCT_B14AC_5 + (UBITS (bit_buf, 5) - 5);
 
 	entry_1:
 	    i += tab->run;
@@ -884,7 +884,7 @@ static void get_mpeg1_non_intra_block (picture_t * picture)
     entry_2:
 	if (bit_buf >= 0x04000000) {
 
-	    tab = DCT_B14_8 - 4 + UBITS (bit_buf, 8);
+	    tab = DCT_B14_8 + (UBITS (bit_buf, 8) - 4);
 
 	    i += tab->run;
 	    if (i < 64)
@@ -920,17 +920,17 @@ static void get_mpeg1_non_intra_block (picture_t * picture)
 	    continue;
 
 	} else if (bit_buf >= 0x02000000) {
-	    tab = DCT_B14_10 - 8 + UBITS (bit_buf, 10);
+	    tab = DCT_B14_10 + (UBITS (bit_buf, 10) - 8);
 	    i += tab->run;
 	    if (i < 64)
 		goto normal_code;
 	} else if (bit_buf >= 0x00800000) {
-	    tab = DCT_13 - 16 + UBITS (bit_buf, 13);
+	    tab = DCT_13 + (UBITS (bit_buf, 13) - 16);
 	    i += tab->run;
 	    if (i < 64)
 		goto normal_code;
 	} else if (bit_buf >= 0x00200000) {
-	    tab = DCT_15 - 16 + UBITS (bit_buf, 15);
+	    tab = DCT_15 + (UBITS (bit_buf, 15) - 16);
 	    i += tab->run;
 	    if (i < 64)
 		goto normal_code;
@@ -1568,10 +1568,10 @@ void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer)
     offset = 0;
     while (1) {
 	if (bit_buf >= 0x08000000) {
-	    mba = MBA_5 - 2 + UBITS (bit_buf, 6);
+	    mba = MBA_5 + (UBITS (bit_buf, 6) - 2);
 	    break;
 	} else if (bit_buf >= 0x01800000) {
-	    mba = MBA_11 - 24 + UBITS (bit_buf, 12);
+	    mba = MBA_11 + (UBITS (bit_buf, 12) - 24);
 	    break;
 	} else switch (UBITS (bit_buf, 12)) {
 	case 8:		/* macroblock_escape */
@@ -1763,10 +1763,10 @@ void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer)
 	mba_inc = 0;
 	while (1) {
 	    if (bit_buf >= 0x10000000) {
-		mba = MBA_5 - 2 + UBITS (bit_buf, 5);
+		mba = MBA_5 + (UBITS (bit_buf, 5) - 2);
 		break;
 	    } else if (bit_buf >= 0x03000000) {
-		mba = MBA_11 - 24 + UBITS (bit_buf, 11);
+		mba = MBA_11 + (UBITS (bit_buf, 11) - 24);
 		break;
 	    } else switch (UBITS (bit_buf, 11)) {
 	    case 8:		/* macroblock_escape */
