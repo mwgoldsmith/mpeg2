@@ -8,9 +8,6 @@ if test x"$no_x" != x"yes"; then
     LIBVO_CFLAGS="$LIBVO_CFLAGS $X_CFLAGS"
     LIBVO_LIBS="$LIBVO_LIBS $X_PRE_LIBS $X_LIBS -lX11 $X_EXTRA_LIBS"
 
-    dnl we should test for Xshm extensions and deal with it in the c code too
-    dnl LIBVO_LIBS="$LIBVO_LIBS -lXext"
-
     dnl check for Xshm
     dnl the C code should be modified to take this into account !
     AC_CHECK_LIB([Xext],[XShmCreateImage],

@@ -42,7 +42,7 @@ void motion_comp_init (void)
 	mc_functions = mc_functions_mmx;
     } else
 #endif
-#ifdef LIBMPEG_MLIB
+#ifdef LIBMPEG2_MLIB
     if (config.flags & MPEG2_MLIB_ENABLE) {
 	fprintf (stderr, "Using mlib for motion compensation\n");
 	mc_functions = mc_functions_mlib;
