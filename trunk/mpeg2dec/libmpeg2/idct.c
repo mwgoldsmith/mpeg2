@@ -257,13 +257,13 @@ void mpeg2_idct_init (uint32_t accel)
     if (accel & MPEG2_ACCEL_ALPHA_MVI) {
 	mpeg2_idct_copy = mpeg2_idct_copy_mvi;
 	mpeg2_idct_add = mpeg2_idct_add_mvi;
-	mpeg2_idct_alpha_init (0);
+	mpeg2_idct_alpha_init ();
     } else if (accel & MPEG2_ACCEL_ALPHA) {
 	int i;
 
 	mpeg2_idct_copy = mpeg2_idct_copy_alpha;
 	mpeg2_idct_add = mpeg2_idct_add_alpha;
-	mpeg2_idct_alpha_init (1);
+	mpeg2_idct_alpha_init ();
 	for (i = -3840; i < 3840 + 256; i++)
 	    CLIP(i) = (i < 0) ? 0 : ((i > 255) ? 255 : i);
     } else
