@@ -1,3 +1,17 @@
+/*
+ *
+ * mga_vid.h
+ *
+ * Copyright (C) 1999 Aaron Holtzman
+ * 
+ * Matrox MGA G200/G400 YUV Video Interface module Version 0.1.0
+ * 
+ * BES == Back End Scaler
+ * 
+ * This software has been released under the terms of the GNU Public
+ * license. See http://www.gnu.org/copyleft/gpl.html for details.
+ */
+
 #ifndef __LINUX_MGAVID_H
 #define __LINUX_MGAVID_H
 
@@ -8,6 +22,7 @@ typedef unsigned char uint_8;
 
 typedef struct mga_vid_config_s
 {
+uint_32 card_type;
 uint_32 src_width;
 uint_32 src_height;
 uint_32 dest_width;
@@ -24,5 +39,8 @@ uint_8  colkey_blue;
 #define MGA_VID_ON     _IO ('J', 2)
 #define MGA_VID_OFF    _IO ('J', 3)
 
+
+#define MGA_G200 0x1234
+#define MGA_G400 0x5678
 
 #endif

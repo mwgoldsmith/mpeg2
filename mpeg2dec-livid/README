@@ -54,7 +54,8 @@ Stuff that is broken
 Stuff that needs to be done
 - fix the broken stuff (see above)
 - the MSSG getvlc.c needs to be sanitized and turned into vlc.c
-- motion.c need to be sanitized and pulled into parse.c
+- motion.c need to be sanitized and pulled into parse.c 
+  (in cvs 'bp_frames_branch')
 - make it really fast :)
 
 Patches
@@ -70,8 +71,9 @@ and set the appropriate function pointers.
 How to use mga_vid from scratch
 
 1. mknod /dev/mga_vid c 178 0
-2. ./configure.
-3. if you have a g200 then you must set IS_G200=1 in display_mga_vid.c.
+2. ./configure
+3. if you have a g200 you might want to change the memory size in 
+   mga_vid.c to 8 megs.
 4. make
 5. su 
 6. /sbin/insmod videodev; /sbin/insmod drivers/mga_vid.o  (you must have 

@@ -36,8 +36,6 @@
 #include "drivers/mga_vid.h"
 #include "display.h"
 
-#define IS_G200 0
-
 mga_vid_config_t mga_vid_config;
 uint_8 *vid_data;
 
@@ -102,11 +100,10 @@ write_frame_g400(uint_8 *y,uint_8 *cr, uint_8 *cb)
 void
 display_frame(uint_8 *src[])
 {
-#if IS_G200
-	write_frame_g200(src[0], src[2], src[1]);
-#else
-	write_frame_g400(src[0], src[2], src[1]);
-#endif
+  if (mga_vid_config.card_type == MGA_G200)
+		write_frame_g200(src[0], src[2], src[1]);
+  else
+		write_frame_g400(src[0], src[2], src[1]);
 }
 
 void 
