@@ -227,22 +227,25 @@ static void common_close (void)
 	XCloseDisplay (priv->display);
 }
 
-static int x11_setup (int width, int height)
+static vo_instance_t * x11_setup (vo_instance_t * this, int width, int height)
 {
     struct x11_priv_s * priv = &x11_priv;
 
+    if (this != NULL)
+	return NULL;
     priv->display = XOpenDisplay (NULL);
     if (! (priv->display)) {
 	fprintf (stderr, "Can not open display\n");
-	return 1;
+	return NULL;
     }
-
-    return x11_common_setup (width, height, x11_create_image);
+    if (x11_common_setup (width, height, x11_create_image))
+	return NULL;
+    return (vo_instance_t *)priv;
 }
 
-static int x11_close (void)
+static int x11_close (vo_instance_t * this)
 {
-    struct x11_priv_s * priv = &x11_priv;
+    struct x11_priv_s * priv = this;
 
     libvo_common_free_frames (libvo_common_free_frame);
     if (priv->ximage)
@@ -252,7 +255,7 @@ static int x11_close (void)
 }
 
 #if 0
-static int x11_draw_slice (uint8_t *src[], int slice_num)
+static int x11_draw_slice (uint8_t * src[], int slice_num)
 {
     struct x11_priv_s * priv = &x11_priv;
 
@@ -388,27 +391,29 @@ static int xshm_create_image (int width, int height)
     return 0;
 }
 
-static int xshm_setup (int width, int height)
+static vo_instance_t * xshm_setup (vo_instance_t * this, int width, int height)
 {
     struct x11_priv_s * priv = &x11_priv;
 
+    if (this != NULL)
+	return NULL;
     priv->display = XOpenDisplay (NULL);
     if (! (priv->display)) {
 	fprintf (stderr, "Can not open display\n");
-	return 1;
+	return NULL;
     }
-
     if (xshm_check_extension ()) {
 	fprintf (stderr, "No xshm extension\n");
-	return 1;
+	return NULL;
     }
-
-    return x11_common_setup (width, height, xshm_create_image);
+    if (x11_common_setup (width, height, xshm_create_image))
+	return NULL;
+    return (vo_instance_t *)priv;
 }
 
-static int xshm_close (void)
+static int xshm_close (vo_instance_t * this)
 {
-    struct x11_priv_s * priv = &x11_priv;
+    struct x11_priv_s * priv = this;
 
     libvo_common_free_frames (libvo_common_free_frame);
     if (priv->ximage) {
@@ -562,22 +567,25 @@ static int xv_common_setup (int width, int height,
     return 0;
 }
 
-static int xv_setup (int width, int height)
+static vo_instance_t * xv_setup (vo_instance_t * this, int width, int height)
 {
     struct x11_priv_s * priv = &x11_priv;
 
+    if (this != NULL)
+	return NULL;
     priv->display = XOpenDisplay (NULL);
     if (! (priv->display)) {
 	fprintf (stderr, "Can not open display\n");
-	return 1;
+	return NULL;
     }
-
-    return xv_common_setup (width, height, xv_alloc_frame);
+    if (xv_common_setup (width, height, xv_alloc_frame))
+	return NULL;
+    return (vo_instance_t *)priv;
 }
 
-static int xv_close (void)
+static int xv_close (vo_instance_t * this)
 {
-    struct x11_priv_s * priv = &x11_priv;
+    struct x11_priv_s * priv = this;
 
     libvo_common_free_frames (xv_free_frame);
     XvUngrabPort (priv->display, priv->port, 0);
@@ -586,7 +594,7 @@ static int xv_close (void)
 }
 
 #if 0
-static int xv_draw_slice (uint8_t *src[], int slice_num)
+static int xv_draw_slice (uint8_t * src[], int slice_num)
 {
     struct x11_priv_s * priv = &x11_priv;
 
@@ -646,27 +654,30 @@ static void xvshm_free_frame (frame_t * frame)
     XFree (frame->private);
 }
 
-static int xvshm_setup (int width, int height)
+static vo_instance_t * xvshm_setup (vo_instance_t * this,
+				    int width, int height)
 {
     struct x11_priv_s * priv = &x11_priv;
 
+    if (this != NULL)
+	return NULL;
     priv->display = XOpenDisplay (NULL);
     if (! (priv->display)) {
 	fprintf (stderr, "Can not open display\n");
-	return 1;
+	return NULL;
     }
-
     if (xshm_check_extension ()) {
 	fprintf (stderr, "No xshm extension\n");
-	return 1;
+	return NULL;
     }
-
-    return xv_common_setup (width, height, xvshm_alloc_frame);
+    if (xv_common_setup (width, height, xvshm_alloc_frame))
+	return NULL;
+    return (vo_instance_t *)priv;
 }
 
-static int xvshm_close (void)
+static int xvshm_close (vo_instance_t * this)
 {
-    struct x11_priv_s * priv = &x11_priv;
+    struct x11_priv_s * priv = this;
 
     libvo_common_free_frames (xvshm_free_frame);
     XvUngrabPort (priv->display, priv->port, 0);

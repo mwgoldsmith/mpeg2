@@ -34,18 +34,19 @@ static char header[1024];
 static int framenum = -2;
 static FILE * md5_file;
 
-static int pgm_setup (int width, int height)
+static vo_instance_t * pgm_setup (vo_instance_t * this, int width, int height)
 {
     image_width = width;
     image_height = height;
 
     sprintf (header, "P5\n\n%d %d\n255\n", width, height * 3 / 2);
-    return libvo_common_alloc_frames (libvo_common_alloc_frame, width, height);
-
-    return 0;
+    
+    if (libvo_common_alloc_frames (libvo_common_alloc_frame, width, height))
+	return NULL;
+    return (vo_instance_t *)1;
 }
 
-static int pgm_close (void)
+static int pgm_close (vo_instance_t * this)
 {
     libvo_common_free_frames (libvo_common_free_frame);
     return 0;
@@ -54,7 +55,7 @@ static int pgm_close (void)
 static char * internal_draw_frame (frame_t * frame)
 {
     static char filename[100];
-    FILE *file;
+    FILE * file;
     int i;
 
     if (++framenum < 0)
@@ -85,12 +86,12 @@ vo_output_video_t video_out_pgm = {
     pgm_setup, pgm_close, libvo_common_get_frame, pgm_draw_frame
 };
 
-static int md5_setup (int width, int height)
+static vo_instance_t * md5_setup (vo_instance_t * this, int width, int height)
 {
     if (!(md5_file = fopen ("md5", "w")))
-        return 1;
+        return NULL;
 
-    return pgm_setup (width, height);
+    return pgm_setup (NULL, width, height);
 }
 
 static void md5_draw_frame (frame_t * frame)

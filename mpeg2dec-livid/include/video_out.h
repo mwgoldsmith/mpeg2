@@ -15,11 +15,13 @@ typedef struct frame_s {
     void * private;
 } frame_t;
 
+typedef void vo_instance_t;
+
 typedef struct vo_output_video_s {
     char * name;
-    int (* setup) (int width, int height);
-    int (* close) (void);
-    frame_t * (* get_frame) (int prediction);
+    vo_instance_t * (* setup) (vo_instance_t * this, int width, int height);
+    int (* close) (vo_instance_t * this);
+    frame_t * (* get_frame) (vo_instance_t * this, int prediction);
     void (* draw_frame) (frame_t * frame);
 } vo_output_video_t;
 
