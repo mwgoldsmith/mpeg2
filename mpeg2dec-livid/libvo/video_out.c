@@ -75,10 +75,12 @@ vo_driver_t video_out_drivers[] =
 typedef struct common_instance_s {
     vo_instance_t vo;
     int prediction_index;
-    vo_frame_t frame[3];
+    vo_frame_t * frame_ptr[3];
+    uint8_t private_data[0];
 } common_instance_t;
 
 int libvo_common_alloc_frames (vo_instance_t * _this, int width, int height,
+			       int frame_size,
 			       void (* draw) (vo_frame_t * frame))
 {
     common_instance_t * this;
@@ -94,12 +96,14 @@ int libvo_common_alloc_frames (vo_instance_t * _this, int width, int height,
 	return 1;
 
     for (i = 0; i < 3; i++) {
-	this->frame[i].base[0] = alloc;
-	this->frame[i].base[1] = alloc + 4 * size;
-	this->frame[i].base[2] = alloc + 5 * size;
-	this->frame[i].copy = NULL;
-	this->frame[i].draw = draw;
-	this->frame[i].this = (vo_instance_t *)this;
+	this->frame_ptr[i] =
+	    (vo_frame_t *)(this->private_data + i * frame_size);
+	this->frame_ptr[i]->base[0] = alloc;
+	this->frame_ptr[i]->base[1] = alloc + 4 * size;
+	this->frame_ptr[i]->base[2] = alloc + 5 * size;
+	this->frame_ptr[i]->copy = NULL;
+	this->frame_ptr[i]->draw = draw;
+	this->frame_ptr[i]->this = (vo_instance_t *)this;
 	alloc += 6 * size;
     }
 
@@ -111,7 +115,7 @@ void libvo_common_free_frames (vo_instance_t * _this)
     common_instance_t * this;
 
     this = (common_instance_t *)_this;
-    free (this->frame[0].base[0]);
+    free (this->frame_ptr[0]->base[0]);
 }
 
 vo_frame_t * libvo_common_get_frame (vo_instance_t * _this, int prediction)
@@ -120,9 +124,9 @@ vo_frame_t * libvo_common_get_frame (vo_instance_t * _this, int prediction)
 
     this = (common_instance_t *)_this;
     if (!prediction)
-	return this->frame + 2;
+	return this->frame_ptr[2];
     else {
 	this->prediction_index ^= 1;
-	return this->frame + this->prediction_index;
+	return this->frame_ptr[this->prediction_index];
     }
 }

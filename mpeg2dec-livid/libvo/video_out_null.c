@@ -32,6 +32,7 @@
 typedef struct null_instance_s {
     vo_instance_t vo;
     int prediction_index;
+    vo_frame_t * frame_ptr[3];
     vo_frame_t frame[3];
 } null_instance_t;
 
@@ -51,7 +52,7 @@ vo_instance_t * vo_null_setup (vo_instance_t * _this, int width, int height)
     }
 
     if (libvo_common_alloc_frames ((vo_instance_t *)this, width, height,
-				   null_draw_frame))
+				   sizeof (vo_frame_t), null_draw_frame))
 	return NULL;
 
     this->vo.reinit = vo_null_setup;
