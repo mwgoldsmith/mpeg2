@@ -40,9 +40,9 @@ if test x"$GCC" = x"yes"; then
 	esac
 	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
     ppc-* | powerpc-*)
-	AC_DEFINE([ARCH_PPC],,[ppc architecture])
 	OPT_CFLAGS="$CFLAGS -Wa,-m7400"
-	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
+	AC_TRY_CFLAGS([$OPT_CFLAGS],
+	    [CFLAGS=$OPT_CFLAGS; AC_DEFINE([ARCH_PPC],,[ppc architecture])]);;
     sparc-*)
 	OPT_CFLAGS="$CFLAGS -mcpu=ultrasparc -mvis"
 	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
