@@ -498,9 +498,9 @@ static void convert_internal (int order, int bpp, int width, int height,
 {
     convert_rgb_t * id = (convert_rgb_t *) result->id;
 
-    if (!id) {
+    if (!id)
 	result->id_size = sizeof (convert_rgb_t);
-    } else {
+    else {
 	id->width = width;
 	id->uv_stride_frame = width >> 1;
 	id->rgb_stride_frame = ((bpp + 7) >> 3) * width;
@@ -511,17 +511,18 @@ static void convert_internal (int order, int bpp, int width, int height,
 
 	result->copy = NULL;
 #ifdef ARCH_X86
-	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_X86_MMXEXT)) {
+	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_X86_MMXEXT))
 	    result->copy = yuv2rgb_init_mmxext (order, bpp);
-	}
-	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_X86_MMX)) {
+	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_X86_MMX))
 	    result->copy = yuv2rgb_init_mmx (order, bpp);
-	}
+#endif
+#ifdef ARCH_SPARC
+	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_SPARC_VIS))
+	    result->copy = yuv2rgb_init_vis (order, bpp);
 #endif
 #ifdef LIBVO_MLIB
-	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_MLIB)) {
+	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_MLIB))
 	    result->copy = yuv2rgb_init_mlib (order, bpp);
-	}
 #endif
 	if (result->copy == NULL) {
 	    result->copy = convert_yuv2rgb_c;
