@@ -666,6 +666,7 @@ static void es_loop (void)
 int main (int argc, char ** argv)
 {
 #ifdef HAVE_IO_H
+    setmode (fileno (stdin), O_BINARY);
     setmode (fileno (stdout), O_BINARY);
 #endif
 
