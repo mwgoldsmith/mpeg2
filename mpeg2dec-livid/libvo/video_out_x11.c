@@ -711,4 +711,55 @@ vo_output_video_t video_out_xvshm = {
 };
 #endif
 
+static int x11auto_setup (int width, int height)
+{
+    extern vo_output_video_t video_out_x11auto;
+    struct x11_priv_s * priv = &x11_priv;
+    int use_xv = 0;
+    int use_xshm = 0;
+
+    priv->display = XOpenDisplay (NULL);
+    if (! (priv->display)) {
+	fprintf (stderr, "Can not open display\n");
+	return 1;
+    }
+
+#ifdef LIBVO_XV
+    use_xv = (xv_check_extension () == 0);
+#endif
+#ifdef LIBVO_XSHM
+    use_xshm = (x11_check_local () == 0) && (xshm_check_extension () == 0);
+#endif
+
+#ifdef LIBVO_XVSHM
+    if (use_xv && use_xshm) {
+	fprintf (stderr, "using xvshm output\n");
+	video_out_x11auto = video_out_xvshm;
+    } else
+#endif
+#ifdef LIBVO_XV
+    if (use_xv) {
+	fprintf (stderr, "using xv output\n");
+	video_out_x11auto = video_out_xv;
+    } else
+#endif
+#ifdef LIBVO_XSHM
+    if (use_xshm) {
+	fprintf (stderr, "using xshm output\n");
+	video_out_x11auto = video_out_xshm;
+    } else
+#endif
+    {
+	fprintf (stderr, "using x11 output\n");
+	video_out_x11auto = video_out_x11;
+    }
+
+    return video_out_x11auto.setup (width, height);
+}
+
+vo_output_video_t video_out_x11auto = {
+    "x11auto",
+    x11auto_setup, NULL, NULL, NULL
+};
+
 #endif
