@@ -63,16 +63,20 @@ static int depth, bpp, mode;
 static XWindowAttributes attribs;
 static int X_already_started = 0;
 
-
 #ifdef HAVE_XV
 #include <X11/extensions/Xv.h>
 #include <X11/extensions/Xvlib.h>
+// FIXME: dynamically allocate this stuff
+#define MAX_BUFFERS 7
+static int xvimage_counter = 0;
+static int current_image = 0;
+static void allocate_xvimage(int);
 static unsigned int ver,rel,req,ev,err;
 static unsigned int formats, adaptors,i,xv_port,xv_format;
 static int win_width,win_height;
 static XvAdaptorInfo        *ai;
 static XvImageFormatValues  *fo;
-static XvImage *xvimage1;
+static XvImage *xvimage[MAX_BUFFERS];
 #endif
 
 #define SH_MEM
@@ -89,7 +93,11 @@ static void DeInstallXErrorHandler (void);
 
 static int Shmem_Flag;
 static int Quiet_Flag;
-static XShmSegmentInfo Shminfo1;
+#ifdef HAVE_XV
+static XShmSegmentInfo Shminfo[MAX_BUFFERS];
+#else
+static XShmSegmentInfo Shminfo[1];
+#endif
 static int gXErrorFlag;
 static int CompletionType = -1;
 
@@ -106,7 +114,6 @@ static void DeInstallXErrorHandler()
 }
 
 #endif
-
 
 static uint32_t image_width;
 static uint32_t image_height;
@@ -168,7 +175,7 @@ init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 	 *
 	 * depth in X11 terminology land is the number of bits used to
 	 * actually represent the colour.
-   *
+   	 *
 	 * bpp in X11 land means how many bits in the frame buffer per
 	 * pixel. 
 	 *
@@ -269,22 +276,7 @@ init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 			fprintf(stderr,"using Xvideo port %d for hw scaling\n",
 			xv_port);
 
-			/* allocate XvImages.  FIXME: no error checking, without
-			* mit-shm this will bomb... */
-			xvimage1 = XvShmCreateImage(mydisplay, xv_port, xv_format, 0,
-			image_width, image_height,
-			&Shminfo1);
-			Shminfo1.shmid    = shmget(IPC_PRIVATE, xvimage1->data_size,
-			IPC_CREAT | 0777);
-			Shminfo1.shmaddr  = (char *) shmat(Shminfo1.shmid, 0, 0);
-			Shminfo1.readOnly = False;
-			xvimage1->data = Shminfo1.shmaddr;
-			XShmAttach(mydisplay, &Shminfo1);
-			XSync(mydisplay, False);
-			shmctl(Shminfo1.shmid, IPC_RMID, 0);
-
-			/* so we can do grayscale while testing... */
-			memset(xvimage1->data,128,xvimage1->data_size);
+			allocate_xvimage(0);
 
 			/* catch window resizes */
 			XSelectInput(mydisplay, mywindow, StructureNotifyMask);
@@ -315,7 +307,7 @@ init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 	if (Shmem_Flag) 
 	{
 		myximage = XShmCreateImage(mydisplay, vinfo.visual, 
-		depth, ZPixmap, NULL, &Shminfo1, width, image_height);
+		depth, ZPixmap, NULL, &Shminfo[0], width, image_height);
 
 		/* If no go, then revert to normal Xlib calls. */
 
@@ -330,10 +322,10 @@ init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 		}
 		/* Success here, continue. */
 
-		Shminfo1.shmid = shmget(IPC_PRIVATE, 
+		Shminfo[0].shmid = shmget(IPC_PRIVATE, 
 		myximage->bytes_per_line * myximage->height ,
 		IPC_CREAT | 0777);
-		if (Shminfo1.shmid < 0 ) 
+		if (Shminfo[0].shmid < 0 ) 
 		{
 			XDestroyImage(myximage);
 			if (!Quiet_Flag)
@@ -344,21 +336,21 @@ init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 			}
 			goto shmemerror;
 		}
-		Shminfo1.shmaddr = (char *) shmat(Shminfo1.shmid, 0, 0);
+		Shminfo[0].shmaddr = (char *) shmat(Shminfo[0].shmid, 0, 0);
 
-		if (Shminfo1.shmaddr == ((char *) -1)) 
+		if (Shminfo[0].shmaddr == ((char *) -1)) 
 		{
 			XDestroyImage(myximage);
-			if (Shminfo1.shmaddr != ((char *) -1))
-				shmdt(Shminfo1.shmaddr);
+			if (Shminfo[0].shmaddr != ((char *) -1))
+				shmdt(Shminfo[0].shmaddr);
 			if (!Quiet_Flag) 
 				fprintf(stderr, "Shared memory error, disabling (address error)\n");
 			goto shmemerror;
 		}
-		myximage->data = Shminfo1.shmaddr;
+		myximage->data = Shminfo[0].shmaddr;
 		ImageData = (unsigned char *) myximage->data;
-		Shminfo1.readOnly = False;
-		XShmAttach(mydisplay, &Shminfo1);
+		Shminfo[0].readOnly = False;
+		XShmAttach(mydisplay, &Shminfo[0]);
 
 		XSync(mydisplay, False);
 
@@ -366,7 +358,7 @@ init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 		{
 			/* Ultimate failure here. */
 			XDestroyImage(myximage);
-			shmdt(Shminfo1.shmaddr);
+			shmdt(Shminfo[0].shmaddr);
 			if (!Quiet_Flag)
 				fprintf(stderr, "Shared memory error, disabling.\n");
 			gXErrorFlag = 0;
@@ -374,7 +366,7 @@ init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 		} 
 		else 
 		{
-			shmctl(Shminfo1.shmid, IPC_RMID, 0);
+			shmctl(Shminfo[0].shmid, IPC_RMID, 0);
 		}
 
 		if (!Quiet_Flag) 
@@ -430,6 +422,27 @@ get_info(void)
 	return &vo_info;
 }
 
+static void
+allocate_xvimage(int foo)
+{
+	/* allocate XvImages.  FIXME: no error checking, without
+	 * mit-shm this will bomb... */
+	xvimage[foo] = XvShmCreateImage(mydisplay, xv_port, xv_format, 0, image_width, image_height, &Shminfo[foo]);
+			
+	Shminfo[foo].shmid    = shmget(IPC_PRIVATE, xvimage[foo]->data_size, IPC_CREAT | 0777);
+	Shminfo[foo].shmaddr  = (char *) shmat(Shminfo[foo].shmid, 0, 0);
+	Shminfo[foo].readOnly = False;
+			
+	xvimage[foo]->data = Shminfo[foo].shmaddr;
+	XShmAttach(mydisplay, &Shminfo[foo]);
+	XSync(mydisplay, False);
+	shmctl(Shminfo[foo].shmid, IPC_RMID, 0);
+
+	/* so we can do grayscale while testing... */
+	memset(xvimage[foo]->data,128,xvimage[foo]->data_size);
+
+	return;
+}
 
 static void 
 Terminate_Display_Process(void) 
@@ -438,9 +451,9 @@ Terminate_Display_Process(void)
 #ifdef SH_MEM
 	if (Shmem_Flag) 
 	{
-		XShmDetach(mydisplay, &Shminfo1);
+		XShmDetach(mydisplay, &Shminfo[0]);
 		XDestroyImage(myximage);
-		shmdt(Shminfo1.shmaddr);
+		shmdt(Shminfo[0].shmaddr);
 	}
 #endif
 	XDestroyWindow(mydisplay, mywindow);
@@ -469,34 +482,35 @@ Display_Image(XImage *myximage, uint8_t *ImageData)
 #endif
 }
 
-#ifdef HAVE_XV
-static inline void
-flip_page_xv(void)
+static void
+check_events(void)
 {
 	Window root;
 	XEvent event;
 	int x, y;
 	unsigned int w, h, b, d;
 
-	if (xv_port != 0) 
+	if (XCheckWindowEvent(mydisplay, mywindow, StructureNotifyMask, &event))
 	{
-		if (XCheckWindowEvent(mydisplay, mywindow, StructureNotifyMask, &event))
-		{
-			XGetGeometry(mydisplay, mywindow, &root, &x, &y, &w, &h, &b, &d);
-			win_width  = w;
-			win_height = h;
-			fprintf(stderr,"win resize: %dx%d\n",win_width,win_height);                
-		}
+		XGetGeometry(mydisplay, mywindow, &root, &x, &y, &w, &h, &b, &d);
+		win_width  = w;
+		win_height = h;
+	}
+}
+#ifdef HAVE_XV
+static inline void
+flip_page_xv(void)
+{
+	check_events();
 
 #ifdef DISP
-		XvShmPutImage(mydisplay, xv_port, mywindow, mygc, xvimage1,
+	XvShmPutImage(mydisplay, xv_port, mywindow, mygc, xvimage[current_image],
 		0, 0,  image_width, image_height,
 		0, 0,  win_width, win_height,
 		False);
-		XFlush(mydisplay);
+	XFlush(mydisplay);
 #endif
-		return;
-	}
+	return;
 }
 #endif
 
@@ -524,12 +538,13 @@ draw_slice_xv(uint8_t *src[], uint32_t slice_num)
 {
 	uint8_t *dst;
 
-	dst = xvimage1->data + image_width * 16 * slice_num;
+	exit(1);
+	dst = xvimage[0]->data + image_width * 16 * slice_num;
 
 	memcpy(dst,src[0],image_width*16);
-	dst = xvimage1->data + image_width * image_height + image_width * 4 * slice_num;
+	dst = xvimage[0]->data + image_width * image_height + image_width * 4 * slice_num;
 	memcpy(dst, src[2],image_width*4);
-	dst = xvimage1->data + image_width * image_height * 5 / 4 + image_width * 4 * slice_num;
+	dst = xvimage[0]->data + image_width * image_height * 5 / 4 + image_width * 4 * slice_num;
 	memcpy(dst, src[1],image_width*4);
 
 	return 0;  
@@ -546,9 +561,6 @@ draw_slice_x11(uint8_t *src[], uint32_t slice_num)
 	yuv2rgb(dst , src[0], src[1], src[2], 
 			image_width, 16, 
 			image_width*(bpp/8), image_width, image_width/2 );
-
-	//Display_Image(myximage, ImageData);
-	//getchar();
 	return 0;
 }
 
@@ -567,39 +579,24 @@ draw_slice(uint8_t *src[], uint32_t slice_num)
 static inline uint32_t 
 draw_frame_xv(uint8_t *src[])
 {
-	Window root;
-	XEvent event;
-	int x, y;
-	unsigned int w, h, b, d;
-    
-	//FIXME XV is borked wrt to slices
-	printf("Xv support is broken\nFeel free to fix it -ah\n");
-	exit(1);
-	//FIXME XV is borked wrt to slices
+	int foo;
 
-	if (xv_port != 0) 
-	{
-		if (XCheckWindowEvent(mydisplay, mywindow, StructureNotifyMask, &event)) 
+	check_events();
+
+	for(foo = xvimage_counter ; foo > 0 ; foo--)
+		if (src[0] == (uint8_t*) xvimage[foo]->data)
 		{
-			XGetGeometry(mydisplay, mywindow, &root, &x, &y, &w, &h, &b, &d);
-			win_width  = w;
-			win_height = h;
-			fprintf(stderr,"win resize: %dx%d\n",win_width,win_height);
+			current_image = foo;
+			return 0;
 		}
-		memcpy(xvimage1->data,src[0],image_width*image_height);
-		memcpy(xvimage1->data+image_width*image_height,
-		src[2],image_width*image_height/4);
-		memcpy(xvimage1->data+image_width*image_height*5/4,
-		src[1],image_width*image_height/4);
-#ifdef DISP
-		XvShmPutImage(mydisplay, xv_port, mywindow, mygc, xvimage1,
-		0, 0,  image_width, image_height,
-		0, 0,  win_width, win_height,
-		False);
-		XFlush(mydisplay);
-#endif
-		return 0;  
-	}
+	
+	memcpy(xvimage[0]->data,src[0],image_width*image_height);
+	memcpy(xvimage[0]->data+image_width*image_height,src[2],image_width*image_height/4);
+	memcpy(xvimage[0]->data+image_width*image_height*5/4,src[1],image_width*image_height/4);
+	
+	current_image = 0;
+	
+	return 0;  
 }
 #endif
 
@@ -630,15 +627,44 @@ draw_frame(uint8_t *src[])
 static vo_image_buffer_t* 
 allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format)
 {
-	//use the generic fallback
-	return allocate_image_buffer_common(height,width,format);
+	xvimage_counter++;
+	
+	if ((xv_port != 0) && (xvimage_counter < MAX_BUFFERS))
+	{
+		vo_image_buffer_t *image;
+
+		image = malloc(sizeof(vo_image_buffer_t));
+
+		if (!image) return NULL;
+		
+		allocate_xvimage(xvimage_counter);
+
+		image->base = xvimage[xvimage_counter]->data;
+		image->height = height;
+		image->width = width;
+		image->format = format;
+		
+		return image;
+	}
+	else
+	{
+		//use the generic fallback
+		return allocate_image_buffer_common(height,width,format);
+	}
 }
 
 static void	
 free_image_buffer(vo_image_buffer_t* image)
 {
-	//use the generic fallback
-	free_image_buffer_common(image);
+	if (xv_port != 0)
+	{
+		// FIXME: properly deallocate XvImages
+	}
+	else
+	{
+		//use the generic fallback
+		free_image_buffer_common(image);
+	}
 }
 
 #else /* HAVE_X11 */
