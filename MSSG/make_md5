@@ -1,0 +1,19 @@
+#! /bin/sh
+
+if test x"$1" = x""; then
+	echo 'usage: make_md5 <type>'
+	echo 'where type is one of c, mmx, altivec'
+	exit
+fi
+
+MPEG2DEC_STREAMS='../mpeg2dec-streams'
+
+streams=`find $MPEG2DEC_STREAMS -name stream|grep -v 422-profile`
+
+for s in $streams; do
+	d=`dirname $s`
+	echo $d
+	mpeg2decode -b $s -o6 %d.pgm >/dev/null 2>&1
+	ls *.pgm | sort -n | xargs md5sum -b >$d/$1.md5
+	rm *.pgm
+done

@@ -53,8 +53,6 @@ static XvImageFormatValues  *fo;
 static XvImage *xvimage1;
 #endif
 
-#define SH_MEM
-
 #ifdef SH_MEM
 
 #include <sys/ipc.h>

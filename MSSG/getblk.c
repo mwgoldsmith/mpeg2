@@ -32,6 +32,7 @@
 #include "config.h"
 #include "global.h"
 
+int WKN = 0;
 
 /* defined in getvlc.h */
 typedef struct {
@@ -197,8 +198,11 @@ int comp;
 
     Flush_Buffer(tab->len);
 
-    if (tab->run==64) /* end_of_block */
-      return;
+    if (tab->run==64) { /* end_of_block */
+       if (i == 1)
+           WKN |= 1 << comp;
+       return;
+    }
 
     if (tab->run==65) /* escape */
     {
@@ -500,6 +504,8 @@ int comp;
       if (Trace_Flag)
         printf("): EOB\n");
 #endif /* TRACE */
+      if (i == 1)
+         WKN |= 1 << comp;
       return;
     }
 

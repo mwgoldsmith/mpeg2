@@ -168,9 +168,6 @@ static void Initialize_Decoder()
   /* IDCT */
   if (Reference_IDCT_Flag)
     Initialize_Reference_IDCT();
-  else
-    Initialize_Fast_IDCT();
-
 }
 
 /* mostly IMPLEMENTAION specific rouintes */

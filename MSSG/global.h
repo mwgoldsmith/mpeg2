@@ -89,8 +89,7 @@ int Get_Luma_DC_dct_diff _ANSI_ARGS_((void));
 int Get_Chroma_DC_dct_diff _ANSI_ARGS_((void));
 
 /* idct.c */
-void Fast_IDCT _ANSI_ARGS_((short *block));
-void Initialize_Fast_IDCT _ANSI_ARGS_((void));
+void Fast_IDCT _ANSI_ARGS_((short *block, int comp));
 
 /* Reference_IDCT.c */
 void Initialize_Reference_IDCT _ANSI_ARGS_((void));
