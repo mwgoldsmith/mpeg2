@@ -25,6 +25,6 @@
 # or
 #DEFAULT (echo ""; id; echo %{sVv}; date; cat) >> $CVSROOT/CVSROOT/commitlog
 
-CVSROOT $CVSROOT/CVSROOT/syncmail -u %{sVv} -m mail.sourceforge.net walken@users.sourceforge.net
+CVSROOT $CVSROOT/CVSROOT/syncmail -u -m mail.sourceforge.net %{sVv} walken@users.sourceforge.net
 
-DEFAULT $CVSROOT/CVSROOT/syncmail -u %{sVv} -m mail.sourceforge.net -f users.sourceforge.net libmpeg2-checkins@lists.sourceforge.net
+DEFAULT $CVSROOT/CVSROOT/syncmail -u -m mail.sourceforge.net -f users.sourceforge.net %{sVv} libmpeg2-checkins@lists.sourceforge.net
