@@ -363,6 +363,8 @@ void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
     decoder->width = sequence->width;
     decoder->height = sequence->height;
     decoder->vertical_position_extension = (sequence->picture_height > 2800);
+    decoder->chroma_format = ((sequence->chroma_width == sequence->width) +
+			      (sequence->chroma_height == sequence->height));
 
     if (mpeg2dec->sequence.width != (unsigned)-1) {
 	unsigned int new_byte_rate;
@@ -528,8 +530,7 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 		    int y_size, uv_size;
 		    y_size = (mpeg2dec->sequence.width *
 			      mpeg2dec->sequence.height);
-		    uv_size = (mpeg2dec->sequence.chroma_width *
-			       mpeg2dec->sequence.chroma_height);
+		    uv_size = y_size >> (2 - decoder->chroma_format);
 		    fbuf->buf[0] = (uint8_t *) mpeg2_malloc (y_size,
 							     MPEG2_ALLOC_YUV);
 		    fbuf->buf[1] = (uint8_t *) mpeg2_malloc (uv_size,

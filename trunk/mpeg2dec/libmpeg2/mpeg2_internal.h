@@ -73,6 +73,8 @@ struct mpeg2_decoder_s {
     int offset;
     int stride;
     int uv_stride;
+    int slice_stride;
+    int slice_uv_stride;
     unsigned int limit_x;
     unsigned int limit_y_16;
     unsigned int limit_y_8;
@@ -111,6 +113,7 @@ struct mpeg2_decoder_s {
     int width;
     int height;
     int vertical_position_extension;
+    int chroma_format;
 
     /* picture header stuff */
 
