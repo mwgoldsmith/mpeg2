@@ -1,6 +1,7 @@
 /*
  * video_out_pgm.c
  * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * Copyright (C) 2003      Regis Duchesne <hpreg@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  * MD5 code derived from linux kernel GPL implementation
  *
@@ -36,6 +37,8 @@ typedef struct pgm_instance_s {
     int framenum;
     int width;
     int height;
+    int chroma_width;
+    int chroma_height;
     char header[1024];
     void (* writer) (struct pgm_instance_s *, uint8_t *, size_t);
     FILE * file;
@@ -43,6 +46,8 @@ typedef struct pgm_instance_s {
     uint32_t md5_block[16];
     uint32_t md5_bytes;
 } pgm_instance_t;
+
+static uint8_t black[16384] = { 0 };
 
 static void file_writer (pgm_instance_t * instance, uint8_t * ptr, size_t size)
 {
@@ -56,12 +61,17 @@ static void internal_draw_frame (pgm_instance_t * instance,
 
     instance->writer (instance, (uint8_t *)instance->header,
 		      strlen (instance->header));
-    instance->writer (instance, buf[0], instance->width * instance->height);
-    for (i = 0; i < instance->height >> 1; i++) {
-	instance->writer (instance, buf[1] + i * (instance->width >> 1),
-			  instance->width >> 1);
-	instance->writer (instance, buf[2] + i * (instance->width >> 1),
-			  instance->width >> 1);
+    for (i = 0; i < instance->height; i++) {
+	instance->writer (instance, buf[0] + i * instance->width,
+			  instance->width);
+	instance->writer (instance, black,
+			  2 * instance->chroma_width - instance->width);
+    }
+    for (i = 0; i < instance->chroma_height; i++) {
+	instance->writer (instance, buf[1] + i * instance->chroma_width,
+			  instance->chroma_width);
+	instance->writer (instance, buf[2] + i * instance->chroma_width,
+			  instance->chroma_width);
     }
 }
 
@@ -87,9 +97,23 @@ static int pgm_setup (vo_instance_t * _instance, unsigned int width,
 
     instance = (pgm_instance_t *) _instance;
 
+    /*
+     * Layout of the Y, U, and V buffers in our pgm image
+     *
+     *      YY        YY        YY
+     * 420: YY   422: YY   444: YY
+     *      UV        UV        UUVV
+     *                UV        UUVV
+     */
+    if (width > 2 * chroma_width)
+	return 1;
+
     instance->width = width;
     instance->height = height;
-    sprintf (instance->header, "P5\n%d %d\n255\n", width, height * 3 / 2);
+    instance->chroma_width = chroma_width;
+    instance->chroma_height = chroma_height;
+    sprintf (instance->header, "P5\n%d %d\n255\n", 2 * chroma_width,
+	     height + chroma_height);
     result->convert = NULL;
     return 0;
 }
