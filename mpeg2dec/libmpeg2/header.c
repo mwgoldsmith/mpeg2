@@ -212,7 +212,7 @@ int mpeg2_header_extension (picture_t * picture, uint8_t * buffer)
     return 0;
 }
 
-int mpeg2_header_picture (picture_t *picture, uint8_t * buffer)
+int mpeg2_header_picture (picture_t * picture, uint8_t * buffer)
 {
     picture->picture_coding_type = (buffer [1] >> 3) & 7;
 
