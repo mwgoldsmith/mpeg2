@@ -1,0 +1,133 @@
+      5a S- --- --- - SEQUENCE MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15
+      62 SG --- --- - GOP CLOSED  0: 0: 0: 0
+      73 SG AA- --- ? PICTURE I fields 2 TFF time_ref 0 offset 0/0 0/0
+   22b01 SG aa- --- ? SLICE
+   22b13 SG BB- aa- ? PICTURE P fields 2 TFF time_ref 1 offset 0/0 0/0
+   2d251 SG bb- aa- ? SLICE
+   2d263 SG CC- bb- a PICTURE P fields 2 TFF time_ref 2 offset 0/0 0/0
+   3df6b SG cc- bb- a SLICE
+   3df7d SG DD- cc- b PICTURE P fields 2 TFF time_ref 3 offset 0/0 0/0
+   4f26a SG dd- cc- b SLICE
+   4f27c SG EE- dd- c PICTURE P fields 2 TFF time_ref 4 offset 0/0 0/0
+   606f8 SG ee- dd- c SLICE
+   6070a SG FF- ee- d PICTURE P fields 2 TFF time_ref 5 offset 0/0 0/0
+   71be4 SG ff- ee- d SLICE
+   71bf6 SG GG- ff- e PICTURE P fields 2 TFF time_ref 6 offset 0/0 0/0
+   832c5 SG gg- ff- e SLICE
+   832d7 SG HH- gg- f PICTURE P fields 2 TFF time_ref 7 offset 0/0 0/0
+   949bf SG hh- gg- f SLICE
+   949d1 SG II- hh- g PICTURE P fields 2 TFF time_ref 8 offset 0/0 0/0
+   a5cb9 SG ii- hh- g SLICE
+   a5ccb SG JJ- ii- h PICTURE P fields 2 TFF time_ref 9 offset 0/0 0/0
+   b7323 SG jj- ii- h SLICE
+   b7379 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15
+   b7381 SG --- --- - GOP CLOSED  0: 0: 0:10
+   b7392 SG KK- jj- i PICTURE I fields 2 TFF time_ref 0 offset 0/0 0/0
+   ded76 SG kk- jj- i SLICE
+   ded88 SG LL- kk- j PICTURE P fields 2 TFF time_ref 1 offset 0/0 0/0
+   ef1d4 SG ll- kk- j SLICE
+   ef1e6 SG MM- ll- k PICTURE P fields 2 TFF time_ref 2 offset 0/0 0/0
+   ff3ef SG mm- ll- k SLICE
+   ff401 SG NN- mm- l PICTURE P fields 2 TFF time_ref 3 offset 0/0 0/0
+  10f5b1 SG nn- mm- l SLICE
+  10f5c3 SG OO- nn- m PICTURE P fields 2 TFF time_ref 4 offset 0/0 0/0
+  11f2ed SG oo- nn- m SLICE
+  11f2ff SG PP- oo- n PICTURE P fields 2 TFF time_ref 5 offset 0/0 0/0
+  12f0b3 SG pp- oo- n SLICE
+  12f0c5 SG QQ- pp- o PICTURE P fields 2 TFF time_ref 6 offset 0/0 0/0
+  13ebda SG qq- pp- o SLICE
+  13ebec SG RR- qq- p PICTURE P fields 2 TFF time_ref 7 offset 0/0 0/0
+  14e8ed SG rr- qq- p SLICE
+  14e8ff SG SS- rr- q PICTURE P fields 2 TFF time_ref 8 offset 0/0 0/0
+  15e744 SG ss- rr- q SLICE
+  15e756 SG TT- ss- r PICTURE P fields 2 TFF time_ref 9 offset 0/0 0/0
+  16e623 SG tt- ss- r SLICE
+  16e679 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15
+  16e681 SG --- --- - GOP CLOSED  0: 0: 0:20
+  16e692 SG UU- tt- s PICTURE I fields 2 TFF time_ref 0 offset 0/0 0/0
+  1903f0 SG uu- tt- s SLICE
+  190402 SG VV- uu- t PICTURE P fields 2 TFF time_ref 1 offset 0/0 0/0
+  19fbf6 SG vv- uu- t SLICE
+  19fc08 SG WW- vv- u PICTURE P fields 2 TFF time_ref 2 offset 0/0 0/0
+  1b0a70 SG ww- vv- u SLICE
+  1b0a82 SG XX- ww- v PICTURE P fields 2 TFF time_ref 3 offset 0/0 0/0
+  1c157d SG xx- ww- v SLICE
+  1c158f SG YY- xx- w PICTURE P fields 2 TFF time_ref 4 offset 0/0 0/0
+  1d22fc SG yy- xx- w SLICE
+  1d230e SG ZZ- yy- x PICTURE P fields 2 TFF time_ref 5 offset 0/0 0/0
+  1e2db2 SG zz- yy- x SLICE
+  1e2dc4 SG AA- zz- y PICTURE P fields 2 TFF time_ref 6 offset 0/0 0/0
+  1f357e SG aa- zz- y SLICE
+  1f3590 SG BB- aa- z PICTURE P fields 2 TFF time_ref 7 offset 0/0 0/0
+  203eca SG bb- aa- z SLICE
+  203edc SG CC- bb- a PICTURE P fields 2 TFF time_ref 8 offset 0/0 0/0
+  214825 SG cc- bb- a SLICE
+  214837 SG DD- cc- b PICTURE P fields 2 TFF time_ref 9 offset 0/0 0/0
+  225589 SG dd- cc- b SLICE
+  2255df S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15
+  2255e7 SG --- --- - GOP CLOSED  0: 0: 1: 5
+  2255f8 SG EE- dd- c PICTURE I fields 2 TFF time_ref 0 offset 0/0 0/0
+  246b16 SG ee- dd- c SLICE
+  246b28 SG FF- ee- d PICTURE P fields 2 TFF time_ref 1 offset 0/0 0/0
+  257247 SG ff- ee- d SLICE
+  257259 SG GG- ff- e PICTURE P fields 2 TFF time_ref 2 offset 0/0 0/0
+  267f21 SG gg- ff- e SLICE
+  267f33 SG HH- gg- f PICTURE P fields 2 TFF time_ref 3 offset 0/0 0/0
+  278d92 SG hh- gg- f SLICE
+  278da4 SG II- hh- g PICTURE P fields 2 TFF time_ref 4 offset 0/0 0/0
+  289a93 SG ii- hh- g SLICE
+  289aa5 SG JJ- ii- h PICTURE P fields 2 TFF time_ref 5 offset 0/0 0/0
+  299d6a SG jj- ii- h SLICE
+  299d7c SG KK- jj- i PICTURE P fields 2 TFF time_ref 6 offset 0/0 0/0
+  2aa749 SG kk- jj- i SLICE
+  2aa75b SG LL- kk- j PICTURE P fields 2 TFF time_ref 7 offset 0/0 0/0
+  2bb068 SG ll- kk- j SLICE
+  2bb07a SG MM- ll- k PICTURE P fields 2 TFF time_ref 8 offset 0/0 0/0
+  2cbb6f SG mm- ll- k SLICE
+  2cbb81 SG NN- mm- l PICTURE P fields 2 TFF time_ref 9 offset 0/0 0/0
+  2dc439 SG nn- mm- l SLICE
+  2dc48f S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15
+  2dc497 SG --- --- - GOP CLOSED  0: 0: 1:15
+  2dc4a8 SG OO- nn- m PICTURE I fields 2 TFF time_ref 0 offset 0/0 0/0
+  2fddee SG oo- nn- m SLICE
+  2fde00 SG PP- oo- n PICTURE P fields 2 TFF time_ref 1 offset 0/0 0/0
+  30e956 SG pp- oo- n SLICE
+  30e968 SG QQ- pp- o PICTURE P fields 2 TFF time_ref 2 offset 0/0 0/0
+  31f3cd SG qq- pp- o SLICE
+  31f3df SG RR- qq- p PICTURE P fields 2 TFF time_ref 3 offset 0/0 0/0
+  32fe75 SG rr- qq- p SLICE
+  32fe87 SG SS- rr- q PICTURE P fields 2 TFF time_ref 4 offset 0/0 0/0
+  340773 SG ss- rr- q SLICE
+  340785 SG TT- ss- r PICTURE P fields 2 TFF time_ref 5 offset 0/0 0/0
+  351280 SG tt- ss- r SLICE
+  351292 SG UU- tt- s PICTURE P fields 2 TFF time_ref 6 offset 0/0 0/0
+  361bd5 SG uu- tt- s SLICE
+  361be7 SG VV- uu- t PICTURE P fields 2 TFF time_ref 7 offset 0/0 0/0
+  372698 SG vv- uu- t SLICE
+  3726aa SG WW- vv- u PICTURE P fields 2 TFF time_ref 8 offset 0/0 0/0
+  3830a7 SG ww- vv- u SLICE
+  3830b9 SG XX- ww- v PICTURE P fields 2 TFF time_ref 9 offset 0/0 0/0
+  393c26 SG xx- ww- v SLICE
+  393c7c S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15
+  393c84 SG --- --- - GOP CLOSED  0: 0: 2: 0
+  393c95 SG YY- xx- w PICTURE I fields 2 TFF time_ref 0 offset 0/0 0/0
+  3b1139 SG yy- xx- w SLICE
+  3b114b SG ZZ- yy- x PICTURE P fields 2 TFF time_ref 1 offset 0/0 0/0
+  3c1ff7 SG zz- yy- x SLICE
+  3c2009 SG AA- zz- y PICTURE P fields 2 TFF time_ref 2 offset 0/0 0/0
+  3d3222 SG aa- zz- y SLICE
+  3d3234 SG BB- aa- z PICTURE P fields 2 TFF time_ref 3 offset 0/0 0/0
+  3e4034 SG bb- aa- z SLICE
+  3e4046 SG CC- bb- a PICTURE P fields 2 TFF time_ref 4 offset 0/0 0/0
+  3f52bb SG cc- bb- a SLICE
+  3f52cd SG DD- cc- b PICTURE P fields 2 TFF time_ref 5 offset 0/0 0/0
+  4065ac SG dd- cc- b SLICE
+  4065be SG EE- dd- c PICTURE P fields 2 TFF time_ref 6 offset 0/0 0/0
+  4177ff SG ee- dd- c SLICE
+  417811 SG FF- ee- d PICTURE P fields 2 TFF time_ref 7 offset 0/0 0/0
+  4289c0 SG ff- ee- d SLICE
+  4289d2 SG GG- ff- e PICTURE P fields 2 TFF time_ref 8 offset 0/0 0/0
+  439651 SG gg- ff- e SLICE
+  439663 SG HH- gg- f PICTURE P fields 2 TFF time_ref 9 offset 0/0 0/0
+  44a975 SG hh- gg- f SLICE
+  44a975 SG --- hh- g END

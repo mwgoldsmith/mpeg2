@@ -1,0 +1,11 @@
+      71 S- --- --- - SEQUENCE MPEG2 SP@ML 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
+      79 SG --- --- - GOP  0: 0:17: 3
+      aa SG AA- --- ? PICTURE I fields 2 time_ref 0 offset 0/0 0/0
+   2328f SG aa- --- ? SLICE
+   232c1 SG BB- aa- ? PICTURE P fields 2 time_ref 1 offset 0/0 0/0
+   36a66 SG bb- aa- ? SLICE
+   36a98 SG CC- bb- a PICTURE P fields 2 time_ref 2 offset 0/0 0/0
+   4455a SG cc- bb- a SLICE
+   4458c SG DD- cc- b PICTURE P fields 2 time_ref 3 offset 0/0 0/0
+   52312 SG dd- cc- b SLICE
+   52312 SG --- dd- c END

@@ -1,0 +1,247 @@
+      f1 S- --- --- - SEQUENCE MPEG2 MP@ML 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
+      f9 SG --- --- - GOP  0: 0:17: 3
+     117 SG AA- --- ? PICTURE I fields 1 TFF time_ref 0 offset 0/0
+    f4fe SG aa- --- ? SLICE_1ST
+    f51c SG aaB --- ? PICTURE_2ND I fields 1 time_ref 0 offset 0/0
+   1f219 SG aab --- ? SLICE
+   1f238 SG BC- aab ? PICTURE P fields 1 TFF time_ref 1 offset 0/0
+   232ff SG bc- aab ? SLICE_1ST
+   2331e SG bcD aab ? PICTURE_2ND P fields 1 time_ref 1 offset 0/0
+   2abde SG bcd aab ? SLICE
+   2abfd SG CE- bcd a PICTURE P fields 1 TFF time_ref 2 offset 0/0
+   31b46 SG ce- bcd a SLICE_1ST
+   31b65 SG ceF bcd a PICTURE_2ND P fields 1 time_ref 2 offset 0/0
+   39847 SG cef bcd a SLICE
+   39866 SG DG- cef b PICTURE P fields 1 TFF time_ref 3 offset 0/0
+   40dc6 SG dg- cef b SLICE_1ST
+   40de5 SG dgH cef b PICTURE_2ND P fields 1 time_ref 3 offset 0/0
+   4895d SG dgh cef b SLICE
+   4897c SG EI- dgh c PICTURE P fields 1 TFF time_ref 4 offset 0/0
+   4fd59 SG ei- dgh c SLICE_1ST
+   4fd78 SG eiJ dgh c PICTURE_2ND P fields 1 time_ref 4 offset 0/0
+   579cd SG eij dgh c SLICE
+   579ec SG FK- eij d PICTURE P fields 1 TFF time_ref 5 offset 0/0
+   5f023 SG fk- eij d SLICE_1ST
+   5f042 SG fkL eij d PICTURE_2ND P fields 1 time_ref 5 offset 0/0
+   66ac8 SG fkl eij d SLICE
+   66ae7 SG GM- fkl e PICTURE P fields 1 TFF time_ref 6 offset 0/0
+   6e261 SG gm- fkl e SLICE_1ST
+   6e280 SG gmN fkl e PICTURE_2ND P fields 1 time_ref 6 offset 0/0
+   75e52 SG gmn fkl e SLICE
+   75e71 SG HO- gmn f PICTURE P fields 1 TFF time_ref 7 offset 0/0
+   7d1c5 SG ho- gmn f SLICE_1ST
+   7d1e4 SG hoP gmn f PICTURE_2ND P fields 1 time_ref 7 offset 0/0
+   84f61 SG hop gmn f SLICE
+   84f80 SG IQ- hop g PICTURE P fields 1 TFF time_ref 8 offset 0/0
+   8c42e SG iq- hop g SLICE_1ST
+   8c44d SG iqR hop g PICTURE_2ND P fields 1 time_ref 8 offset 0/0
+   9403e SG iqr hop g SLICE
+   9405d SG JS- iqr h PICTURE P fields 1 TFF time_ref 9 offset 0/0
+   9b48d SG js- iqr h SLICE_1ST
+   9b4ac SG jsT iqr h PICTURE_2ND P fields 1 time_ref 9 offset 0/0
+   a321b SG jst iqr h SLICE
+   a323a SG KU- jst i PICTURE P fields 1 TFF time_ref 10 offset 0/0
+   aa65f SG ku- jst i SLICE_1ST
+   aa67e SG kuV jst i PICTURE_2ND P fields 1 time_ref 10 offset 0/0
+   b2219 SG kuv jst i SLICE
+   b2238 SG LW- kuv j PICTURE P fields 1 TFF time_ref 11 offset 0/0
+   b97e8 SG lw- kuv j SLICE_1ST
+   b9807 SG lwX kuv j PICTURE_2ND P fields 1 time_ref 11 offset 0/0
+   c11fe SG lwx kuv j SLICE
+   c121d SG MY- lwx k PICTURE P fields 1 TFF time_ref 12 offset 0/0
+   c88b5 SG my- lwx k SLICE_1ST
+   c88d4 SG myZ lwx k PICTURE_2ND P fields 1 time_ref 12 offset 0/0
+   d0303 SG myz lwx k SLICE
+   d0322 SG NA- myz l PICTURE P fields 1 TFF time_ref 13 offset 0/0
+   d7a52 SG na- myz l SLICE_1ST
+   d7a71 SG naB myz l PICTURE_2ND P fields 1 time_ref 13 offset 0/0
+   df551 SG nab myz l SLICE
+   df570 SG OC- nab m PICTURE P fields 1 TFF time_ref 14 offset 0/0
+   e6b0d SG oc- nab m SLICE_1ST
+   e6b2c SG ocD nab m PICTURE_2ND P fields 1 time_ref 14 offset 0/0
+   ee8d4 SG ocd nab m SLICE
+   ee8f3 SG PE- ocd n PICTURE P fields 1 TFF time_ref 15 offset 0/0
+   f5a4d SG pe- ocd n SLICE_1ST
+   f5a6c SG peF ocd n PICTURE_2ND P fields 1 time_ref 15 offset 0/0
+   fd79b SG pef ocd n SLICE
+   fd7ba SG QG- pef o PICTURE P fields 1 TFF time_ref 16 offset 0/0
+  104ea2 SG qg- pef o SLICE_1ST
+  104ec1 SG qgH pef o PICTURE_2ND P fields 1 time_ref 16 offset 0/0
+  10ca53 SG qgh pef o SLICE
+  10ca72 SG RI- qgh p PICTURE P fields 1 TFF time_ref 17 offset 0/0
+  113f36 SG ri- qgh p SLICE_1ST
+  113f55 SG riJ qgh p PICTURE_2ND P fields 1 time_ref 17 offset 0/0
+  11b846 SG rij qgh p SLICE
+  11b865 SG SK- rij q PICTURE P fields 1 TFF time_ref 18 offset 0/0
+  122ffa SG sk- rij q SLICE_1ST
+  123019 SG skL rij q PICTURE_2ND P fields 1 time_ref 18 offset 0/0
+  12a9d4 SG skl rij q SLICE
+  12a9f3 SG TM- skl r PICTURE P fields 1 TFF time_ref 19 offset 0/0
+  1321bb SG tm- skl r SLICE_1ST
+  1321da SG tmN skl r PICTURE_2ND P fields 1 time_ref 19 offset 0/0
+  139df0 SG tmn skl r SLICE
+  139e0f SG UO- tmn s PICTURE P fields 1 TFF time_ref 20 offset 0/0
+  14130e SG uo- tmn s SLICE_1ST
+  14132d SG uoP tmn s PICTURE_2ND P fields 1 time_ref 20 offset 0/0
+  149068 SG uop tmn s SLICE
+  149087 SG VQ- uop t PICTURE P fields 1 TFF time_ref 21 offset 0/0
+  15032c SG vq- uop t SLICE_1ST
+  15034b SG vqR uop t PICTURE_2ND P fields 1 time_ref 21 offset 0/0
+  158102 SG vqr uop t SLICE
+  158121 SG WS- vqr u PICTURE P fields 1 TFF time_ref 22 offset 0/0
+  15f52f SG ws- vqr u SLICE_1ST
+  15f54e SG wsT vqr u PICTURE_2ND P fields 1 time_ref 22 offset 0/0
+  167187 SG wst vqr u SLICE
+  1671a6 SG XU- wst v PICTURE P fields 1 TFF time_ref 23 offset 0/0
+  16e6a2 SG xu- wst v SLICE_1ST
+  16e6c1 SG xuV wst v PICTURE_2ND P fields 1 time_ref 23 offset 0/0
+  1762aa SG xuv wst v SLICE
+  1762c9 SG YW- xuv w PICTURE P fields 1 TFF time_ref 24 offset 0/0
+  17d6c1 SG yw- xuv w SLICE_1ST
+  17d6e0 SG ywX xuv w PICTURE_2ND P fields 1 time_ref 24 offset 0/0
+  18555f SG ywx xuv w SLICE
+  18557e SG ZY- ywx x PICTURE P fields 1 TFF time_ref 25 offset 0/0
+  18c604 SG zy- ywx x SLICE_1ST
+  18c623 SG zyZ ywx x PICTURE_2ND P fields 1 time_ref 25 offset 0/0
+  1944ca SG zyz ywx x SLICE
+  1944e9 SG AA- zyz y PICTURE P fields 1 TFF time_ref 26 offset 0/0
+  19b92a SG aa- zyz y SLICE_1ST
+  19b949 SG aaB zyz y PICTURE_2ND P fields 1 time_ref 26 offset 0/0
+  1a3418 SG aab zyz y SLICE
+  1a3437 SG BC- aab z PICTURE P fields 1 TFF time_ref 27 offset 0/0
+  1aa8ce SG bc- aab z SLICE_1ST
+  1aa8ed SG bcD aab z PICTURE_2ND P fields 1 time_ref 27 offset 0/0
+  1b2456 SG bcd aab z SLICE
+  1b2475 SG CE- bcd a PICTURE P fields 1 TFF time_ref 28 offset 0/0
+  1b9969 SG ce- bcd a SLICE_1ST
+  1b9988 SG ceF bcd a PICTURE_2ND P fields 1 time_ref 28 offset 0/0
+  1c1509 SG cef bcd a SLICE
+  1c1528 SG DG- cef b PICTURE P fields 1 TFF time_ref 29 offset 0/0
+  1c8b49 SG dg- cef b SLICE_1ST
+  1c8b68 SG dgH cef b PICTURE_2ND P fields 1 time_ref 29 offset 0/0
+  1d07a2 SG dgh cef b SLICE
+  1d07c1 SG EI- dgh c PICTURE P fields 1 TFF time_ref 30 offset 0/0
+  1d7ac3 SG ei- dgh c SLICE_1ST
+  1d7ae2 SG eiJ dgh c PICTURE_2ND P fields 1 time_ref 30 offset 0/0
+  1df927 SG eij dgh c SLICE
+  1df946 SG FK- eij d PICTURE P fields 1 TFF time_ref 31 offset 0/0
+  1e6c22 SG fk- eij d SLICE_1ST
+  1e6c41 SG fkL eij d PICTURE_2ND P fields 1 time_ref 31 offset 0/0
+  1ee897 SG fkl eij d SLICE
+  1ee8b6 SG GM- fkl e PICTURE P fields 1 TFF time_ref 32 offset 0/0
+  1f5ccd SG gm- fkl e SLICE_1ST
+  1f5cec SG gmN fkl e PICTURE_2ND P fields 1 time_ref 32 offset 0/0
+  1fd9c5 SG gmn fkl e SLICE
+  1fd9e4 SG HO- gmn f PICTURE P fields 1 TFF time_ref 33 offset 0/0
+  204f00 SG ho- gmn f SLICE_1ST
+  204f1f SG hoP gmn f PICTURE_2ND P fields 1 time_ref 33 offset 0/0
+  20c7e6 SG hop gmn f SLICE
+  20c805 SG IQ- hop g PICTURE P fields 1 TFF time_ref 34 offset 0/0
+  21409e SG iq- hop g SLICE_1ST
+  2140bd SG iqR hop g PICTURE_2ND P fields 1 time_ref 34 offset 0/0
+  21bbe8 SG iqr hop g SLICE
+  21bc07 SG JS- iqr h PICTURE P fields 1 TFF time_ref 35 offset 0/0
+  2232b6 SG js- iqr h SLICE_1ST
+  2232d5 SG jsT iqr h PICTURE_2ND P fields 1 time_ref 35 offset 0/0
+  22ae5d SG jst iqr h SLICE
+  22ae7c SG KU- jst i PICTURE P fields 1 TFF time_ref 36 offset 0/0
+  232136 SG ku- jst i SLICE_1ST
+  232155 SG kuV jst i PICTURE_2ND P fields 1 time_ref 36 offset 0/0
+  239dd2 SG kuv jst i SLICE
+  239df1 SG LW- kuv j PICTURE P fields 1 TFF time_ref 37 offset 0/0
+  2411d7 SG lw- kuv j SLICE_1ST
+  2411f6 SG lwX kuv j PICTURE_2ND P fields 1 time_ref 37 offset 0/0
+  24907e SG lwx kuv j SLICE
+  24909d SG MY- lwx k PICTURE P fields 1 TFF time_ref 38 offset 0/0
+  25041a SG my- lwx k SLICE_1ST
+  250439 SG myZ lwx k PICTURE_2ND P fields 1 time_ref 38 offset 0/0
+  25811a SG myz lwx k SLICE
+  258139 SG NA- myz l PICTURE P fields 1 TFF time_ref 39 offset 0/0
+  25f59d SG na- myz l SLICE_1ST
+  25f5bc SG naB myz l PICTURE_2ND P fields 1 time_ref 39 offset 0/0
+  26710b SG nab myz l SLICE
+  26712a SG OC- nab m PICTURE P fields 1 TFF time_ref 40 offset 0/0
+  26e7e8 SG oc- nab m SLICE_1ST
+  26e807 SG ocD nab m PICTURE_2ND P fields 1 time_ref 40 offset 0/0
+  2761cd SG ocd nab m SLICE
+  2761ec SG PE- ocd n PICTURE P fields 1 TFF time_ref 41 offset 0/0
+  27d876 SG pe- ocd n SLICE_1ST
+  27d895 SG peF ocd n PICTURE_2ND P fields 1 time_ref 41 offset 0/0
+  28541c SG pef ocd n SLICE
+  28543b SG QG- pef o PICTURE P fields 1 TFF time_ref 42 offset 0/0
+  28c8d7 SG qg- pef o SLICE_1ST
+  28c8f6 SG qgH pef o PICTURE_2ND P fields 1 time_ref 42 offset 0/0
+  294548 SG qgh pef o SLICE
+  294567 SG RI- qgh p PICTURE P fields 1 TFF time_ref 43 offset 0/0
+  29bb06 SG ri- qgh p SLICE_1ST
+  29bb25 SG riJ qgh p PICTURE_2ND P fields 1 time_ref 43 offset 0/0
+  2a3464 SG rij qgh p SLICE
+  2a3483 SG SK- rij q PICTURE P fields 1 TFF time_ref 44 offset 0/0
+  2aac26 SG sk- rij q SLICE_1ST
+  2aac45 SG skL rij q PICTURE_2ND P fields 1 time_ref 44 offset 0/0
+  2b265f SG skl rij q SLICE
+  2b267e SG TM- skl r PICTURE P fields 1 TFF time_ref 45 offset 0/0
+  2b9de2 SG tm- skl r SLICE_1ST
+  2b9e01 SG tmN skl r PICTURE_2ND P fields 1 time_ref 45 offset 0/0
+  2c18bf SG tmn skl r SLICE
+  2c18de SG UO- tmn s PICTURE P fields 1 TFF time_ref 46 offset 0/0
+  2c8ec3 SG uo- tmn s SLICE_1ST
+  2c8ee2 SG uoP tmn s PICTURE_2ND P fields 1 time_ref 46 offset 0/0
+  2d0a84 SG uop tmn s SLICE
+  2d0aa3 SG VQ- uop t PICTURE P fields 1 TFF time_ref 47 offset 0/0
+  2d7f1b SG vq- uop t SLICE_1ST
+  2d7f3a SG vqR uop t PICTURE_2ND P fields 1 time_ref 47 offset 0/0
+  2dfbb7 SG vqr uop t SLICE
+  2dfbd6 SG WS- vqr u PICTURE P fields 1 TFF time_ref 48 offset 0/0
+  2e6fcb SG ws- vqr u SLICE_1ST
+  2e6fea SG wsT vqr u PICTURE_2ND P fields 1 time_ref 48 offset 0/0
+  2eeaa4 SG wst vqr u SLICE
+  2eeac3 SG XU- wst v PICTURE P fields 1 TFF time_ref 49 offset 0/0
+  2f619d SG xu- wst v SLICE_1ST
+  2f61bc SG xuV wst v PICTURE_2ND P fields 1 time_ref 49 offset 0/0
+  2fdb1f SG xuv wst v SLICE
+  2fdb3e SG YW- xuv w PICTURE P fields 1 TFF time_ref 50 offset 0/0
+  305281 SG yw- xuv w SLICE_1ST
+  3052a0 SG ywX xuv w PICTURE_2ND P fields 1 time_ref 50 offset 0/0
+  30cf35 SG ywx xuv w SLICE
+  30cf54 SG ZY- ywx x PICTURE P fields 1 TFF time_ref 51 offset 0/0
+  313fbf SG zy- ywx x SLICE_1ST
+  313fde SG zyZ ywx x PICTURE_2ND P fields 1 time_ref 51 offset 0/0
+  31be56 SG zyz ywx x SLICE
+  31be75 SG AA- zyz y PICTURE P fields 1 TFF time_ref 52 offset 0/0
+  3230e6 SG aa- zyz y SLICE_1ST
+  323105 SG aaB zyz y PICTURE_2ND P fields 1 time_ref 52 offset 0/0
+  32ac09 SG aab zyz y SLICE
+  32ac28 SG BC- aab z PICTURE P fields 1 TFF time_ref 53 offset 0/0
+  33269b SG bc- aab z SLICE_1ST
+  3326ba SG bcD aab z PICTURE_2ND P fields 1 time_ref 53 offset 0/0
+  339ec5 SG bcd aab z SLICE
+  339ee4 SG CE- bcd a PICTURE P fields 1 TFF time_ref 54 offset 0/0
+  3416be SG ce- bcd a SLICE_1ST
+  3416dd SG ceF bcd a PICTURE_2ND P fields 1 time_ref 54 offset 0/0
+  349213 SG cef bcd a SLICE
+  349232 SG DG- cef b PICTURE P fields 1 TFF time_ref 55 offset 0/0
+  350174 SG dg- cef b SLICE_1ST
+  350193 SG dgH cef b PICTURE_2ND P fields 1 time_ref 55 offset 0/0
+  3580f8 SG dgh cef b SLICE
+  358117 SG EI- dgh c PICTURE P fields 1 TFF time_ref 56 offset 0/0
+  35f4e3 SG ei- dgh c SLICE_1ST
+  35f502 SG eiJ dgh c PICTURE_2ND P fields 1 time_ref 56 offset 0/0
+  366fad SG eij dgh c SLICE
+  366fcc SG FK- eij d PICTURE P fields 1 TFF time_ref 57 offset 0/0
+  36e6d6 SG fk- eij d SLICE_1ST
+  36e6f5 SG fkL eij d PICTURE_2ND P fields 1 time_ref 57 offset 0/0
+  37625c SG fkl eij d SLICE
+  37627b SG GM- fkl e PICTURE P fields 1 TFF time_ref 58 offset 0/0
+  37d59b SG gm- fkl e SLICE_1ST
+  37d5ba SG gmN fkl e PICTURE_2ND P fields 1 time_ref 58 offset 0/0
+  385311 SG gmn fkl e SLICE
+  385330 SG HO- gmn f PICTURE P fields 1 TFF time_ref 59 offset 0/0
+  38c682 SG ho- gmn f SLICE_1ST
+  38c6a1 SG hoP gmn f PICTURE_2ND P fields 1 time_ref 59 offset 0/0
+  394438 SG hop gmn f SLICE
+  394457 SG IQ- hop g PICTURE P fields 1 TFF time_ref 60 offset 0/0
+  39b6a3 SG iq- hop g SLICE_1ST
+  39b6c2 SG iqR hop g PICTURE_2ND P fields 1 time_ref 60 offset 0/0
+  3a30d8 SG iqr hop g SLICE
+  3a30d8 SG --- iqr h END

@@ -1,0 +1,11 @@
+      5a S- --- --- - SEQUENCE MPEG2 MP@ML 720x576 chroma 360x288 fps 25 maxBps 1875000 vbv 229376 picture 720x576 display 720x576 pixel 16x15
+      62 SG --- --- - GOP CLOSED  0: 0: 0: 0
+      73 SG AA- --- ? PICTURE I fields 2 TFF time_ref 0 offset 0/0 0/0
+   22b01 SG aa- --- ? SLICE
+   22b13 SG BB- aa- ? PICTURE P fields 2 TFF time_ref 1 offset 0/0 0/0
+   2d251 SG bb- aa- ? SLICE
+   2d263 SG CC- bb- a PICTURE P fields 2 TFF time_ref 2 offset 0/0 0/0
+   3df6b SG cc- bb- a SLICE
+   3df7d SG DD- cc- b PICTURE P fields 2 TFF time_ref 3 offset 0/0 0/0
+   4f26a SG dd- cc- b SLICE
+   4f26a SG --- dd- c END
