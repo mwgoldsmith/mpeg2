@@ -156,6 +156,7 @@ slice_get_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint
 	const uint_8 *scan = picture->scan;
 	uint_8 *quant_matrix = picture->intra_quantizer_matrix;
 	sint_16 quantizer_scale = slice->quantizer_scale;
+	sint_16 mismatch;
 
 	//Get the intra DC coefficient and inverse quantize it
 	if (cc == 0)
@@ -164,32 +165,39 @@ slice_get_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint
 		dest[0] = (slice->dc_dct_pred[cc]+= Get_Chroma_DC_dct_diff()) << (3 - picture->intra_dc_precision);
 
 	i = 1;
+	mismatch = ~dest[0];
 	while((slice_get_block_coeff(&run,&val,0,picture->intra_vlc_format)))
 	{
 		i += run;
 		j = scan[i++];
-		dest[j] = (val * quantizer_scale * quant_matrix[j]) / 16;
-		//FIXME put mismatch control back in
+		mismatch ^= dest[j] = (val * quantizer_scale * quant_matrix[j]) / 16;
 	}
+	dest[63] ^= mismatch & 1;
 }
 
 static void
 slice_get_non_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest)
 {
-	uint_32 i = 0;
+	uint_32 i;
 	uint_32 j;
 	uint_16 run;
 	sint_16 val;
 	const uint_8 *scan = picture->scan;
 	uint_8 *quant_matrix = picture->non_intra_quantizer_matrix;
 	sint_16 quantizer_scale = slice->quantizer_scale;
+	int k;
+	sint_16 mismatch;
 
+	i = 0;
+	mismatch = 1;
 	while((slice_get_block_coeff(&run,&val,i==0,0)))
 	{
 		i += run;
 		j = scan[i++];
-		dest[j] = (((val<<1) + (val>>15))* quantizer_scale * quant_matrix[j]) >> 5;
+		k = (val > 0) ? 1 : ((val < 0) ? -1 : 0);
+		mismatch ^= dest[j] = ((2 * val + k) * quantizer_scale * quant_matrix[j]) / 32;
 	}
+	dest[63] ^= mismatch & 1;
 }
 
 static inline void slice_intra_DCT (picture_t * picture, slice_t * slice,
