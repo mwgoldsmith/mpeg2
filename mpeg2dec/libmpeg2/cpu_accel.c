@@ -26,6 +26,8 @@
 #include <inttypes.h>
 
 #include "mpeg2.h"
+#include "attributes.h"
+#include "mpeg2_internal.h"
 
 #ifdef ACCEL_DETECT
 #ifdef ARCH_X86

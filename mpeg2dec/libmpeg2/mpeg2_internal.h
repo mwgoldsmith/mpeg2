@@ -58,13 +58,13 @@ struct mpeg2_decoder_s {
     /* first, state that carries information from one macroblock to the */
     /* next inside a slice, and is never used outside of mpeg2_slice() */
 
-    /* DCT coefficients - should be kept aligned ! */
-    int16_t DCTblock[64];
-
     /* bit parsing stuff */
     uint32_t bitstream_buf;		/* current 32 bit working set */
     int bitstream_bits;			/* used bits in working set */
     const uint8_t * bitstream_ptr;	/* buffer with stream data */
+
+    /* DCT coefficients */
+    int16_t DCTblock[64] ATTR_ALIGN(16);
 
     uint8_t * dest[3];
     uint8_t * picture_dest[3];

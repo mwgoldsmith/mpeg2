@@ -31,8 +31,8 @@
 #include <inttypes.h>
 
 #include "mpeg2.h"
-#include "mpeg2_internal.h"
 #include "attributes.h"
+#include "mpeg2_internal.h"
 
 typedef vector signed char vector_s8_t;
 typedef vector unsigned char vector_u8_t;

@@ -29,8 +29,10 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include "alpha_asm.h"
+#include "mpeg2.h"
 #include "attributes.h"
+#include "mpeg2_internal.h"
+#include "alpha_asm.h"
 
 #define W1 2841 /* 2048 * sqrt (2) * cos (1 * pi / 16) */
 #define W2 2676 /* 2048 * sqrt (2) * cos (2 * pi / 16) */
