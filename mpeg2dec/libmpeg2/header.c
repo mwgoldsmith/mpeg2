@@ -102,20 +102,18 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
     static unsigned int frame_period[9] = {
 	0, 1126125, 1125000, 1080000, 900900, 900000, 540000, 450450, 450000
     };
-    int width, height;
     int i;
 
     if ((buffer[6] & 0x20) != 0x20)	/* missing marker_bit */
 	return 1;
 
     i = (buffer[0] << 16) | (buffer[1] << 8) | buffer[2];
-    sequence->display_width = sequence->picture_width = width = i >> 12;
-    sequence->display_height = sequence->picture_height = height = i & 0xfff;
-    decoder->width = sequence->width = width = (width + 15) & ~15;
-    decoder->height = sequence->height = height = (height + 15) & ~15;
-    decoder->vertical_position_extension = (height > 2800);
-    sequence->chroma_width = width >> 1;
-    sequence->chroma_height = height >> 1;
+    sequence->display_width = sequence->picture_width = i >> 12;
+    sequence->display_height = sequence->picture_height = i & 0xfff;
+    sequence->width = (sequence->picture_width + 15) & ~15;
+    sequence->height = (sequence->picture_height + 15) & ~15;
+    sequence->chroma_width = sequence->width >> 1;
+    sequence->chroma_height = sequence->height >> 1;
 
     sequence->flags = SEQ_FLAG_PROGRESSIVE_SEQUENCE;
 
@@ -139,7 +137,7 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
     } else
 	for (i = 0; i < 64; i++)
 	    decoder->intra_quantizer_matrix[mpeg2_scan_norm[i]] =
-		default_intra_quantizer_matrix [i];
+		default_intra_quantizer_matrix[i];
 
     if (buffer[7] & 1)
 	for (i = 0; i < 64; i++)
@@ -154,7 +152,6 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
     sequence->transfer_characteristics = 1;
     sequence->matrix_coefficients = 1;
 
-    decoder->mpeg1 = 1;
     decoder->intra_dc_precision = 0;
     decoder->frame_pred_frame_dct = 1;
     decoder->q_scale_type = 0;
@@ -174,8 +171,6 @@ static int sequence_ext (mpeg2dec_t * mpeg2dec)
 {
     uint8_t * buffer = mpeg2dec->chunk_start;
     sequence_t * sequence = &(mpeg2dec->new_sequence);
-    decoder_t * decoder = &(mpeg2dec->decoder);
-    int width, height;
     uint32_t flags;
 
     if (!(buffer[3] & 1))
@@ -183,31 +178,30 @@ static int sequence_ext (mpeg2dec_t * mpeg2dec)
 
     sequence->profile_level_id = (buffer[0] << 4) | (buffer[1] >> 4);
 
-    width = sequence->display_width = sequence->picture_width +=
+    sequence->display_width = sequence->picture_width +=
 	((buffer[1] << 13) | (buffer[2] << 5)) & 0x3000;
-    height = sequence->display_height = sequence->picture_height +=
+    sequence->display_height = sequence->picture_height +=
 	(buffer[2] << 7) & 0x3000;
-    decoder->vertical_position_extension = (height > 2800);
+    sequence->width = (sequence->picture_width + 15) & ~15;
+    sequence->height = (sequence->picture_height + 15) & ~15;
     flags = sequence->flags | SEQ_FLAG_MPEG2;
     if (!(buffer[1] & 8)) {
 	flags &= ~SEQ_FLAG_PROGRESSIVE_SEQUENCE;
-	height = (height + 31) & ~31;
+	sequence->height = (sequence->height + 31) & ~31;
     }
     if (buffer[5] & 0x80)
 	flags |= SEQ_FLAG_LOW_DELAY;
     sequence->flags = flags;
-    decoder->width = sequence->width = width = (width + 15) & ~15;
-    decoder->height = sequence->height = height = (height + 15) & ~15;
+    sequence->chroma_width = sequence->width;
+    sequence->chroma_height = sequence->height;
     switch (buffer[1] & 6) {
     case 0:	/* invalid */
 	return 1;
     case 2:	/* 4:2:0 */
-	height >>= 1;
+	sequence->chroma_height >>= 1;
     case 4:	/* 4:2:2 */
-	width >>= 1;
+	sequence->chroma_width >>= 1;
     }
-    sequence->chroma_width = width;
-    sequence->chroma_height = height;
 
     sequence->byte_rate += ((buffer[2]<<25) | (buffer[3]<<17)) & 0x3ffc0000;
 
@@ -215,8 +209,6 @@ static int sequence_ext (mpeg2dec_t * mpeg2dec)
 
     sequence->frame_period =
 	sequence->frame_period * ((buffer[5]&31)+1) / (((buffer[5]>>2)&3)+1);
-
-    decoder->mpeg1 = 0;
 
     mpeg2dec->ext_state = SEQ_DISPLAY_EXT;
 
@@ -307,8 +299,14 @@ static inline void finalize_sequence (sequence_t * sequence)
 void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
 {
     sequence_t * sequence = &(mpeg2dec->new_sequence);
+    decoder_t * decoder = &(mpeg2dec->decoder);
 
     finalize_sequence (sequence);
+
+    decoder->mpeg1 = !(sequence->flags & SEQ_FLAG_MPEG2);
+    decoder->width = sequence->width;
+    decoder->height = sequence->height;
+    decoder->vertical_position_extension = (sequence->picture_height > 2800);
 
     /*
      * according to 6.1.1.6, repeat sequence headers should be
