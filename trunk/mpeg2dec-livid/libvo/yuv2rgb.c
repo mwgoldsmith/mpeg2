@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "config.h"
 #include "video_out.h"
 #include "yuv2rgb.h"
 
@@ -76,11 +77,24 @@ static void yuv2rgb_c (void * dst, const uint_8 * py,
 
 void yuv2rgb_init (uint_32 bpp, uint_32 mode) 
 {
+	yuv2rgb = NULL;
 #ifdef __i386__
-	yuv2rgb = yuv2rgb_init_mmx(bpp,mode);
-
-	if(yuv2rgb == NULL)
+        if(yuv2rgb == NULL /*&& (config.flags & VO_MMX_ENABLE)*/)
+	{
+		yuv2rgb = yuv2rgb_init_mmx(bpp,mode);
+		if(yuv2rgb != NULL)
+			fprintf (stderr, "Using MMX for colorspace transform\n");
+	}
 #endif
+#ifdef HAVE_MLIB
+	if(yuv2rgb == NULL /*&& (config.flags & VO_MLIB_ENABLE)*/)
+	{
+		yuv2rgb = yuv2rgb_init_mlib(bpp,mode);
+		if(yuv2rgb != NULL)
+			fprintf (stderr, "Using mlib for colorspace transform\n");
+	}
+#endif
+	if(yuv2rgb == NULL)
 	{
 		fprintf (stderr, "No accelerated colorspace conversion found\n");
 		yuv2rgb_c_init (bpp, mode);
