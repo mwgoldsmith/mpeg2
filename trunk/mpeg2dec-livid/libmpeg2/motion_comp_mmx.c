@@ -29,6 +29,15 @@
 #include "attributes.h"
 #include "mmx.h"
 
+
+//MMX code - needs a rewrite
+
+
+
+
+
+
+
 // some rounding constants
 mmx_t round1 = {0x0001000100010001LL};
 mmx_t round4 = {0x0002000200020002LL};
@@ -516,5 +525,388 @@ motion_comp_put_y_8x8_mmx (uint8_t * dest, uint8_t * ref,
 
 
 MOTION_COMP_EXTERN (mmx)
+
+
+
+
+
+
+
+
+//MMXEXT code
+
+
+static inline void MC_put1_8 (int height, uint8_t * dest, uint8_t * ref,
+			      int stride)
+{
+    do {
+	movq_m2r (*ref, mm0);
+	movq_r2m (mm0, *dest);
+	ref += stride;
+	dest += stride;
+    } while (--height);
+}
+
+static inline void MC_put1_16 (int height, uint8_t * dest, uint8_t * ref,
+			       int stride)
+{
+    do {
+	movq_m2r (*ref, mm0);
+	movq_m2r (*(ref+8), mm1);
+	ref += stride;
+	movq_r2m (mm0, *dest);
+	movq_r2m (mm1, *(dest+8));
+	dest += stride;
+    } while (--height);
+}
+
+static inline void MC_avg1_8 (int height, uint8_t * dest, uint8_t * ref,
+			      int stride)
+{
+    do {
+	movq_m2r (*ref, mm0);
+	pavgb_m2r (*dest, mm0);
+	ref += stride;
+	movq_r2m (mm0, *dest);
+	dest += stride;
+    } while (--height);
+}
+
+static inline void MC_avg1_16 (int height, uint8_t * dest, uint8_t * ref,
+			       int stride)
+{
+    do {
+	movq_m2r (*ref, mm0);
+	movq_m2r (*(ref+8), mm1);
+	pavgb_m2r (*dest, mm0);
+	pavgb_m2r (*(dest+8), mm1);
+	movq_r2m (mm0, *dest);
+	ref += stride;
+	movq_r2m (mm1, *(dest+8));
+	dest += stride;
+    } while (--height);
+}
+
+static inline void MC_put2_8 (int height, uint8_t * dest, uint8_t * ref,
+			      int stride, int offset)
+{
+    do {
+	movq_m2r (*ref, mm0);
+	pavgb_m2r (*(ref+offset), mm0);
+	ref += stride;
+	movq_r2m (mm0, *dest);
+	dest += stride;
+    } while (--height);
+}
+
+static inline void MC_put2_16 (int height, uint8_t * dest, uint8_t * ref,
+			       int stride, int offset)
+{
+    do {
+	movq_m2r (*ref, mm0);
+	movq_m2r (*(ref+8), mm1);
+	pavgb_m2r (*(ref+offset), mm0);
+	pavgb_m2r (*(ref+offset+8), mm1);
+	movq_r2m (mm0, *dest);
+	ref += stride;
+	movq_r2m (mm1, *(dest+8));
+	dest += stride;
+    } while (--height);
+}
+
+static inline void MC_avg2_8 (int height, uint8_t * dest, uint8_t * ref,
+			      int stride, int offset)
+{
+    do {
+	movq_m2r (*ref, mm0);
+	pavgb_m2r (*(ref+offset), mm0);
+	pavgb_m2r (*dest, mm0);
+	ref += stride;
+	movq_r2m (mm0, *dest);
+	dest += stride;
+    } while (--height);
+}
+
+static inline void MC_avg2_16 (int height, uint8_t * dest, uint8_t * ref,
+			       int stride, int offset)
+{
+    do {
+	movq_m2r (*ref, mm0);
+	movq_m2r (*(ref+8), mm1);
+	pavgb_m2r (*(ref+offset), mm0);
+	pavgb_m2r (*(ref+offset+8), mm1);
+	pavgb_m2r (*dest, mm0);
+	pavgb_m2r (*(dest+8), mm1);
+	ref += stride;
+	movq_r2m (mm0, *dest);
+	movq_r2m (mm1, *(dest+8));
+	dest += stride;
+    } while (--height);
+}
+
+static mmx_t mask_one = {0x0101010101010101LL};
+
+static inline void MC_put4_8 (int height, uint8_t * dest, uint8_t * ref,
+			      int stride)
+{
+    movq_m2r (*ref, mm0);
+    movq_m2r (*(ref+1), mm1);
+    movq_r2r (mm0, mm7);
+    pxor_r2r (mm1, mm7);
+    pavgb_r2r (mm1, mm0);
+    ref += stride;
+
+    do {
+	movq_m2r (*ref, mm2);
+	movq_r2r (mm0, mm5);
+
+	movq_m2r (*(ref+1), mm3);
+	movq_r2r (mm2, mm6);
+
+	pxor_r2r (mm3, mm6);
+	pavgb_r2r (mm3, mm2);
+
+	por_r2r (mm6, mm7);
+	pxor_r2r (mm2, mm5);
+
+	pand_r2r (mm5, mm7);
+	pavgb_r2r (mm2, mm0);
+
+	pand_m2r (mask_one, mm7);
+
+	psubusb_r2r (mm7, mm0);
+
+	ref += stride;
+	movq_r2m (mm0, *dest);
+	dest += stride;
+
+	movq_r2r (mm6, mm7);	// unroll !
+	movq_r2r (mm2, mm0);	// unroll !
+    } while (--height);
+}
+
+static inline void MC_put4_16 (int height, uint8_t * dest, uint8_t * ref,
+			       int stride)
+{
+    do {
+	movq_m2r (*ref, mm0);
+	movq_m2r (*(ref+stride+1), mm1);
+	movq_r2r (mm0, mm7);
+	movq_m2r (*(ref+1), mm2);
+	pxor_r2r (mm1, mm7);
+	movq_m2r (*(ref+stride), mm3);
+	movq_r2r (mm2, mm6);
+	pxor_r2r (mm3, mm6);
+	pavgb_r2r (mm1, mm0);
+	pavgb_r2r (mm3, mm2);
+	por_r2r (mm6, mm7);
+	movq_r2r (mm0, mm6);
+	pxor_r2r (mm2, mm6);
+	pand_r2r (mm6, mm7);
+	pand_m2r (mask_one, mm7);
+	pavgb_r2r (mm2, mm0);
+	psubusb_r2r (mm7, mm0);
+	movq_r2m (mm0, *dest);
+
+	movq_m2r (*(ref+8), mm0);
+	movq_m2r (*(ref+stride+9), mm1);
+	movq_r2r (mm0, mm7);
+	movq_m2r (*(ref+9), mm2);
+	pxor_r2r (mm1, mm7);
+	movq_m2r (*(ref+stride+8), mm3);
+	movq_r2r (mm2, mm6);
+	pxor_r2r (mm3, mm6);
+	pavgb_r2r (mm1, mm0);
+	pavgb_r2r (mm3, mm2);
+	por_r2r (mm6, mm7);
+	movq_r2r (mm0, mm6);
+	pxor_r2r (mm2, mm6);
+	pand_r2r (mm6, mm7);
+	pand_m2r (mask_one, mm7);
+	pavgb_r2r (mm2, mm0);
+	psubusb_r2r (mm7, mm0);
+	ref += stride;
+	movq_r2m (mm0, *(dest+8));
+	dest += stride;
+    } while (--height);
+}
+
+static inline void MC_avg4_8 (int height, uint8_t * dest, uint8_t * ref,
+			      int stride)
+{
+    do {
+	movq_m2r (*ref, mm0);
+	movq_m2r (*(ref+stride+1), mm1);
+	movq_r2r (mm0, mm7);
+	movq_m2r (*(ref+1), mm2);
+	pxor_r2r (mm1, mm7);
+	movq_m2r (*(ref+stride), mm3);
+	movq_r2r (mm2, mm6);
+	pxor_r2r (mm3, mm6);
+	pavgb_r2r (mm1, mm0);
+	pavgb_r2r (mm3, mm2);
+	por_r2r (mm6, mm7);
+	movq_r2r (mm0, mm6);
+	pxor_r2r (mm2, mm6);
+	pand_r2r (mm6, mm7);
+	pand_m2r (mask_one, mm7);
+	pavgb_r2r (mm2, mm0);
+	psubusb_r2r (mm7, mm0);
+	movq_m2r (*dest, mm1);
+	pavgb_r2r (mm1, mm0);
+	ref += stride;
+	movq_r2m (mm0, *dest);
+	dest += stride;
+    } while (--height);
+}
+
+static inline void MC_avg4_16 (int height, uint8_t * dest, uint8_t * ref,
+			       int stride)
+{
+    do {
+	movq_m2r (*ref, mm0);
+	movq_m2r (*(ref+stride+1), mm1);
+	movq_r2r (mm0, mm7);
+	movq_m2r (*(ref+1), mm2);
+	pxor_r2r (mm1, mm7);
+	movq_m2r (*(ref+stride), mm3);
+	movq_r2r (mm2, mm6);
+	pxor_r2r (mm3, mm6);
+	pavgb_r2r (mm1, mm0);
+	pavgb_r2r (mm3, mm2);
+	por_r2r (mm6, mm7);
+	movq_r2r (mm0, mm6);
+	pxor_r2r (mm2, mm6);
+	pand_r2r (mm6, mm7);
+	pand_m2r (mask_one, mm7);
+	pavgb_r2r (mm2, mm0);
+	psubusb_r2r (mm7, mm0);
+	movq_m2r (*dest, mm1);
+	pavgb_r2r (mm1, mm0);
+	movq_r2m (mm0, *dest);
+
+	movq_m2r (*(ref+8), mm0);
+	movq_m2r (*(ref+stride+9), mm1);
+	movq_r2r (mm0, mm7);
+	movq_m2r (*(ref+9), mm2);
+	pxor_r2r (mm1, mm7);
+	movq_m2r (*(ref+stride+8), mm3);
+	movq_r2r (mm2, mm6);
+	pxor_r2r (mm3, mm6);
+	pavgb_r2r (mm1, mm0);
+	pavgb_r2r (mm3, mm2);
+	por_r2r (mm6, mm7);
+	movq_r2r (mm0, mm6);
+	pxor_r2r (mm2, mm6);
+	pand_r2r (mm6, mm7);
+	pand_m2r (mask_one, mm7);
+	pavgb_r2r (mm2, mm0);
+	psubusb_r2r (mm7, mm0);
+	movq_m2r (*(dest+8), mm1);
+	pavgb_r2r (mm1, mm0);
+	ref += stride;
+	movq_r2m (mm0, *(dest+8));
+	dest += stride;
+    } while (--height);
+}
+
+static void motion_comp_avg_16x16_mmxext (uint8_t * dest, uint8_t * ref,
+					  int stride, int height)
+{
+    MC_avg1_16 (height, dest, ref, stride);
+}
+
+static void motion_comp_avg_8x8_mmxext (uint8_t * dest, uint8_t * ref,
+					int stride, int height)
+{
+    MC_avg1_8 (height, dest, ref, stride);
+}
+
+static void motion_comp_put_16x16_mmxext (uint8_t * dest, uint8_t * ref,
+					  int stride, int height)
+{
+    MC_put1_16 (height, dest, ref, stride);
+}
+
+static void motion_comp_put_8x8_mmxext (uint8_t * dest, uint8_t * ref,
+					int stride, int height)
+{
+    MC_put1_8 (height, dest, ref, stride);
+}
+
+static void motion_comp_avg_x_16x16_mmxext (uint8_t * dest, uint8_t * ref,
+					    int stride, int height)
+{
+    MC_avg2_16 (height, dest, ref, stride, 1);
+}
+
+static void motion_comp_avg_x_8x8_mmxext (uint8_t * dest, uint8_t * ref,
+					  int stride, int height)
+{
+    MC_avg2_8 (height, dest, ref, stride, 1);
+}
+
+static void motion_comp_put_x_16x16_mmxext (uint8_t * dest, uint8_t * ref,
+					    int stride, int height)
+{
+    MC_put2_16 (height, dest, ref, stride, 1);
+}
+
+static void motion_comp_put_x_8x8_mmxext (uint8_t * dest, uint8_t * ref,
+					  int stride, int height)
+{
+    MC_put2_8 (height, dest, ref, stride, 1);
+}
+
+static void motion_comp_avg_y_16x16_mmxext (uint8_t * dest, uint8_t * ref,
+					    int stride, int height)
+{
+    MC_avg2_16 (height, dest, ref, stride, stride);
+}
+
+static void motion_comp_avg_y_8x8_mmxext (uint8_t * dest, uint8_t * ref,
+					  int stride, int height)
+{
+    MC_avg2_8 (height, dest, ref, stride, stride);
+}
+
+static void motion_comp_put_y_16x16_mmxext (uint8_t * dest, uint8_t * ref,
+					    int stride, int height)
+{
+    MC_put2_16 (height, dest, ref, stride, stride);
+}
+
+static void motion_comp_put_y_8x8_mmxext (uint8_t * dest, uint8_t * ref,
+					  int stride, int height)
+{
+    MC_put2_8 (height, dest, ref, stride, stride);
+}
+
+static void motion_comp_avg_xy_16x16_mmxext (uint8_t * dest, uint8_t * ref,
+					     int stride, int height)
+{
+    MC_avg4_16 (height, dest, ref, stride);
+}
+
+static void motion_comp_avg_xy_8x8_mmxext (uint8_t * dest, uint8_t * ref,
+					   int stride, int height)
+{
+    MC_avg4_8 (height, dest, ref, stride);
+}
+
+static void motion_comp_put_xy_16x16_mmxext (uint8_t * dest, uint8_t * ref,
+					     int stride, int height)
+{
+    MC_put4_16 (height, dest, ref, stride);
+}
+
+static void motion_comp_put_xy_8x8_mmxext (uint8_t * dest, uint8_t * ref,
+					   int stride, int height)
+{
+    MC_put4_8 (height, dest, ref, stride);
+}
+
+
+MOTION_COMP_EXTERN (mmxext)
 
 #endif

@@ -168,8 +168,8 @@ void idct_block_copy_mlib (int16_t * block, uint8_t * dest, int stride);
 void idct_block_add_mlib (int16_t * block, uint8_t * dest, int stride);
 
 // idct_mmx.c
-void idct_block_copy_sse (int16_t *block, uint8_t * dest, int stride);
-void idct_block_add_sse (int16_t *block, uint8_t * dest, int stride);
+void idct_block_copy_mmxext (int16_t *block, uint8_t * dest, int stride);
+void idct_block_add_mmxext (int16_t *block, uint8_t * dest, int stride);
 void idct_block_copy_mmx (int16_t *block, uint8_t * dest, int stride);
 void idct_block_add_mmx (int16_t *block, uint8_t * dest, int stride);
 void idct_mmx_init (void);
@@ -197,6 +197,7 @@ typedef struct mc_functions_s
 
 extern mc_functions_t mc_functions_c;
 extern mc_functions_t mc_functions_mmx;
+extern mc_functions_t mc_functions_mmxext;
 extern mc_functions_t mc_functions_mlib;
 
 // slice.c
