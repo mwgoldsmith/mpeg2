@@ -129,7 +129,7 @@ int mpeg2_seek_sequence (mpeg2dec_t * mpeg2dec)
 	mpeg2dec->code = mpeg2dec->buf_start[-1];
     }
     mpeg2dec->chunk_start = mpeg2dec->chunk_buffer;
-    mpeg2dec->state = STATE_INVALID;
+    mpeg2dec->sequence.width = -1;
     return 0;
 }
 
@@ -193,18 +193,6 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	mpeg2dec->action = mpeg2_header_picture_start;
     case RECEIVED (0xb8, STATE_SEQUENCE):
 	mpeg2_header_sequence_finalize (mpeg2dec);
-
-	/*
-	 * according to 6.1.1.6, repeat sequence headers should be
-	 * identical to the original. However some DVDs dont respect that
-	 * and have different bitrates in the repeat sequence headers. So
-	 * we'll ignore that in the comparison and still consider these as
-	 * repeat sequence headers.
-	 */
-	mpeg2dec->last_sequence.byte_rate = mpeg2dec->sequence.byte_rate;
-	if (!memcmp (&(mpeg2dec->last_sequence), &(mpeg2dec->sequence),
-		     sizeof (sequence_t)))
-	    mpeg2dec->state = STATE_SEQUENCE_REPEATED;
 	break;
 
     /* other legal state transitions */
