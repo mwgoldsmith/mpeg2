@@ -515,6 +515,7 @@ vo_instance_t * vo_x11_open (void)
 	return NULL;
 
     instance->vo.setup = x11_setup;
+    instance->vo.close = NULL;
     return (vo_instance_t *) instance;
 }
 
@@ -534,6 +535,7 @@ vo_instance_t * vo_xv_open (void)
 	return NULL;
 
     instance->vo.setup = xv_setup;
+    instance->vo.close = NULL;
     return (vo_instance_t *) instance;
 }
 #endif
