@@ -1,6 +1,4 @@
 * things we dont implement yet
-	* field pictures
-	* mpeg1 - full-pixel MC, have to find test streams
 	* dont crash on bad streams, make sure we can resync after a while
 		* possible chunk buffer overflow (writing or reading back)
 		* destination macroblock overflow
@@ -16,6 +14,7 @@
 
 * local optimizations
 	* review the use of static inline functions
+	* rework the MC parsing code
 	* improve MMX motion comp inner routines
 	* optimize DCT for very sparse input matrixes ?
 	* optimize startcode search loop ?
