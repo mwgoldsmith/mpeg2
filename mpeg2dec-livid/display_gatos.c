@@ -29,9 +29,13 @@
 \**************************************************************************/
 
 //Only define ONE of these
-#define GATOS_RAGE_INTERLACED // WORKS WELL
+//#define GATOS_RAGE_INTERLACED // WORKS WELL
 //#define GATOS_R128_INTERLACED // HAS PROBLEMS BUT WORKS.
-//#define GATOS_R128_LINEAR // DOESN'T WORK!
+//#define GATOS_R128_DOUBLE // WORKS WELL
+#define GATOS_R128_LINEAR // WORKS PRETTY WELL
+
+#define METHOD_1
+//#define METHOD_2
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -112,12 +116,25 @@ void display_frame(uint_8 *src[]) {
   unsigned char *cbuf;
   int h, w;
 
-  for (h=0; h!=vertical_size;) {
+  for (h=0; h!=vertical_size>>1;) {
     ++h;
-    if(h&1) {
       for(w=0; w!=horizontal_size>>2;) {
         ++w;
         cbuf = (unsigned char *)buf;
+      (*cbuf++) = *Cb1++;
+      (*cbuf++) = *Y++;
+      (*cbuf++) = *Cr1++;  
+      (*cbuf++) = *Y++;
+      (*dest++) = *buf;
+      (*cbuf++) = *Cb1++;
+      (*cbuf++) = *Y++;
+      (*cbuf++) = *Cr1++;
+      (*cbuf++) = *Y++;
+      (*dest++) = buf[1];
+      }
+    for(w=0; w!=horizontal_size>>2;) {
+      ++w;
+      cbuf = (unsigned char *)buf;
         (*cbuf++) = *Cb2++;
         (*cbuf++) = *Y++;
         (*cbuf++) = *Cr2++;
@@ -130,7 +147,19 @@ void display_frame(uint_8 *src[]) {
         (*dest++) = buf[1];
         }
       }
-    else {
+#endif
+
+#ifdef GATOS_R128_DOUBLE
+  unsigned char *Y=src[0], *Cb1=src[1], *Cr1=src[2], *Cb2=src[1], *Cr2=src[2];
+  unsigned long *dest1=(unsigned long *)(ATIFB+CAP0_BUF0_OFFSET);
+  unsigned long *dest2=(unsigned long *)(ATIFB+CAP0_BUF0_EVEN_OFFSET);
+  unsigned long buf[2];  
+  unsigned char *cbuf;
+  int h, w;
+
+  for (h=0; h!=vertical_size;) {
+    ++h;
+    if(h&1) {
       for(w=0; w!=horizontal_size>>2;) {
         ++w;
         cbuf = (unsigned char *)buf;
@@ -138,13 +167,29 @@ void display_frame(uint_8 *src[]) {
         (*cbuf++) = *Y++;
         (*cbuf++) = *Cr1++;  
         (*cbuf++) = *Y++;
-        (*dest++) = *buf;
+        (*dest1++) = *buf;
         (*cbuf++) = *Cb1++;
         (*cbuf++) = *Y++;
         (*cbuf++) = *Cr1++;
         (*cbuf++) = *Y++;
-        (*dest++) = buf[1];
+        (*dest1++) = buf[1];
         }
+      }
+    else {
+      for(w=0; w!=horizontal_size>>2;) {
+        ++w;
+        cbuf = (unsigned char *)buf;
+        (*cbuf++) = *Cb2++;
+        (*cbuf++) = *Y++;
+        (*cbuf++) = *Cr2++;
+        (*cbuf++) = *Y++;
+        (*dest2++) = *buf;
+        (*cbuf++) = *Cb2++;
+        (*cbuf++) = *Y++;
+        (*cbuf++) = *Cr2++;
+        (*cbuf++) = *Y++;
+        (*dest2++) = buf[1];
+    }
       }
     }
 #endif
@@ -196,6 +241,10 @@ void display_frame(uint_8 *src[]) {
 #endif
   }
 
+#ifndef GATOS_RAGE_INTERLACED
+void switch_mode(int mode);
+#endif
+
 void display_init(uint_32 width, uint_32 height) {
   // ATI video via GATOS
   printf("GATOS init(%d,%d)\n", width, height);
@@ -203,22 +252,26 @@ void display_init(uint_32 width, uint_32 height) {
   if(gatos_init(GATOS_WRITE_BUFFER|GATOS_OVERLAY))
     { perror(_("display: gatos_init()")); exit(1); }
 
-#ifdef GATOS_RAGE_INTERLACED
-  gatos_setcapturesize(width, height);
-#endif
-#ifdef GATOS_R128_LINEAR
-  gatos_setcapturesize(width, height);
-#endif
 #ifdef GATOS_R128_INTERLACED
-  gatos_setcapturesize(width, height>>1);
+  gatos_setcapturemode(GATOS_MODE_INTERLACED, 0, width, height);
+#else
+#ifdef GATOS_R128_DOUBLE
+  gatos_setcapturemode(GATOS_MODE_DOUBLE, 0, width, height);
+#else
+  gatos_setcapturemode(GATOS_MODE_SINGLE_ODD, 0, width, height<<1);
+#endif
 #endif
 
+#ifndef GATOS_RAGE_INTERLACED
+  switch_mode(3);
+#endif
   horizontal_size = width;
   vertical_size = height;
-  gatos_enable_video(1);
-  gatos_enable_capture(0);
   gatos_setmapped(1);
   gatos_setvisibility(0);
+  gatos_enable_video(1);
+  gatos_enable_capture(0);
+
   if(gatos_setcolorkey(winbg)) {
     perror(_("xatitv: gatos_setcolorkey()"));
     exit(1);

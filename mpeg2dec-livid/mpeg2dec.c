@@ -33,14 +33,15 @@
 
 uint_8 buf[2048];
 FILE *in_file;
-static struct timeval tv_beg;
 static uint_32 frame_counter = 0;
-static uint_32 is_display_initialized = 0;
 
-static void print_fps(void) 
+struct timeval tv_beg;
+struct timeval tv_end;
+float elapsed = 0;
+float total_elapsed = 0;
+
+static void print_fps(uint_32 final) 
 {
-	struct timeval tv_end;
-	float elapsed;
 
 	//XXX hackety hack hack...
 #ifdef __i386__
@@ -48,15 +49,44 @@ static void print_fps(void)
 #endif
 	gettimeofday(&tv_end, NULL);
 	
-	elapsed = (tv_end.tv_sec - tv_beg.tv_sec) + 
+	elapsed += (tv_end.tv_sec - tv_beg.tv_sec) + 
 			(tv_end.tv_usec - tv_beg.tv_usec) / 1000000.0;        
-	printf("\n %u frames in %5.2f seconds ( %5.3f fps )\n", 
-			frame_counter, elapsed, frame_counter / elapsed);
+	
+	tv_beg = tv_end;
+
+
+	if(!((frame_counter)%200))
+	{
+		printf("|---------+---------+------------+-------+--------|\n");
+		printf("|total t  | avg fps | frame #    | time  | fps    |\n");
+		printf("|---------+---------+------------+-------+--------|\n");
+
+	}
+
+	if(!((++frame_counter)%10))
+	{
+		total_elapsed += elapsed;
+
+		printf("| % 7.3g |  %3.03f | %4d - %4d| %3.03f | %3.03f |\n",
+		total_elapsed, frame_counter / total_elapsed, 
+		frame_counter-10,frame_counter,elapsed, 10 / elapsed);
+
+		elapsed = 0;
+	}
+	if (final)
+	{
+
+		printf("|---------+---------+------------+-------+--------|\n");
+		printf("| % 7.3g |  %3.03f |    0 - %4d| %3.03f | %3.03f |\n",
+		total_elapsed, frame_counter / total_elapsed, 
+		frame_counter,total_elapsed, frame_counter / total_elapsed);
+		printf("|---------+---------+------------+-------+--------|\n");
+	}
 }
  
 static void signal_handler(int sig)
 {
-	print_fps();
+	print_fps(1);
 	signal(sig, SIG_DFL);
 	raise(sig);
 }
@@ -71,14 +101,14 @@ void fill_buffer(uint_8 **start,uint_8 **end)
 
 	if(bytes_read < 2048)
 	{
-		print_fps();
+		print_fps(1);
 		exit(0);
 	}
 }
 
 int main(int argc,char *argv[])
 {
-	mpeg2_frame_t *my_frame;
+	mpeg2_frame_t *my_frame = NULL;
 
 	if(argc < 2)
 	{
@@ -102,34 +132,29 @@ int main(int argc,char *argv[])
 	else
 		in_file = stdin;
 
-	signal(SIGINT, signal_handler);
 
 	//FIXME this should go in mpeg2_init
 	bitstream_init(fill_buffer);
 
 	mpeg2_init();
 
+	signal(SIGINT, signal_handler);
+
 	gettimeofday(&tv_beg, NULL);
 
+	while (my_frame == NULL)    // better safe than sorry.
+		my_frame = mpeg2_decode_frame();
+
+	display_init(my_frame->width,my_frame->height);
 
 	while(1)
 	{
-		my_frame = mpeg2_decode_frame();
-		
-		if( my_frame  != NULL ) 
+		if(my_frame != NULL) 
 		{
-			//FIXME
-			//we can't initialize the display until we know how big the picture is
-			if(!is_display_initialized)
-			{
-				display_init(my_frame->width,my_frame->height);
-				is_display_initialized = 1;
-			}
-
 			display_frame(my_frame->frame);
-			//printf("frame_counter = %d\n",frame_counter++);
-			frame_counter++;
+			print_fps(0);
 		}
+		my_frame = mpeg2_decode_frame();
 	}
   return 0;
 }

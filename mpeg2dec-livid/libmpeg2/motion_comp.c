@@ -83,7 +83,7 @@ motion_comp_init (void)
 
 //FIXME turn mmx back on
 #ifdef __i386__
-    if (config.flags & MPEG2_MMX_ENABLE)
+    if (1 | config.flags & MPEG2_MMX_ENABLE)
 		{
 			motion_comp_idct_add = motion_comp_idct_add_mmx;
 			motion_comp_idct_copy = motion_comp_idct_copy_mmx;

@@ -4,6 +4,7 @@ mpeg2dec-0.1.7
 -cleanup on motion_comp
 -remove mb_buffer goofiness
 -new yuv2rgb code
+-SDL display code added
 
 mpeg2dec-0.1.6 Wed Mar 22 09:45:44 PST 2000
 -enhanced g200 

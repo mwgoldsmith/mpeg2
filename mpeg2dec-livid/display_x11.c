@@ -356,7 +356,9 @@ void display_init(uint_32 width, uint_32 height)
    DeInstallXErrorHandler();
 #endif
    
-   bpp = myximage->bits_per_pixel;
+	 //XXX why the heck was this here?
+   //bpp = myximage->bits_per_pixel;
+
    // If we have blue in the lowest bit then obviously RGB 
    mode = ((myximage->blue_mask & 0x01) != 0) ? MODE_RGB : MODE_BGR;
 #ifdef WORDS_BIGENDIAN 

@@ -13,6 +13,7 @@ Contributions by (in no particular order):
 	Michel LESPINASSE <walken@windriver.com> - motion comp cleanup, new yuv2rgb
   David I. Lehn <dlehn@vt.edu> - motion_comp mmx code
 	Fredrik Vraalsen <vraalsen@cs.uiuc.edu> - general hackage and good stuff
+	Ryan C. Gordon <icculus@lokigames.com> - SDL support
 	(let me know if I've forgotten anyone)
 
 First of all, this is very early code. If you're not interested

@@ -108,6 +108,9 @@ decode_find_header(uint_32 type,picture_t *picture)
 			case EXTENSION_START_CODE:
 				parse_extension(picture);
 				break;
+			case SEQUENCE_HEADER_CODE: 
+				parse_sequence_header(picture); 
+			break;
 
 			//FIXME add in the other strange extension headers
 			default:
@@ -137,6 +140,7 @@ mpeg2_init(void)
 
 	//FIXME setup config properly
 	config.flags = MPEG2_MMX_ENABLE;
+	//config.flags = 0;
 
 	mb.y_blocks = y_blocks;
 	mb.cr_blocks = cr_blocks;

@@ -56,31 +56,43 @@ uint_32 non_linear_quantizer_scale[32] =
 static const uint_8 scan_norm_mmx[64] =
 { 
 	// MMX Zig-Zag scan pattern (transposed)  
-	 0, 8, 1, 2, 9,16,24,17,10, 3, 4,11,18,25,32,40,
-	33,26,19,12, 5, 6,13,20,27,34,41,48,56,49,42,35,
-	28,21,14, 7,15,22,29,36,43,50,57,58,51,44,37,30,
-	23,31,38,45,52,59,60,53,46,39,47,54,61,62,55,63
+	0,  8, 1,  2, 9,16,24,17,
+	10, 3, 4, 11,18,25,32,40,
+	33,26,19,12, 5, 6,13,20,
+	27,34,41,48,56,49,42,35,
+	28,21,14, 7,15,22,29,36,
+	43,50,57,58,51,44,37,30,
+	23,31,38,45,52,59,60,53,
+	46,39,47,54,61,62,55,63
 };
 
 static const uint_8 scan_alt_mmx[64] = 
 { 
 	// Alternate scan pattern (transposed)
-	 0, 1, 2, 3, 8, 9,16,17,10,11, 4, 5, 6, 7,15,14,
-	13,12,19,18,24,25,32,33,26,27,20,21,22,23,28,29,
-	30,31,34,35,40,41,48,49,42,43,36,37,38,39,44,45,
-	46,47,50,51,56,57,58,59,52,53,54,55,60,61,62,63,
+	0, 1, 2, 3, 8, 9,16,17,
+	10,11, 4, 5, 6, 7,15,14,
+	13,12,19,18,24,25,32,33,
+	26,27,20,21,22,23,28,29,
+	30,31,34,35,40,41,48,49,
+	42,43,36,37,38,39,44,45,
+	46,47,50,51,56,57,58,59,
+	52,53,54,55,60,61,62,63,
 };
 #endif
+
 static const uint_8 scan_norm[64] =
 { 
 	// Zig-Zag scan pattern
-	0,1,8,16,9,2,3,10,17,24,32,25,18,11,4,5,
-	12,19,26,33,40,48,41,34,27,20,13,6,7,14,21,28,
-	35,42,49,56,57,50,43,36,29,22,15,23,30,37,44,51,
-	58,59,52,45,38,31,39,46,53,60,61,54,47,55,62,63
+	 0, 1, 8,16, 9, 2, 3,10,
+	17,24,32,25,18,11, 4, 5,
+	12,19,26,33,40,48,41,34,
+	27,20,13, 6, 7,14,21,28,
+	35,42,49,56,57,50,43,36,
+	29,22,15,23,30,37,44,51,
+	58,59,52,45,38,31,39,46,
+	53,60,61,54,47,55,62,63
 };
 
-#ifdef __i386__
 static const uint_8 scan_alt[64] =
 { 
 	// Alternate scan pattern 
@@ -89,7 +101,6 @@ static const uint_8 scan_alt[64] =
 	51,59,20,28,5,13,6,14,21,29,36,44,52,60,37,45,
 	53,61,22,30,7,15,23,31,38,46,54,62,39,47,55,63
 };
-#endif
 
 static uint_8 default_intra_quantization_matrix[64] = 
 {
@@ -128,11 +139,11 @@ parse_state_init(picture_t *picture)
 	//here (mmx vs normal) instead of the ifdefs in parse_picture_coding_extension
 
 #ifdef __i386__
+	if(config.flags & MPEG2_MMX_ENABLE)
 		picture->scan = scan_norm_mmx;
-#else
-		picture->scan = scan_norm;
+	else
 #endif
-
+		picture->scan = scan_norm;
 
 }
 
@@ -306,16 +317,21 @@ parse_picture_coding_extension(picture_t *picture)
   picture->alternate_scan             = bitstream_get(1);
 
 #ifdef __i386__
-	if(picture->alternate_scan)
-		picture->scan = scan_alt_mmx;
+	if(config.flags & MPEG2_MMX_ENABLE)
+	{
+		if(picture->alternate_scan)
+			picture->scan = scan_alt_mmx;
+		else
+			picture->scan = scan_norm_mmx;
+	}
 	else
-		picture->scan = scan_norm_mmx;
-#else
-	if(picture->alternate_scan)
-		picture->scan = scan_alt;
-	else
-		picture->scan = scan_norm;
 #endif
+	{
+		if(picture->alternate_scan)
+			picture->scan = scan_alt;
+		else
+			picture->scan = scan_norm;
+	}
 
   picture->repeat_first_field         = bitstream_get(1);
 	/*chroma_420_type isn't used */       bitstream_get(1);
