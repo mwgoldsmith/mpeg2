@@ -135,25 +135,24 @@ typedef struct picture_s {
     int bitrate;
 } picture_t;
 
-typedef struct mpeg2_config_s {
-    /* Bit flags that enable various things */
-    uint32_t flags;
-} mpeg2_config_t;
+typedef struct cpu_state_s {
+#ifdef ARCH_PPC
+    uint8_t regv[12*16];
+#endif
+    int dummy;
+} cpu_state_t;
 
-/* The only global variable, */
-/* the config struct */
-extern mpeg2_config_t config;
+/* cpu_state.c */
+void cpu_state_init (uint32_t mm_accel);
 
-
-
-/* slice.c */
+/* header.c */
 void header_state_init (picture_t * picture);
 int header_process_picture_header (picture_t * picture, uint8_t * buffer);
 int header_process_sequence_header (picture_t * picture, uint8_t * buffer);
 int header_process_extension (picture_t * picture, uint8_t * buffer);
 
 /* idct.c */
-void idct_init (void);
+void idct_init (uint32_t mm_accel);
 
 /* idct_mlib.c */
 void idct_block_add_mlib (int16_t * block, uint8_t * dest, int stride);
@@ -175,7 +174,7 @@ void idct_block_add_altivec (int16_t * block, uint8_t * dest, int stride);
 void idct_altivec_init (void);
 
 /* motion_comp.c */
-void motion_comp_init (void);
+void motion_comp_init (uint32_t mm_accel);
 
 typedef struct mc_functions_s {
     void (* put [8]) (uint8_t * dst, uint8_t *, int32_t, int32_t);

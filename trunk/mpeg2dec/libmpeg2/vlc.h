@@ -29,9 +29,10 @@ do {								\
 
 static inline void bitstream_init (picture_t * picture, uint8_t * start)
 {
-    picture->bitstream_buf = 0;    GETWORD (picture->bitstream_buf, 16, start);
-    picture->bitstream_ptr = start;
-    picture->bitstream_bits = 0;
+    picture->bitstream_buf =
+	(start[0] << 24) | (start[1] << 16) | (start[2] << 8) | start[3];
+    picture->bitstream_ptr = start + 4;
+    picture->bitstream_bits = -16;
 }
 
 /* make sure that there are at least 16 valid bits in bit_buf */

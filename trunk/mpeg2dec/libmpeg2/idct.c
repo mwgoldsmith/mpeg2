@@ -65,15 +65,15 @@ static void idct_block_add_c (int16_t *block, uint8_t * dest, int stride);
 static uint8_t clip_lut[1024];
 #define CLIP(i) ((clip_lut+384)[ (i)])
 
-void idct_init (void)
+void idct_init (uint32_t mm_accel)
 {
 #ifdef ARCH_X86
-    if (config.flags & MM_ACCEL_X86_MMXEXT) {
+    if (mm_accel & MM_ACCEL_X86_MMXEXT) {
 	fprintf (stderr, "Using MMXEXT for IDCT transform\n");
 	idct_block_copy = idct_block_copy_mmxext;
 	idct_block_add = idct_block_add_mmxext;
 	idct_mmx_init ();
-    } else if (config.flags & MM_ACCEL_X86_MMX) {
+    } else if (mm_accel & MM_ACCEL_X86_MMX) {
 	fprintf (stderr, "Using MMX for IDCT transform\n");
 	idct_block_copy = idct_block_copy_mmx;
 	idct_block_add = idct_block_add_mmx;
@@ -81,7 +81,7 @@ void idct_init (void)
     } else
 #endif
 #ifdef ARCH_PPC
-    if (config.flags & MM_ACCEL_PPC_ALTIVEC) {
+    if (mm_accel & MM_ACCEL_PPC_ALTIVEC) {
 	fprintf (stderr, "Using altivec for IDCT transform\n");
 	idct_block_copy = idct_block_copy_altivec;
 	idct_block_add = idct_block_add_altivec;
@@ -89,7 +89,7 @@ void idct_init (void)
     } else
 #endif
 #ifdef LIBMPEG2_MLIB
-    if (config.flags & MM_ACCEL_MLIB) {
+    if (mm_accel & MM_ACCEL_MLIB) {
 	char * env_var;
 
 	env_var = getenv ("MLIB_NON_IEEE");
