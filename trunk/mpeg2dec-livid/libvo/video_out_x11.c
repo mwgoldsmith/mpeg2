@@ -55,6 +55,7 @@ typedef struct x11_frame_s {
 typedef struct x11_instance_s {
     vo_instance_t vo;
     int prediction_index;
+    vo_frame_t * frame_ptr[3];
     x11_frame_t frame[3];
 
     /* local data */
@@ -207,7 +208,7 @@ static int x11_common_setup (x11_instance_t * this, int width, int height,
     }
 
     if (libvo_common_alloc_frames ((vo_instance_t *)this, width, height,
-				   draw_image)) {
+				   sizeof (x11_frame_t), draw_image)) {
 	fprintf (stderr, "Can not allocate yuv backing buffers\n");
 	return 1;
     }
@@ -527,6 +528,7 @@ static int xv_alloc_frames (x11_instance_t * this, int width, int height)
 	return 1;
 
     for (i = 0; i < 3; i++) {
+	this->frame_ptr[i] = (vo_frame_t *)(this->frame + i);
 	this->frame[i].vo.base[0] = alloc;
 	this->frame[i].vo.base[1] = alloc + 5 * size;
 	this->frame[i].vo.base[2] = alloc + 4 * size;
@@ -617,20 +619,6 @@ static int xv_draw_slice (uint8_t * src[], int slice_num)
 }
 #endif
 
-vo_frame_t * xv_get_frame (vo_instance_t * _this, int prediction)
-{
-    x11_instance_t * this;
-
-    this = (x11_instance_t *)_this;
-
-    if (!prediction)
-	return (vo_frame_t *)(this->frame + 2);
-    else {
-	this->prediction_index ^= 1;
-	return (vo_frame_t *)(this->frame + this->prediction_index);
-    }
-}
-
 vo_instance_t * vo_xv_setup (vo_instance_t * _this, int width, int height)
 {
     x11_instance_t * this;
@@ -652,7 +640,7 @@ vo_instance_t * vo_xv_setup (vo_instance_t * _this, int width, int height)
 
     this->vo.reinit = vo_xv_setup;
     this->vo.close = xv_close;
-    this->vo.get_frame = xv_get_frame;
+    this->vo.get_frame = libvo_common_get_frame;
 
     return (vo_instance_t *)this;
 }
@@ -683,6 +671,7 @@ static int xvshm_alloc_frames (x11_instance_t * this, int width, int height)
 	return 1;
 
     for (i = 0; i < 3; i++) {
+	this->frame_ptr[i] = (vo_frame_t *)(this->frame + i);
 	this->frame[i].vo.base[0] = alloc;
 	this->frame[i].vo.base[1] = alloc + 5 * size;
 	this->frame[i].vo.base[2] = alloc + 4 * size;
@@ -746,7 +735,7 @@ vo_instance_t * vo_xvshm_setup (vo_instance_t * _this, int width, int height)
 
     this->vo.reinit = vo_xvshm_setup;
     this->vo.close = xvshm_close;
-    this->vo.get_frame = xv_get_frame;
+    this->vo.get_frame = libvo_common_get_frame;
 
     return (vo_instance_t *)this;
 }

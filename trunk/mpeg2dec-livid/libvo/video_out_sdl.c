@@ -92,6 +92,7 @@ typedef struct sdl_frame_s {
 typedef struct sdl_instance_s {
     vo_instance_t vo;
     int prediction_index;
+    vo_frame_t * frame_ptr[3];
     sdl_frame_t frame[3];
 
     /* SDL YUV surface & overlay */
@@ -145,20 +146,12 @@ static void sdl_draw_frame (vo_frame_t * _frame)
     sdl_frame_t * frame;
     sdl_instance_t * this;
 
-
     frame = (sdl_frame_t *)_frame;
     this = (sdl_instance_t *)frame->vo.this;
 
     SDL_UnlockYUVOverlay (frame->overlay);
-	
-    /* blit to the YUV overlay */
     SDL_DisplayYUVOverlay (frame->overlay, &(this->surface->clip_rect));
-	
-    /* check for events */
     check_events ();
-	
-    /* Unlock the frame - the frame is 100% filled with data to display 
-     * We Lock it again when the frame was displayed. */
     SDL_LockYUVOverlay (frame->overlay);
 }
 
@@ -180,6 +173,7 @@ static int sdl_alloc_frames (sdl_instance_t * this, int width, int height)
 	this->frame[i].vo.copy = NULL;
 	this->frame[i].vo.draw = sdl_draw_frame;
 	this->frame[i].vo.this = (vo_instance_t *)this;
+	this->frame_ptr[i] = (vo_frame_t *)(this->frame + i);
 
 	/* Locks the allocated frame, to allow writing to it.
 	 * sdl_flip Unlocks it. sdl_draw_frame Locks it again.*/
@@ -196,20 +190,6 @@ static void sdl_free_frames (sdl_instance_t * this)
 
     for (i = 0; i < 3; i++)
 	SDL_FreeYUVOverlay (this->frame[i].overlay);
-}
-
-vo_frame_t * sdl_get_frame (vo_instance_t * _this, int prediction)
-{
-    sdl_instance_t * this;
-
-    this = (sdl_instance_t *)_this;
-
-    if (!prediction)
-	return (vo_frame_t *)(this->frame + 2);
-    else {
-	this->prediction_index ^= 1;
-	return (vo_frame_t *)(this->frame + this->prediction_index);
-    }
 }
 
 /**
@@ -355,15 +335,15 @@ static void sdl_close (vo_instance_t * _this)
 
 
 vo_instance_t sdl_vo_instance = {
-    vo_sdl_setup, sdl_close, sdl_get_frame
+    vo_sdl_setup, sdl_close, libvo_common_get_frame
 };
 
 vo_instance_t sdlsw_vo_instance = {
-    vo_sdlsw_setup, sdl_close, sdl_get_frame
+    vo_sdlsw_setup, sdl_close, libvo_common_get_frame
 };
 
 vo_instance_t sdlaa_vo_instance = {
-    vo_sdlaa_setup, sdl_close, sdl_get_frame
+    vo_sdlaa_setup, sdl_close, libvo_common_get_frame
 };
 
 #endif

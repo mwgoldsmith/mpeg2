@@ -32,6 +32,7 @@
 typedef struct pgm_instance_s {
     vo_instance_t vo;
     int prediction_index;
+    vo_frame_t * frame_ptr[3];
     vo_frame_t frame[3];
     int width;
     int height;
@@ -56,7 +57,7 @@ static vo_instance_t * internal_setup (vo_instance_t * _this,
     }
 
     if (libvo_common_alloc_frames ((vo_instance_t *)this, width, height,
-				   draw_frame))
+				   sizeof (vo_frame_t), draw_frame))
 	return NULL;
 
     this->vo = pgm_vo_instance;
