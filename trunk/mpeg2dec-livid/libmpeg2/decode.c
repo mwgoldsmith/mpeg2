@@ -49,13 +49,7 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output,
     mpeg2dec->drop_frame=0;
     mpeg2dec->in_slice=0;
 
-    // copy output structure into local mpeg2dec structure
-    // FIXME this is ugly
-    if (output != NULL) {
-	mpeg2dec->output=(vo_output_video_t *) 
-	    malloc (sizeof (vo_output_video_t));
-	memcpy(mpeg2dec->output,output,sizeof (vo_output_video_t));
-    }
+    mpeg2dec->output = output;
     
     // opaque user pointer (is passed to the output)
     mpeg2dec->user_data=user_data;
