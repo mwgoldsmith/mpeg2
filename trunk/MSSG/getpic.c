@@ -66,6 +66,7 @@ static int decode_macroblock _ANSI_ARGS_((int *macroblock_type,
   int PMV[2][2][2], int dc_dct_pred[3], 
   int motion_vertical_field_select[2][2], int dmvector[2]));
 
+extern int IDCT_overflow;
 
 /* decode one frame or field picture */
 void Decode_Picture(bitstream_framenum, sequence_framenum)
@@ -818,8 +819,22 @@ int dct_type;
     /* ISO/IEC 13818-2 section Annex A: inverse DCT */
     if (Reference_IDCT_Flag)
       Reference_IDCT(ld->block[comp]);
-    else
+    else {
+      short ref[64];
+      int i, j;
+
+      memcpy (ref, ld->block[comp], 64*sizeof(short));
+      Reference_IDCT(ref);
       Fast_IDCT(ld->block[comp], comp);
+      for (i = 0; i < 64; i++) {
+	j = ld->block[comp][i];
+	j = (j < -256) ? -256 : (j > 255) ? 255 : j;
+	j -= ref[i];
+	if (j < -1 || j > 1) {
+	  IDCT_overflow = 1;
+	}
+      }
+    }
     
     /* ISO/IEC 13818-2 section 7.6.8: Adding prediction and coefficient data */
     Add_Block(comp,bx,by,dct_type,(macroblock_type & MACROBLOCK_INTRA)==0);

@@ -46,6 +46,7 @@ static void Initialize_Decoder _ANSI_ARGS_((void));
 static void Deinitialize_Sequence _ANSI_ARGS_((void));
 static void Process_Options _ANSI_ARGS_((int argc, char *argv[]));
 
+int IDCT_overflow = 0;
 
 #if OLD
 static int  Get_Val _ANSI_ARGS_((char *argv[]));
@@ -148,7 +149,7 @@ char *argv[];
   if (Two_Streams)
     close(enhan.Infile);
 
-  return 0;
+  return IDCT_overflow;
 }
 
 /* IMPLEMENTAION specific rouintes */
@@ -166,8 +167,7 @@ static void Initialize_Decoder()
     Clip[i] = (i<0) ? 0 : ((i>255) ? 255 : i);
 
   /* IDCT */
-  if (Reference_IDCT_Flag)
-    Initialize_Reference_IDCT();
+  Initialize_Reference_IDCT();
 }
 
 /* mostly IMPLEMENTAION specific rouintes */
