@@ -108,16 +108,12 @@ static void decode_allocate_image_buffers (INITTYPE * output,
 
 #ifdef __OMS__
     // allocate images in YV12 format
-<<<<<<< decode.c
     tmp = output->allocate_image_buffer (picture->coded_picture_height, 
 					  picture->coded_picture_width, 
 					  0x32315659);
 #else
     // allocate images in YV12 format
     tmp = output->allocate_image_buffer2 (picture->coded_picture_width, 
-=======
-    tmp = output->allocate_image_buffer (picture->coded_picture_width, 
->>>>>>> 1.56
 					  picture->coded_picture_height, 
 					  0x32315659 USERDATA );
 #endif
@@ -125,23 +121,18 @@ static void decode_allocate_image_buffers (INITTYPE * output,
     picture->throwaway_frame[1] = tmp->base + frame_size * 5 / 4;
     picture->throwaway_frame[2] = tmp->base + frame_size;
 
-<<<<<<< decode.c
 #ifdef __OMS__
     tmp = output->allocate_image_buffer (picture->coded_picture_height, 
 					  picture->coded_picture_width, 
 					  0x32315659);
 #else
     tmp = output->allocate_image_buffer2 (picture->coded_picture_width, 
-=======
-    tmp = output->allocate_image_buffer (picture->coded_picture_width, 
->>>>>>> 1.56
 					  picture->coded_picture_height, 
 					  0x32315659 USERDATA );
 #endif
     picture->backward_reference_frame[0] = tmp->base;
     picture->backward_reference_frame[1] = tmp->base + frame_size * 5 / 4;
     picture->backward_reference_frame[2] = tmp->base + frame_size;
-<<<<<<< decode.c
    
 #ifdef __OMS__ 
     tmp = output->allocate_image_buffer (picture->coded_picture_height, 
@@ -149,10 +140,6 @@ static void decode_allocate_image_buffers (INITTYPE * output,
 					  0x32315659);
 #else
     tmp = output->allocate_image_buffer2 (picture->coded_picture_width, 
-=======
-    
-    tmp = output->allocate_image_buffer (picture->coded_picture_width, 
->>>>>>> 1.56
 					  picture->coded_picture_height, 
 					  0x32315659 USERDATA );
 #endif
@@ -204,27 +191,9 @@ static int parse_chunk (INITTYPE * output, int code, uint8_t * buffer)
 
     is_frame_done = in_slice && ((!code) || (code >= 0xb0));
 
-<<<<<<< decode.c
-    if (is_frame_done && (!drop_frame)) {
-	if ((HACK_MODE == 2) || (picture.mpeg1)) {
-	    uint8_t ** bar;
-
-	    if (picture.picture_coding_type == B_TYPE)
-		bar = picture.throwaway_frame;
-	    else
-		bar = picture.forward_reference_frame;
-=======
     if (is_frame_done) {
 	in_slice = 0;
->>>>>>> 1.56
 
-<<<<<<< decode.c
-	    output->draw_frame (bar);
-	}
-	output->flip_page ();
-    }
-
-=======
 	if (!drop_frame) {
 	    if (((HACK_MODE == 2) || (picture.mpeg1)) &&
 		((picture.picture_structure == FRAME_PICTURE) ||
@@ -235,7 +204,6 @@ static int parse_chunk (INITTYPE * output, int code, uint8_t * buffer)
 		    output->draw_frame(picture.forward_reference_frame);
 	    }
 	    output->flip_page ();
->>>>>>> 1.56
 #ifdef ARCH_X86
 	    if (config.flags & MM_ACCEL_X86_MMX)
 		emms ();
@@ -303,10 +271,8 @@ static int parse_chunk (INITTYPE * output, int code, uint8_t * buffer)
 	drop_frame |= drop_flag && (picture.picture_coding_type == B_TYPE);
 	
 	if (!drop_frame) {
-<<<<<<< decode.c
 	    uint8_t ** bar;
-=======
->>>>>>> 1.56
+
 	    slice_process (&picture, code, buffer);
 
 	    if (picture.picture_coding_type == B_TYPE)
@@ -389,19 +355,10 @@ void mpeg2_close (INITTYPE * output)
     if (is_display_initialized)
 	output->draw_frame (picture.backward_reference_frame);
 #if 0 // Totaly broken, wrong type and not implemented in all outputs
-#ifdef __OMS__
-<<<<<<< decode.c
-//    output->free_image_buffer (picture.backward_reference_frame);
-//    output->free_image_buffer (picture.forward_reference_frame);
-//    output->free_image_buffer (picture.throwaway_frame);
-#endif
-=======
     output->free_image_buffer (picture.backward_reference_frame);
     output->free_image_buffer (picture.forward_reference_frame);
     output->free_image_buffer (picture.throwaway_frame);
 #endif
-#endif
->>>>>>> 1.56
 }
 
 void mpeg2_drop (int flag)
