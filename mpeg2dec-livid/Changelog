@@ -1,10 +1,12 @@
-mpeg2dec-0.1.7 
+mpeg2dec-0.1.7 Sun May 28 23:29:27 GMT-5 2000
 -added Xv support
 -major cruft removal
 -cleanup on motion_comp
 -remove mb_buffer goofiness
 -new yuv2rgb code
 -SDL display code added
+-faster motion_comp_c code
+-moved codec, display code into separate libraries
 
 mpeg2dec-0.1.6 Wed Mar 22 09:45:44 PST 2000
 -enhanced g200 

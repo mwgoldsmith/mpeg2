@@ -34,7 +34,6 @@
 #include "mpeg2_internal.h"
 
 #include "motion_comp.h"
-#include "motion_comp_mmx.h"
 
 
 
@@ -609,3 +608,6 @@ motion_comp_put_y_8x8_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 
 {
    motion_comp_put_y_mmx( 8, height, curr_block, ref_block, frame_stride);
 }
+
+
+MOTION_COMP_EXTERN(mmx)

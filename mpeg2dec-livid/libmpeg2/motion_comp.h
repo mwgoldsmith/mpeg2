@@ -22,51 +22,30 @@
  */
 
 void motion_comp_init(void);
+void motion_comp_c_init(void);
 void motion_comp (picture_t * picture, macroblock_t *mb);
 
-//prototypes for the C fallback versions of motion_comp
-void motion_comp_c_init(void);
-void motion_comp_idct_add_c (uint_8 * dst, sint_16 * block, uint_32 stride);
-void motion_comp_idct_copy_c (uint_8 * dst, sint_16 * block, uint_32 stride);
+typedef struct mc_functions_s
+{
+    void (* idct_copy) (uint_8 *dst, sint_16 *block, uint_32 stride);
+    void (* idct_add) (uint_8 *dst, sint_16 *block, uint_32 stride);
+    void (* put [8]) (uint_8 *dst, uint_8 *, sint_32, sint_32);
+    void (* avg [8]) (uint_8 *dst, uint_8 *, sint_32, sint_32);
+} mc_functions_t;
 
-//There are 2 sets of eight worker functions. One set is for the normal
-//case and the other is for the averaging case.
-//
-//These functions are defined in the motion_comp_[c|mmx].c files.
-//
-void motion_comp_put_16x16 (uint_8 *curr_block, uint_8 *ref_block, 
-		sint_32 stride, sint_32 height);
-void motion_comp_put_x_16x16 (uint_8 *curr_block, uint_8 *ref_block, 
-		sint_32 stride, sint_32 height);
-void motion_comp_put_y_16x16 (uint_8 *curr_block, uint_8 *ref_block, 
-		sint_32 stride, sint_32 height);
-void motion_comp_put_xy_16x16 (uint_8 *curr_block, uint_8 *ref_block, 
-		sint_32 stride, sint_32 height);
+#define MOTION_COMP_EXTERN(x) mc_functions_t mc_functions_##x =\
+{\
+	motion_comp_idct_copy_##x,    motion_comp_idct_add_##x,\
+	{motion_comp_put_16x16_##x,   motion_comp_put_x_16x16_##x,\
+	 motion_comp_put_y_16x16_##x, motion_comp_put_xy_16x16_##x,\
+	 motion_comp_put_8x8_##x,     motion_comp_put_x_8x8_##x,\
+	 motion_comp_put_y_8x8_##x,   motion_comp_put_xy_8x8_##x},\
+	{motion_comp_avg_16x16_##x,   motion_comp_avg_x_16x16_##x,\
+	 motion_comp_avg_y_16x16_##x, motion_comp_avg_xy_16x16_##x,\
+	 motion_comp_avg_8x8_##x,     motion_comp_avg_x_8x8_##x,\
+	 motion_comp_avg_y_8x8_##x,   motion_comp_avg_xy_8x8_##x}\
+};
 
-void motion_comp_put_8x8 (uint_8 *curr_block, uint_8 *ref_block, 
-		sint_32 stride, sint_32 height);
-void motion_comp_put_x_8x8 (uint_8 *curr_block, uint_8 *ref_block, 
-		sint_32 stride, sint_32 height);
-void motion_comp_put_y_8x8 (uint_8 *curr_block, uint_8 *ref_block, 
-		sint_32 stride, sint_32 height);
-void motion_comp_put_xy_8x8 (uint_8 *curr_block, uint_8 *ref_block, 
-		sint_32 stride, sint_32 height);
+extern mc_functions_t mc_functions_c;
+extern mc_functions_t mc_functions_mmx;
 
-
-void motion_comp_avg_16x16 (uint_8 *curr_block, uint_8 *ref_block, 
-		sint_32 stride, sint_32 height);
-void motion_comp_avg_x_16x16 (uint_8 *curr_block, uint_8 *ref_block, 
-		sint_32 stride, sint_32 height); 
-void motion_comp_avg_y_16x16 (uint_8 *curr_block, uint_8 *ref_block, 
-		sint_32 stride, sint_32 height);
-void motion_comp_avg_xy_16x16 (uint_8 *curr_block, uint_8 *ref_block, 
-		sint_32 stride, sint_32 height);
-
-void motion_comp_avg_8x8 (uint_8 *curr_block, uint_8 *ref_block, 
-		sint_32 stride, sint_32 height);
-void motion_comp_avg_x_8x8 (uint_8 *curr_block, uint_8 *ref_block, 
-		sint_32 stride, sint_32 height); 
-void motion_comp_avg_y_8x8 (uint_8 *curr_block, uint_8 *ref_block, 
-		sint_32 stride, sint_32 height); 
-void motion_comp_avg_xy_8x8 (uint_8 *curr_block, uint_8 *ref_block, 
-		sint_32 stride, sint_32 height); 
