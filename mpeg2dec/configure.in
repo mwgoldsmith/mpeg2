@@ -6,6 +6,7 @@ AM_INIT_AUTOMAKE(mpeg2dec,0.2.1-cvs)
 AM_CONFIG_HEADER(include/config.h)
 AM_MAINTAINER_MODE
 AC_CANONICAL_HOST
+if test x"$host_alias" = x""; then host_alias="$host"; fi
 
 dnl Checks for compiler
 AC_PROG_CC
