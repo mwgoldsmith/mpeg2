@@ -169,10 +169,10 @@ struct mpeg2dec_s {
     /* last start code ? */
     uint8_t code;
 
-    /* PTS */
-    uint32_t pts_current, pts_previous;
-    int num_pts;
-    int bytes_since_pts;
+    /* picture tags */
+    uint32_t tag_current, tag2_current, tag_previous, tag2_previous;
+    int num_tags;
+    int bytes_since_tag;
 
     int first;
     int alloc_index_user;

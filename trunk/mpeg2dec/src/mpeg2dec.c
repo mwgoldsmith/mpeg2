@@ -508,12 +508,17 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 		    NEEDBYTES (len);
 		    /* header points to the mpeg2 pes header */
 		    if (header[7] & 0x80) {
-			uint32_t pts;
+			uint32_t pts, dts;
 
 			pts = (((header[9] >> 1) << 30) |
 			       (header[10] << 22) | ((header[11] >> 1) << 15) |
 			       (header[12] << 7) | (header[13] >> 1));
-			mpeg2_pts (mpeg2dec, pts);
+			dts = (!(header[7] & 0x40) ? pts :
+			       (((header[14] >> 1) << 30) |
+				(header[15] << 22) |
+				((header[16] >> 1) << 15) |
+				(header[17] << 7) | (header[18] >> 1)));
+			mpeg2_tag_picture (mpeg2dec, pts, dts);
 		    }
 		} else {	/* mpeg1 */
 		    int len_skip;
@@ -537,13 +542,17 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 		    NEEDBYTES (len);
 		    /* header points to the mpeg1 pes header */
 		    ptsbuf = header + len_skip;
-		    if (ptsbuf[-1] & 0x20) {
-			uint32_t pts;
+		    if ((ptsbuf[-1] & 0xe0) == 0x20) {
+			uint32_t pts, dts;
 
 			pts = (((ptsbuf[-1] >> 1) << 30) |
 			       (ptsbuf[0] << 22) | ((ptsbuf[1] >> 1) << 15) |
 			       (ptsbuf[2] << 7) | (ptsbuf[3] >> 1));
-			mpeg2_pts (mpeg2dec, pts);
+			dts = (((ptsbuf[-1] & 0xf0) != 0x30) ? pts :
+			       (((ptsbuf[4] >> 1) << 30) |
+				(ptsbuf[5] << 22) | ((ptsbuf[6] >> 1) << 15) |
+				(ptsbuf[7] << 7) | (ptsbuf[18] >> 1)));
+			mpeg2_tag_picture (mpeg2dec, pts, dts);
 		    }
 		}
 		DONEBYTES (len);
@@ -659,8 +668,9 @@ static int pva_demux (uint8_t * buf, uint8_t * end)
 		len = 12 + (header[5] & 3);
 		NEEDBYTES (len);
 		decode_mpeg2 (header + 12, header + len);
-		mpeg2_pts (mpeg2dec, ((header[8] << 24) | (header[9] << 16) |
-				      (header[10] << 8) | header[11]));
+		mpeg2_tag_picture (mpeg2dec,
+				   ((header[8] << 24) | (header[9] << 16) |
+				    (header[10] << 8) | header[11]), 0);
 	    }
 	    DONEBYTES (len);
 	    bytes = (header[6] << 8) + header[7] + 8 - len;
