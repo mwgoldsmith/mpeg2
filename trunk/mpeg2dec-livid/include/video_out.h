@@ -43,6 +43,8 @@ typedef struct vo_driver_s {
     vo_open_t * open;
 } vo_driver_t;
 
+void vo_accel (uint32_t accel);
+
 /* return NULL terminated array of all drivers */
 vo_driver_t * vo_drivers (void);
 

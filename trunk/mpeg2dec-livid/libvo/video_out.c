@@ -27,6 +27,7 @@
 #include "video_out.h"
 #include "video_out_internal.h"
 
+uint32_t vo_mm_accel = 0;
 
 /* Externally visible list of all vo drivers */
 
@@ -41,6 +42,11 @@ extern vo_open_t vo_nullrgb32_open;
 extern vo_open_t vo_pgm_open;
 extern vo_open_t vo_pgmpipe_open;
 extern vo_open_t vo_md5_open;
+
+void vo_accel (uint32_t accel)
+{
+    vo_mm_accel = accel;
+}
 
 static vo_driver_t video_out_drivers[] =
 {

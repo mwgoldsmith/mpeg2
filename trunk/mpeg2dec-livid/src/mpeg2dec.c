@@ -292,18 +292,22 @@ static void es_loop (void)
 int main (int argc,char *argv[])
 {
     vo_instance_t * output;
+    uint32_t accel;
 
     fprintf (stderr, PACKAGE"-"VERSION
 	     " (C) 2000-2001 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>\n");
 
     handle_args (argc, argv);
 
+    accel = mm_accel () | MM_ACCEL_MLIB;
+
+    vo_accel (accel);
     output = vo_open (output_open);
     if (output == NULL) {
 	fprintf (stderr, "Can not open output\n");
 	return 1;
     }
-    mpeg2_init (&mpeg2dec, mm_accel () | MM_ACCEL_MLIB, output);
+    mpeg2_init (&mpeg2dec, accel, output);
 
     signal (SIGINT, signal_handler);
 

@@ -19,6 +19,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+extern uint32_t vo_mm_accel;
+
 int libvo_common_alloc_frames (vo_instance_t * instance, int width, int height,
 			       int frame_size,
 			       void (* copy) (vo_frame_t *, uint8_t **),
