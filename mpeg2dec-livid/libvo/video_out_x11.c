@@ -1,4 +1,4 @@
-//#define DISP
+#define DISP
 
 /*
  * video_out_x11.c
