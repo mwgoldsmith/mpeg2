@@ -13,3 +13,4 @@
 #undef HAVE_SDL
 #undef HAVE_3DFX
 #undef HAVE_MGA
+#undef HAVE_SYNCFB
