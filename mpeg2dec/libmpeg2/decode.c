@@ -30,6 +30,7 @@
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 #include "convert.h"
+#include "attributes.h"
 
 #define BUFFER_SIZE (1194 * 1024)
 
@@ -172,21 +173,21 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 {
     uint8_t code;
 
-    if (mpeg2dec->state == STATE_END) {
+    switch (mpeg2dec->state) {
+    case STATE_END:
 	mpeg2_header_end (mpeg2dec);
 	return STATE_END;
-    }
 
-    while (1) {
+    next_chunk:
+	mpeg2dec->chunk_ptr = mpeg2dec->chunk_start;
+    default:
 	code = mpeg2dec->code;
 	if (copy_chunk (mpeg2dec))
 	    return -1;
 
 	/* wait for sequence_header_code */
-	if (mpeg2dec->state == STATE_INVALID && code != 0xb3) {
-	    mpeg2dec->chunk_ptr = mpeg2dec->chunk_start;
-	    continue;
-	}
+	if (mpeg2dec->state == STATE_INVALID && code != 0xb3)
+	    goto next_chunk;
 
 	switch (code) {
 	case 0x00:	/* picture_start_code */
@@ -223,20 +224,17 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	case RECEIVED (0x00, STATE_SEQUENCE):
 	case RECEIVED (0xb8, STATE_SEQUENCE):
 	    mpeg2_header_sequence_finalize (mpeg2dec);
-	    mpeg2dec->chunk_start = mpeg2dec->chunk_ptr =
-		mpeg2dec->chunk_buffer;
 	    if (repeated_sequence (&(mpeg2dec->last_sequence),
 				   &(mpeg2dec->sequence)))
-		break;
+		mpeg2dec->state = STATE_SEQUENCE_REPEATED;
 	    mpeg2dec->last_sequence = mpeg2dec->sequence;
-	    return STATE_SEQUENCE;
+	    break;
 
 	/* end of sequence */
 	case RECEIVED (0xb7, STATE_SLICE):
 	    mpeg2dec->state = STATE_END;
 	    mpeg2dec->last_sequence.width = (unsigned int) -1;
-	    mpeg2dec->chunk_ptr = mpeg2dec->chunk_start;
-	    return STATE_SLICE;
+	    break;
 
 	/* other legal state transitions */
 	case RECEIVED (0x00, STATE_GOP):
@@ -244,9 +242,7 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	case RECEIVED (0x00, STATE_SLICE):
 	case RECEIVED (0xb3, STATE_SLICE):
 	case RECEIVED (0xb8, STATE_SLICE):
-	    mpeg2dec->chunk_start = mpeg2dec->chunk_ptr =
-		mpeg2dec->chunk_buffer;
-	    return mpeg2dec->state;
+	    break;
 
 	/* legal headers within a given state */
 	case RECEIVED (0xb2, STATE_SEQUENCE):
@@ -256,29 +252,28 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	case RECEIVED (0xb5, STATE_SEQUENCE):
 	case RECEIVED (0xb5, STATE_PICTURE):
 	case RECEIVED (0xb5, STATE_PICTURE_2ND):
-	    break;
+	    goto next_chunk;
 
 	default:
-	    if (mpeg2dec->code >= 0xb0) {
+	    if (likely (mpeg2dec->code < 0xb0)) {
+		if (likely (mpeg2dec->state == STATE_SLICE_1ST ||
+			    mpeg2dec->state == STATE_SLICE))
+		    goto next_chunk;
+		else if (mpeg2dec->state == STATE_PICTURE ||
+			 mpeg2dec->state == STATE_PICTURE_2ND)
+		    break;
+	    }
+
 	case RECEIVED (0x00, STATE_PICTURE):
 	case RECEIVED (0x00, STATE_PICTURE_2ND):
-	illegal:
-		/* illegal codes (0x00 - 0xb8) or system codes (0xb9 - 0xff) */
-		mpeg2dec->state = STATE_INVALID;
-		mpeg2dec->chunk_start = mpeg2dec->chunk_ptr =
-		    mpeg2dec->chunk_buffer;
-		break;
-	    } else if (mpeg2dec->state == STATE_PICTURE ||
-		       mpeg2dec->state == STATE_PICTURE_2ND) {
-		mpeg2dec->chunk_start = mpeg2dec->chunk_ptr =
-		    mpeg2dec->chunk_buffer;
-		return mpeg2dec->state;
-	    } else if (mpeg2dec->state != STATE_SLICE &&
-		     mpeg2dec->state != STATE_SLICE_1ST)
-		goto illegal;	/* slice at unexpected position */
+	    mpeg2dec->state = STATE_INVALID;
+	    mpeg2dec->chunk_start = mpeg2dec->chunk_buffer;
+	    goto next_chunk;
 	}
-	mpeg2dec->chunk_ptr = mpeg2dec->chunk_start;
     }
+
+    mpeg2dec->chunk_start = mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
+    return mpeg2dec->state;
 }
 
 void mpeg2_convert (mpeg2dec_t * mpeg2dec,
