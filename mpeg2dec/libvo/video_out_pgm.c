@@ -78,7 +78,7 @@ static int pgm_setup (vo_instance_t * _instance, int width, int height,
 
     instance->width = width;
     instance->height = height;
-    sprintf (instance->header, "P5\n\n%d %d\n255\n", width, height * 3 / 2);
+    sprintf (instance->header, "P5\n%d %d\n255\n", width, height * 3 / 2);
     result->convert = NULL;
     return 0;
 }
