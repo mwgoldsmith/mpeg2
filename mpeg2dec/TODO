@@ -1,3 +1,6 @@
+* fix 'make check' on G4 (just have to update md5sums)
+* update mpeg2dec-stream.tar.gz on sourceforge
+
 * fix altivec IDCT (memset block to 0), optimize mmx idct memset too.
 
 * decode.c:
