@@ -891,18 +891,11 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	DUMPBITS (bit_buf, bits, 9);
 	NEEDBITS (bit_buf, bits);
     }
+    DUMPBITS (bit_buf, bits, 1);
 
-    if (bit_buf & 0x40000000) {
-	DUMPBITS (bit_buf, bits, 2);
-	offset = 0;
-    } else {
-	int mba_inc;
-
-	DUMPBITS (bit_buf, bits, 1);
-	mba_inc = get_macroblock_address_increment ();
-	mba += mba_inc;
-	offset = mba_inc << 4;
-    }
+    offset = get_macroblock_address_increment ();
+    mba += offset;
+    offset <<= 4;
 
     while (1) {
 	NEEDBITS (bit_buf, bits);
