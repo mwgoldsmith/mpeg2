@@ -147,6 +147,10 @@ void header_process_sequence_header (picture_t * picture, uint_8 * buffer)
 	picture->coded_picture_height = v_size;
 	picture->last_mba = ((h_size * v_size) >> 8) - 1;
 
+	// this is not used by the decoder
+	picture->aspect_ratio_information = buffer[3] >> 4;
+	picture->frame_rate_code = buffer[3] & 15;
+
 	picture->intra_quantizer_matrix = default_intra_quantization_matrix;
 	if (buffer[7] & 2)
 	{
@@ -157,9 +161,6 @@ void header_process_sequence_header (picture_t * picture, uint_8 * buffer)
 		picture->intra_quantizer_matrix = picture->custom_intra_quantization_matrix;
 		buffer += 64;
 	}
-
-	// this is not used by the decoder
-	picture->frame_rate_code = buffer[3] & 15;
 
 	picture->non_intra_quantizer_matrix = default_non_intra_quantization_matrix;
 	if (buffer[7] & 1)

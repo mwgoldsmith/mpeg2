@@ -106,6 +106,7 @@ typedef struct picture_s
 
 	//these things are not needed by the decoder
 	//NOTICE : this is a temporary interface, we will build a better one later.
+	uint_16 aspect_ratio_information;
 	uint_16 frame_rate_code;
 	uint_16 progressive_sequence;
 	uint_16 top_field_first;
