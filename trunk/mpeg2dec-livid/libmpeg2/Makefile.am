@@ -11,7 +11,7 @@ libmpeg2_la_LDFLAGS = -version-info 1:6:1 -export-symbols libmpeg2.sym
 libmpeg2_la_SOURCES = slice.c header.c stats.c idct.c motion_comp.c\
 	decode.c debug.c
 
-EXTRA_libmpeg2_la_SOURCES = idct_mmx.c idct_block_mmx.S idct_mlib.c\
+EXTRA_libmpeg2_la_SOURCES = idct_mmx.c idct_mlib.c\
 	motion_comp_mmx.c motion_comp_mlib.c libmpeg2.sym 
 
 noinst_HEADERS = mpeg2.h stats.h header.h slice.h motion_comp.h\

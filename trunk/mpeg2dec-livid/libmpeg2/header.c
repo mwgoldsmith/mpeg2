@@ -54,33 +54,6 @@ static uint8_t default_intra_quantizer_matrix[64] ALIGN_16_BYTE = {
     83
 };
 
-#ifdef __i386__
-static uint8_t scan_norm_mmx[64] ALIGN_16_BYTE = { 
-    // MMX Zig-Zag scan pattern (transposed) 
-     0, 8, 1, 2, 9,16,24,17,
-    10, 3, 4,11,18,25,32,40,
-    33,26,19,12, 5, 6,13,20,
-    27,34,41,48,56,49,42,35,
-    28,21,14, 7,15,22,29,36,
-    43,50,57,58,51,44,37,30,
-    23,31,38,45,52,59,60,53,
-    46,39,47,54,61,62,55,63
-};
-
-static uint8_t scan_alt_mmx[64] ALIGN_16_BYTE = 
-{ 
-    // Alternate scan pattern (transposed)
-     0, 1, 2, 3, 8, 9,16,17,
-    10,11, 4, 5, 6, 7,15,14,
-    13,12,19,18,24,25,32,33,
-    26,27,20,21,22,23,28,29,
-    30,31,34,35,40,41,48,49,
-    42,43,36,37,38,39,44,45,
-    46,47,50,51,56,57,58,59,
-    52,53,54,55,60,61,62,63,
-};
-#endif
-
 static uint8_t scan_norm[64] ALIGN_16_BYTE =
 { 
     // Zig-Zag scan pattern
@@ -108,12 +81,7 @@ void header_state_init (picture_t * picture)
     //FIXME we should set pointers to the real scan matrices here (mmx vs
     //normal) instead of the ifdefs in header_process_picture_coding_extension
 
-#ifdef __i386__
-    if (config.flags & MPEG2_MMX_ENABLE)
-	picture->scan = scan_norm_mmx;
-    else
-#endif
-	picture->scan = scan_norm;
+    picture->scan = scan_norm;
 }
 
 int header_process_sequence_header (picture_t * picture, uint8_t * buffer)
@@ -121,7 +89,6 @@ int header_process_sequence_header (picture_t * picture, uint8_t * buffer)
     unsigned int h_size;
     unsigned int v_size;
     int i;
-    uint8_t * scan;
 
     if ((buffer[6] & 0x20) != 0x20)
 	return 1;	// missing marker_bit
@@ -143,27 +110,20 @@ int header_process_sequence_header (picture_t * picture, uint8_t * buffer)
     picture->aspect_ratio_information = buffer[3] >> 4;
     picture->frame_rate_code = buffer[3] & 15;
 
-#ifdef __i386__
-    if (config.flags & MPEG2_MMX_ENABLE)
-	scan = scan_norm_mmx;
-    else
-#endif
-	scan = scan_norm;
-
     if (buffer[7] & 2) {
 	for (i = 0; i < 64; i++)
-	    picture->intra_quantizer_matrix[scan[i]] =
+	    picture->intra_quantizer_matrix[scan_norm[i]] =
 		(buffer[i+7] << 7) | (buffer[i+8] >> 1);
 	buffer += 64;
     } else {
 	for (i = 0; i < 64; i++)
-	    picture->intra_quantizer_matrix[scan[i]] =
+	    picture->intra_quantizer_matrix[scan_norm[i]] =
 		default_intra_quantizer_matrix [i];
     }
 
     if (buffer[7] & 1) {
 	for (i = 0; i < 64; i++)
-	    picture->non_intra_quantizer_matrix[scan[i]] =
+	    picture->non_intra_quantizer_matrix[scan_norm[i]] =
 		buffer[i+8];
     } else {
 	for (i = 0; i < 64; i++)
@@ -202,24 +162,17 @@ static int header_process_quant_matrix_extension (picture_t * picture,
 						  uint8_t * buffer)
 {
     int i;
-    uint8_t * scan;
 
-#ifdef __i386__
-    if (config.flags & MPEG2_MMX_ENABLE)
-	scan = scan_norm_mmx;
-    else
-#endif
-	scan = scan_norm;
     if (buffer[0] & 8) {
 	for (i = 0; i < 64; i++)
-	    picture->intra_quantizer_matrix[scan[i]] =
+	    picture->intra_quantizer_matrix[scan_norm[i]] =
 		(buffer[i] << 5) | (buffer[i+1] >> 3);
 	buffer += 64;
     }
 
     if (buffer[0] & 4) {
 	for (i = 0; i < 64; i++)
-	    picture->non_intra_quantizer_matrix[scan[i]] =
+	    picture->non_intra_quantizer_matrix[scan_norm[i]] =
 		(buffer[i] << 6) | (buffer[i+1] >> 2);
     }
 
@@ -243,21 +196,10 @@ static int header_process_picture_coding_extension (picture_t * picture, uint8_t
     picture->q_scale_type = (buffer[3] >> 4) & 1;
     picture->intra_vlc_format = (buffer[3] >> 3) & 1;
 
-    if (buffer[3] & 4) {	// alternate_scan
-#ifdef __i386__
-	if (config.flags & MPEG2_MMX_ENABLE)
-	    picture->scan = scan_alt_mmx;
-	else
-#endif
-	    picture->scan = scan_alt;
-    } else {
-#ifdef __i386__
-	if (config.flags & MPEG2_MMX_ENABLE)
-	    picture->scan = scan_norm_mmx;
-	else
-#endif
-	    picture->scan = scan_norm;
-    }
+    if (buffer[3] & 4)	// alternate_scan
+	picture->scan = scan_alt;
+    else
+	picture->scan = scan_norm;
 
     // these are not used by the decoder
     picture->top_field_first = buffer[3] >> 7;

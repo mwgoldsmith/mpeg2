@@ -55,6 +55,7 @@
 
 //use gcc attribs to align critical data structures
 #define ALIGN_16_BYTE __attribute__ ((aligned (16)))
+#define ALIGN_8_BYTE __attribute__ ((aligned (8)))
 
 //The picture struct contains all of the top level state
 //information (ie everything except slice and macroblock

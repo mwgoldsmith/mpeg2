@@ -1,3 +1,5 @@
+/* we do not use this anymore - see idct_mmx.c */
+
 /*
  * the input data is tranposed and each 16 bit element in the 8x8 matrix
  * is left aligned:
