@@ -50,7 +50,11 @@ AC_DEFUN([AC_C_ALWAYS_INLINE],
 	AC_MSG_CHECKING([for always_inline])
 	SAVE_CFLAGS="$CFLAGS"
 	CFLAGS="$CFLAGS -Wall -Werror"
-	AC_TRY_COMPILE([],[__attribute__ ((__always_inline__)) void f (void);],
+	AC_TRY_COMPILE([],
+	    [__attribute__ ((__always_inline__)) void f (void);
+	    #ifdef __cplusplus
+	    42 = 42;	// obviously illegal - we want c++ to fail here
+	    #endif],
 	    [ac_cv_always_inline=yes],[ac_cv_always_inline=no])
 	CFLAGS="$SAVE_CFLAGS"
 	AC_MSG_RESULT([$ac_cv_always_inline])
