@@ -67,9 +67,9 @@ static uint32_t x86_accel (void)
     if (! (edx & 0x00800000))	// no MMX
 	return 0;
 
-    caps = OMS_ACCEL_X86_MMX;
+    caps = MM_ACCEL_X86_MMX;
     if (edx & 0x02000000)	// SSE - identical to AMD MMX extensions
-	caps = OMS_ACCEL_X86_MMX | OMS_ACCEL_X86_MMXEXT;
+	caps = MM_ACCEL_X86_MMX | MM_ACCEL_X86_MMXEXT;
 
     cpuid (0x80000000, eax, ebx, ecx, edx);
     if (eax < 0x80000001)	// no extended capabilities
@@ -78,10 +78,10 @@ static uint32_t x86_accel (void)
     cpuid (0x80000001, eax, ebx, ecx, edx);
 
     if (edx & 0x80000000)
-	caps |= OMS_ACCEL_X86_3DNOW;
+	caps |= MM_ACCEL_X86_3DNOW;
 
     if (AMD && (edx & 0x00400000))	// AMD MMX extensions
-	caps |= OMS_ACCEL_X86_MMXEXT;
+	caps |= MM_ACCEL_X86_MMXEXT;
 
     return caps;
 }
