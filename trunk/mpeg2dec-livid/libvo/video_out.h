@@ -36,6 +36,16 @@ typedef signed short sint_16;
 typedef signed char sint_8;
 #endif
 
+
+typedef struct vo_image_buffer_s
+{
+	uint_32 height;
+	uint_32 width;
+	uint_32 format;
+	uint_8 *base;
+	void *private;
+} vo_image_buffer_t;
+
 typedef struct vo_functions_s
 {
 	/*
@@ -82,7 +92,6 @@ typedef struct vo_functions_s
 	uint_32 (*draw_frame)(uint_8 *src[]);
 
 
-
 	/*
 	 * Update a section of the offscreen buffer. A "slice" is an area of the
 	 *  video image that is 16 rows of pixels at the width of the video image.
@@ -125,17 +134,27 @@ typedef struct vo_functions_s
 	void (*flip_page)(void);
 
 	/*
-	 * Allocate a display buffer. This may allow, for some drivers, some
+	 * Allocate an image buffer. This may allow, for some drivers, some
 	 * bonus acceleration (like AGP-based transfers, etc...). If nothing
 	 * else, implementing this as a simple wrapper over malloc() is acceptable.
 	 * This memory must be system memory as it will be read often.
 	 *
-	 *    params : num_bytes == number of bytes to allocate.
-	 *   returns : NULL if unable to allocate, ptr to new buffer on success.
+	 *    params : height  == heigth of image in pixels
+	 *           : width   == width of image in pixels
+	 *           : format  == fourCC code corresponding to the image format
+	 *   returns : NULL if unable to allocate, ptr to new surface
 	 */
 
-	void* (*allocate_buffer)(uint_32 num_bytes);
+	vo_image_buffer_t* (*allocate_image_buffer)(uint_32 height, uint_32 width, uint_32 format);
 
+	/*
+	 * Free an image buffer allocated with allocate_image_buffer.
+	 *
+	 *    params : image == image buffer to be freed
+	 *   returns : none
+	 */
+
+	void	(*free_image_buffer)(vo_image_buffer_t* image);
 } vo_functions_t;
 
 
