@@ -28,11 +28,7 @@
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
-#ifdef HAVE_GETOPT_H
 #include <getopt.h>
-#else
-#include <unistd.h>
-#endif
 
 #include "video_out.h"
 #include "mpeg2.h"
