@@ -1,4 +1,4 @@
-      b9 S- --- --- - SEQUENCE MPEG2 MP@ML 720x480 chroma 360x240 fps 30 maxBps 500000 vbv 229376 picture 720x480 display 120x120 pixel 4x3
+      b9 S- --- --- - SEQUENCE MPEG2 MP@ML COMPONENT 720x480 chroma 360x240 fps 30 maxBps 500000 vbv 229376 picture 720x480 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
       cf SG --- --- - GOP CLOSED  0: 0: 0: 0

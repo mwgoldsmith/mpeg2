@@ -1,4 +1,4 @@
-      31 S- --- --- - SEQUENCE MPEG2 MP@ML 352x224 chroma 176x112 fps 30 maxBps 250000 vbv 229376 picture 352x224 display 120x120 pixel 4x3
+      31 S- --- --- - SEQUENCE MPEG2 MP@ML COMPONENT 352x224 chroma 176x112 fps 30 maxBps 250000 vbv 229376 picture 352x224 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
       47 SG --- --- - GOP CLOSED  0: 0: 0: 0
@@ -40,7 +40,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
    10794 SG fhi fhi f SLICE
-   10841 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 352x224 chroma 176x112 fps 30 maxBps 250000 vbv 229376 picture 352x224 display 120x120 pixel 4x3
+   10841 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT 352x224 chroma 176x112 fps 30 maxBps 250000 vbv 229376 picture 352x224 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
    108f2 S- GJ- df- a PICTURE I PROG fields 2 TFF time_ref 8 offset 20/-12 21/-11
@@ -71,7 +71,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
    21a34 S- lp- lp- l SLICE
-   21a61 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 352x224 chroma 176x112 fps 30 maxBps 250000 vbv 229376 picture 352x224 display 120x120 pixel 4x3
+   21a61 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT 352x224 chroma 176x112 fps 30 maxBps 250000 vbv 229376 picture 352x224 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
    21a77 SG --- --- - GOP  0: 0: 0:12
@@ -105,7 +105,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
    33638 SG rvw rvw r SLICE
-   33665 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 352x224 chroma 176x112 fps 30 maxBps 250000 vbv 229376 picture 352x224 display 120x120 pixel 4x3
+   33665 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT 352x224 chroma 176x112 fps 30 maxBps 250000 vbv 229376 picture 352x224 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
    33716 S- SX- pt- m PICTURE I PROG fields 2 TFF time_ref 8 offset 50/-46 51/-45
@@ -136,7 +136,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
    440ce S- xd- xd- x SLICE
-   440fb S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 352x224 chroma 176x112 fps 30 maxBps 250000 vbv 229376 picture 352x224 display 120x120 pixel 4x3
+   440fb S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT 352x224 chroma 176x112 fps 30 maxBps 250000 vbv 229376 picture 352x224 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
    44111 SG --- --- - GOP  0: 0: 0:24
@@ -174,7 +174,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
    5509d SG dl- dl- d SLICE
-   5514a S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 352x224 chroma 176x112 fps 30 maxBps 250000 vbv 229376 picture 352x224 display 120x120 pixel 4x3
+   5514a S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT 352x224 chroma 176x112 fps 30 maxBps 250000 vbv 229376 picture 352x224 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
    551fb S- EM- bj- y PICTURE I PROG fields 2 TFF time_ref 8 offset 80/-80 81/-79
@@ -205,7 +205,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
    65abd S- jrs jrs j SLICE
-   65b6a S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 352x224 chroma 176x112 fps 30 maxBps 250000 vbv 229376 picture 352x224 display 120x120 pixel 4x3
+   65b6a S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT 352x224 chroma 176x112 fps 30 maxBps 250000 vbv 229376 picture 352x224 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
    65b80 SG --- --- - GOP  0: 0: 1: 6
@@ -247,7 +247,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
    75ad7 SG pab pab p SLICE
-   75b04 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 352x224 chroma 176x112 fps 30 maxBps 250000 vbv 229376 picture 352x224 display 120x120 pixel 4x3
+   75b04 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT 352x224 chroma 176x112 fps 30 maxBps 250000 vbv 229376 picture 352x224 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
    75b2c S- QC- ny- k PICTURE I fields 1 TFF time_ref 8 offset 110/-82
@@ -278,7 +278,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
    8706b S- vi- vi- v SLICE
-   87098 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 352x224 chroma 176x112 fps 30 maxBps 250000 vbv 229376 picture 352x224 display 120x120 pixel 4x3
+   87098 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT 352x224 chroma 176x112 fps 30 maxBps 250000 vbv 229376 picture 352x224 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
    870ae SG --- --- - GOP  0: 0: 1:18
@@ -312,7 +312,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
    9771a SG bp- bp- b SLICE
-   977c7 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 352x224 chroma 176x112 fps 30 maxBps 250000 vbv 229376 picture 352x224 display 120x120 pixel 4x3
+   977c7 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT 352x224 chroma 176x112 fps 30 maxBps 250000 vbv 229376 picture 352x224 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
    977ef S- CQ- zn- w PICTURE I fields 1 TFF time_ref 8 offset 140/-116

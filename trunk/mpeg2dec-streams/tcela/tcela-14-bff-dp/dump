@@ -1,4 +1,4 @@
-      71 S- --- --- - SEQUENCE MPEG2 SP@ML 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
+      71 S- --- --- - SEQUENCE MPEG2 SP@ML COMPONENT BT.470-2/B,G 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
          USER_DATA 71 bytes
          e6 1d 37 2f 00 0e e6 1d 37 31 40 28 23 29 4d 50    7/    71@(#)MP
          45 47 20 45 6e 63 6f 64 65 72 20 76 32 2e 39 20  EG Encoder v2.9 
@@ -36,7 +36,7 @@
    dd4cc SG nn- mm- l SLICE
    dd4fe SG OO- nn- m PICTURE P fields 2 time_ref 14 offset 0/0 0/0
    eb2b5 SG oo- nn- m SLICE
-   eb322 S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
+   eb322 S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML COMPONENT BT.470-2/B,G 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
          USER_DATA 71 bytes
          e6 1d 37 2f 00 0e e6 1d 37 31 40 28 23 29 4d 50    7/    71@(#)MP
          45 47 20 45 6e 63 6f 64 65 72 20 76 32 2e 39 20  EG Encoder v2.9 
@@ -74,7 +74,7 @@
   1bac6d SG cc- bb- a SLICE
   1bac9f SG DD- cc- b PICTURE P fields 2 time_ref 14 offset 0/0 0/0
   1c9c3c SG dd- cc- b SLICE
-  1c9ca9 S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
+  1c9ca9 S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML COMPONENT BT.470-2/B,G 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
          USER_DATA 71 bytes
          e6 1d 37 2f 00 0e e6 1d 37 31 40 28 23 29 4d 50    7/    71@(#)MP
          45 47 20 45 6e 63 6f 64 65 72 20 76 32 2e 39 20  EG Encoder v2.9 
@@ -112,7 +112,7 @@
   29fab3 SG rr- qq- p SLICE
   29fae5 SG SS- rr- q PICTURE P fields 2 time_ref 14 offset 0/0 0/0
   2af01f SG ss- rr- q SLICE
-  2af08c S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
+  2af08c S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML COMPONENT BT.470-2/B,G 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
          USER_DATA 71 bytes
          e6 1d 37 2f 00 0e e6 1d 37 31 40 28 23 29 4d 50    7/    71@(#)MP
          45 47 20 45 6e 63 6f 64 65 72 20 76 32 2e 39 20  EG Encoder v2.9 
@@ -150,7 +150,7 @@
   3856ba SG gg- ff- e SLICE
   3856ec SG HH- gg- f PICTURE P fields 2 time_ref 14 offset 0/0 0/0
   39496a SG hh- gg- f SLICE
-  3949d7 S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
+  3949d7 S- --- --- - SEQUENCE_REPEATED MPEG2 SP@ML COMPONENT BT.470-2/B,G 720x480 chroma 360x240 fps 30 maxBps 1875000 vbv 229376 picture 720x480 display 720x480 pixel 8x9
          USER_DATA 71 bytes
          e6 1d 37 2f 00 0e e6 1d 37 31 40 28 23 29 4d 50    7/    71@(#)MP
          45 47 20 45 6e 63 6f 64 65 72 20 76 32 2e 39 20  EG Encoder v2.9 
