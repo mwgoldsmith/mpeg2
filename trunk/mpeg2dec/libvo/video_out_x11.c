@@ -49,7 +49,8 @@ int XShmGetEventBase (Display *);
 #include "convert.h"
 
 typedef struct {
-    unsigned int width;
+    int width;
+    int stride;
     int chroma420;
     uint8_t * out;
 } convert_uyvy_t;
@@ -61,41 +62,56 @@ static void uyvy_start (void * _id, const mpeg2_fbuf_t * fbuf,
     convert_uyvy_t * instance = (convert_uyvy_t *) _id;
 
     instance->out = fbuf->buf[0];
+    instance->stride = instance->width;
+    if (picture->nb_fields == 1) {
+	instance->stride <<= 1;
+	if (! (picture->flags & PIC_FLAG_TOP_FIELD_FIRST))
+	    instance->out += 2 * instance->width;
+    }
+}
+
+static void uyvy_line (uint8_t * py, uint8_t * pu, uint8_t * pv, void * _dst,
+		       int width)
+{
+    uint32_t * dst = (uint32_t *) _dst;
+
+    width >>= 4;
+    do {
+	dst[0] =  py[1] << 24 | pv[0] << 16 |  py[0] << 8 | pu[0];
+	dst[1] =  py[3] << 24 | pv[1] << 16 |  py[2] << 8 | pu[1];
+	dst[2] =  py[5] << 24 | pv[2] << 16 |  py[4] << 8 | pu[2];
+	dst[3] =  py[7] << 24 | pv[3] << 16 |  py[6] << 8 | pu[3];
+	dst[4] =  py[9] << 24 | pv[4] << 16 |  py[8] << 8 | pu[4];
+	dst[5] = py[11] << 24 | pv[5] << 16 | py[10] << 8 | pu[5];
+	dst[6] = py[13] << 24 | pv[6] << 16 | py[12] << 8 | pu[6];
+	dst[7] = py[15] << 24 | pv[7] << 16 | py[14] << 8 | pu[7];
+	py += 16;
+	pu += 8;
+	pv += 8;
+	dst += 8;
+    } while (--width);
 }
 
 static void uyvy_copy (void * id, uint8_t * const * src, unsigned int v_offset)
 {
-    const uint8_t * y;
-    const uint8_t * u;
-    const uint8_t * v;
     const convert_uyvy_t * instance = (convert_uyvy_t *) id;
-    uint32_t * out;
-    int width, height;
+    uint8_t * py;
+    uint8_t * pu;
+    uint8_t * pv;
+    uint8_t * dst;
+    int height;
 
-    y = src[0];
-    u = src[1];
-    v = src[2];
-    out = (uint32_t *) (instance->out + 2 * instance->width * v_offset);
+    dst = instance->out + 2 * instance->stride * v_offset;
+    py = src[0]; pu = src[1]; pv = src[2];
+
     height = 16;
     do {
-	width = instance->width >> 4;
-	do {
-	    out[0] =  y[1] << 24 | v[0] << 16 |  y[0] << 8 | u[0];
-	    out[1] =  y[3] << 24 | v[1] << 16 |  y[2] << 8 | u[1];
-	    out[2] =  y[5] << 24 | v[2] << 16 |  y[4] << 8 | u[2];
-	    out[3] =  y[7] << 24 | v[3] << 16 |  y[6] << 8 | u[3];
-	    out[4] =  y[9] << 24 | v[4] << 16 |  y[8] << 8 | u[4];
-	    out[5] = y[11] << 24 | v[5] << 16 | y[10] << 8 | u[5];
-	    out[6] = y[13] << 24 | v[6] << 16 | y[12] << 8 | u[6];
-	    out[7] = y[15] << 24 | v[7] << 16 | y[14] << 8 | u[7];
-	    y += 16;
-	    u += 8;
-	    v += 8;
-	    out += 8;
-	} while (--width);
-	if (--height & instance->chroma420) {
-	    u -= instance->width >> 1;
-	    v -= instance->width >> 1;
+	uyvy_line (py, pu, pv, dst, instance->width);
+	dst += 2 * instance->stride;
+	py += instance->stride;
+	if (! (--height & instance->chroma420)) {
+	    pu += instance->stride >> 1;
+	    pv += instance->stride >> 1;
 	}
     } while (height);
 }
