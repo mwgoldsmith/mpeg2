@@ -207,8 +207,8 @@ header_process_extension(picture_t *picture)
 			break;
 
 		default:
-			fprintf(stderr,"(header) unsupported extension %x\n",code);
-			exit(1);
+			fprintf (stderr,"(header) unsupported extension %x\n",code);
+			fprintf (stderr, "EXIT\n");
 	}
 }
 
@@ -241,7 +241,7 @@ header_process_sequence_extension(picture_t *picture)
 	if(picture->chroma_format != CHROMA_420)
 	{
 		fprintf(stderr,"(parse) sorry, mpeg2dec doesn't support color formats other than 4:2:0\n");
-		exit(1);
+		fprintf (stderr, "EXIT\n");
 	}
 }
 
@@ -337,7 +337,7 @@ header_process_picture_coding_extension(picture_t *picture)
 	if(picture->picture_structure != FRAME_PICTURE)
 	{
 		fprintf(stderr,"(parse) sorry, mpeg2dec doesn't support field based pictures yet\n");
-		exit(1);
+		fprintf (stderr, "EXIT\n");
 	}
 
 	stats_picture_coding_ext_header(picture);

@@ -199,7 +199,7 @@ motion_comp (picture_t * picture, macroblock_t *mb)
 			if (!(mb->macroblock_type & (MACROBLOCK_MOTION_FORWARD | MACROBLOCK_MOTION_BACKWARD)) ) 
 			{
 				fprintf (stderr, "PATTERN - NO MOTION");
-				exit (2);
+				fprintf (stderr, "EXIT\n");
 			}
 
 			if (mb->coded_block_pattern & 0x20)

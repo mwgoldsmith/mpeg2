@@ -21,9 +21,6 @@
  *
  */
 
-//FIXME normally I wouldn't nest includes, but we'll leave this here until I get
-//another chance to move things around
-#include "libvo/video_out.h"
 
 #ifndef AARONS_TYPES
 #define AARONS_TYPES
@@ -51,6 +48,3 @@ typedef struct mpeg2_config_s
 	//Callback that points the decoder to new stream data
   void   (*fill_buffer_callback)(uint_8 **, uint_8 **);
 } mpeg2_config_t;
-
-void mpeg2_init(vo_functions_t*);
-uint_32 mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end);
