@@ -335,10 +335,11 @@ static inline int get_chroma_dc_dct_diff (mpeg2_decoder_t * const decoder)
 #undef bit_ptr
 }
 
-#define SATURATE(val)					\
-do {							\
-    if (unlikely ((uint32_t)(val + 2048) > 4095))	\
-	val = SBITS (val, 1) ^ 2047;			\
+#define SATURATE(val)				\
+do {						\
+    val <<= 4;					\
+    if (unlikely (val != (int16_t) val))	\
+	val = (SBITS (val, 1) ^ 2047) << 4;	\
 } while (0)
 
 static void get_intra_block_B14 (mpeg2_decoder_t * const decoder)
@@ -448,7 +449,7 @@ static void get_intra_block_B14 (mpeg2_decoder_t * const decoder)
 	}
 	break;	/* illegal, check needed to avoid buffer overflow */
     }
-    dest[63] ^= mismatch & 1;
+    dest[63] ^= mismatch & 16;
     DUMPBITS (bit_buf, bits, 2);	/* dump end of block code */
     decoder->bitstream_buf = bit_buf;
     decoder->bitstream_bits = bits;
@@ -561,7 +562,7 @@ static void get_intra_block_B15 (mpeg2_decoder_t * const decoder)
 	}
 	break;	/* illegal, check needed to avoid buffer overflow */
     }
-    dest[63] ^= mismatch & 1;
+    dest[63] ^= mismatch & 16;
     DUMPBITS (bit_buf, bits, 4);	/* dump end of block code */
     decoder->bitstream_buf = bit_buf;
     decoder->bitstream_bits = bits;
@@ -584,7 +585,7 @@ static int get_non_intra_block (mpeg2_decoder_t * const decoder)
     int16_t * dest;
 
     i = -1;
-    mismatch = 1;
+    mismatch = -1;
     dest = decoder->DCTblock;
 
     bit_buf = decoder->bitstream_buf;
@@ -684,7 +685,7 @@ static int get_non_intra_block (mpeg2_decoder_t * const decoder)
 	}
 	break;	/* illegal, check needed to avoid buffer overflow */
     }
-    dest[63] ^= mismatch & 1;
+    dest[63] ^= mismatch & 16;
     DUMPBITS (bit_buf, bits, 2);	/* dump end of block code */
     decoder->bitstream_buf = bit_buf;
     decoder->bitstream_bits = bits;
@@ -955,7 +956,7 @@ static inline void slice_intra_DCT (mpeg2_decoder_t * const decoder,
     else
 	decoder->dc_dct_pred[cc] += get_chroma_dc_dct_diff (decoder);
     decoder->DCTblock[0] =
-	decoder->dc_dct_pred[cc] << (3 - decoder->intra_dc_precision);
+	decoder->dc_dct_pred[cc] << (7 - decoder->intra_dc_precision);
 
     if (decoder->mpeg1) {
 	if (decoder->coding_type != D_TYPE)

@@ -124,16 +124,15 @@ static const vector_s16_t constants_4 ATTR_ALIGN(16) =
     bias = (vector_s16_t)vec_splat ((vector_s32_t)constants, 3);	\
 									\
     zero = vec_splat_s16 (0);						\
-    shift = vec_splat_u16 (4);						\
 									\
-    vx0 = vec_mradds (vec_sl (block[0], shift), constants_1, zero);	\
-    vx1 = vec_mradds (vec_sl (block[1], shift), constants_2, zero);	\
-    vx2 = vec_mradds (vec_sl (block[2], shift), constants_3, zero);	\
-    vx3 = vec_mradds (vec_sl (block[3], shift), constants_4, zero);	\
-    vx4 = vec_mradds (vec_sl (block[4], shift), constants_1, zero);	\
-    vx5 = vec_mradds (vec_sl (block[5], shift), constants_4, zero);	\
-    vx6 = vec_mradds (vec_sl (block[6], shift), constants_3, zero);	\
-    vx7 = vec_mradds (vec_sl (block[7], shift), constants_2, zero);	\
+    vx0 = vec_mradds (block[0], constants_1, zero);			\
+    vx1 = vec_mradds (block[1], constants_2, zero);			\
+    vx2 = vec_mradds (block[2], constants_3, zero);			\
+    vx3 = vec_mradds (block[3], constants_4, zero);			\
+    vx4 = vec_mradds (block[4], constants_1, zero);			\
+    vx5 = vec_mradds (block[5], constants_4, zero);			\
+    vx6 = vec_mradds (block[6], constants_3, zero);			\
+    vx7 = vec_mradds (block[7], constants_2, zero);			\
 									\
     IDCT_HALF								\
 									\
