@@ -100,8 +100,8 @@ static int open_display (x11_instance_t * instance, int width, int height)
     }
 
     instance->xshm_extension = 0;
-    if ((XShmQueryVersion (instance->display, &major, &minor,
-			   &pixmaps) != 0) &&
+    if (XShmQueryVersion (instance->display, &major, &minor,
+			  &pixmaps) != 0 &&
 	(major > 1 || (major == 1 && minor >= 1))) {
 	instance->xshm_extension = 1;
 	instance->completion_type =
@@ -272,14 +272,14 @@ static int x11_alloc_frames (x11_instance_t * instance, int xshm)
 {
     int size;
     char * alloc;
-    int i;
+    int i = 0;
 
     if (xshm && !instance->xshm_extension)
 	return 1;
 
     size = 0;
     alloc = NULL;
-    for (i = 0; i < 3; i++) {
+    while (i < 3) {
 	instance->frame[i].wait_completion = 0;
 	instance->frame[i].ximage = xshm ?
 	    XShmCreateImage (instance->display, instance->vinfo.visual,
@@ -292,23 +292,27 @@ static int x11_alloc_frames (x11_instance_t * instance, int xshm)
 	if (instance->frame[i].ximage == NULL) {
 	    fprintf (stderr, "Cannot create ximage\n");
 	    return 1;
-	} else if (i == 0) {
-	    size = (instance->frame[0].ximage->bytes_per_line *
-		    instance->frame[0].ximage->height);
-	    alloc = xshm ?
-		(char *) create_shm (instance, 3 * size) :
-		(char *) malloc (3 * size);
-	    if (alloc == NULL) {
-		XDestroyImage (instance->frame[0].ximage);
+	} else if (xshm) {
+	    if (i == 0) {
+		size = (instance->frame[0].ximage->bytes_per_line *
+			instance->frame[0].ximage->height);
+		alloc = (char *) create_shm (instance, 3 * size);
+	    } else if (size != (instance->frame[i].ximage->bytes_per_line *
+				instance->frame[i].ximage->height)) {
+		fprintf (stderr, "unexpected ximage data size\n");
 		return 1;
 	    }
-	} else if (size != (instance->frame[i].ximage->bytes_per_line *
-			    instance->frame[i].ximage->height)) {
-	    fprintf (stderr, "unexpected ximage data size\n");
+	} else
+	    alloc =
+		(char *) malloc (instance->frame[i].ximage->bytes_per_line *
+				 instance->frame[i].ximage->height);
+	instance->frame[i].data = instance->frame[i].ximage->data = alloc;
+	i++;
+	if (alloc == NULL) {
+	    while (--i >= 0)
+		XDestroyImage (instance->frame[i].ximage);
 	    return 1;
 	}
-
-	instance->frame[i].data = instance->frame[i].ximage->data = alloc;
 	alloc += size;
     }
 
@@ -327,8 +331,6 @@ static void x11_teardown (x11_instance_t * instance)
     }
     if (instance->xshm)
 	destroy_shm (instance);
-    else
-	free (instance->frame[0].data);
 }
 
 static void x11_close (vo_instance_t * _instance)
