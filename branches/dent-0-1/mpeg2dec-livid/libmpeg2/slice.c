@@ -83,7 +83,7 @@ inline uint32_t
 slice_get_block_coeff(uint16_t *run, int16_t *val, uint16_t non_intra_dc, uint16_t intra_vlc_format)
 {
 	uint32_t code;
-	DCTtab *tab;
+	DCTtab *tab = NULL;
 
 	//this routines handles intra AC and non-intra AC/DC coefficients
 	code = bitstream_show(16);
