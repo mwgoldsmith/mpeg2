@@ -84,9 +84,16 @@
 
 /** Private SDL Data structure **/
 
+typedef struct sdl_frame_s {
+    vo_frame_t vo;
+    SDL_Overlay * overlay;
+} sdl_frame_t;
+
 typedef struct sdl_instance_s {
-	vo_instance_t vo;
-	 
+    vo_instance_t vo;
+    int prediction_index;
+    sdl_frame_t frame[3];
+
 	/* SDL YUV surface & overlay */
 	SDL_Surface *surface;
 	
@@ -106,48 +113,101 @@ extern vo_instance_t sdl_vo_instance;
 
 
 /**
- * Allocate an SDL frame buffer. Called once to allocate memory for a frame.
+ * Checks for SDL window resize events.
  *
- *   params : width, height == needed surface width and height
- *            frame == frame to allocate
- *  returns : 0 on success, <> 0 on failure
+ *   params : none
+ *  returns : doesn't return
  **/
 
-static int sdl_alloc_frame (frame_t * frame, int width, int height)
+static void check_events (void)
 {
 	sdl_instance_t * this = &sdl_static_instance;
+	SDL_Event event;
+	
+	/* capture window resize events */
+	while (SDL_PollEvent(&event)) {
+		if (event.type == SDL_VIDEORESIZE)
+			this->surface = SDL_SetVideoMode(event.resize.w, event.resize.h, this->bpp, this->sdlflags);
+		if (event.type == SDL_KEYDOWN)
+			SDL_Delay(4000);
+	}
+}
+
+
+/**
+ * Draw a frame to the SDL YUV overlay and checks for events.
+ *
+ *   params : frame == vo_frame_t to draw
+ *  returns : doesn't return
+ **/
+
+static void sdl_draw_frame (vo_frame_t * _frame)
+{
+    sdl_frame_t * frame;
+	sdl_instance_t * this;
+
+	frame = (sdl_frame_t *)_frame;
+	this = (sdl_instance_t *)frame->vo.this;
+	
+	/* blit to the YUV overlay */
+	SDL_DisplayYUVOverlay (frame->overlay, &this->surface->clip_rect);
+	
+	/* check for events */
+	check_events();
+	
+	/* Unlock the frame - the frame is 100% filled with data to display 
+	 * We Lock it again when the frame was displayed. */
+	SDL_UnlockYUVOverlay (frame->overlay);
+}
+
+static int sdl_alloc_frames (sdl_instance_t * this, int width, int height)
+{
+    int i;
+
+    for (i = 0; i < 3; i++) {
 
 	/* This is a bug somewhere else height == width, and width == height */
-	if (!(frame->private = (void*) SDL_CreateYUVOverlay (width, height,
-			SDL_YV12_OVERLAY, this->surface))) {
-		fprintf (stderr, "sdl couldn't create a YUV overlay.");
-		return 1;
-	}
-
-	frame->base[0] = (uint8_t*) ((SDL_Overlay*) (frame->private))->pixels[0];
-	frame->base[2] = (uint8_t*) ((SDL_Overlay*) (frame->private))->pixels[1];
-	frame->base[1] = (uint8_t*) ((SDL_Overlay*) (frame->private))->pixels[2];
+	this->frame[i].overlay = SDL_CreateYUVOverlay (width, height,
+						       SDL_YV12_OVERLAY,
+						       this->surface);
+	if (this->frame[i].overlay == NULL)
+	    return 1;
+	this->frame[i].vo.base[0] = (this->frame[i].overlay->pixels[0]);
+	this->frame[i].vo.base[1] = (this->frame[i].overlay->pixels[2]);
+	this->frame[i].vo.base[2] = (this->frame[i].overlay->pixels[1]);
+	this->frame[i].vo.draw = sdl_draw_frame;
+	this->frame[i].vo.this = (vo_instance_t *)this;
 
 	/* Locks the allocated frame, to allow writing to it.
 	 * sdl_flip Unlocks it. sdl_draw_frame Locks it again.*/
-	SDL_LockYUVOverlay ((SDL_Overlay*) frame->private);
+	SDL_LockYUVOverlay (this->frame[i].overlay);	
+    }
 	
 	return 0;
 }
 
 
-/**
- * Free an SDL image frame from memory
- *
- *   params : frame == frame to free
- *  returns : doesn't return
- **/
-
-static void sdl_free_frame (frame_t* frame)
+static void sdl_free_frames (sdl_instance_t * this)
 {
-	SDL_FreeYUVOverlay((SDL_Overlay*) frame->private);
+    int i;
+
+    for (i = 0; i < 3; i++)
+	SDL_FreeYUVOverlay(this->frame[i].overlay);
 }
 
+vo_frame_t * sdl_get_frame (vo_instance_t * _this, int prediction)
+{
+    sdl_instance_t * this;
+
+    this = (sdl_instance_t *)_this;
+
+    if (!prediction)
+	return (vo_frame_t *)(this->frame + 2);
+    else {
+	this->prediction_index ^= 1;
+	return (vo_frame_t *)(this->frame + this->prediction_index);
+    }
+}
 
 /**
  * Open and prepare SDL output.
@@ -225,7 +285,7 @@ static vo_instance_t * sdl_setup (vo_instance_t * _this, int width, int height)
 		return NULL;
 	}
 
-	if (libvo_common_alloc_frames (sdl_alloc_frame, width, height)) {
+	if (sdl_alloc_frames (this, width, height)) {
 		fprintf (stderr, "sdl could not allocate frame buffers\n");
 		return NULL;
 	}
@@ -270,11 +330,11 @@ vo_instance_t * vo_sdlaa_setup (vo_instance_t * _this, int width, int height)
  *   returns : non-zero on error, zero on success
  **/
 
-static int sdl_close (vo_instance_t * _this)
+static void sdl_close (vo_instance_t * _this)
 {
 	sdl_instance_t * this = (sdl_instance_t *)_this;
 
-	libvo_common_free_frames (sdl_free_frame);
+	sdl_free_frames (this);
 
 	/* Free our blitting surface */
 	if (this->surface)
@@ -282,66 +342,21 @@ static int sdl_close (vo_instance_t * _this)
 	
 	/* Cleanup SDL */
 	SDL_QuitSubSystem(SDL_INIT_VIDEO);
-	
-	return 0;
 }
 
 
-/**
- * Checks for SDL window resize events.
- *
- *   params : none
- *  returns : doesn't return
- **/
-
-static void check_events (void)
-{
-	sdl_instance_t * this = &sdl_static_instance;
-	SDL_Event event;
-	
-	/* capture window resize events */
-	while (SDL_PollEvent(&event)) {
-		if (event.type == SDL_VIDEORESIZE)
-			this->surface = SDL_SetVideoMode(event.resize.w, event.resize.h, this->bpp, this->sdlflags);
-		if (event.type == SDL_KEYDOWN)
-			SDL_Delay(4000);
-	}
-}
-
-
-/**
- * Draw a frame to the SDL YUV overlay and checks for events.
- *
- *   params : frame == frame_t to draw
- *  returns : doesn't return
- **/
-
-static void sdl_draw_frame (frame_t * frame)
-{
-	sdl_instance_t * this = &sdl_static_instance;
-	
-	/* blit to the YUV overlay */
-	SDL_DisplayYUVOverlay ((SDL_Overlay*) frame->private, &this->surface->clip_rect);
-	
-	/* check for events */
-	check_events();
-	
-	/* Unlock the frame - the frame is 100% filled with data to display 
-	 * We Lock it again when the frame was displayed. */
-	SDL_UnlockYUVOverlay ((SDL_Overlay*) frame->private);
-}
 
 
 vo_instance_t sdl_vo_instance = {
-    vo_sdl_setup, sdl_close, libvo_common_get_frame, sdl_draw_frame
+    vo_sdl_setup, sdl_close, sdl_get_frame
 };
 
 vo_instance_t sdlsw_vo_instance = {
-    vo_sdlsw_setup, sdl_close, libvo_common_get_frame, sdl_draw_frame
+    vo_sdlsw_setup, sdl_close, sdl_get_frame
 };
 
 vo_instance_t sdlaa_vo_instance = {
-    vo_sdlaa_setup, sdl_close, libvo_common_get_frame, sdl_draw_frame
+    vo_sdlaa_setup, sdl_close, sdl_get_frame
 };
 
 #endif
