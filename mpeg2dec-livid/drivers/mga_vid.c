@@ -612,6 +612,18 @@ static int mga_vid_open(struct inode *inode, struct file *file)
 	return(0);
 }
 
+#if LINUX_VERSION_CODE >= 0x020400
+static struct file_operations mga_vid_fops =
+{
+	llseek:		mga_vid_lseek,
+	read:			mga_vid_read,
+	write:		mga_vid_write,
+	ioctl:		mga_vid_ioctl,
+	mmap:			mga_vid_mmap,
+	open:			mga_vid_open,
+	release: 	mga_vid_release
+};
+#else
 static struct file_operations mga_vid_fops =
 {
 	mga_vid_lseek,
@@ -625,7 +637,7 @@ static struct file_operations mga_vid_fops =
 	NULL,
 	mga_vid_release
 };
-
+#endif
 
 static long mga_v4l_read(struct video_device *v, char *buf, unsigned long count, 
 	int noblock)

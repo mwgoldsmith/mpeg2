@@ -401,18 +401,14 @@ static int mga_vid_open(struct inode *inode, struct file *file)
 
 static struct file_operations mga_vid_fops =
 {
-	mga_vid_lseek,
-	mga_vid_read,
-	mga_vid_write,
-	NULL,
-	NULL,
-	mga_vid_ioctl,
-	mga_vid_mmap,
-	mga_vid_open,
-	NULL,
-	mga_vid_release
+	llseek:		mga_vid_lseek,
+	read:			mga_vid_read,
+	write:		mga_vid_write,
+	ioctl:		mga_vid_ioctl,
+	mmap:			mga_vid_mmap,
+	open:			mga_vid_open,
+	release: 	mga_vid_release
 };
-
 
 static long mga_v4l_read(struct video_device *v, char *buf, unsigned long count, 
 	int noblock)
