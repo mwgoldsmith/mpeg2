@@ -1508,43 +1508,40 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 
     forward_ref[0] = picture->forward_reference_frame->base;
     if (picture->picture_structure != FRAME_PICTURE) {
-	offset <<= 1;
 	forward_ref[1] = picture->forward_reference_frame->base;
+	offset <<= 1;
 	picture->current_field = (picture->picture_structure == BOTTOM_FIELD);
 	if ((picture->second_field) &&
 	    (picture->picture_coding_type != B_TYPE))
 	    forward_ref[picture->picture_structure == TOP_FIELD] =
 		picture->current_frame->base;
+
 	picture->f_motion.ref[1][0] = forward_ref[1][0] + offset * 4 + stride;
-	picture->f_motion.ref[1][1] =
-	    forward_ref[1][1] + offset + (stride >> 1);
-	picture->f_motion.ref[1][2] =
-	    forward_ref[1][2] + offset + (stride >> 1);
-	picture->b_motion.ref[1][0] = 
+	picture->f_motion.ref[1][1] = forward_ref[1][1] + offset + (stride>>1);
+	picture->f_motion.ref[1][2] = forward_ref[1][2] + offset + (stride>>1);
+
+	picture->b_motion.ref[1][0] =
 	    picture->backward_reference_frame->base[0] + offset * 4 + stride;
 	picture->b_motion.ref[1][1] =
-	    (picture->backward_reference_frame->base[1] +
-	     offset + (stride >> 1));
+	    picture->backward_reference_frame->base[1] + offset + (stride>>1);
 	picture->b_motion.ref[1][2] =
-	    (picture->backward_reference_frame->base[2] +
-	     offset + (stride >> 1));
+	    picture->backward_reference_frame->base[2] + offset + (stride>>1);
     }
 
     picture->f_motion.ref[0][0] = forward_ref[0][0] + offset * 4;
     picture->f_motion.ref[0][1] = forward_ref[0][1] + offset;
     picture->f_motion.ref[0][2] = forward_ref[0][2] + offset;
-    picture->f_motion.f_code[0] = picture->f_code[0][0];
-    picture->f_motion.f_code[1] = picture->f_code[0][1];
+
     picture->f_motion.pmv[0][0] = picture->f_motion.pmv[0][1] = 0;
     picture->f_motion.pmv[1][0] = picture->f_motion.pmv[1][1] = 0;
+
     picture->b_motion.ref[0][0] =
 	picture->backward_reference_frame->base[0] + offset * 4;
     picture->b_motion.ref[0][1] =
 	picture->backward_reference_frame->base[1] + offset;
     picture->b_motion.ref[0][2] =
 	picture->backward_reference_frame->base[2] + offset;
-    picture->b_motion.f_code[0] = picture->f_code[1][0];
-    picture->b_motion.f_code[1] = picture->f_code[1][1];
+
     picture->b_motion.pmv[0][0] = picture->b_motion.pmv[0][1] = 0;
     picture->b_motion.pmv[1][0] = picture->b_motion.pmv[1][1] = 0;
 
@@ -1566,7 +1563,6 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	stride <<= 1;
     }
 
-    /* reset intra dc predictor */
     picture->dc_dct_pred[0] = picture->dc_dct_pred[1] =
 	picture->dc_dct_pred[2] = 1 << (picture->intra_dc_precision + 7);
 
@@ -1617,7 +1613,6 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		DCT_stride = stride;
 	    }
 
-	    /* Decode lum blocks */
 	    slice_intra_DCT (picture, 0, dest[0] + offset, DCT_stride);
 	    slice_intra_DCT (picture, 0, dest[0] + offset + 8, DCT_stride);
 	    slice_intra_DCT (picture, 0, dest[0] + offset + DCT_offset,
@@ -1625,7 +1620,6 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	    slice_intra_DCT (picture, 0, dest[0] + offset + DCT_offset + 8,
 			     DCT_stride);
 
-	    /* Decode chroma blocks */
 	    slice_intra_DCT (picture, 1, dest[1] + (offset >> 1), stride >> 1);
 	    slice_intra_DCT (picture, 2, dest[2] + (offset >> 1), stride >> 1);
 
@@ -1693,7 +1687,6 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		    break;
 		}
 
-	    /* 6.3.17.4 Coded block pattern */
 	    if (macroblock_modes & MACROBLOCK_PATTERN) {
 		int coded_block_pattern;
 		int DCT_offset, DCT_stride;
@@ -1707,8 +1700,6 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		}
 
 		coded_block_pattern = get_coded_block_pattern (picture);
-
-		/* Decode lum blocks */
 
 		if (coded_block_pattern & 0x20)
 		    slice_non_intra_DCT (picture, dest[0] + offset,
@@ -1724,8 +1715,6 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		    slice_non_intra_DCT (picture,
 					 dest[0] + offset + DCT_offset + 8,
 					 DCT_stride);
-
-		/* Decode chroma blocks */
 
 		if (coded_block_pattern & 0x2)
 		    slice_non_intra_DCT (picture, dest[1] + (offset >> 1),
@@ -1753,12 +1742,9 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	    if (!mba_inc)
 		break;
 
-	    /* reset intra dc predictor on skipped block */
 	    picture->dc_dct_pred[0] = picture->dc_dct_pred[1] =
 		picture->dc_dct_pred[2] = 1 << (picture->intra_dc_precision+7);
 
-	    /* handling of skipped mb's differs between P_TYPE and B_TYPE */
-	    /* pictures */
 	    if (picture->picture_coding_type == P_TYPE) {
 		picture->f_motion.pmv[0][0] = picture->f_motion.pmv[0][1] = 0;
 		picture->f_motion.pmv[1][0] = picture->f_motion.pmv[1][1] = 0;

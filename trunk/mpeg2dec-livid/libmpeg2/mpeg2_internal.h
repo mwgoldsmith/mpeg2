@@ -93,8 +93,6 @@ typedef struct picture_s {
 	
     /* picture coding extension stuff */
 	
-    /* quantization factor for motion vectors */
-    int f_code[2][2];
     /* quantization factor for intra dc coefficients */
     int intra_dc_precision;
     /* top/bottom/both fields */
