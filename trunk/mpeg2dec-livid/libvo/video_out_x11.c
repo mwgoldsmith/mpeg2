@@ -1,3 +1,5 @@
+// fix event handling. wait for unmap before close display.
+
 /* 
  * video_out_x11.c, X11 interface
  *
@@ -19,712 +21,431 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <inttypes.h>
-
-#include "log.h"
-#include "video_out.h"
-#include "video_out_internal.h"
-
+#include <string.h>	// strerror
+#include <errno.h>	// errno
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include <errno.h>
-#include "yuv2rgb.h"
-#ifdef DENT_RESCALE
-#include "rescale.h"
-#endif
+#include <inttypes.h>
 
 #ifdef LIBVO_XSHM
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <X11/extensions/XShm.h>
+#include <string.h>	// memcmp
+#include <sys/socket.h>	// getsockname, getpeername
+#include <netinet/in.h>	// struct sockaddr_in
 #endif
 
-#ifdef LIBVO_XV
-#include <X11/extensions/Xv.h>
-#include <X11/extensions/Xvlib.h>
-#endif
+#include "video_out.h"
+#include "video_out_internal.h"
+#include "yuv2rgb.h"
 
-// not defined on solaris 2.6... grumbl
-Bool XShmQueryExtension (Display *);
-
-static int x11_close		(void *plugin);
-static int x11_setup		(vo_output_video_attr_t *attr);
-#ifdef LIBVO_XSHM
-static int _xshm_create		(XShmSegmentInfo *Shminfo, int size);
-static void _xshm_destroy	(XShmSegmentInfo *Shminfo);
-#endif
-#ifdef LIBVO_XV
-static XvImage *_xv_create	(void);
-static int _xv_draw_frame	(frame_t *frame);
-static int _xv_draw_slice	(uint8_t *src[], int slice_num);
-static void _xv_flip_page	(void);
-#endif
-static int x11_draw_frame	(frame_t *frame);
-static int x11_draw_slice	(uint8_t *src[], int slice_num);
-static void x11_flip_page	(void);
-static void x11_free_image_buffer	(frame_t* image);
-static frame_t * x11_allocate_image_buffer (int width, int height, uint32_t format);
-
-#ifdef LIBVO_XV
-#define NUM_BUFFERS 6
-#else
-#define NUM_BUFFERS 1
-#endif
-
-static struct x11_priv_s {
-/* local data */
-	unsigned char *ImageData;
-	int image_width;
-	int image_height;
-        int oldtime;
-
-/* X11 related variables */
-	Display *display;
-	Window window;
-	GC gc;
-	XVisualInfo vinfo;
-	XImage *ximage;
-	int depth, bpp, mode;
-	XWindowAttributes attribs;
-	int X_already_started;
-
-#ifdef LIBVO_XSHM
-	int Shmem_Flag;
-	XShmSegmentInfo Shminfo[NUM_BUFFERS];
-	int gXErrorFlag;
-	int CompletionType;
-#endif
-
-#ifdef LIBVO_XV
-	unsigned int xv_port;
-	unsigned int xv_format;
-
-	XvImage *current_image;
-	XvImage *xvimage;
-#endif
-
-	int win_width, win_height;
-} x11_priv;
-
-
-LIBVO_EXTERN (x11,"x11")
 
 #ifdef LIBVO_XSHM
 /* since it doesn't seem to be defined on some platforms */
-int XShmGetEventBase(Display*);
+int XShmGetEventBase (Display *);
 #endif
 
-static void x11_InstallXErrorHandler ()
-{
-	//XSetErrorHandler (HandleXError);
-	XFlush (x11_priv.display);
-}
 
-static void x11_DeInstallXErrorHandler ()
-{
-	XSetErrorHandler (NULL);
-	XFlush (x11_priv.display);
-}
+static struct x11_priv_s {
+/* local data */
+    uint8_t * imagedata;
+    int width;
+    int height;
+    int stride;
 
-static int x11_open (void)
-{
-	char *display = ":0.0";
-	int screen;
-	unsigned int fg, bg;
-	XSizeHints hint;
-	XEvent xev;
-	XGCValues xgcv;
-	Colormap theCmap;
-	XSetWindowAttributes xswa;
-	unsigned long xswamask;
-#ifdef LIBVO_XV
-	unsigned int ver, rel, req, ev, err;
-#endif
-	struct x11_priv_s *priv = &x11_priv;
-	static int opened = 0;
-
-	if (opened)
-	    return 0;
-	opened = 1;
-
-	if (priv->X_already_started)
-		return -1;
-
-	if (getenv ("DISPLAY"))
-		display = getenv ("DISPLAY");
-
-	if (!(priv->display = XOpenDisplay (display))) {
-		LOG (LOG_ERROR, "Can not open display");
-		return -1;
-	}
-
-	XGetWindowAttributes (priv->display, DefaultRootWindow(priv->display), &priv->attribs);
-
-	priv->depth = priv->attribs.depth;
-
-	screen = DefaultScreen (priv->display);
-
-	hint.x = 0;
-	hint.y = 0;
-	hint.width = 320;
-	hint.height = 200;
-	hint.flags = PPosition | PSize;
-
-	/* Get some colors */
-
-	bg = WhitePixel (priv->display, screen);
-	fg = BlackPixel (priv->display, screen);
-
-	/*
-	 *
-	 * depth in X11 terminology land is the number of bits used to
-	 * actually represent the colour.
-	 *
-	 * bpp in X11 land means how many bits in the frame buffer per
-	 * pixel. 
-	 *
-	 * ex. 15 bit color is 15 bit depth and 16 bpp. Also 24 bit
-	 *     color is 24 bit depth, but can be 24 bpp or 32 bpp.
-	 */
-
-	switch (priv->depth) {
-	case 15:
-	case 16:
-	case 24:
-	case 32:
-		break;
-
-	default:
-		/* The root window may be 8bit but there might still be
-		 * visuals with other bit depths. For example this is the
-		 * case on Sun/Solaris machines.
-		 */
-		priv->depth = 24;
-		break;
-	}
-
-	XMatchVisualInfo (priv->display, screen, priv->depth, TrueColor, &priv->vinfo);
-
-	theCmap   = XCreateColormap(priv->display, RootWindow(priv->display,screen), priv->vinfo.visual, AllocNone);
-
-	xswa.background_pixel = 0;
-	xswa.border_pixel     = 1;
-	xswa.colormap         = theCmap;
-	xswamask = CWBackPixel | CWBorderPixel | CWColormap;
-
-	priv->window = XCreateWindow (priv->display,
-		RootWindow (priv->display,screen),
-		hint.x, hint.y, hint.width, hint.height,
-		4, priv->depth, CopyFromParent, priv->vinfo.visual,
-		xswamask, &xswa);
-
-	XSelectInput (priv->display, priv->window, StructureNotifyMask);
-
-// Tell other applications about this window
-	XSetStandardProperties(priv->display, priv->window,
-		"Open Media System", "OMS", None, NULL, 0, &hint);
-
-// Map window
-	XMapWindow (priv->display, priv->window);
-
-// Wait for map
-	do {
-		XNextEvent (priv->display, &xev);
-	} while (xev.type != MapNotify || xev.xmap.event != priv->window);
-
-	XSelectInput (priv->display, priv->window, NoEventMask);
-
-	XFlush (priv->display);
-	XSync (priv->display, False);
-
-	priv->gc = XCreateGC (priv->display, priv->window, 0L, &xgcv);
+/* X11 related variables */
+    Display * display;
+    Window window;
+    GC gc;
+    XVisualInfo vinfo;
+    XImage * ximage;
 
 #ifdef LIBVO_XSHM
-	if (XShmQueryExtension (priv->display)) {
-		priv->Shmem_Flag = 1;
-		priv->CompletionType = XShmGetEventBase(priv->display) + ShmCompletion;
-		LOG (LOG_INFO, "Using MIT Shared memory extension");
-	} else {
-		priv->Shmem_Flag = 0;
-	}
+    XShmSegmentInfo shminfo; // num_buffers
 #endif
+} x11_priv;
 
-#ifdef LIBVO_XV
-	priv->xv_port = 0;
+static int x11_get_visual_info (void)
+{
+    struct x11_priv_s * priv = &x11_priv;
+    XVisualInfo visualTemplate;
+    XVisualInfo * XvisualInfoTable;
+    XVisualInfo * XvisualInfo;
+    int number;
+    int i;
 
-	if (Success == XvQueryExtension (priv->display, &ver, &rel, &req, &ev, &err)) {
-		unsigned int formats, adaptors;
-		XvAdaptorInfo *ai;
-		XvImageFormatValues  *fo;
-		int i;
+    // list truecolor visuals for the default screen
+    visualTemplate.class = TrueColor;
+    visualTemplate.screen = DefaultScreen (priv->display);
+    XvisualInfoTable =
+	XGetVisualInfo (priv->display,
+			VisualScreenMask | VisualClassMask, &visualTemplate,
+			&number);
+    if (XvisualInfoTable == NULL)
+	return 1;
 
-		// check for Xvideo support
-		if (Success != XvQueryAdaptors (priv->display, DefaultRootWindow(priv->display), &adaptors, &ai)) {
-			LOG (LOG_ERROR, "Xv: XvQueryAdaptors failed");
-			return -1;
-		}
+    // find the visual with the highest depth
+    XvisualInfo = XvisualInfoTable;
+    for (i = 1; i < number; i++)
+	if (XvisualInfoTable[i].depth > XvisualInfo->depth)
+	    XvisualInfo = XvisualInfoTable + i;
 
-		// check adaptors
-		for (i=0; i<adaptors; i++) {
-			if ((ai[i].type & XvInputMask) && (ai[i].type & XvImageMask) && !priv->xv_port) 
-				priv->xv_port = ai[i].base_id;
-		}
-
-		// check image formats
-		if (priv->xv_port) {
-			fo = XvListImageFormats (priv->display, priv->xv_port, (int*)&formats);
-
-			for (i=0; i<formats; i++) {
-				if (fo[i].id == 0x32315659) {
-					priv->xv_format = fo[i].id;
-					LOG (LOG_INFO, "using Xvideo port %d for hw scaling", priv->xv_port);
-					break;
-				}
-			}
-			if (i == formats) /* no matching image format not */
-				priv->xv_port = 0;
-		}
-	}
-
-	if (priv->xv_port) {
-		video_out_x11.draw_frame = _xv_draw_frame;
-		video_out_x11.draw_slice = _xv_draw_slice;
-		video_out_x11.flip_page = _xv_flip_page;
-	} else
-#endif
-	{
-		video_out_x11.draw_frame = x11_draw_frame;
-		video_out_x11.draw_slice = x11_draw_slice;
-		video_out_x11.flip_page = x11_flip_page;
-	}
-
-#ifdef DENT_RESCALE
-	//rescale_init ((priv->depth == 24) ? priv->bpp : priv->depth, priv->mode);
-#endif
-	priv->X_already_started++;
-
-	// catch window resizes
-	XSelectInput (priv->display, priv->window, StructureNotifyMask);
-
-	LOG (LOG_DEBUG, "Open Called\n");
-	return 0;
+    priv->vinfo = *XvisualInfo;
+    XFree (XvisualInfoTable);
+    return 0;
 }
 
-
-/**
- * connect to server, create and map window,
- * allocate colors and (shared) memory
- **/
-
-static int x11_setup (vo_output_video_attr_t *attr)
+static void x11_create_window (int width, int height)
 {
-	XSizeHints hint;
-	struct x11_priv_s *priv = &x11_priv;
+    struct x11_priv_s * priv = &x11_priv;
+    XSetWindowAttributes attr;
 
-	x11_open ();
+    attr.background_pixmap = None;
+    attr.backing_store = NotUseful;
+    attr.event_mask = 0;
+    priv->window =
+	XCreateWindow (priv->display, DefaultRootWindow (priv->display),
+		       0 /* x */, 0 /* y */, width, height,
+		       0 /* border_width */, priv->vinfo.depth,
+		       InputOutput, priv->vinfo.visual,
+		       CWBackPixmap | CWBackingStore | CWEventMask, &attr);
+}
 
-	priv->image_width = attr->width;
-	priv->image_height = attr->height;
+static void x11_create_gc (void)
+{
+    struct x11_priv_s * priv = &x11_priv;
+    XGCValues gcValues;
 
-	hint.x = 0;
-	hint.y = 0;
-	hint.width = priv->image_width;
-	hint.height = priv->image_height;
-	hint.flags = PPosition | PSize;
+    priv->gc = XCreateGC (priv->display, priv->window, 0, &gcValues);
+}
 
-	XResizeWindow (priv->display, priv->window, priv->image_width, priv->image_height);
+static int x11_create_image (int width, int height)
+{
+    struct x11_priv_s * priv = &x11_priv;
 
-	if (attr->title)
-		XSetStandardProperties (priv->display, priv->window,
-			attr->title, attr->title, None, NULL, 0, &hint);
-	
-#ifdef LIBVO_XV
-	if (priv->xv_port) {
-		priv->xvimage = _xv_create();
+    priv->ximage = XCreateImage (priv->display,
+				 priv->vinfo.visual, priv->vinfo.depth,
+				 ZPixmap, 0, NULL /* data */,
+				 width, height, 16, 0);
+    if (priv->ximage == NULL)
+	return 1;
 
-		if (priv->xvimage != NULL) {
-			// catch window resizes
-			XSelectInput (priv->display, priv->window, StructureNotifyMask);
-			priv->win_width  = priv->image_width;
-			priv->win_height = priv->image_height;
+    priv->ximage->data =
+	malloc (priv->ximage->bytes_per_line * priv->ximage->height);
+    return 0;
+}
 
-			priv->X_already_started++;
-			return 0;
-		}
-	}
-#endif
+static int x11_yuv2rgb_init (void)
+{
+    struct x11_priv_s * priv = &x11_priv;
+    int mode;
 
-#ifdef LIBVO_XSHM
-	x11_InstallXErrorHandler ();
-
-	if (priv->Shmem_Flag) {
-		
-		priv->ximage = XShmCreateImage (priv->display, priv->vinfo.visual, priv->depth, ZPixmap, NULL, &priv->Shminfo[0], attr->width, priv->image_height);
-
-		if ((_xshm_create (&priv->Shminfo[0], priv->ximage->bytes_per_line * priv->ximage->height))) {
-			XDestroyImage(priv->ximage);
-			goto shmemerror;
-		}
-	
-		// If no go, then revert to normal Xlib calls.
-		if (!priv->ximage) {
-			LOG (LOG_ERROR, "Shared memory error, disabling (Ximage error)");
-			goto shmemerror;
-		}
-
-		if ((_xshm_create (&priv->Shminfo[0], priv->ximage->bytes_per_line * priv->ximage->height))) {
-			XDestroyImage(priv->ximage);
-			goto shmemerror;
-		}
-	
-		priv->ximage->data = priv->Shminfo[0].shmaddr;
-		priv->ImageData = (unsigned char *) priv->ximage->data;
-	} else {
-shmemerror:
-		priv->Shmem_Flag = 0;
-#endif
-		priv->ximage = XGetImage (priv->display, priv->window, 0, 0,
-			attr->width, priv->image_height, AllPlanes, ZPixmap);
-		priv->ImageData = priv->ximage->data;
-#ifdef LIBVO_XSHM
-	}
-
-	x11_DeInstallXErrorHandler();
-#endif
-
-	priv->bpp = priv->ximage->bits_per_pixel;
-
-	// If we have blue in the lowest bit then obviously RGB 
-	priv->mode = ((priv->ximage->blue_mask & 0x01)) ? MODE_RGB : MODE_BGR;
+    // If we have blue in the lowest bit then "obviously" RGB
+    // (walken : the guy who wrote this convention never heard of endianness ?)
+    mode = ((priv->ximage->blue_mask & 0x01)) ? MODE_RGB : MODE_BGR;
 
 #ifdef WORDS_BIGENDIAN 
-	if (priv->ximage->byte_order != MSBFirst)
+    if (priv->ximage->byte_order != MSBFirst)
+	return 1;
 #else
-	if (priv->ximage->byte_order != LSBFirst) 
-#endif
-	{
-		LOG (LOG_ERROR, "No support fon non-native XImage byte order");
-		return -1;
-	}
-
-#ifdef DENT_RESCALE
-	rescale_init ((priv->depth == 24) ? priv->bpp : priv->depth, priv->mode);
-	rescale_set_factors (priv->image_width, priv->image_height, priv->win_width, priv->win_height);
+    if (priv->ximage->byte_order != LSBFirst)
+	return 1;
 #endif
 
-	yuv2rgb_init ((priv->depth == 24) ? priv->bpp : priv->depth, priv->mode);
-	return 0;
+    /*
+     *
+     * depth in X11 terminology land is the number of bits used to
+     * actually represent the colour.
+     *
+     * bpp in X11 land means how many bits in the frame buffer per
+     * pixel. 
+     *
+     * ex. 15 bit color is 15 bit depth and 16 bpp. Also 24 bit
+     *     color is 24 bit depth, but can be 24 bpp or 32 bpp.
+     */
+
+    yuv2rgb_init (((priv->vinfo.depth == 24) ?
+		   priv->ximage->bits_per_pixel : priv->vinfo.depth), mode);
+
+    return 0;
 }
 
-
-static int x11_close(void *plugin) 
+static int common_setup (int width, int height,
+			 int (* create_image) (int, int))
 {
-#ifdef LIBVO_XSHM
-	int foo = 0;
-	struct x11_priv_s *priv = &x11_priv;
+    struct x11_priv_s * priv = &x11_priv;
 
-	LOG (LOG_INFO, "Closing video plugin");
-	
-	if (x11_priv.Shmem_Flag) {
-		while (priv->Shminfo[foo].shmaddr) {
-			_xshm_destroy(&priv->Shminfo[foo]);
-			LOG (LOG_INFO, "destroying shm segment %d", foo);
-			foo++;
-		}
-				
-		if (x11_priv.ximage)
-			XDestroyImage (x11_priv.ximage);
-	}
-#endif
-	if (x11_priv.window)
-		XDestroyWindow (x11_priv.display, x11_priv.window);
-	XCloseDisplay (x11_priv.display);
-	x11_priv.X_already_started = 0;
+    if (x11_get_visual_info ()) {
+	fprintf (stderr, "No truecolor visual\n");
+	return 1;
+    }
 
-	return 0;
+    x11_create_window (width, height);
+    x11_create_gc ();
+
+    if (create_image (width, height)) {
+	fprintf (stderr, "Cannot create ximage\n");
+	return 1;
+    }
+
+    if (x11_yuv2rgb_init ()) {
+	fprintf (stderr, "No support for non-native byte order\n");
+	return 1;
+    }
+
+    // FIXME set WM_DELETE_WINDOW protocol ? to avoid shm leaks
+
+    // should move this after everything than could potentially fail
+    XMapWindow (priv->display, priv->window);
+
+    priv->width = width;
+    priv->height = height;
+    priv->imagedata = (unsigned char *) priv->ximage->data;
+    priv->stride = priv->ximage->bytes_per_line;
+
+    return 0;
 }
 
-#ifdef LIBVO_XSHM
-static int _xshm_create (XShmSegmentInfo *Shminfo, int size)
+static void common_close (void)
 {
-	struct x11_priv_s *priv = &x11_priv;
-	
-	Shminfo->shmid = shmget (IPC_PRIVATE, size, IPC_CREAT | 0777);
+    struct x11_priv_s * priv = &x11_priv;
 
-	if (Shminfo->shmid < 0) {
-		LOG (LOG_ERROR, "Shared memory error, disabling (seg id error: %s)", strerror (errno));
-		return -1;
-	}
-	
-	Shminfo->shmaddr = (char *) shmat(Shminfo->shmid, 0, 0);
-
-	if (Shminfo->shmaddr == ((char *) -1)) {
-		if (Shminfo->shmaddr != ((char *) -1))
-			shmdt(Shminfo->shmaddr);
-		LOG (LOG_ERROR, "Shared memory error, disabling (address error)");
-		return -1;
-	}
-		
-	Shminfo->readOnly = False;
-	XShmAttach(priv->display, Shminfo);
-
-	return 0;
+    if (priv->window) {
+	XFreeGC (priv->display, priv->gc);
+	XDestroyWindow (priv->display, priv->window);
+    }
+    if (priv->display)
+	XCloseDisplay (priv->display);
 }
 
-static void _xshm_destroy (XShmSegmentInfo *Shminfo)
+static int x11_setup (vo_output_video_attr_t * vo_attr)
 {
-	struct x11_priv_s *priv = &x11_priv;
-	
-	XShmDetach (priv->display, Shminfo);
-	shmdt (Shminfo->shmaddr);
-	shmctl (Shminfo->shmid, IPC_RMID, 0);
-}
-#endif
+    struct x11_priv_s * priv = &x11_priv;
+    int width, height;
 
-#ifdef LIBVO_XV
-static XvImage* _xv_create ()
+    width = vo_attr->width;
+    height = vo_attr->height;
+
+    priv->display = XOpenDisplay (NULL);
+    if (! (priv->display)) {
+	fprintf (stderr, "Can not open display\n");
+	return 1;
+    }
+
+    return common_setup (width, height, x11_create_image);
+}
+
+static int x11_close (void * dummy)
 {
-	int foo = 0;
-	XvImage *xvimage;
-	XShmSegmentInfo *Shminfo;
-	struct x11_priv_s *priv = &x11_priv;
+    struct x11_priv_s * priv = &x11_priv;
 
-	if (!(xvimage = malloc (sizeof (XvImage))))
-		return NULL;
-
-#ifdef LIBVO_XSHM	
-	if (priv->Shmem_Flag) {
-		//finds unused Shmarea
-		do
-		{
-			Shminfo = &priv->Shminfo[foo];
-			foo++;
-		}
-		while (Shminfo->shmaddr != NULL);
-				
-		xvimage = XvShmCreateImage (priv->display, priv->xv_port, 
-				priv->xv_format, 0, priv->image_width, priv->image_height, 
-				Shminfo);
-
-		_xshm_create (Shminfo, xvimage->data_size);
-		xvimage->data = Shminfo->shmaddr;
-
-		// so we can do grayscale while testing...
-		memset (xvimage->data, 128, xvimage->data_size);
-	
-		return xvimage;
-	}
-#endif
-	xvimage = XvCreateImage (priv->display, priv->xv_port, 
-		priv->xv_format, 0, priv->image_width, priv->image_height);
-
-	xvimage->data = malloc(xvimage->data_size);
-
-	// so we can do grayscale while testing...
-	memset (xvimage->data, 128, xvimage->data_size);
-	
-	return xvimage;
+    XDestroyImage (priv->ximage);
+    common_close ();
+    return 0;
 }
-#endif
-
-
-static inline int _check_event (void)
-{
-	struct x11_priv_s *priv = &x11_priv;
-	Window root;
-	XEvent event;
-	int x, y;
-	unsigned int w, h, b, d;
-
-	if (XCheckWindowEvent(priv->display, priv->window, StructureNotifyMask, &event)) {
-		XGetGeometry(priv->display, priv->window, &root, &x, &y, &w, &h, &b, &d);
-		priv->win_width  = w;
-		priv->win_height = h;
-		LOG (LOG_DEBUG, "win resize: %dx%d", priv->win_width, priv->win_height);                
-
-		return 1;
-	}
-
-	/*Fullscreen stuff
-         *
-         *FIXME this should go up top in place of NoEventMask, it didnt work
-	 *there though
-         *It was breaking the StructureNotifyMask
-         *Other then that the rest was working
-         */
-        //XSelectInput (priv->display, priv->window, ButtonPressMask);
-	
-	
-        /* 
-	   if(XCheckMaskEvent(priv->display, ButtonPressMask, &event)) {
-	   LOG(LOG_DEBUG,"BUTTON PRESS AT %ld", event.xbutton.time);
-	   if(event.xbutton.time-oldtime<250)//1/4 second
-	   //exit(1); //just to test
-           //_x11.priv.fullscreen=1; //something like this
-           LOG(LOG_DEBUG,"double BUTTON PRESS AT %ld", event.xbutton.time);
-	   
-           oldtime=event.xbutton.time;
-           }*/
-
-	return 0;
-}
-
-
-#ifdef LIBVO_XV
-static void _xv_flip_page (void)
-{
-	struct x11_priv_s *priv = &x11_priv;
-
-	_check_event ();
-
-#ifdef LIBVO_XSHM
-	if (priv->Shmem_Flag)
-		XvShmPutImage (priv->display, priv->xv_port, priv->window,
-			priv->gc, priv->current_image,
-			0, 0,  priv->image_width, priv->image_height,
-			0, 0,  priv->win_width, priv->win_height,
-			False);
-	else
-#endif
-		XvPutImage (priv->display, priv->xv_port, priv->window,
-			priv->gc, priv->current_image,
-			0, 0,  priv->image_width, priv->image_height,
-			0, 0,  priv->win_width, priv->win_height);
-	
-	XFlush (priv->display);
-}
-#endif
-
 
 static void x11_flip_page (void)
 {
-	struct x11_priv_s *priv = &x11_priv;
+    struct x11_priv_s * priv = &x11_priv;
 
-	if (_check_event ()) {
-#ifdef DENT_RESCALE
-		rescale_set_factors (priv->win_width, priv->win_height, priv->image_width, priv->image_height);
-#endif
-	}
-
-#ifdef LIBVO_XSHM
-	if (priv->Shmem_Flag) {
-		XShmPutImage (priv->display, priv->window, priv->gc, priv->ximage, 
-			0, 0, 0, 0, priv->ximage->width, priv->ximage->height, True); 
-		XFlush (priv->display);
-	} else
-#endif
-	{
-		XPutImage(priv->display, priv->window, priv->gc, priv->ximage,
-			0, 0, 0, 0, priv->ximage->width, priv->ximage->height);
-		XFlush (priv->display);
-	}
+    XPutImage (priv->display, priv->window, priv->gc, priv->ximage, 
+	       0, 0, 0, 0, priv->width, priv->height);
+    XFlush (priv->display);
 }
-
-
-#ifdef LIBVO_XV
-static int _xv_draw_slice (uint8_t *src[], int slice_num)
-{
-	struct x11_priv_s *priv = &x11_priv;
-	uint8_t *dst;
-
-	priv->current_image = priv->xvimage;
-
-	dst = priv->xvimage->data + priv->image_width * 16 * slice_num;
-
-	memcpy (dst,src[0],priv->image_width*16);
-	dst = priv->xvimage->data + priv->image_width * priv->image_height + priv->image_width * 4 * slice_num;
-	memcpy (dst, src[2],priv->image_width*4);
-	dst = priv->xvimage->data + priv->image_width * priv->image_height * 5 / 4 + priv->image_width * 4 * slice_num;
-	memcpy (dst, src[1],priv->image_width*4);
-
-	return 0;  
-}
-#endif
-
 
 static int x11_draw_slice (uint8_t *src[], int slice_num)
 {
-	struct x11_priv_s *priv = &x11_priv;
-	uint8_t *dst;
+    struct x11_priv_s * priv = &x11_priv;
 
-	dst = priv->ImageData + priv->image_width * 16 * (priv->bpp/8) * slice_num;
+    yuv2rgb (priv->imagedata + priv->stride * 16 * slice_num,
+	     src[0], src[1], src[2], priv->width, 16,
+	     priv->stride, priv->width, priv->width >> 1);
 
-	yuv2rgb (dst, src[0], src[1], src[2], 
-			priv->image_width, 16, 
-			priv->image_width*(priv->bpp/8), priv->image_width, priv->image_width/2 );
-
-	return 0;
+    return 0;
 }
-
-
-#ifdef LIBVO_XV
-static int _xv_draw_frame (frame_t *frame)
-{
-	struct x11_priv_s *priv = &x11_priv;
-
-	_check_event ();
-
-	priv->current_image = frame->private;
-	
-	return 0;  
-}
-#endif
 
 static int x11_draw_frame (frame_t *frame)
 {
-	struct x11_priv_s *priv = &x11_priv;
+    struct x11_priv_s * priv = &x11_priv;
 
-	yuv2rgb(priv->ImageData, frame->base[0], frame->base[1], frame->base[2],
-		priv->image_width, priv->image_height, 
-		priv->image_width*(priv->bpp/8), priv->image_width, priv->image_width/2 );
+    yuv2rgb (priv->imagedata, frame->base[0], frame->base[1], frame->base[2],
+	     priv->width, priv->height,
+	     priv->stride, priv->width, priv->width >> 1);
 
-	return 0; 
+    return 0;
 }
 
-static frame_t* x11_allocate_image_buffer (int width, int height, uint32_t format)
+static frame_t * x11_allocate_image_buffer (int width, int height,
+					    uint32_t format)
 {
-        frame_t *frame;
-
-	if (!(frame = malloc (sizeof (frame_t))))
-		return NULL;
-
-#ifdef LIBVO_XV
-	if (x11_priv.xv_port) {
-		frame->private = _xv_create ();
-
-		frame->base[0] = ((XvImage*) frame->private)->data;
-		frame->base[2] = frame->base[0] + width * height;
-		frame->base[1] = frame->base[0] + width * height * 5 / 4;
-
-		return frame;
-	}
-	else
-#endif
-
-        //we only know how to do 4:2:0 planar yuv right now.
-        if (!(frame->private = malloc (width * height * 3 / 2))) {
-                free (frame);
-                return NULL;
-	}
-	
-	frame->base[0] = frame->private;
-	frame->base[1] = frame->base[0] + width * height;
-	frame->base[2] = frame->base[0] + width * height * 5 / 4;
-
-        return frame;
+    return libvo_common_alloc (width, height);
 }
-
 
 void x11_free_image_buffer (frame_t* frame)
 {
-#ifdef LIBVO_XV
-	if (x11_priv.xv_port)
-		XFree(frame->private);
-	else
-#endif
-	free (frame->base);
-	free (frame);
+    libvo_common_free (frame);
 }
+
+vo_output_video_t video_out_x11 = {
+    name: "x11",
+    setup: x11_setup,
+    close: x11_close,
+    draw_frame: x11_draw_frame,
+    draw_slice: x11_draw_slice,
+    flip_page: x11_flip_page,
+    allocate_image_buffer: x11_allocate_image_buffer,
+    free_image_buffer: x11_free_image_buffer
+};
+
+#ifdef LIBVO_XSHM
+static int x11_check_local (void)
+{
+    struct x11_priv_s * priv = &x11_priv;
+    int fd;
+    struct sockaddr_in me;
+    struct sockaddr_in peer;
+    int len;
+
+    fd = ConnectionNumber (priv->display);
+
+    len = sizeof (me);
+    if (getsockname (fd, &me, &len))
+	return 1;	// should not happen, assume remote display
+
+    if (me.sin_family == PF_UNIX)
+	return 0;	// display is local, using unix domain socket
+
+    if (me.sin_family != PF_INET)
+	return 1;	// unknown protocol, assume remote display
+
+    len = sizeof (peer);
+    if (getpeername (fd, &peer, &len))
+	return 1;	// should not happen, assume remote display
+
+    if (peer.sin_family != PF_INET)
+	return 1;	// should not happen, assume remote display
+
+    if (memcmp (&(me.sin_addr), &(peer.sin_addr), sizeof(me.sin_addr)))
+	return 1;	// display is remote, using tcp/ip socket
+
+    return 0;		// display is local, using tcp/ip socket
+}
+
+static int xshm_check_extension (void)
+{
+    struct x11_priv_s * priv = &x11_priv;
+    int major;
+    int minor;
+    Bool pixmaps;
+
+    if (XShmQueryVersion (priv->display, &major, &minor, &pixmaps) == 0)
+	return 1;
+
+    if ((major < 1) || ((major == 1) && (minor < 1)))
+	return 1;
+
+    return 0;
+}
+
+static int xshm_create_image (int width, int height)
+{
+    struct x11_priv_s * priv = &x11_priv;
+
+    priv->ximage = XShmCreateImage (priv->display,
+				    priv->vinfo.visual, priv->vinfo.depth,
+				    ZPixmap, NULL /* data */,
+				    &(priv->shminfo), width, height);
+    if (priv->ximage == NULL)
+	return 1;
+
+    priv->shminfo.shmid =
+	shmget (IPC_PRIVATE,
+		priv->ximage->bytes_per_line * priv->ximage->height,
+		IPC_CREAT | 0777);
+    if (priv->shminfo.shmid == -1)
+	return 1;
+
+    priv->shminfo.shmaddr = shmat (priv->shminfo.shmid, 0, 0);
+    if (priv->shminfo.shmaddr == (char *)-1)
+	return 1;
+
+    priv->shminfo.readOnly = True;
+    if (! (XShmAttach (priv->display, &(priv->shminfo))))
+	return 1;
+
+    priv->ximage->data = priv->shminfo.shmaddr;
+    return 0;
+}
+
+static void xshm_destroy_image (void)
+{
+    struct x11_priv_s * priv = &x11_priv;
+
+    if (priv->ximage) {
+	if (priv->shminfo.shmaddr != (char *)-1) {
+	    XShmDetach (priv->display, &(priv->shminfo));
+	    shmdt (priv->shminfo.shmaddr);
+	}
+	if (priv->shminfo.shmid != -1)
+	    shmctl (priv->shminfo.shmid, IPC_RMID, 0);
+	XDestroyImage (priv->ximage);
+    }
+}
+
+static int xshm_setup (vo_output_video_attr_t * vo_attr)
+{
+    struct x11_priv_s * priv = &x11_priv;
+    int width, height;
+
+    width = vo_attr->width;
+    height = vo_attr->height;
+
+    priv->display = XOpenDisplay (NULL);
+    if (! (priv->display)) {
+	fprintf (stderr, "Can not open display\n");
+	return 1;
+    }
+
+    if (x11_check_local ()) {
+	fprintf (stderr, "Can not use xshm on a remote display\n");
+	return 1;
+    }
+
+    if (xshm_check_extension ()) {
+	fprintf (stderr, "No xshm extension\n");
+	return 1;
+    }
+
+    return common_setup (width, height, xshm_create_image);
+}
+
+static int xshm_close (void * dummy)
+{
+    xshm_destroy_image ();
+    common_close ();
+    return 0;
+}
+
+static void xshm_flip_page (void)
+{
+    struct x11_priv_s * priv = &x11_priv;
+
+    XShmPutImage (priv->display, priv->window, priv->gc, priv->ximage, 
+		  0, 0, 0, 0, priv->width, priv->height, False);
+    XFlush (priv->display);
+}
+
+vo_output_video_t video_out_xshm = {
+    name: "xshm",
+    setup: xshm_setup,
+    close: xshm_close,
+    draw_frame: x11_draw_frame,
+    draw_slice: x11_draw_slice,
+    flip_page: xshm_flip_page,
+    allocate_image_buffer: x11_allocate_image_buffer,
+    free_image_buffer: x11_free_image_buffer
+};
+#endif
 
 #endif
