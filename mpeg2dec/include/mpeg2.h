@@ -81,13 +81,13 @@ typedef struct mpeg2_gop_s {
 #define PIC_FLAG_PROGRESSIVE_FRAME 16
 #define PIC_FLAG_COMPOSITE_DISPLAY 32
 #define PIC_FLAG_SKIP 64
-#define PIC_FLAG_PTS 128
+#define PIC_FLAG_TAGS 128
 #define PIC_MASK_COMPOSITE_DISPLAY 0xfffff000
 
 typedef struct mpeg2_picture_s {
     unsigned int temporal_reference;
     unsigned int nb_fields;
-    uint32_t pts;
+    uint32_t tag, tag2;
     uint32_t flags;
     struct {
 	int x, y;
@@ -169,7 +169,7 @@ void mpeg2_reset (mpeg2dec_t * mpeg2dec, int full_reset);
 void mpeg2_skip (mpeg2dec_t * mpeg2dec, int skip);
 void mpeg2_slice_region (mpeg2dec_t * mpeg2dec, int start, int end);
 
-void mpeg2_pts (mpeg2dec_t * mpeg2dec, uint32_t pts);
+void mpeg2_tag_picture (mpeg2dec_t * mpeg2dec, uint32_t tag, uint32_t tag2);
 
 void mpeg2_init_fbuf (mpeg2_decoder_t * decoder, uint8_t * current_fbuf[3],
 		      uint8_t * forward_fbuf[3], uint8_t * backward_fbuf[3]);

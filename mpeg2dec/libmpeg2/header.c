@@ -462,16 +462,18 @@ mpeg2_state_t mpeg2_header_picture_start (mpeg2dec_t * mpeg2dec)
     mpeg2dec->state = ((mpeg2dec->state != STATE_SLICE_1ST) ?
 		       STATE_PICTURE : STATE_PICTURE_2ND);
     picture->flags = 0;
-    picture->pts = 0;
-    if (mpeg2dec->num_pts) {
-	if (mpeg2dec->bytes_since_pts >= 4) {
-	    mpeg2dec->num_pts = 0;
-	    picture->pts = mpeg2dec->pts_current;
-	    picture->flags = PIC_FLAG_PTS;
-	} else if (mpeg2dec->num_pts > 1) {
-	    mpeg2dec->num_pts = 1;
-	    picture->pts = mpeg2dec->pts_previous;
-	    picture->flags = PIC_FLAG_PTS;
+    picture->tag = picture->tag2 = 0;
+    if (mpeg2dec->num_tags) {
+	if (mpeg2dec->bytes_since_tag >= 4) {
+	    mpeg2dec->num_tags = 0;
+	    picture->tag = mpeg2dec->tag_current;
+	    picture->tag2 = mpeg2dec->tag2_current;
+	    picture->flags = PIC_FLAG_TAGS;
+	} else if (mpeg2dec->num_tags > 1) {
+	    mpeg2dec->num_tags = 1;
+	    picture->tag = mpeg2dec->tag_previous;
+	    picture->tag2 = mpeg2dec->tag2_previous;
+	    picture->flags = PIC_FLAG_TAGS;
 	}
     }
     picture->display_offset[0].x = picture->display_offset[1].x =

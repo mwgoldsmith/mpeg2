@@ -343,8 +343,8 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
 	fprintf (f, " fields %d", pic->nb_fields);
 	if (pic->flags & PIC_FLAG_TOP_FIELD_FIRST)
 	    fprintf (f, " TFF");
-	if (pic->flags & PIC_FLAG_PTS)
-	    fprintf (f, " pts %08x", pic->pts);
+	if (pic->flags & PIC_FLAG_TAGS)
+	    fprintf (f, " pts %08x dts %08x", pic->tag, pic->tag2);
 	fprintf (f, " time_ref %d", pic->temporal_reference);
 	if (pic->flags & PIC_FLAG_COMPOSITE_DISPLAY)
 	    fprintf (f, " composite %05x", pic->flags >> 12);
