@@ -312,7 +312,7 @@ void mpeg2_convert (mpeg2dec_t * mpeg2dec,
 	     mpeg2_accels, arg, &convert_init);
     if (convert_init.id_size) {
 	convert_init.id = mpeg2dec->convert_id =
-	    mpeg2_malloc (convert_init.id_size, ALLOC_CONVERT_ID);
+	    mpeg2_malloc (convert_init.id_size, MPEG2_ALLOC_CONVERT_ID);
 	convert (mpeg2dec->decoder.width, mpeg2dec->decoder.height,
 		 mpeg2_accels, arg, &convert_init);
     }
@@ -323,14 +323,17 @@ void mpeg2_convert (mpeg2dec_t * mpeg2dec,
     mpeg2dec->convert_copy = convert_init.copy;
 
     size = mpeg2dec->decoder.width * mpeg2dec->decoder.height >> 2;
-    mpeg2dec->yuv_buf[0][0] = (uint8_t *) mpeg2_malloc (6 * size, ALLOC_YUV);
+    mpeg2dec->yuv_buf[0][0] = (uint8_t *) mpeg2_malloc (6 * size,
+							MPEG2_ALLOC_YUV);
     mpeg2dec->yuv_buf[0][1] = mpeg2dec->yuv_buf[0][0] + 4 * size;
     mpeg2dec->yuv_buf[0][2] = mpeg2dec->yuv_buf[0][0] + 5 * size;
-    mpeg2dec->yuv_buf[1][0] = (uint8_t *) mpeg2_malloc (6 * size, ALLOC_YUV);
+    mpeg2dec->yuv_buf[1][0] = (uint8_t *) mpeg2_malloc (6 * size,
+							MPEG2_ALLOC_YUV);
     mpeg2dec->yuv_buf[1][1] = mpeg2dec->yuv_buf[1][0] + 4 * size;
     mpeg2dec->yuv_buf[1][2] = mpeg2dec->yuv_buf[1][0] + 5 * size;
     size = mpeg2dec->decoder.width * 8;
-    mpeg2dec->yuv_buf[2][0] = (uint8_t *) mpeg2_malloc (6 * size, ALLOC_YUV);
+    mpeg2dec->yuv_buf[2][0] = (uint8_t *) mpeg2_malloc (6 * size,
+							MPEG2_ALLOC_YUV);
     mpeg2dec->yuv_buf[2][1] = mpeg2dec->yuv_buf[2][0] + 4 * size;
     mpeg2dec->yuv_buf[2][2] = mpeg2dec->yuv_buf[2][0] + 5 * size;
 }
@@ -404,7 +407,7 @@ mpeg2dec_t * mpeg2_init (void)
     mpeg2_accel (MPEG2_ACCEL_DETECT);
 
     mpeg2dec = (mpeg2dec_t *) mpeg2_malloc (sizeof (mpeg2dec_t),
-					    ALLOC_MPEG2DEC);
+					    MPEG2_ALLOC_MPEG2DEC);
     if (mpeg2dec == NULL)
 	return NULL;
 
@@ -413,7 +416,7 @@ mpeg2dec_t * mpeg2_init (void)
     mpeg2dec->num_pts = 0;
 
     mpeg2dec->chunk_buffer = (uint8_t *) mpeg2_malloc (BUFFER_SIZE + 4,
-						       ALLOC_CHUNK);
+						       MPEG2_ALLOC_CHUNK);
 
     mpeg2dec->shift = 0xffffff00;
     mpeg2dec->code = 0xb4;
