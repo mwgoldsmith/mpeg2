@@ -214,6 +214,20 @@ static inline int bound_motion_vector (int vector, int f_code)
 #endif
 }
 
+static inline int get_dmv (void)
+{
+#define bit_buf bitstream_buf
+#define bits bitstream_bits
+
+    DMVtab * tab;
+
+    tab = DMV_2 + UBITS (bit_buf, 2);
+    DUMPBITS (bit_buf, bits, tab->len);
+    return tab->dmv;
+#undef bit_buf
+#undef bits
+}
+
 static inline int get_coded_block_pattern (void)
 {
 #define bit_buf bitstream_buf
@@ -1066,6 +1080,51 @@ static void motion_field (motion_t * motion, uint8_t * dest[3],
 		  width * 2, 8);
 }
 
+static int motion_dmv_top_field_first;
+static void motion_dmv (motion_t * motion, uint8_t * dest[3],
+			int offset, int width,
+			void (** table) (uint8_t *, uint8_t *, int, int))
+{
+    int motion_x, motion_y;
+    int dmv_x, dmv_y;
+    int m;
+    int other_x, other_y;
+
+    NEEDBITS (bit_buf, bits);
+    motion_x = motion->pmv[0][0] + get_motion_delta (motion->f_code[0]);
+    motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
+    motion->pmv[1][0] = motion->pmv[0][0] = motion_x;
+
+    NEEDBITS (bit_buf, bits);
+    dmv_x = get_dmv ();
+
+    NEEDBITS (bit_buf, bits);
+    motion_y = (motion->pmv[0][1] >> 1) + get_motion_delta (motion->f_code[1]);
+    //motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
+    motion->pmv[1][1] = motion->pmv[0][1] = motion_y << 1;
+
+    NEEDBITS (bit_buf, bits);
+    dmv_y = get_dmv ();
+
+    motion_block (mc_functions.put, motion_x, motion_y, dest, offset,
+		  motion->ref_frame, offset, width * 2, 8);
+
+    m = motion_dmv_top_field_first ? 1 : 3;
+    other_x = ((motion_x * m + (motion_x > 0)) >> 1) + dmv_x;
+    other_y = ((motion_y * m + (motion_y > 0)) >> 1) + dmv_y - 1;
+    motion_block (mc_functions.avg, other_x, other_y, dest, offset,
+		  motion->ref_frame, offset + width, width * 2, 8);
+
+    motion_block (mc_functions.put, motion_x, motion_y, dest, offset + width,
+		  motion->ref_frame, offset + width, width * 2, 8);
+
+    m = motion_dmv_top_field_first ? 3 : 1;
+    other_x = ((motion_x * m + (motion_x > 0)) >> 1) + dmv_x;
+    other_y = ((motion_y * m + (motion_y > 0)) >> 1) + dmv_y + 1;
+    motion_block (mc_functions.avg, other_x, other_y, dest, offset + width,
+		  motion->ref_frame, offset, width * 2, 8);
+}
+
 // like motion_frame, but reuse previous motion vectors
 static void motion_reuse (motion_t * motion, uint8_t * dest[3],
 			  int offset, int width,
@@ -1253,6 +1312,12 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 			offset, width);
 		break;
 
+	    case MC_DMV:
+		motion_dmv_top_field_first = picture->top_field_first;
+		MOTION (motion_dmv, MACROBLOCK_MOTION_FORWARD, slice, dest,
+			offset, width);
+		break;
+
 	    case 0:
 		// non-intra mb without forward mv in a P picture
 		slice.f_motion.pmv[0][0] = slice.f_motion.pmv[0][1] = 0;
@@ -1260,10 +1325,6 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 
 		MOTION (motion_zero, MACROBLOCK_MOTION_FORWARD,
 			slice, dest, offset, width);
-		break;
-
-	    case MC_DMV:
-		printf ("DMV\n");
 		break;
 	    }
 

@@ -75,6 +75,11 @@ typedef struct {
 } MVtab;
 
 typedef struct {
+    int8_t dmv;
+    uint8_t len;
+} DMVtab;
+
+typedef struct {
     uint8_t cbp;
     uint8_t len;
 } CBPtab;
@@ -162,6 +167,11 @@ static MVtab MV_10 [] = {
     { 6, 7}, { 6, 7}, { 6, 7}, { 6, 7}, { 6, 7}, { 6, 7}, { 6, 7}, { 6, 7},
     { 5, 7}, { 5, 7}, { 5, 7}, { 5, 7}, { 5, 7}, { 5, 7}, { 5, 7}, { 5, 7},
     { 4, 7}, { 4, 7}, { 4, 7}, { 4, 7}, { 4, 7}, { 4, 7}, { 4, 7}, { 4, 7}
+};
+
+
+static DMVtab DMV_2 [] = {
+    { 0, 1}, { 0, 1}, { 1, 2}, {-1, 2}
 };
 
 
