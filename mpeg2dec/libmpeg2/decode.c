@@ -434,6 +434,10 @@ mpeg2dec_t * mpeg2_init (void)
     mpeg2dec->action = mpeg2_seek_sequence;
     mpeg2dec->sequence.width = (unsigned)-1;
 
+    mpeg2_reset_info(&(mpeg2dec->info));
+    mpeg2dec->info.sequence = NULL;
+    mpeg2dec->info.gop = NULL;
+
     return mpeg2dec;
 }
 

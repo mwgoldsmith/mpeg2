@@ -231,6 +231,7 @@ mpeg2_state_t mpeg2_parse_header (mpeg2dec_t * mpeg2dec);
 
 /* header.c */
 void mpeg2_header_state_init (mpeg2dec_t * mpeg2dec);
+void mpeg2_reset_info (mpeg2_info_t * info);
 int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_gop (mpeg2dec_t * mpeg2dec);
 mpeg2_state_t mpeg2_header_picture_start (mpeg2dec_t * mpeg2dec);
