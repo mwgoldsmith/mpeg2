@@ -71,7 +71,7 @@ static void print_fps(uint_32 final)
 		return;
 	}
 
-	if (elapsed < 100)	/* only display every second */
+	if (elapsed < 50)	/* only display every 0.50 seconds */
 		return;
 
 	tv_beg = tv_end;
@@ -80,8 +80,11 @@ static void print_fps(uint_32 final)
 	fps = frames * 10000 / elapsed;			/* 100x */
 	tfps = frame_counter * 10000 / total_elapsed;	/* 100x */
 
-	fprintf(stderr, "%8d %8d.%02d %8d %8d.%02d\r", frame_counter,
-		fps / 100, fps %100, total_elapsed, tfps / 100, tfps % 100);
+	fprintf(stderr, "%d frames in %d.%02d sec (%d.%02d fps), "
+		"%d last %d.%02d sec (%d.%02d fps)\r", frame_counter,
+		total_elapsed / 100, total_elapsed % 100,
+		tfps / 100, tfps % 100, frames, elapsed / 100, elapsed % 100,
+		fps / 100, fps % 100);
 
 	last_count = frame_counter;
 }
