@@ -126,7 +126,7 @@ static RETSIGTYPE sigill_handler (int sig)
 
 static inline uint32_t arch_accel (void)
 {
-    static volatile sighandler_t oldsig;
+    static RETSIGTYPE (* oldsig) (int);
 
     oldsig = signal (SIGILL, sigill_handler);
     if (sigsetjmp (jmpbuf, 1)) {
