@@ -25,7 +25,6 @@
 
 #include <inttypes.h>
 
-#include "video_out.h"
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 #include "attributes.h"
@@ -1416,7 +1415,7 @@ do {									\
     if (decoder->offset == decoder->width) {				\
 	do { /* just so we can use the break statement */		\
 	    if (decoder->convert) {					\
-		decoder->convert (decoder->frame_id, decoder->dest);	\
+		decoder->convert (decoder->fbuf_id, decoder->dest);	\
 		if (decoder->coding_type == B_TYPE)			\
 		    break;						\
 	    }								\

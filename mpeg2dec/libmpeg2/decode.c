@@ -24,11 +24,10 @@
 #include "config.h"
 
 #include <stdio.h>
-#include <string.h>	/* memcpy/memset, try to remove */
+#include <string.h>	/* memcmp/memset, try to remove */
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include "video_out.h"
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 
@@ -183,8 +182,7 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 	case RECEIVED (0xb8, STATE_SEQUENCE):
 	    if (memcmp (&(mpeg2dec->last_sequence), &(mpeg2dec->sequence), 
 			sizeof (sequence_t))) {
-		memcpy (&(mpeg2dec->last_sequence), &(mpeg2dec->sequence),
-			sizeof (sequence_t));
+		mpeg2dec->last_sequence = mpeg2dec->sequence;
 		return STATE_SEQUENCE;
 	    }
 	    break;
@@ -231,9 +229,12 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
     }
 }
 
-void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, vo_frame_t * buf)
+void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id)
 {
-    *(mpeg2dec->fbuf) = buf;
+    mpeg2dec->fbuf->buf[0] = buf[0];
+    mpeg2dec->fbuf->buf[1] = buf[1];
+    mpeg2dec->fbuf->buf[2] = buf[2];
+    mpeg2dec->fbuf->id = id;
     if (mpeg2dec->state == STATE_SEQUENCE) {
 	if (++(mpeg2dec->fbuf) == mpeg2dec->fbufs + 3)
 	    mpeg2dec->fbuf = mpeg2dec->fbufs;
