@@ -23,11 +23,9 @@
 
 int debug_is_on(void);
 
+ //fprintf(stderr,format,## args)
 #ifdef __GNUC__
-#define dprintf(format,args...)\
-{\
-	fprintf(stderr,format,## args);\
-}
+#define dprintf(format,args...);
 #else
 void dprintf(char fmt[],...);
 #endif

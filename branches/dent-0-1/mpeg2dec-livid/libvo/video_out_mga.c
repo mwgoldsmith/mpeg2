@@ -524,7 +524,7 @@ static void free_image_buffer(vo_image_buffer_t* image)
  * Initialize Plugin.
  **/
 
-int plugin_init (char *whoami)
+int PLUGIN_INIT (video_out_mga) (char *whoami)
 {
 	pluginRegister (whoami,
 		PLUGIN_ID_OUTPUT_VIDEO,
@@ -541,7 +541,7 @@ int plugin_init (char *whoami)
  * Cleanup Plugin.
  **/
 
-void plugin_exit (void)
+void PLUGIN_EXIT (video_out_mga) (void)
 {
 }
 

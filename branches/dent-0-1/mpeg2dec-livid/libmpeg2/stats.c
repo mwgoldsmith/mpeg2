@@ -31,6 +31,7 @@
 
 static void stats_picture (uint8_t * buffer)
 {
+#ifdef DEBUG
 	static char * picture_coding_type_str [8] = {
 		"Invalid picture type",
 		"I-type",
@@ -39,7 +40,7 @@ static void stats_picture (uint8_t * buffer)
 		"D (very bad)",
 		"Invalid","Invalid","Invalid"
 	};
-
+#endif
 	int picture_coding_type;
 	int temporal_reference;
 	int vbv_delay;
@@ -60,6 +61,7 @@ static void stats_user_data (uint8_t * buffer)
 
 static void stats_sequence (uint8_t * buffer)
 {
+#ifdef DEBUG
 	static char * aspect_ratio_information_str[8] = {
 		"Invalid Aspect Ratio",
 		"1:1",
@@ -70,6 +72,7 @@ static void stats_sequence (uint8_t * buffer)
 		"Invalid Aspect Ratio",
 		"Invalid Aspect Ratio"
 	};
+
 	static char * frame_rate_str[16] = {
 		"Invalid frame_rate_code",
 		"23.976", "24", "25"   , "29.97",
@@ -79,7 +82,7 @@ static void stats_sequence (uint8_t * buffer)
 		"Invalid frame_rate_code", "Invalid frame_rate_code",
 		"Invalid frame_rate_code"
 	};
-
+#endif
 	int horizontal_size;
 	int vertical_size;
 	int aspect_ratio_information;
@@ -138,12 +141,14 @@ static void stats_slice (uint8_t code, uint8_t * buffer)
 
 static void stats_sequence_extension (uint8_t * buffer)
 {
+#ifdef DEBUG
 	static char * chroma_format_str[4] = {
 		"Invalid Chroma Format",
 		"4:2:0 Chroma",
 		"4:2:2 Chroma",
 		"4:4:4 Chroma"
 	};
+#endif
 
 	int progressive_sequence;
 	int chroma_format;
@@ -183,13 +188,14 @@ static void stats_picture_display_extension (uint8_t * buffer)
 
 static void stats_picture_coding_extension (uint8_t * buffer)
 {
+#ifdef DEBUG
 	static char * picture_structure_str[4] = {
 		"Invalid Picture Structure",
 		"Top field",
 		"Bottom field",
 		"Frame Picture"
 	};
-
+#endif
 	int f_code[2][2];
 	int intra_dc_precision;
 	int picture_structure;
