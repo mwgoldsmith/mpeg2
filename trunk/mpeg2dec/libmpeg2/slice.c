@@ -1689,21 +1689,21 @@ void mpeg2_slice (mpeg2_decoder_t * const decoder, const int code,
 
 		offset = decoder->offset;
 		dest_y = decoder->dest[0] + offset;
-		if (coded_block_pattern & 0x20)
+		if (coded_block_pattern & 1)
 		    slice_non_intra_DCT (decoder, dest_y, DCT_stride);
-		if (coded_block_pattern & 0x10)
+		if (coded_block_pattern & 2)
 		    slice_non_intra_DCT (decoder, dest_y + 8, DCT_stride);
-		if (coded_block_pattern & 0x08)
+		if (coded_block_pattern & 4)
 		    slice_non_intra_DCT (decoder, dest_y + DCT_offset,
 					 DCT_stride);
-		if (coded_block_pattern & 0x04)
+		if (coded_block_pattern & 8)
 		    slice_non_intra_DCT (decoder, dest_y + DCT_offset + 8,
 					 DCT_stride);
-		if (coded_block_pattern & 0x2)
+		if (coded_block_pattern & 16)
 		    slice_non_intra_DCT (decoder,
 					 decoder->dest[1] + (offset >> 1),
 					 decoder->uv_stride);
-		if (coded_block_pattern & 0x1)
+		if (coded_block_pattern & 32)
 		    slice_non_intra_DCT (decoder,
 					 decoder->dest[2] + (offset >> 1),
 					 decoder->uv_stride);
