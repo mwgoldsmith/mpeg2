@@ -1,6 +1,7 @@
 /*
  * video_out_x11.c
  * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * Copyright (C) 2003      Regis Duchesne <hpreg@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
@@ -55,7 +56,7 @@ typedef struct {
 #endif
 } x11_frame_t;
 
-typedef struct {
+typedef struct x11_instance_s {
     vo_instance_t vo;
     x11_frame_t frame[3];
     int index;
@@ -70,6 +71,7 @@ typedef struct {
 #ifdef LIBVO_XV
     XvPortID port;
 #endif
+    void (* teardown) (struct x11_instance_s * instance);
 } x11_instance_t;
 
 static int open_display (x11_instance_t * instance)
@@ -275,8 +277,8 @@ static int x11_alloc_frames (x11_instance_t * instance)
 	    alloc = (char *) create_shm (instance, 3 * size);
 	    if (alloc == NULL)
 		return 1;
-	} else if (size != (instance->frame[0].ximage->bytes_per_line *
-			    instance->frame[0].ximage->height)) {
+	} else if (size != (instance->frame[i].ximage->bytes_per_line *
+			    instance->frame[i].ximage->height)) {
 	    fprintf (stderr, "unexpected ximage data size\n");
 	    return 1;
 	}
@@ -284,13 +286,12 @@ static int x11_alloc_frames (x11_instance_t * instance)
 	instance->frame[i].data = instance->frame[i].ximage->data = alloc;
 	alloc += size;
     }
-    instance->index = 0;
+
     return 0;
 }
 
-static void x11_close (vo_instance_t * _instance)
+static void x11_teardown (x11_instance_t * instance)
 {
-    x11_instance_t * instance = (x11_instance_t *) _instance;
     int i;
 
     for (i = 0; i < 3; i++) {
@@ -299,6 +300,13 @@ static void x11_close (vo_instance_t * _instance)
 	XDestroyImage (instance->frame[i].ximage);
     }
     destroy_shm (instance);
+}
+
+static void x11_close (vo_instance_t * _instance)
+{
+    x11_instance_t * instance = (x11_instance_t *) _instance;
+
+    instance->teardown (instance);
     XFreeGC (instance->display, instance->gc);
     XDestroyWindow (instance->display, instance->window);
     XCloseDisplay (instance->display);
@@ -415,9 +423,8 @@ static int xv_alloc_frames (x11_instance_t * instance)
     return 0;
 }
 
-static void xv_close (vo_instance_t * _instance)
+static void xv_teardown (x11_instance_t * instance)
 {
-    x11_instance_t * instance = (x11_instance_t *) _instance;
     int i;
 
     for (i = 0; i < 3; i++) {
@@ -427,23 +434,34 @@ static void xv_close (vo_instance_t * _instance)
     }
     destroy_shm (instance);
     XvUngrabPort (instance->display, instance->port, 0);
-    XFreeGC (instance->display, instance->gc);
-    XDestroyWindow (instance->display, instance->window);
-    XCloseDisplay (instance->display);
 }
 #endif
 
 static int common_setup (x11_instance_t * instance, int width, int height,
 			 vo_setup_result_t * result, int xv)
 {
-    instance->vo.set_fbuf = NULL;
-    instance->vo.discard = NULL;
-    instance->vo.start_fbuf = x11_start_fbuf;
-    instance->width = width;
-    instance->height = height;
+    if (instance->vo.close) {
+        /* Already setup, just adjust to the new size */
+        instance->teardown (instance);
 
-    if (open_display (instance))
-	return 1;
+        instance->width = width;
+        instance->height = height;
+        XResizeWindow (instance->display, instance->window, width, height);
+    } else {
+        /* Not setup yet, do the full monty */
+        instance->vo.set_fbuf = NULL;
+        instance->vo.discard = NULL;
+        instance->vo.start_fbuf = x11_start_fbuf;
+        instance->width = width;
+        instance->height = height;
+
+        if (open_display (instance))
+            return 1;
+
+        XMapWindow (instance->display, instance->window);
+    }
+
+    instance->index = 0;
 
 #ifdef LIBVO_XV
     if (xv && (! (xv_check_extension (instance)))) {
@@ -451,7 +469,7 @@ static int common_setup (x11_instance_t * instance, int width, int height,
 	    return 1;
 	instance->vo.setup_fbuf = xv_setup_fbuf;
 	instance->vo.draw = xv_draw_frame;
-	instance->vo.close = xv_close;
+	instance->teardown = xv_teardown;
 	result->convert = NULL;
     } else
 #endif
@@ -460,7 +478,7 @@ static int common_setup (x11_instance_t * instance, int width, int height,
 	    return 1;
 	instance->vo.setup_fbuf = x11_setup_fbuf;
 	instance->vo.draw = x11_draw_frame;
-	instance->vo.close = x11_close;
+	instance->teardown = x11_teardown;
 
 #ifdef WORDS_BIGENDIAN
 	if (instance->frame[0].ximage->byte_order != MSBFirst) {
@@ -496,7 +514,7 @@ static int common_setup (x11_instance_t * instance, int width, int height,
 			  instance->vinfo.depth));
     }
 
-    XMapWindow (instance->display, instance->window);
+    instance->vo.close = x11_close;
 
     return 0;
 }
