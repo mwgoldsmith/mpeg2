@@ -1,0 +1,23 @@
+      53 S- --- --- - SEQUENCE MPEG2 422@ML 720x512 chroma 360x512 fps 29.97 maxBps 6250000 vbv 892928 picture 720x512 display 720x512 pixel 128x135
+         USER_DATA 41 bytes
+         08 08 08 08 08 08 08 08 08 08 08 08 08 08 08 08                  
+         08 08 08 08 08 08 00 54 65 6b 74 72 6f 6e 69 78         Tektronix
+         20 4d 50 45 47 3a 0a 0a 0c                        MPEG:          
+      5b SG --- --- - GOP DROP CLOSED  0: 0: 0: 0
+     131 SG AA- --- ? PICTURE I fields 1 TFF time_ref 0 offset 0/0
+   3b54a SG aa- --- ? SLICE_1ST
+   3b55c SG aaB --- ? PICTURE_2ND P fields 1 time_ref 0 offset 0/0
+   56438 SG aab --- ? SLICE
+   5644a SG BC- aab ? PICTURE P fields 1 TFF time_ref 3 offset 0/0
+   63613 SG bc- aab ? SLICE_1ST
+   63625 SG bcD aab ? PICTURE_2ND P fields 1 time_ref 3 offset 0/0
+   6b3b1 SG bcd aab ? SLICE
+   6b3c3 SG CE- CE- C PICTURE B fields 1 TFF time_ref 1 offset 0/0
+   7d0b6 SG ce- ce- c SLICE_1ST
+   7d0c8 SG ceF ceF c PICTURE_2ND B fields 1 time_ref 1 offset 0/0
+   9edab SG cef cef c SLICE
+   9edbd SG DG- DG- D PICTURE B fields 1 TFF time_ref 2 offset 0/0
+   b8e93 SG dg- dg- d SLICE_1ST
+   b8ea5 SG dgH dgH d PICTURE_2ND B fields 1 time_ref 2 offset 0/0
+   d21d4 SG dgh dgh d SLICE
+   d21d4 SG --- bcd a END
