@@ -596,7 +596,7 @@ do {					\
     packuswb_r2r (r1, r0);		\
 } while (0)
 
-static void block_copy (int16_t * block, uint8_t * dest, int stride)
+static inline void block_copy (int16_t * block, uint8_t * dest, int stride)
 {
     movq_m2r (*(block+0*8), mm0);
     movq_m2r (*(block+0*8+4), mm1);
@@ -628,7 +628,7 @@ do {					\
     paddsw_m2r (*(block+offset+4), r2);	\
 } while (0)
 
-static void block_add (int16_t * block, uint8_t * dest, int stride)
+static inline void block_add (int16_t * block, uint8_t * dest, int stride)
 {
     movq_m2r (*dest, mm1);
     pxor_r2r (mm0, mm0);

@@ -33,7 +33,7 @@ static int debug_level = -1;
 
 /* Determine is debug output is required. */
 /* We could potentially have multiple levels of debug info */
-static int debug_is_on (void)
+static inline int debug_is_on (void)
 {
     char * env_var;
 
