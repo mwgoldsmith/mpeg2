@@ -27,10 +27,6 @@ typedef struct mpeg2dec_s {
     vo_output_video_t * output;
     void * user_data;
 
-    // here we store the allocated images, which we get from
-    // the output interface
-    img_buf_t * frame[3];
- 
     // this is where we keep the state of the decoder
     struct picture_s * picture;
     
