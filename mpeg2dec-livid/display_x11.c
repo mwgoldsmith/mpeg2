@@ -119,11 +119,10 @@ void display_init(uint_32 width, uint_32 height)
    XEvent xev;
 
    XGCValues xgcv;
-   //Colormap theCmap;
+   Colormap theCmap;
    XSetWindowAttributes xswa;
    unsigned long xswamask;
 
-   Shmem_Flag = 1;
    clip = clip_tbl + 384;
 
    for (i= -384; i< 640; i++)
@@ -159,8 +158,10 @@ void display_init(uint_32 width, uint_32 height)
 
    XGetWindowAttributes(mydisplay, DefaultRootWindow(mydisplay), &attribs);
    bpp = attribs.depth;
-   if (bpp != 15 && bpp != 16 && bpp != 24 && bpp != 32)
-      fprintf(stderr,"Only 15,16,24, and 32bpp supported\n");
+   if (bpp != 15 && bpp != 16 && bpp != 24 && bpp != 32) {
+      fprintf(stderr,"Only 15,16,24, and 32bpp supported. Trying 24bpp!\n");
+      bpp = 24;
+   }
    //BEGIN HACK
    //mywindow = XCreateSimpleWindow(mydisplay, DefaultRootWindow(mydisplay),
    //hint.x, hint.y, hint.width, hint.height, 4, fg, bg);
@@ -168,14 +169,13 @@ void display_init(uint_32 width, uint_32 height)
    XMatchVisualInfo(mydisplay,screen,bpp,TrueColor,&vinfo);
    printf("visual id is  %lx\n",vinfo.visualid);
 
-   /*
-     theCmap   = XCreateColormap(mydisplay, RootWindow(mydisplay,screen), 
+   theCmap   = XCreateColormap(mydisplay, RootWindow(mydisplay,screen), 
                                vinfo.visual, AllocNone);
-   */
+
    xswa.background_pixel = 0;
    xswa.border_pixel     = 1;
-   //xswa.colormap         = theCmap;
-   xswamask = CWBackPixel | CWBorderPixel /*|CWColormap*/ ;
+   xswa.colormap         = theCmap;
+   xswamask = CWBackPixel | CWBorderPixel |CWColormap;
 
 
    mywindow = XCreateWindow(mydisplay, RootWindow(mydisplay,screen),

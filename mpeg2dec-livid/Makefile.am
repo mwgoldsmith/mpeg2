@@ -1,12 +1,13 @@
 # # Process this file with automake to produce Makefile.in.
 AUTOMAKE_OPTIONS = 1.3 foreign
 
-CFLAGS = -Wall -O3 -g 
+CFLAGS = -Wall -O3 -g @CFLAGS@ @X_CFLAGS@
 
 bin_PROGRAMS = mpeg2dec
 
 mpeg2dec_LIBS= 
-mpeg2dec_LDADD=@CONFIG_OBJS@ -L/usr/X11R6/lib -lXext -lX11 -lm
+mpeg2dec_LDADD= @CONFIG_OBJS@ @X_PRE_LIBS@ @X_LIBS@ -lXext -lX11\
+	@X_EXTRA_LIBS@ -lm
 
 mpeg2dec_SOURCES = getvlc.c  mb_buffer.c motion.c parse.c stats.c\
 	idct.c motion_comp.c inv_quantize.c decode.c bitstream.c debug.c 
@@ -29,4 +30,4 @@ prof:
 x11:
 	$(MAKE) -e mpeg2dec mpeg2dec_LDADD="display_x11.o idct_block_mmx.S motion_comp_mmx.c idct_mmx.c"
 
-SUBDIRS=tools drivers .
+SUBDIRS=tools @DRIVERS@ .
