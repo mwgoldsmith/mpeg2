@@ -329,8 +329,6 @@ void mpeg2_convert (mpeg2dec_t * mpeg2dec,
 							MPEG2_ALLOC_YUV);
     y_size = mpeg2dec->sequence.width * 32;
     uv_size = y_size >> (2 - mpeg2dec->decoder.chroma_format);
-    if (mpeg2dec->sequence.chroma_height < mpeg2dec->sequence.height)
-	uv_size >>= 1;
     mpeg2dec->yuv_buf[2][0] = (uint8_t *) mpeg2_malloc (y_size,
 							MPEG2_ALLOC_YUV);
     mpeg2dec->yuv_buf[2][1] = (uint8_t *) mpeg2_malloc (uv_size,
