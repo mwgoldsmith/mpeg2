@@ -25,7 +25,7 @@
 #include <linux/init.h>
 #include <linux/videodev.h>
 
-#include "sis_vid.h"
+#include "hw_bes.h"
 
 #ifdef CONFIG_MTRR 
 #include <asm/mtrr.h>
