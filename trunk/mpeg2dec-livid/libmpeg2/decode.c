@@ -41,8 +41,11 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output)
 
     if (do_init) {
 	do_init = 0;
+	config.flags = mm_accel () | MM_ACCEL_MLIB;
 	idct_init ();
 	motion_comp_init ();
+	mpeg2dec->chunk_buffer = (uint8_t *) malloc(224 * 1024 + 4);
+	mpeg2dec->picture = (picture_t *) malloc (sizeof (picture_t));
     }
 
     mpeg2dec->shift = 0;
@@ -52,14 +55,10 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output)
     mpeg2dec->drop_frame = 0;
     mpeg2dec->in_slice = 0;
     mpeg2dec->output = output;
-    mpeg2dec->chunk_buffer = (uint8_t *) malloc(224 * 1024 + 4);
     mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
     mpeg2dec->code = 0xff;
 
-    mpeg2dec->picture = (picture_t *) malloc (sizeof (picture_t));
     memset (mpeg2dec->picture, 0, sizeof (picture_t));
-
-    config.flags = mm_accel () | MM_ACCEL_MLIB;
 
     // initialize supstructures
     header_state_init (mpeg2dec->picture);
