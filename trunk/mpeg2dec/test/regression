@@ -53,11 +53,17 @@ for dir in $dirs; do
 	$mpeg2dec -vv $accel -o md5 $basedir/$dir/stream >dump 2>&1 >md5
 	if [ -f $basedir/$dir/$md5 ]; then
 	    diff -wu md5 $basedir/$dir/$md5 || error=1
+	else
+	    echo missing file $dir/$md5
 	fi
 	if [ -f $basedir/$dir/dump ]; then
 	    sed '1d' dump | diff -wu - $basedir/$dir/dump || error=1
+	else
+	    echo missing file $dir/dump
 	fi
 	rm -f md5 dump core
+    else
+	echo missing file $dir/stream
     fi
 done
 
