@@ -61,7 +61,7 @@ void (* mpeg2_idct_add) (int last, int16_t * block,
 			 uint8_t * dest, int stride);
 
 static uint8_t clip_lut[1024];
-#define CLIP(i) ((clip_lut+384)[ (i)])
+#define CLIP(i) ((clip_lut+384)[(i)])
 
 /* row (horizontal) IDCT
  *
@@ -238,29 +238,45 @@ static void mpeg2_idct_add_c (const int last, int16_t * block,
 {
     int i;
 
-    for (i = 0; i < 8; i++)
-	idct_row (block + 8 * i);
+    if (last != 129 || (block[0] & 7) == 4) {
+	for (i = 0; i < 8; i++)
+	    idct_row (block + 8 * i);
+	for (i = 0; i < 8; i++)
+	    idct_col (block + i);
+	do {
+	    dest[0] = CLIP (block[0] + dest[0]);
+	    dest[1] = CLIP (block[1] + dest[1]);
+	    dest[2] = CLIP (block[2] + dest[2]);
+	    dest[3] = CLIP (block[3] + dest[3]);
+	    dest[4] = CLIP (block[4] + dest[4]);
+	    dest[5] = CLIP (block[5] + dest[5]);
+	    dest[6] = CLIP (block[6] + dest[6]);
+	    dest[7] = CLIP (block[7] + dest[7]);
 
-    for (i = 0; i < 8; i++)
-	idct_col (block + i);
+	    block[0] = 0;	block[1] = 0;	block[2] = 0;	block[3] = 0;
+	    block[4] = 0;	block[5] = 0;	block[6] = 0;	block[7] = 0;
 
-    i = 8;
-    do {
-	dest[0] = CLIP (block[0] + dest[0]);
-	dest[1] = CLIP (block[1] + dest[1]);
-	dest[2] = CLIP (block[2] + dest[2]);
-	dest[3] = CLIP (block[3] + dest[3]);
-	dest[4] = CLIP (block[4] + dest[4]);
-	dest[5] = CLIP (block[5] + dest[5]);
-	dest[6] = CLIP (block[6] + dest[6]);
-	dest[7] = CLIP (block[7] + dest[7]);
+	    dest += stride;
+	    block += 8;
+	} while (--i);
+    } else {
+	int DC;
 
-	block[0] = 0;	block[1] = 0;	block[2] = 0;	block[3] = 0;
-	block[4] = 0;	block[5] = 0;	block[6] = 0;	block[7] = 0;
-
-	dest += stride;
-	block += 8;
-    } while (--i);
+	DC = (block[0] + 4) >> 3;
+	block[0] = block[63] = 0;
+	i = 8;
+	do {
+	    dest[0] = CLIP (DC + dest[0]);
+	    dest[1] = CLIP (DC + dest[1]);
+	    dest[2] = CLIP (DC + dest[2]);
+	    dest[3] = CLIP (DC + dest[3]);
+	    dest[4] = CLIP (DC + dest[4]);
+	    dest[5] = CLIP (DC + dest[5]);
+	    dest[6] = CLIP (DC + dest[6]);
+	    dest[7] = CLIP (DC + dest[7]);
+	    dest += stride;
+	} while (--i);
+    }
 }
 
 void mpeg2_idct_init (uint32_t mm_accel)
