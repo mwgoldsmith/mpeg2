@@ -36,12 +36,12 @@
 #include "idct.h"
 
 extern mc_functions_t mc_functions;
-extern void (*idct_block_copy)(sint_16 * block, uint_8 * dest, int stride);
-extern void (*idct_block_add)(sint_16 * block, uint_8 * dest, int stride);
+extern void (*idct_block_copy)(int16_t * block, uint8_t * dest, int stride);
+extern void (*idct_block_add)(int16_t * block, uint8_t * dest, int stride);
 
 //XXX put these on the stack in slice_process?
 static slice_t slice;
-sint_16 DCTblock[64] ALIGN_16_BYTE;
+int16_t DCTblock[64] ALIGN_16_BYTE;
 
 typedef struct {
 	char run, level, len;
@@ -51,7 +51,7 @@ extern DCTtab DCTtabfirst[],DCTtabnext[],DCTtab0[],DCTtab1[];
 extern DCTtab DCTtab2[],DCTtab3[],DCTtab4[],DCTtab5[],DCTtab6[];
 extern DCTtab DCTtab0a[],DCTtab1a[];
 
-uint_32 non_linear_quantizer_scale[32] =
+uint32_t non_linear_quantizer_scale[32] =
 {
 	 0, 1, 2, 3, 4, 5, 6, 7,
 	 8,10,12,14,16,18,20,22,
@@ -72,10 +72,10 @@ static inline int get_quantizer_scale (int q_scale_type)
 }
 
 //This needs to be rewritten
-inline uint_32
-slice_get_block_coeff(uint_16 *run, sint_16 *val, uint_16 non_intra_dc,uint_16 intra_vlc_format)
+inline uint32_t
+slice_get_block_coeff(uint16_t *run, int16_t *val, uint16_t non_intra_dc,uint16_t intra_vlc_format)
 {
-	uint_32 code;
+	uint32_t code;
 	DCTtab *tab;
 
 	//this routines handles intra AC and non-intra AC/DC coefficients
@@ -148,16 +148,16 @@ slice_get_block_coeff(uint_16 *run, sint_16 *val, uint_16 non_intra_dc,uint_16 i
 
 
 static void
-slice_get_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint_32 cc)
+slice_get_intra_block(const picture_t *picture,slice_t *slice,int16_t *dest,uint32_t cc)
 {
-	uint_32 i = 1;
-	uint_32 j;
-	uint_16 run;
-	sint_16 val;
-	const uint_8 *scan = picture->scan;
-	uint_8 *quant_matrix = picture->intra_quantizer_matrix;
-	sint_16 quantizer_scale = slice->quantizer_scale;
-	sint_16 mismatch;
+	uint32_t i = 1;
+	uint32_t j;
+	uint16_t run;
+	int16_t val;
+	const uint8_t *scan = picture->scan;
+	uint8_t *quant_matrix = picture->intra_quantizer_matrix;
+	int16_t quantizer_scale = slice->quantizer_scale;
+	int16_t mismatch;
 
 	//Get the intra DC coefficient and inverse quantize it
 	if (cc == 0)
@@ -177,17 +177,17 @@ slice_get_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint
 }
 
 static void
-slice_get_non_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest)
+slice_get_non_intra_block(const picture_t *picture,slice_t *slice,int16_t *dest)
 {
-	uint_32 i;
-	uint_32 j;
-	uint_16 run;
-	sint_16 val;
-	const uint_8 *scan = picture->scan;
-	uint_8 *quant_matrix = picture->non_intra_quantizer_matrix;
-	sint_16 quantizer_scale = slice->quantizer_scale;
+	uint32_t i;
+	uint32_t j;
+	uint16_t run;
+	int16_t val;
+	const uint8_t *scan = picture->scan;
+	uint8_t *quant_matrix = picture->non_intra_quantizer_matrix;
+	int16_t quantizer_scale = slice->quantizer_scale;
 	int k;
-	sint_16 mismatch;
+	int16_t mismatch;
 
 	i = 0;
 	mismatch = 1;
@@ -202,19 +202,19 @@ slice_get_non_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest)
 }
 
 static inline void slice_intra_DCT (picture_t * picture, slice_t * slice,
-									int cc, uint_8 * dest, int stride)
+									int cc, uint8_t * dest, int stride)
 {
 	slice_get_intra_block (picture, slice, DCTblock, cc);
 	idct_block_copy (DCTblock, dest, stride);
-	memset (DCTblock, 0, sizeof(sint_16) * 64);
+	memset (DCTblock, 0, sizeof(int16_t) * 64);
 }
 
 static inline void slice_non_intra_DCT (picture_t * picture, slice_t * slice,
-										uint_8 * dest, int stride)
+										uint8_t * dest, int stride)
 {
 	slice_get_non_intra_block (picture, slice, DCTblock);
 	idct_block_add (DCTblock, dest, stride);
-	memset (DCTblock, 0, sizeof(sint_16) * 64);
+	memset (DCTblock, 0, sizeof(int16_t) * 64);
 }
 
 static int get_motion_delta (int f_code)
@@ -257,8 +257,8 @@ slice_init(void)
 {
 }
 
-void motion_frame (motion_t * motion, uint_8 * dest[3], int offset, int width,
-				   void (** table) (uint_8 *, uint_8 *, int, int))
+void motion_frame (motion_t * motion, uint8_t * dest[3], int offset, int width,
+				   void (** table) (uint8_t *, uint8_t *, int, int))
 {
 	int motion_x, motion_y;
 
@@ -274,8 +274,8 @@ void motion_frame (motion_t * motion, uint_8 * dest[3], int offset, int width,
 				  motion->ref_frame, offset, width, 16);
 }
 
-void motion_field (motion_t * motion, uint_8 * dest[3], int offset, int width,
-				   void (** table) (uint_8 *, uint_8 *, int, int))
+void motion_field (motion_t * motion, uint8_t * dest[3], int offset, int width,
+				   void (** table) (uint8_t *, uint8_t *, int, int))
 {
 	int vertical_field_select;
 	int motion_x, motion_y;
@@ -310,16 +310,16 @@ void motion_field (motion_t * motion, uint_8 * dest[3], int offset, int width,
 }
 
 // like motion_frame, but reuse previous motion vectors
-void motion_reuse (motion_t * motion, uint_8 * dest[3], int offset, int width,
-				   void (** table) (uint_8 *, uint_8 *, int, int))
+void motion_reuse (motion_t * motion, uint8_t * dest[3], int offset, int width,
+				   void (** table) (uint8_t *, uint8_t *, int, int))
 {
 	motion_block (table, motion->pmv[0][0], motion->pmv[0][1], dest, offset,
 				  motion->ref_frame, offset, width, 16);
 }
 
 // like motion_frame, but use null motion vectors
-void motion_zero (motion_t * motion, uint_8 * dest[3], int offset, int width,
-				  void (** table) (uint_8 *, uint_8 *, int, int))
+void motion_zero (motion_t * motion, uint8_t * dest[3], int offset, int width,
+				  void (** table) (uint8_t *, uint8_t *, int, int))
 {
 	motion_block (table, 0, 0, dest, offset,
 				  motion->ref_frame, offset, width, 16);
@@ -353,10 +353,10 @@ do {														\
 				  mc_functions.avg : mc_functions.put));	\
 } while (0);
 
-uint_32 get_macroblock_modes (int picture_coding_type,
+uint32_t get_macroblock_modes (int picture_coding_type,
 							  int frame_pred_frame_dct)
 {
-	uint_32 macroblock_modes;
+	uint32_t macroblock_modes;
 
 	macroblock_modes = Get_macroblock_type (picture_coding_type);
 
@@ -377,14 +377,14 @@ uint_32 get_macroblock_modes (int picture_coding_type,
 	return macroblock_modes;
 }
 
-uint_32
-slice_process (picture_t * picture, uint_8 code, uint_8 * buffer)
+uint32_t
+slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 {
-	uint_32 mba;      
-	uint_32 mba_inc;
-	uint_32 macroblock_modes;
+	uint32_t mba;      
+	uint32_t mba_inc;
+	uint32_t macroblock_modes;
 	int width;
-	uint_8 * dest[3];
+	uint8_t * dest[3];
 	int offset;
 
 

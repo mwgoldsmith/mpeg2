@@ -25,8 +25,8 @@ void motion_comp_init(void);
 
 typedef struct mc_functions_s
 {
-	void (* put [8]) (uint_8 *dst, uint_8 *, sint_32, sint_32);
-	void (* avg [8]) (uint_8 *dst, uint_8 *, sint_32, sint_32);
+	void (* put [8]) (uint8_t *dst, uint8_t *, int32_t, int32_t);
+	void (* avg [8]) (uint8_t *dst, uint8_t *, int32_t, int32_t);
 } mc_functions_t;
 
 #define MOTION_COMP_EXTERN(x) mc_functions_t mc_functions_##x =\
@@ -45,8 +45,8 @@ extern mc_functions_t mc_functions_c;
 extern mc_functions_t mc_functions_mmx;
 extern mc_functions_t mc_functions_mlib;
 
-void motion_block (void (** table) (uint_8 *, uint_8 *, int, int),
+void motion_block (void (** table) (uint8_t *, uint8_t *, int, int),
 				   int x_pred, int y_pred,
-				   uint_8 * dest[3], int dest_offset,
-				   uint_8 * src[3], int src_offset,
+				   uint8_t * dest[3], int dest_offset,
+				   uint8_t * src[3], int src_offset,
 				   int pitch, int height);

@@ -73,8 +73,8 @@ findArrayEnd(SDL_Rect **array)
     return(i - 1);
 } // findArrayEnd
 
-static uint_32 
-init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
+static uint32_t 
+init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 /*
  * Initialize an SDL surface and an SDL YUV overlay.
  *
@@ -218,8 +218,8 @@ get_info(void)
 
 
     // !!! do we still need this API function?
-static uint_32 
-draw_frame(uint_8 *src[])
+static uint32_t 
+draw_frame(uint8_t *src[])
 /*
  * Draw a frame to the SDL YUV overlay.
  *
@@ -248,8 +248,8 @@ draw_frame(uint_8 *src[])
 } // display_frame
 
 
-static uint_32 
-draw_slice(uint_8 *src[], uint_32 slice_num)
+static uint32_t 
+draw_slice(uint8_t *src[], uint32_t slice_num)
 /*
  * Draw a slice (16 rows of image) to the SDL YUV overlay.
  *
@@ -292,7 +292,7 @@ flip_page(void)
 } // display_flip_page
 
 static vo_image_buffer_t* 
-allocate_image_buffer(uint_32 height, uint_32 width, uint_32 format)
+allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format)
 {
 	//use the generic fallback
 	return allocate_image_buffer_common(height,width,format);

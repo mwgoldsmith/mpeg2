@@ -64,10 +64,10 @@ vo_functions_t* video_out_drivers[] =
 //FIXME this should allocate AGP memory via agpgart and then we
 //can use AGP transfers to the framebuffer
 vo_image_buffer_t* 
-allocate_image_buffer_common(uint_32 width, uint_32 height, uint_32 format)
+allocate_image_buffer_common(uint32_t width, uint32_t height, uint32_t format)
 {
 	vo_image_buffer_t *image;
-	uint_32 image_size;
+	uint32_t image_size;
 
 	image = malloc(sizeof(vo_image_buffer_t));
 

@@ -29,7 +29,7 @@
 #include "debug.h"
 #include "stats.h"
 
-static void stats_picture (uint_8 * buffer)
+static void stats_picture (uint8_t * buffer)
 {
 	static char * picture_coding_type_str [8] =
 	{
@@ -54,12 +54,12 @@ static void stats_picture (uint_8 * buffer)
 			 temporal_reference, vbv_delay);
 }
 
-static void stats_user_data (uint_8 * buffer)
+static void stats_user_data (uint8_t * buffer)
 {
 	dprintf ("(user_data)\n");
 }
 
-static void stats_sequence (uint_8 * buffer)
+static void stats_sequence (uint8_t * buffer)
 {
 	static char * aspect_ratio_information_str[8] =
 	{
@@ -117,29 +117,29 @@ static void stats_sequence (uint_8 * buffer)
 			 load_non_intra_quantizer_matrix ? " , Custom Non-Intra Matrix":"");
 }
 
-static void stats_sequence_error (uint_8 * buffer)
+static void stats_sequence_error (uint8_t * buffer)
 {
 	dprintf ("(sequence_error)\n");
 }
 
-static void stats_sequence_end (uint_8 * buffer)
+static void stats_sequence_end (uint8_t * buffer)
 {
 	dprintf ("(sequence_end)\n");
 }
 
-static void stats_group (uint_8 * buffer)
+static void stats_group (uint8_t * buffer)
 {
 	dprintf ("(group)%s%s\n",
 			 (buffer[4] & 0x40) ? " closed_gop" : "",
 			 (buffer[4] & 0x20) ? " broken_link" : "");
 }
 
-static void stats_slice (uint_8 code, uint_8 * buffer)
+static void stats_slice (uint8_t code, uint8_t * buffer)
 {
 	//dprintf ("(slice %d)\n", code);
 }
 
-static void stats_sequence_extension (uint_8 * buffer)
+static void stats_sequence_extension (uint8_t * buffer)
 {
 	static char * chroma_format_str[4] =
 	{
@@ -159,33 +159,33 @@ static void stats_sequence_extension (uint_8 * buffer)
 			 progressive_sequence, chroma_format_str [chroma_format]);
 }
 
-static void stats_sequence_display_extension (uint_8 * buffer)
+static void stats_sequence_display_extension (uint8_t * buffer)
 {
 	dprintf ("(sequence_display_extension)\n");
 }
 
-static void stats_quant_matrix_extension (uint_8 * buffer)
+static void stats_quant_matrix_extension (uint8_t * buffer)
 {
 	dprintf ("(quant_matrix_extension)\n");
 }
 
-static void stats_copyright_extension (uint_8 * buffer)
+static void stats_copyright_extension (uint8_t * buffer)
 {
 	dprintf ("(copyright_extension)\n");
 }
 
 
-static void stats_sequence_scalable_extension (uint_8 * buffer)
+static void stats_sequence_scalable_extension (uint8_t * buffer)
 {
 	dprintf ("(sequence_scalable_extension)\n");
 }
 
-static void stats_picture_display_extension (uint_8 * buffer)
+static void stats_picture_display_extension (uint8_t * buffer)
 {
 	dprintf ("(picture_display_extension)\n");
 }
 
-static void stats_picture_coding_extension (uint_8 * buffer)
+static void stats_picture_coding_extension (uint8_t * buffer)
 {
 	static char * picture_structure_str[4] =
 	{
@@ -236,7 +236,7 @@ static void stats_picture_coding_extension (uint_8 * buffer)
 			 alternate_scan, repeat_first_field, progressive_frame);
 }
 
-void stats_header (uint_8 code, uint_8 * buffer)
+void stats_header (uint8_t code, uint8_t * buffer)
 {
 	if (! (debug_is_on ()))
 		return;

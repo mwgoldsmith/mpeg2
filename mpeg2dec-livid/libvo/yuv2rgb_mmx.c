@@ -440,7 +440,7 @@ yuv420_argb32_mmx(unsigned char * image, const unsigned char * py,
 
 
 yuv2rgb_fun 
-yuv2rgb_init_mmx(uint_32 bpp, uint_32 mode)
+yuv2rgb_init_mmx(uint32_t bpp, uint32_t mode)
 {
 
 	//FIXME remove when fixed

@@ -36,8 +36,8 @@ static vo_info_t vo_info =
 	""
 };
 
-static uint_32
-draw_slice(uint_8 *src[], uint_32 slice_num)
+static uint32_t
+draw_slice(uint8_t *src[], uint32_t slice_num)
 {
 	return 0;
 }
@@ -47,14 +47,14 @@ flip_page(void)
 {
 }
 
-static uint_32
-draw_frame(uint_8 *src[])
+static uint32_t
+draw_frame(uint8_t *src[])
 {
 	return 0;
 }
 
-static uint_32
-init(uint_32 width, uint_32 height, uint_32 fullscreen, char *title)
+static uint32_t
+init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 {
   return 0;
 }
@@ -66,7 +66,7 @@ get_info(void)
 }
 
 static vo_image_buffer_t* 
-allocate_image_buffer(uint_32 height, uint_32 width, uint_32 format)
+allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format)
 {
 	//use the generic fallback
 	return allocate_image_buffer_common(height,width,format);

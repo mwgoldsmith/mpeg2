@@ -55,8 +55,8 @@
 // mc function template
 
 #define MC_FUNC(op,xy)							\
-static void motion_comp_##op####xy##_16x16_c (uint_8 *curr_block, uint_8 *ref_block, \
-				    sint_32 stride, sint_32 height)	\
+static void motion_comp_##op####xy##_16x16_c (uint8_t *curr_block, uint8_t *ref_block, \
+				    int32_t stride, int32_t height)	\
 {									\
 	int i;								\
 								\
@@ -82,10 +82,10 @@ static void motion_comp_##op####xy##_16x16_c (uint_8 *curr_block, uint_8 *ref_bl
 		curr_block += stride;						\
 	}									\
 }									\
-static void motion_comp_##op####xy##_8x8_c (uint_8 *curr_block, uint_8 *ref_block, \
-				   sint_32 stride, sint_32 height)	\
+static void motion_comp_##op####xy##_8x8_c (uint8_t *curr_block, uint8_t *ref_block, \
+				   int32_t stride, int32_t height)	\
 {									\
-	uint_32 i;								\
+	uint32_t i;								\
 								\
 	for (i = 0; i < height; i++)					\
 	{									\

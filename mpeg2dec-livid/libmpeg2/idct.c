@@ -58,13 +58,13 @@
 
 
 // idct main entry point 
-void (*idct_block_copy) (sint_16 * block, uint_8 * dest, int stride);
-void (*idct_block_add) (sint_16 * block, uint_8 * dest, int stride);
+void (*idct_block_copy) (int16_t * block, uint8_t * dest, int stride);
+void (*idct_block_add) (int16_t * block, uint8_t * dest, int stride);
 
-static void idct_block_copy_c (sint_16 *block, uint_8 * dest, int stride);
-static void idct_block_add_c (sint_16 *block, uint_8 * dest, int stride);
+static void idct_block_copy_c (int16_t *block, uint8_t * dest, int stride);
+static void idct_block_add_c (int16_t *block, uint8_t * dest, int stride);
 
-static uint_8 clip_lut[1024];
+static uint8_t clip_lut[1024];
 #define CLIP(i) ((clip_lut+384)[(i)])
 
 void idct_init(void)
@@ -108,7 +108,7 @@ void idct_init(void)
  *        c[1..7] = 128*sqrt(2)
  */
 
-static void inline idct_row (sint_16 * block)
+static void inline idct_row (int16_t * block)
 {
 	int x0, x1, x2, x3, x4, x5, x6, x7, x8;
 
@@ -178,7 +178,7 @@ static void inline idct_row (sint_16 * block)
  *        c[1..7] = (1/1024)*sqrt(2)
  */
 
-static void inline idct_col (sint_16 *block)
+static void inline idct_col (int16_t *block)
 {
 	int x0, x1, x2, x3, x4, x5, x6, x7, x8;
 
@@ -240,7 +240,7 @@ static void inline idct_col (sint_16 *block)
 	block[8*7] = (x7 - x1) >> 14;
 }
 
-void idct_block_copy_c (sint_16 * block, uint_8 * dest, int stride)
+void idct_block_copy_c (int16_t * block, uint8_t * dest, int stride)
 {
 	int i;
 
@@ -266,7 +266,7 @@ void idct_block_copy_c (sint_16 * block, uint_8 * dest, int stride)
 	} while (--i);
 }
 
-void idct_block_add_c (sint_16 * block, uint_8 * dest, int stride)
+void idct_block_add_c (int16_t * block, uint8_t * dest, int stride)
 {
 	int i;
 

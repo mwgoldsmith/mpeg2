@@ -32,9 +32,9 @@
 
 #include "idct.h"
 
-void idct_block_mmx (sint_16 * block);
+void idct_block_mmx (int16_t * block);
 
-void idct_block_copy_mmx (sint_16 * block, uint_8 * dest, int stride)
+void idct_block_copy_mmx (int16_t * block, uint8_t * dest, int stride)
 {
 	int i;
 
@@ -52,7 +52,7 @@ void idct_block_copy_mmx (sint_16 * block, uint_8 * dest, int stride)
 	} while (--i);
 }
 
-void idct_block_add_mmx (sint_16 * block, uint_8 * dest, int stride)
+void idct_block_add_mmx (int16_t * block, uint8_t * dest, int stride)
 {
 	int i;
 

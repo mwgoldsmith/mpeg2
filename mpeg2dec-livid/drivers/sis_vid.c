@@ -52,41 +52,41 @@ MODULE_AUTHOR("Aaron Holtzman <aholtzma@engr.uvic.ca>");
 typedef struct bes_registers_s
 {
 	//base address of yuv framebuffer
-	uint_32 yuv_base;
-	uint_32 u_base;
-	uint_32 v_base;
-	uint_32 fb_end;;
+	uint32_t yuv_base;
+	uint32_t u_base;
+	uint32_t v_base;
+	uint32_t fb_end;;
 
 	//frame buffer pitch 
-	uint_32 pitch;
+	uint32_t pitch;
 
 	//window boundaries
-	uint_32 left;
-	uint_32 right;
-	uint_32 top;
-	uint_32 bottom;
+	uint32_t left;
+	uint32_t right;
+	uint32_t top;
+	uint32_t bottom;
 
 	//control registers
-	uint_32 misc_0;
-	uint_32 misc_1;
-	uint_32 misc_3;
-	uint_32 misc_4;
+	uint32_t misc_0;
+	uint32_t misc_1;
+	uint32_t misc_3;
+	uint32_t misc_4;
 
 	//key overlay mode
-	uint_32 key_mode;
+	uint32_t key_mode;
 
 } bes_registers_t;
 
 static bes_registers_t regs;
-static uint_32 mga_vid_in_use = 0;
-static uint_32 vid_src_ready = 0;
-static uint_32 vid_overlay_on = 0;
+static uint32_t mga_vid_in_use = 0;
+static uint32_t vid_src_ready = 0;
+static uint32_t vid_overlay_on = 0;
 
-static uint_8 *mga_mmio_base = 0;
-static uint_32 mga_mem_base = 0; 
-static uint_32 mga_src_base = 0;
+static uint8_t *mga_mmio_base = 0;
+static uint32_t mga_mem_base = 0; 
+static uint32_t mga_src_base = 0;
 
-static uint_32 mga_ram_size = 0;
+static uint32_t mga_ram_size = 0;
 
 static struct pci_dev *pci_dev;
 
@@ -120,7 +120,7 @@ static void mga_vid_frame_sel(int frame)
 
 static void mga_vid_write_regs(void)
 {
-	uint_32 foo;
+	uint32_t foo;
 
 	//unlock the video accel registers
 	WRITE_REG(VIDEO_ACCEL,0x80,0x86);
@@ -181,7 +181,7 @@ static void mga_vid_write_regs(void)
 
 static int mga_vid_set_config(mga_vid_config_t *config)
 {
-	uint_32 x, y, frame_size;
+	uint32_t x, y, frame_size;
 
 	x = config->x_org;
 	y = config->y_org;

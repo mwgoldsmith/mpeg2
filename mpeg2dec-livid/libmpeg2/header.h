@@ -22,6 +22,6 @@
  */
  
 void header_state_init (picture_t * picture);
-void header_process_picture_header (picture_t * picture, uint_8 * buffer);
-void header_process_sequence_header (picture_t * picture, uint_8 * buffer);
-void header_process_extension (picture_t * picture, uint_8 * buffer);
+void header_process_picture_header (picture_t * picture, uint8_t * buffer);
+void header_process_sequence_header (picture_t * picture, uint8_t * buffer);
+void header_process_extension (picture_t * picture, uint8_t * buffer);

@@ -57,11 +57,11 @@ vo_functions_t video_out;
 //we max out at 65536 bytes as that is the largest
 //slice we will see in MP@ML streams.
 //(we make no pretenses ofdecoding anything more than that)
-static uint_8 chunk_buffer[65536 + 4];
-static uint_32 shift = 0;
+static uint8_t chunk_buffer[65536 + 4];
+static uint32_t shift = 0;
 
-static uint_32 is_display_initialized = 0;
-static uint_32 is_sequence_needed = 1;
+static uint32_t is_display_initialized = 0;
+static uint32_t is_sequence_needed = 1;
 
 void
 mpeg2_init(vo_functions_t *foo)
@@ -86,8 +86,8 @@ mpeg2_init(vo_functions_t *foo)
 static void 
 decode_allocate_image_buffers(picture_t *picture)
 {
-	uint_32 frame_size;
-	uint_32 slice_size;
+	uint32_t frame_size;
+	uint32_t slice_size;
 	vo_image_buffer_t *tmp;
 
 	frame_size = picture->coded_picture_width * picture->coded_picture_height;
@@ -136,7 +136,7 @@ decode_reorder_frames(void)
 	}
 }
 
-int parse_chunk (int code, uint_8 * buffer)
+int parse_chunk (int code, uint8_t * buffer)
 {
 	int is_frame_done = 0;
 
@@ -186,7 +186,7 @@ int parse_chunk (int code, uint_8 * buffer)
 			}
 			else
 			{
-				uint_8 *foo[3];
+				uint8_t *foo[3];
 
 				foo[0] = picture.forward_reference_frame[0] + (code-1) * 16 *
 					picture.coded_picture_width;
@@ -206,14 +206,14 @@ int parse_chunk (int code, uint_8 * buffer)
 	return is_frame_done;
 }
 
-uint_32 mpeg2_decode_data (uint_8 * current, uint_8 * end) 
+uint32_t mpeg2_decode_data (uint8_t * current, uint8_t * end) 
 {
-	static uint_8 code = 0xff;
-	//static uint_8 chunk_buffer[65536];
-	static uint_8 *chunk_ptr = chunk_buffer;
-	//static uint_32 shift = 0;
+	static uint8_t code = 0xff;
+	//static uint8_t chunk_buffer[65536];
+	static uint8_t *chunk_ptr = chunk_buffer;
+	//static uint32_t shift = 0;
 
-	uint_8 byte;
+	uint8_t byte;
 	int ret = 0;
 
 	while (1)

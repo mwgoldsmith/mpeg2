@@ -31,12 +31,12 @@
 #include <mlib_sys.h>
 #include <mlib_video.h>
 
-void idct_block_copy_mlib (sint_16 * block, uint_8 * dest, int stride)
+void idct_block_copy_mlib (int16_t * block, uint8_t * dest, int stride)
 {
 	mlib_VideoIDCT8x8_U8_S16 (dest, block, stride);
 }
 
-void idct_block_add_mlib (sint_16 * block, uint_8 * dest, int stride)
+void idct_block_add_mlib (int16_t * block, uint8_t * dest, int stride)
 {
 	// Should we use mlib_VideoIDCT_IEEE_S16_S16 here ??
 	// it's ~30% slower.

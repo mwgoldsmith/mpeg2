@@ -10,25 +10,22 @@
  * license. See http://www.gnu.org/copyleft/gpl.html for details.
  */
 
-#ifndef AARONS_TYPES
-typedef unsigned int uint_32;
-typedef unsigned char uint_8;
-#endif
+#include <inttypes.h>
 
 typedef struct mga_vid_config_s
 {
-uint_32 card_type;
-uint_32 ram_size;
-uint_32 src_width;
-uint_32 src_height;
-uint_32 dest_width;
-uint_32 dest_height;
-uint_32 x_org;
-uint_32 y_org;
-uint_8  colkey_on;
-uint_8  colkey_red;
-uint_8  colkey_green;
-uint_8  colkey_blue;
+uint32_t card_type;
+uint32_t ram_size;
+uint32_t src_width;
+uint32_t src_height;
+uint32_t dest_width;
+uint32_t dest_height;
+uint32_t x_org;
+uint32_t y_org;
+uint8_t  colkey_on;
+uint8_t  colkey_red;
+uint8_t  colkey_green;
+uint8_t  colkey_blue;
 } mga_vid_config_t;
 
 #define MGA_VID_CONFIG    _IOR('J', 1, mga_vid_config_t)
