@@ -84,14 +84,4 @@ static int pgm_setup (vo_output_video_attr_t *attr)
     return 0;
 }
 
-static frame_t * pgm_allocate_image_buffer (int width, int height, uint32_t format)
-{
-    return libvo_common_alloc (width, height);
-}
-
-static void pgm_free_image_buffer (frame_t* frame)
-{
-    libvo_common_free (frame);
-}
-
 LIBVO_EXTERN (pgm, "pgm")

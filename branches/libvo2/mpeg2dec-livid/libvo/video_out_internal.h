@@ -14,8 +14,6 @@
 
 int libvo_common_setup (vo_output_video_attr_t *attr);
 int libvo_common_close ();
-frame_t * libvo_common_alloc (int width, int height);
-void libvo_common_free (frame_t * frame);
 
 frame_t * request_frame (void);
 void release_frame(frame_t *frame);
@@ -31,8 +29,6 @@ vo_output_video_t video_out_##x = {\
 	draw_frame:             x ## _draw_frame,\
 	draw_slice:             x ## _draw_slice,\
 	flip_page:              x ## _flip_page,\
-	allocate_image_buffer:  x ## _allocate_image_buffer,\
-	free_image_buffer:      x ## _free_image_buffer,\
 	request_frame:		request_frame,\
 	release_frame:          release_frame\
 };

@@ -52,15 +52,4 @@ static int null_setup (vo_output_video_attr_t *attr)
     return 0;
 }
 
-static frame_t * null_allocate_image_buffer (int width, int height,
-					     uint32_t format)
-{
-    return libvo_common_alloc (width, height);
-}
-
-static void null_free_image_buffer (frame_t * frame)
-{
-    libvo_common_free (frame);
-}
-
 LIBVO_EXTERN (null, "null")

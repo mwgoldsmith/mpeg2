@@ -37,8 +37,6 @@ typedef struct vo_output_video_s {
     int (*draw_frame)   (frame_t *frame); 
     int (*draw_slice)   (uint8_t *src[], int slice_num); 
     void        (*flip_page)    (void); 
-    frame_t *(*allocate_image_buffer)(int width, int height, uint32_t format); 
-    void    (*free_image_buffer)        (frame_t* image); 
 // </old> 
 } vo_output_video_t;
 
