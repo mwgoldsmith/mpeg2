@@ -265,10 +265,10 @@ static inline int get_luma_dc_dct_diff (void)
     } else {
 	tab = DC_long - 0x1e0 + UBITS (bit_buf, 9);
 	size = tab->size;
-	bits += tab->len + size;
-	bit_buf <<= tab->len;
+	DUMPBITS (bit_buf, bits, tab->len);
+	NEEDBITS (bit_buf, bits);
 	dc_diff = UBITS (bit_buf, size) - UBITS (SBITS (~bit_buf, 1), size);
-	bit_buf <<= size;
+	DUMPBITS (bit_buf, bits, size);
 	return dc_diff;
     }
 #undef bit_buf
@@ -300,10 +300,10 @@ static inline int get_chroma_dc_dct_diff (void)
     } else {
 	tab = DC_long - 0x3e0 + UBITS (bit_buf, 10);
 	size = tab->size;
-	bits += tab->len + 1 + size;
-	bit_buf <<= tab->len + 1;
+	DUMPBITS (bit_buf, bits, tab->len + 1);
+	NEEDBITS (bit_buf, bits);
 	dc_diff = UBITS (bit_buf, size) - UBITS (SBITS (~bit_buf, 1), size);
-	bit_buf <<= size;
+	DUMPBITS (bit_buf, bits, size);
 	return dc_diff;
     }
 #undef bit_buf
