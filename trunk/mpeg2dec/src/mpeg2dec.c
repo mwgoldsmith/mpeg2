@@ -53,10 +53,13 @@ static mpeg2dec_t * mpeg2dec;
 static vo_open_t * output_open = NULL;
 static vo_instance_t * output;
 static int sigint = 0;
+static int total_offset = 0;
+static int verbose = 0;
+
+void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
+		 int offset, int verbose);
 
 #ifdef HAVE_GETTIMEOFDAY
-
-static void print_fps (int final);
 
 static RETSIGTYPE signal_handler (int sig)
 {
@@ -74,6 +77,9 @@ static void print_fps (int final)
     struct timeval tv_end;
     float fps, tfps;
     int frames, elapsed;
+
+    if (verbose)
+	return;
 
     gettimeofday (&tv_end, NULL);
 
@@ -130,14 +136,16 @@ static void print_usage (char ** argv)
     int i;
     vo_driver_t * drivers;
 
-    fprintf (stderr, "usage: %s [-h] [-o <mode>] [-s [<track>]] [-t <pid>]"
-	     " [-p] [-c] <file>\n"
+    fprintf (stderr, "usage: "
+	     "%s [-h] [-o <mode>] [-s [<track>]] [-t <pid>] [-p] [-c] \\\n"
+	     "\t\t[-v] <file>\n"
 	     "\t-h\tdisplay help and available video output modes\n"
 	     "\t-s\tuse program stream demultiplexer, "
 	     "track 0-15 or 0xe0-0xef\n"
 	     "\t-t\tuse transport stream demultiplexer, pid 0x10-0x1ffe\n"
 	     "\t-p\tuse pva demultiplexer\n"
 	     "\t-c\tuse c implementation, disables all accelerations\n"
+	     "\t-v\tverbose information about the MPEG stream\n"
 	     "\t-o\tvideo output mode\n", argv[0]);
 
     drivers = vo_drivers ();
@@ -155,7 +163,7 @@ static void handle_args (int argc, char ** argv)
     char * s;
 
     drivers = vo_drivers ();
-    while ((c = getopt (argc, argv, "hs::t:pco:")) != -1)
+    while ((c = getopt (argc, argv, "hs::t:pco:v")) != -1)
 	switch (c) {
 	case 'o':
 	    for (i = 0; drivers[i].name != NULL; i++)
@@ -196,6 +204,11 @@ static void handle_args (int argc, char ** argv)
 	    mpeg2_accel (0);
 	    break;
 
+	case 'v':
+	    if (++verbose > 2)
+		print_usage (argv);
+	    break;
+
 	default:
 	    print_usage (argv);
 	}
@@ -222,13 +235,14 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
     vo_setup_result_t setup_result;
 
     mpeg2_buffer (mpeg2dec, current, end);
+    total_offset += end - current;
 
     info = mpeg2_info (mpeg2dec);
-    while (1) {
-	state = mpeg2_parse (mpeg2dec);
+    while ((state = mpeg2_parse (mpeg2dec)) != STATE_BUFFER) {
+	if (verbose)
+	    dump_state (stderr, state, info,
+			total_offset - mpeg2_getpos (mpeg2dec), verbose);
 	switch (state) {
-	case STATE_BUFFER:
-	    return;
 	case STATE_SEQUENCE:
 	    /* might set nb fbuf, convert format, stride */
 	    /* might set fbufs */
