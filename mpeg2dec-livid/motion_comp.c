@@ -24,7 +24,7 @@
 //
 // This will get amusing in a few months I'm sure
 //
-// motion_comp.c rewrite counter:  4
+// motion_comp.c rewrite counter:  5
 //
 
 #include <stdlib.h>
@@ -87,6 +87,105 @@ motion_comp_init(void)
 		motion_comp = motion_comp_c;
 }
 
+
+void motion_putblock(int x_pred, int y_pred, int field_select,
+	 uint_8 *dst_y, uint_8 *dst_cr, uint_8 *dst_cb,	uint_8 *refframe[3], int pitch, int height)
+{
+	int x_half, y_half;
+	uint_8 *src1, *src2;
+
+	x_half = x_pred & 1;
+	y_half = y_pred & 1;
+	x_pred >>= 1;
+	y_pred >>= 1;
+	
+	src1 = refframe[0] + x_pred + y_pred * pitch + field_select * (pitch >> 1);
+
+	if (x_half && y_half) {
+		soft_VideoInterpXY_U8_U8_16x16(dst_y, src1, pitch, height);
+	} else if (x_half) {
+		soft_VideoInterpX_U8_U8_16x16 (dst_y, src1, pitch, height);
+	} else if (y_half) {
+		soft_VideoInterpY_U8_U8_16x16 (dst_y, src1, pitch, height);
+	} else {
+		soft_VideoCopyRef_U8_U8_16x16 (dst_y, src1, pitch, height);
+	}
+
+	x_half = x_pred & 1;
+	y_half = y_pred & 1;
+	x_pred >>= 1;
+	y_pred >>= 1;
+	pitch >>= 1;
+	height >>= 1;
+
+	src1 = refframe[1] + x_pred + y_pred * pitch + field_select * (pitch >> 1);
+	src2 = refframe[2] + x_pred + y_pred * pitch + field_select * (pitch >> 1);
+
+	if (x_half && y_half) {
+		soft_VideoInterpXY_U8_U8_8x8(dst_cr, src1, pitch, height);
+		soft_VideoInterpXY_U8_U8_8x8(dst_cb, src2, pitch, height);
+	} else if (x_half) {
+		soft_VideoInterpX_U8_U8_8x8 (dst_cr, src1, pitch, height);
+		soft_VideoInterpX_U8_U8_8x8 (dst_cb, src2, pitch, height);
+	} else if (y_half) {
+		soft_VideoInterpY_U8_U8_8x8 (dst_cr, src1, pitch, height);
+		soft_VideoInterpY_U8_U8_8x8 (dst_cb, src2, pitch, height);
+	} else {
+		soft_VideoCopyRef_U8_U8_8x8 (dst_cr, src1, pitch, height);
+		soft_VideoCopyRef_U8_U8_8x8 (dst_cb, src2, pitch, height);
+	}
+}
+
+
+void motion_aveblock(int x_pred, int y_pred, int field_select,
+	 uint_8 *dst_y, uint_8 *dst_cr, uint_8 *dst_cb,	uint_8 *refframe[3], int pitch, int height)
+{
+	int x_half, y_half;
+	uint_8 *src1, *src2;
+
+	x_half = x_pred & 1;
+	y_half = y_pred & 1;
+	x_pred >>= 1;
+	y_pred >>= 1;
+	
+	src1 = refframe[0] + x_pred + y_pred * pitch + field_select * (pitch >> 1);
+
+	if (x_half && y_half) {
+		soft_VideoInterpAveXY_U8_U8_16x16(dst_y, src1, pitch, height);
+	} else if (x_half) {
+		soft_VideoInterpAveX_U8_U8_16x16 (dst_y, src1, pitch, height);
+	} else if (y_half) {
+		soft_VideoInterpAveY_U8_U8_16x16 (dst_y, src1, pitch, height);
+	} else {
+		soft_VideoCopyRefAve_U8_U8_16x16 (dst_y, src1, pitch, height);
+	}
+
+	x_half = x_pred & 1;
+	y_half = y_pred & 1;
+	x_pred >>= 1;
+	y_pred >>= 1;
+	pitch >>= 1;
+	height >>= 1;
+
+	src1 = refframe[1] + x_pred + y_pred * pitch + field_select * (pitch >> 1);
+	src2 = refframe[2] + x_pred + y_pred * pitch + field_select * (pitch >> 1);
+
+	if (x_half && y_half) {
+		soft_VideoInterpAveXY_U8_U8_8x8(dst_cr, src1, pitch, height);
+		soft_VideoInterpAveXY_U8_U8_8x8(dst_cb, src2, pitch, height);
+	} else if (x_half) {
+		soft_VideoInterpAveX_U8_U8_8x8 (dst_cr, src1, pitch, height);
+		soft_VideoInterpAveX_U8_U8_8x8 (dst_cb, src2, pitch, height);
+	} else if (y_half) {
+		soft_VideoInterpAveY_U8_U8_8x8 (dst_cr, src1, pitch, height);
+		soft_VideoInterpAveY_U8_U8_8x8 (dst_cb, src2, pitch, height);
+	} else {
+		soft_VideoCopyRefAve_U8_U8_8x8 (dst_cr, src1, pitch, height);
+		soft_VideoCopyRefAve_U8_U8_8x8 (dst_cb, src2, pitch, height);
+	}
+}
+
+
 void
 motion_comp_c(picture_t *picture,mb_buffer_t *mb_buffer)
 {
@@ -145,87 +244,86 @@ motion_comp_c(picture_t *picture,mb_buffer_t *mb_buffer)
 		
 			if(mb->macroblock_type & MACROBLOCK_MOTION_FORWARD)
 			{
-				int x_half   = (mb->f_motion_vectors[0][0] & 1);
-				int y_half   = (mb->f_motion_vectors[0][1] & 1);
-				int x_pred_y = (mb->f_motion_vectors[0][0] >> 1) + x * 16;
-				int y_pred_y = (mb->f_motion_vectors[0][1] >> 1) + y * 16;
-				int x_pred_c = x_pred_y / 2;
-				int y_pred_c = y_pred_y / 2;
-				
-				uint_8 *pred_y  = &picture->forward_reference_frame[0][x_pred_y + y_pred_y * width];
-				uint_8 *pred_cr = &picture->forward_reference_frame[1][x_pred_c + y_pred_c * width/2];				
-				uint_8 *pred_cb = &picture->forward_reference_frame[2][x_pred_c + y_pred_c * width/2];
-				
-				if (x_half && y_half) {
-					soft_VideoInterpXY_U8_U8_16x16(dst_y,  pred_y,  width,   width);
-					soft_VideoInterpXY_U8_U8_8x8  (dst_cr, pred_cr, width/2, width/2);
-					soft_VideoInterpXY_U8_U8_8x8  (dst_cb, pred_cb, width/2, width/2);
-				} else if (x_half) {
-					soft_VideoInterpX_U8_U8_16x16(dst_y,  pred_y,  width,   width);
-					soft_VideoInterpX_U8_U8_8x8  (dst_cr, pred_cr, width/2, width/2);
-					soft_VideoInterpX_U8_U8_8x8  (dst_cb, pred_cb, width/2, width/2);
-				} else if (y_half) {
-					soft_VideoInterpY_U8_U8_16x16(dst_y,  pred_y,  width,   width);
-					soft_VideoInterpY_U8_U8_8x8  (dst_cr, pred_cr, width/2, width/2);
-					soft_VideoInterpY_U8_U8_8x8  (dst_cb, pred_cb, width/2, width/2);
+				if (mb->motion_type == MC_FRAME) {
+					motion_putblock(
+						mb->f_motion_vectors[0][0] + x * 32,
+						mb->f_motion_vectors[0][1] + y * 32,
+						0,
+						dst_y, dst_cr, dst_cb,
+						picture->forward_reference_frame,
+						width, 16);
 				} else {
-					soft_VideoCopyRef_U8_U8_16x16(dst_y,  pred_y,  width);
-					soft_VideoCopyRef_U8_U8_8x8  (dst_cr, pred_cr, width/2);
-					soft_VideoCopyRef_U8_U8_8x8  (dst_cb, pred_cb, width/2);
+					motion_putblock(
+						mb->f_motion_vectors[0][0] + x * 32,
+						(mb->f_motion_vectors[0][1] >> 1) + y * 16,
+						mb->f_motion_vertical_field_select[0],
+						dst_y, dst_cr, dst_cb,
+						picture->forward_reference_frame,
+						width * 2, 8);
+					motion_putblock(
+						mb->f_motion_vectors[1][0] + x * 32,
+						(mb->f_motion_vectors[1][1] >> 1) + y * 16,
+						mb->f_motion_vertical_field_select[1],
+						dst_y + width, dst_cr + width/2, dst_cb + width/2,
+						picture->forward_reference_frame,
+						width * 2, 8);
 				}
 			}
 		
 			if(mb->macroblock_type & MACROBLOCK_MOTION_BACKWARD)
 			{
-				int x_half   = (mb->b_motion_vectors[0][0] & 1);
-				int y_half   = (mb->b_motion_vectors[0][1] & 1);
-				int x_pred_y = (mb->b_motion_vectors[0][0] >> 1) + x * 16;
-				int y_pred_y = (mb->b_motion_vectors[0][1] >> 1) + y * 16;
-				int x_pred_c = x_pred_y / 2;
-				int y_pred_c = y_pred_y / 2;
-				
-				uint_8 *pred_y  = &picture->backward_reference_frame[0][x_pred_y + y_pred_y * width];
-				uint_8 *pred_cr = &picture->backward_reference_frame[1][x_pred_c + y_pred_c * width/2];
-				uint_8 *pred_cb = &picture->backward_reference_frame[2][x_pred_c + y_pred_c * width/2];
-				
 				if(mb->macroblock_type & MACROBLOCK_MOTION_FORWARD)
 				{
-					if (x_half && y_half) {
-						soft_VideoInterpAveXY_U8_U8_16x16(dst_y,  pred_y,  width,   width);
-						soft_VideoInterpAveXY_U8_U8_8x8  (dst_cr, pred_cr, width/2, width/2);
-						soft_VideoInterpAveXY_U8_U8_8x8  (dst_cb, pred_cb, width/2, width/2);
-					} else if (x_half) {
-						soft_VideoInterpAveX_U8_U8_16x16(dst_y,  pred_y,  width,   width);
-						soft_VideoInterpAveX_U8_U8_8x8  (dst_cr, pred_cr, width/2, width/2);
-						soft_VideoInterpAveX_U8_U8_8x8  (dst_cb, pred_cb, width/2, width/2);
-					} else if (y_half) {
-						soft_VideoInterpAveY_U8_U8_16x16(dst_y,  pred_y,  width,   width);
-						soft_VideoInterpAveY_U8_U8_8x8  (dst_cr, pred_cr, width/2, width/2);
-						soft_VideoInterpAveY_U8_U8_8x8  (dst_cb, pred_cb, width/2, width/2);
+					if (mb->motion_type == MC_FRAME) {
+						motion_aveblock(
+							mb->b_motion_vectors[0][0] + x * 32,
+							mb->b_motion_vectors[0][1] + y * 32,
+							0,
+							dst_y, dst_cr, dst_cb,
+							picture->backward_reference_frame,
+							width, 16);
 					} else {
-						soft_VideoCopyRefAve_U8_U8_16x16(dst_y,  pred_y,  width);
-						soft_VideoCopyRefAve_U8_U8_8x8  (dst_cr, pred_cr, width/2);
-						soft_VideoCopyRefAve_U8_U8_8x8  (dst_cb, pred_cb, width/2);
+						motion_aveblock(
+							mb->b_motion_vectors[0][0] + x * 32,
+							(mb->b_motion_vectors[0][1] >> 1) + y * 16,
+							mb->b_motion_vertical_field_select[0],
+							dst_y, dst_cr, dst_cb,
+							picture->backward_reference_frame,
+							width * 2, 8);
+						motion_aveblock(
+							mb->b_motion_vectors[1][0] + x * 32,
+							(mb->b_motion_vectors[1][1] >> 1) + y * 16,
+							mb->b_motion_vertical_field_select[1],
+							dst_y + width, dst_cr + width/2, dst_cb + width/2,
+							picture->backward_reference_frame,
+							width * 2, 8);
 					}
 				}
 				else
 				{
-					if (x_half && y_half) {
-						soft_VideoInterpXY_U8_U8_16x16(dst_y,  pred_y,  width,   width);
-						soft_VideoInterpXY_U8_U8_8x8  (dst_cr, pred_cr, width/2, width/2);
-						soft_VideoInterpXY_U8_U8_8x8  (dst_cb, pred_cb, width/2, width/2);
-					} else if (x_half) {
-						soft_VideoInterpX_U8_U8_16x16(dst_y,  pred_y,  width,   width);
-						soft_VideoInterpX_U8_U8_8x8  (dst_cr, pred_cr, width/2, width/2);
-						soft_VideoInterpX_U8_U8_8x8  (dst_cb, pred_cb, width/2, width/2);
-					} else if (y_half) {
-						soft_VideoInterpY_U8_U8_16x16(dst_y,  pred_y,  width,   width);
-						soft_VideoInterpY_U8_U8_8x8  (dst_cr, pred_cr, width/2, width/2);
-						soft_VideoInterpY_U8_U8_8x8  (dst_cb, pred_cb, width/2, width/2);
+					if (mb->motion_type == MC_FRAME) {
+						motion_putblock(
+							mb->b_motion_vectors[0][0] + x * 32,
+							mb->b_motion_vectors[0][1] + y * 32,
+							0,
+							dst_y, dst_cr, dst_cb,
+							picture->backward_reference_frame,
+							width, 16);
 					} else {
-						soft_VideoCopyRef_U8_U8_16x16(dst_y,  pred_y,  width);
-						soft_VideoCopyRef_U8_U8_8x8  (dst_cr, pred_cr, width/2);
-						soft_VideoCopyRef_U8_U8_8x8  (dst_cb, pred_cb, width/2);
+						motion_putblock(
+							mb->b_motion_vectors[0][0] + x * 32,
+							(mb->b_motion_vectors[0][1] >> 1) + y * 16,
+							mb->b_motion_vertical_field_select[0],
+							dst_y, dst_cr, dst_cb,
+							picture->backward_reference_frame,
+							width * 2, 8);
+						motion_putblock(
+							mb->b_motion_vectors[1][0] + x * 32,
+							(mb->b_motion_vectors[1][1] >> 1) + y * 16,
+							mb->b_motion_vertical_field_select[1],
+							dst_y + width, dst_cr + width/2, dst_cb + width/2,
+							picture->backward_reference_frame,
+							width * 2, 8);
 					}
 				}
 			}
