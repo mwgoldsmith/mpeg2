@@ -2,10 +2,10 @@
 	* write small libvo doc
 	* fix xshm completion events in libvo
 	* generic slice handling, plus sdl implementation
-	* interlaced slices
-	* clean up frame_t declaration and usage (libvo/libmpeg2)
+	* clean up frame_t declaration and usage (libvo/libmpeg2) + video_out.h
 	* libmpeg2 reentrancy
 	* x11auto output module
+	* clean up yuv2rgb for interlaced pictures (handling of uv)
 
 * things we dont implement yet
 	* dont crash on bad streams, make sure we can resync after a while

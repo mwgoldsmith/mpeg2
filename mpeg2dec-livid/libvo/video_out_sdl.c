@@ -171,6 +171,7 @@ static int sdl_alloc_frames (sdl_instance_t * this, int width, int height)
 	this->frame[i].vo.base[1] = (this->frame[i].overlay->pixels[2]);
 	this->frame[i].vo.base[2] = (this->frame[i].overlay->pixels[1]);
 	this->frame[i].vo.copy = NULL;
+	this->frame[i].vo.field = NULL;
 	this->frame[i].vo.draw = sdl_draw_frame;
 	this->frame[i].vo.this = (vo_instance_t *)this;
 	this->frame_ptr[i] = (vo_frame_t *)(this->frame + i);

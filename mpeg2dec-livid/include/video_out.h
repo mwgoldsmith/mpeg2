@@ -16,6 +16,7 @@ typedef struct vo_instance_s vo_instance_t;
 struct vo_frame_s {
     uint8_t * base[3];	/* pointer to 3 planes */
     void (* copy) (vo_frame_t * frame, uint8_t **);
+    void (* field) (vo_frame_t * frame, int flags);
     void (* draw) (vo_frame_t * frame);
     vo_instance_t * this;
 };
@@ -51,9 +52,20 @@ static inline void vo_close (vo_instance_t * this)
     this->close (this);
 }
 
-static inline vo_frame_t * vo_get_frame (vo_instance_t * this, int prediction)
+#define VO_TOP_FIELD 1
+#define VO_BOTTOM_FIELD 2
+#define VO_BOTH_FIELDS (VO_TOP_FIELD | VO_BOTTOM_FIELD)
+#define VO_PREDICTION_FLAG 4
+
+static inline vo_frame_t * vo_get_frame (vo_instance_t * this, int flags)
 {
-    return this->get_frame (this, prediction);
+    return this->get_frame (this, flags);
+}
+
+static inline void vo_field (vo_frame_t * frame, int flags)
+{
+    if (frame->field != NULL)
+	frame->field (frame, flags);
 }
 
 static inline void vo_draw (vo_frame_t * frame)
