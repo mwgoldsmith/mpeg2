@@ -37,7 +37,7 @@ endif
 lib_LTLIBRARIES = display_null.la $(DISPLAY_X11) $(DISPLAY_3DFX) $(DISPLAY_MGA) $(DISPLAY_SDL)
 
 display_x11_la_SOURCES = video_out_x11.c yuv2rgb.c
-EXTRA_display_x11_la_SOURCES = yuv2rgb_mmx.c
+EXTRA_display_x11_la_SOURCES = yuv2rgb_mmx.c yuv2rgb_mlib.c
 display_x11_la_LIBADD = @X_PRE_LIBS@ @X_LIBS@ -lXext
 display_x11_la_LDFLAGS = -avoid-version -module -Wl,-soname,display_x11
 

@@ -76,12 +76,22 @@ static void yuv2rgb_c (void * dst, const uint_8 * py,
 
 void yuv2rgb_init (uint_32 bpp, uint_32 mode) 
 {
-#ifdef __i386__
-	yuv2rgb = yuv2rgb_init_mmx(bpp,mode);
+	yuv2rgb = NULL;
 
-	if(yuv2rgb == NULL)
+// should be #ifdef HAVE_MMX
+#ifdef __i386__
+	if(!yuv2rgb) {
+		if ((yuv2rgb = yuv2rgb_init_mmx (bpp,mode)))
+			fprintf (stderr, "Using MMX for colorspace transform\n");
+	}
 #endif
-	{
+#ifdef HAVE_MLIB
+	if(!yuv2rgb) {
+		if ((yuv2rgb = yuv2rgb_init_mlib(bpp,mode)))
+			fprintf (stderr, "Using mlib for colorspace transform\n");
+	}
+#endif
+	if(!yuv2rgb) {
 		fprintf (stderr, "No accelerated colorspace conversion found\n");
 		yuv2rgb_c_init (bpp, mode);
 		yuv2rgb = (yuv2rgb_fun)yuv2rgb_c;

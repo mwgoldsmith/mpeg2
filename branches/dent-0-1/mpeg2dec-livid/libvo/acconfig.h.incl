@@ -13,3 +13,6 @@
 /* Have Matrox GX00 */
 #undef HAVE_MGA
 
+/* Have MLIB */
+#undef HAVE_MLIB
+

@@ -176,9 +176,11 @@ init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 
 	depth = attribs.depth;
 
-	if (depth != 15 && depth != 16 && depth != 24 && depth != 32) 
-	{
-		fprintf(stderr,"Only 15,16,24, and 32 bit depth supported.  Trying 24 bit depth!\n");
+	if (depth != 15 && depth != 16 && depth != 24 && depth != 32) {
+		/* The root window may be 8bit but there might still be
+		 * visuals with other bit depths. For example this is the
+		 * case on Sun/Solaris machines.
+		 */
 		depth = 24;
 	}
 	//BEGIN HACK
@@ -186,7 +188,6 @@ init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 	//hint.x, hint.y, hint.width, hint.height, 4, fg, bg);
 	//
 	XMatchVisualInfo(mydisplay, screen, depth, TrueColor, &vinfo);
-	printf("visual id is  %lx\n", vinfo.visualid);
 
 	theCmap   = XCreateColormap(mydisplay, RootWindow(mydisplay,screen), 
 	vinfo.visual, AllocNone);
