@@ -38,7 +38,7 @@ typedef struct vo_output_video_attr_s {
 	char *title;
 } vo_output_video_attr_t;
 
-#include "output_video.h"
+#include <oms/plugin/generic.h>
 
 typedef struct vo_output_video_s {
     PLUGIN_GENERIC;
