@@ -18,6 +18,7 @@ Other contributors include:
 	Gerd Knorr <kraxel@goldbach.in-berlin.de> - Xv support
 	David I. Lehn <dlehn@vt.edu> - motion_comp mmx code
 	Olie Lho <ollie@sis.com.tw> - MMX yuv2rgb routine
+	David S. Miller <davem@redhat.com> - sparc VIS optimizations
 	Rick Niles <niles@scyld.com> - build fixes
 	Real Ouellet <realo@sympatico.ca> - g200 fixes
 	Bajusz Peter <hyp-x@inf.bme.hu> - motion comp fixes
