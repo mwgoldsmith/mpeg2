@@ -23,4 +23,4 @@
  *
  */
 
-void idct_init(void);
+void idct_init (void);

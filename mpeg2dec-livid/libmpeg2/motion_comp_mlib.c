@@ -35,30 +35,6 @@
 #include <mlib_sys.h>
 #include <mlib_video.h>
 
-
-
-// mlib doesn't have this function...
-void
-motion_comp_idct_copy_mlib (uint_8 *dst, sint_16 *block, uint_32 stride)
-{
-  uint_32 i;
-  uint_8 *dst2 = dst;
-  
-  for (i = 0; i < 8; i++)
-    {
-      *((uint_32 *)dst2) = (uint_32)0;
-      *((uint_32 *)(dst2+4)) = (uint_32)0;
-      dst2 += stride;
-    }
-  mlib_VideoAddBlock_U8_S16 (dst, block, stride);
-}
-
-void
-motion_comp_idct_add_mlib (uint_8 *dst, sint_16 *block, uint_32 stride)
-{
-  mlib_VideoAddBlock_U8_S16 (dst, block, stride);
-}
-
 void
 motion_comp_put_16x16_mlib (uint_8 *dst, uint_8 *block, sint_32 stride, sint_32 height)
 {

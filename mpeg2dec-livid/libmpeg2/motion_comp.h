@@ -22,19 +22,15 @@
  */
 
 void motion_comp_init(void);
-void motion_comp_c_init(void);
 
 typedef struct mc_functions_s
 {
-    void (* idct_copy) (uint_8 *dst, sint_16 *block, uint_32 stride);
-    void (* idct_add) (uint_8 *dst, sint_16 *block, uint_32 stride);
-    void (* put [8]) (uint_8 *dst, uint_8 *, sint_32, sint_32);
-    void (* avg [8]) (uint_8 *dst, uint_8 *, sint_32, sint_32);
+	void (* put [8]) (uint_8 *dst, uint_8 *, sint_32, sint_32);
+	void (* avg [8]) (uint_8 *dst, uint_8 *, sint_32, sint_32);
 } mc_functions_t;
 
 #define MOTION_COMP_EXTERN(x) mc_functions_t mc_functions_##x =\
 {\
-	motion_comp_idct_copy_##x,    motion_comp_idct_add_##x,\
 	{motion_comp_put_16x16_##x,   motion_comp_put_x_16x16_##x,\
 	 motion_comp_put_y_16x16_##x, motion_comp_put_xy_16x16_##x,\
 	 motion_comp_put_8x8_##x,     motion_comp_put_x_8x8_##x,\

@@ -262,53 +262,6 @@ mmx_interp_average_4_U8(uint_8 *dst, uint_8 *src1, uint_8 *src2, uint_8 *src3, u
    movq_r2m(mm1,*dst);                 // store result in dst
 }
 
-void 
-motion_comp_idct_copy_mmx (uint_8 *dst, sint_16 *block, uint_32 stride)
-{
-	int y;
-
-	for (y = 0; y < 8; y++) 
-	{
-		movq_m2r(*block,mm1);
-		movq_m2r(*(block+4),mm2);
-		block += 8;
-		packuswb_r2r(mm2,mm1);
-		movq_r2m(mm1,*dst);
-		dst += stride;
-	}
-}
-
-
-// Add a motion compensated 8x8 block to the current block
-void
-motion_comp_idct_add_mmx( uint_8 *dst, sint_16 *block, uint_32 stride) 
-{
-	int y;
-
-	mmx_zero_reg();
-
-	for (y = 0; y < 8; y++) 
-	{
-			movq_m2r(*dst,mm1);            // load 8 curr bytes
-			movq_r2r(mm1,mm2);             // copy 8 curr bytes
-
-			punpcklbw_r2r(mm0,mm1);        // unpack low curr bytes
-			punpckhbw_r2r(mm0,mm2);        // unpack high curr bytes
-
-			movq_m2r(*block,mm3);          // load 4 mc words (mc0)
-			paddsw_r2r(mm3,mm1);           // mm1=curr+mc0 (w/ saturatation)
-
-			movq_m2r(*(block+4),mm4);      // load next 4 mc words (mc1)
-			paddsw_r2r(mm4,mm2);           // mm2=curr+mc1 (w/ saturatation)
-
-			packuswb_r2r(mm2,mm1);         // pack (w/ saturation)
-			movq_r2m(mm1,*dst);            // store result in curr
-
-			dst   += stride;
-			block += 8;
-	}
-}  
-
 //-----------------------------------------------------------------------
 
 static inline void 
@@ -599,14 +552,14 @@ void
 motion_comp_put_y_16x16_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 frame_stride, 
 		const sint_32 height) 
 {
-   motion_comp_put_y_mmx( 16, height, curr_block, ref_block, frame_stride);
+	motion_comp_put_y_mmx( 16, height, curr_block, ref_block, frame_stride);
 }
 
 void 
 motion_comp_put_y_8x8_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 frame_stride, 
 		const sint_32 height) 
 {
-   motion_comp_put_y_mmx( 8, height, curr_block, ref_block, frame_stride);
+	motion_comp_put_y_mmx( 8, height, curr_block, ref_block, frame_stride);
 }
 
 

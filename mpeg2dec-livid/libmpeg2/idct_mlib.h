@@ -21,5 +21,5 @@
  *
  */
 
-void idct_block_mlib(sint_16 *mb);
-void idct_end_mlib();
+void idct_block_copy_mlib (sint_16 * block, uint_8 * dest, int stride);
+void idct_block_copy_mlib (sint_16 * block, uint_8 * dest, int stride);
