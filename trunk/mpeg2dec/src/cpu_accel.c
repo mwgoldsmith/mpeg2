@@ -26,7 +26,7 @@
 #include "mm_accel.h"
 
 #ifdef ARCH_X86
-static uint32_t x86_accel (void)
+static uint32_t arch_accel (void)
 {
     uint32_t eax, ebx, ecx, edx;
     int AMD;
@@ -101,17 +101,52 @@ static uint32_t x86_accel (void)
 
     return caps;
 }
-#endif
+#endif /* ARCH_X86 */
+
+#ifdef ARCH_PPC
+#include <signal.h>
+#include <setjmp.h>
+
+static sigjmp_buf jmpbuf;
+static volatile sig_atomic_t canjump = 0;
+
+static RETSIGTYPE sigill_handler (int sig)
+{
+    if (!canjump) {
+	signal (sig, SIG_DFL);
+	raise (sig);
+    }
+
+    canjump = 0;
+    siglongjump (jmpbuf, 1);
+}
+
+static uint32_t arch_accel (void)
+{
+    signal (SIGILL, sigill_handler);
+    if (sigsetjmp (jmpbuf, 1)) {
+	signal (SIGILL, SIG_DFL);
+	return 0;
+    }
+
+    canjump = 1;
+
+    asm volatile ("mtspr 256,%0" :: "r" (-1));
+
+    signal (SIGILL, SIG_DFL);
+    return MM_ACCEL_PPC_ALTIVEC;
+}
+#endif /* ARCH_PPC */
 
 uint32_t mm_accel (void)
 {
-#ifdef ARCH_X86
+#if defined (ARCH_X86) || defined (ARCH_PPC)
     static int got_accel = 0;
     static uint32_t accel;
 
     if (!got_accel) {
 	got_accel = 1;
-	accel = x86_accel ();
+	accel = arch_accel ();
     }
 
     return accel;

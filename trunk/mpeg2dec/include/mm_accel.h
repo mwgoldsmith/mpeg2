@@ -30,6 +30,9 @@
 #define MM_ACCEL_X86_3DNOW	0x40000000
 #define MM_ACCEL_X86_MMXEXT	0x20000000
 
+/* powerpc accelerations */
+#define MM_ACCEL_PPC_ALTIVEC	0x80000000
+
 uint32_t mm_accel (void);
 
 #endif /* MM_ACCEL_H */
