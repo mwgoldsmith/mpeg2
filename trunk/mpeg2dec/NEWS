@@ -7,6 +7,8 @@ going after errors. There is no test suite for this feature yet though.
 Second, the altivec optimizations provide a huge speedup (more than
 2.5x) on ppc g4 machines.
 
+High definition video streams are now supported.
+
 There is also native support for compiling using VC++.
 
 And, the libvo interface has been slightly extended so people can more
