@@ -308,11 +308,11 @@ static void yuv2rgb_c_init (uint_32 bpp, uint_32 mode)
 {  
 	int i;
 	uint_8 table_Y[1024];
-	uint_32 * table_32;
-	uint_16 * table_16;
-	uint_8 * table_8;
-	int entry_size = 0;
-	void * table_r, * table_g, * table_b;
+	uint_32 *table_32 = 0;
+	uint_16 *table_16 = 0;
+	uint_8 *table_8 = 0;
+	uint_32 entry_size = 0;
+	void *table_r = 0, *table_g = 0, *table_b = 0;
 
 	int crv = Inverse_Table_6_9[matrix_coefficients][0];
 	int cbu = Inverse_Table_6_9[matrix_coefficients][1];

@@ -23,4 +23,4 @@ libvo_la_SOURCES =\
 
 EXTRA_libvo_la_SOURCES = yuv2rgb_mmx.c
 
-noinst_HEADERS = video_out_internal.h yuv2rgb.h 
+noinst_HEADERS = video_out_internal.h yuv2rgb.h  mmx.h

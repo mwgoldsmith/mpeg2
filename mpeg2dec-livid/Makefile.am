@@ -16,6 +16,3 @@ mpeg2dec_LDADD=  libmpeg2/libmpeg2.la libvo/libvo.la @X_PRE_LIBS@ @X_LIBS@ -lXex
 	-L/usr/X11R6/lib -lX11 @X_EXTRA_LIBS@ -lm
 
 noinst_HEADERS =  config.h 
-
-prof:
-	$(MAKE) mpeg2dec CFLAGS="-pg `echo $(CFLAGS) | sed s/-fomit-frame-pointer//`"
