@@ -166,13 +166,7 @@ struct mpeg2dec_s {
     sequence_t sequence;
     picture_t pictures[4];
     picture_t * picture;
-    fbuf_t fbufs[3];
-    fbuf_t * start_fbuf;
-    fbuf_t * end_fbuf;
-    fbuf_t * fbuf;
-    fbuf_t * start_yuv_fbuf;
-    fbuf_t * end_yuv_fbuf;
-    fbuf_t * yuv_fbuf;
+    fbuf_t fbuf[3];	/* 0: current fbuf, 1-2: prediction fbufs */
 };
 
 typedef struct {
