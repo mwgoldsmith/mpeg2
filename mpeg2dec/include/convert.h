@@ -29,13 +29,12 @@ typedef struct convert_init_s {
     int id_size;
     int buf_size[3];
     void (* start) (void * id, const mpeg2_fbuf_t * fbuf,
-		    const mpeg2_picture_t * picture, const mpeg2_gop_t * gop,
-		    const mpeg2_sequence_t * sequence);
+		    const mpeg2_picture_t * picture, const mpeg2_gop_t * gop);
     void (* copy) (void * id, uint8_t * const * src, unsigned int v_offset);
 } convert_init_t;
 
-typedef void convert_t (int width, int height, uint32_t accel, void * arg,
-			convert_init_t * result);
+typedef void convert_t (const mpeg2_sequence_t * sequence, uint32_t accel,
+			void * arg, convert_init_t * result);
 
 convert_t convert_rgb32;
 convert_t convert_rgb24;

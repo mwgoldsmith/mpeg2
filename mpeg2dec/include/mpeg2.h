@@ -41,7 +41,7 @@
 #define SEQ_VIDEO_FORMAT_MAC 0x80
 #define SEQ_VIDEO_FORMAT_UNSPECIFIED 0xa0
 
-typedef struct {
+typedef struct mpeg2_sequence_s {
     unsigned int width, height;
     unsigned int chroma_width, chroma_height;
     unsigned int byte_rate;
@@ -63,7 +63,7 @@ typedef struct {
 #define GOP_FLAG_BROKEN_LINK 2
 #define GOP_FLAG_CLOSED_GOP 4
 
-typedef struct {
+typedef struct mpeg2_gop_s {
     uint8_t hours;
     uint8_t minutes;
     uint8_t seconds;
@@ -84,7 +84,7 @@ typedef struct {
 #define PIC_FLAG_PTS 128
 #define PIC_MASK_COMPOSITE_DISPLAY 0xfffff000
 
-typedef struct {
+typedef struct mpeg2_picture_s {
     unsigned int temporal_reference;
     unsigned int nb_fields;
     uint32_t pts;
@@ -94,12 +94,12 @@ typedef struct {
     } display_offset[3];
 } mpeg2_picture_t;
 
-typedef struct {
+typedef struct mpeg2_fbuf_s {
     uint8_t * buf[3];
     void * id;
 } mpeg2_fbuf_t;
 
-typedef struct {
+typedef struct mpeg2_info_s {
     const mpeg2_sequence_t * sequence;
     const mpeg2_gop_t * gop;
     const mpeg2_picture_t * current_picture;
@@ -132,7 +132,7 @@ typedef enum {
 
 struct convert_init_s;
 void mpeg2_convert (mpeg2dec_t * mpeg2dec,
-		    void convert (int, int, uint32_t, void *,
+		    void convert (const mpeg2_sequence_t *, uint32_t, void *,
 				  struct convert_init_s *), void * arg);
 void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id);
 void mpeg2_custom_fbuf (mpeg2dec_t * mpeg2dec, int custom_fbuf);
