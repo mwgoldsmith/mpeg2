@@ -250,12 +250,11 @@ static int sequence_display_ext (mpeg2dec_t * mpeg2dec)
 {
     uint8_t * buffer = mpeg2dec->chunk_start;
     mpeg2_sequence_t * sequence = &(mpeg2dec->new_sequence);
-    uint32_t flags;
 
-    flags = ((sequence->flags & ~SEQ_MASK_VIDEO_FORMAT) |
-	     ((buffer[0]<<4) & SEQ_MASK_VIDEO_FORMAT));
+    sequence->flags = ((sequence->flags & ~SEQ_MASK_VIDEO_FORMAT) |
+		       ((buffer[0]<<4) & SEQ_MASK_VIDEO_FORMAT));
     if (buffer[0] & 1) {
-	flags |= SEQ_FLAG_COLOUR_DESCRIPTION;
+	sequence->flags |= SEQ_FLAG_COLOUR_DESCRIPTION;
 	sequence->colour_primaries = buffer[1];
 	sequence->transfer_characteristics = buffer[2];
 	sequence->matrix_coefficients = buffer[3];
