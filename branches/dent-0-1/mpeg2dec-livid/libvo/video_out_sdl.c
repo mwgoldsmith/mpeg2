@@ -30,6 +30,7 @@
  *
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -136,7 +137,6 @@ static int _sdl_setup (plugin_output_video_attr_t *attr)
 		return -1;
 	}
 
-	//atexit (SDL_Quit);
 	atexit (SDL_VideoQuit);
 
 	vidInfo = SDL_GetVideoInfo ();
@@ -199,7 +199,7 @@ static int _sdl_setup (plugin_output_video_attr_t *attr)
 		bpp = 16;  // (*shrug*)
 	}
 
-	if (!(surface = SDL_SetVideoMode(desiredWidth, desiredHeight, bpp, sdlflags))) {
+	if (!(surface = SDL_SetVideoMode (desiredWidth, desiredHeight, bpp, sdlflags))) {
 		LOG (LOG_ERROR, "SDL could not set the video mode");
 		return -1;
 	}
@@ -209,9 +209,8 @@ static int _sdl_setup (plugin_output_video_attr_t *attr)
 	else
 		SDL_WM_SetCaption ("", "oms");
 
-
-	if (!(overlay = SDL_CreateYUVOverlay(attr->width, attr->height, SDL_IYUV_OVERLAY, surface))) {
-		LOG (LOG_ERROR, "Couldn't create an SDL-based YUV overlay!");
+	if (!(overlay = SDL_CreateYUVOverlay (attr->width, attr->height, SDL_IYUV_OVERLAY, surface))) {
+		LOG (LOG_ERROR, "Couldn't create an SDL-based YUV overlay");
 		return -1;
 	}
 
@@ -260,7 +259,7 @@ static int _sdl_draw_frame (uint8_t *src[])
  * Draw a slice (16 rows of image) to the SDL YUV overlay.
  *
  *   params : *src[] == the Y, U, and V planes that make up the slice.
- *  returns : non-zero on success, zero on error.
+ *  returns : non-zero on error, zero on success.
  **/
 
 static int _sdl_draw_slice (uint8_t *src[], uint32_t slice_num)
@@ -269,18 +268,19 @@ static int _sdl_draw_slice (uint8_t *src[], uint32_t slice_num)
 
 	if (SDL_LockYUVOverlay (overlay)) {
 		LOG (LOG_ERROR, "Couldn't lock SDL-based YUV overlay");
-		return 0;
+		return -1;
 	}
 
 	dst = overlay->pixels + (slicePlaneY * slice_num);
 	memcpy (dst, src[0], slicePlaneY);
-	dst = (overlay->pixels + framePlaneY) + (slicePlaneUV * slice_num);
+	dst = overlay->pixels + framePlaneY + (slicePlaneUV * slice_num);
 	memcpy (dst, src[1], slicePlaneUV);
 	dst += framePlaneUV;
 	memcpy (dst, src[2], slicePlaneUV);
-
+	
 	SDL_UnlockYUVOverlay (overlay);
-	return -1;
+
+	return 0;
 }
 
 
@@ -322,7 +322,7 @@ static vo_image_buffer_t *allocate_image_buffer (uint32_t height, uint32_t width
 		free(image);
 		return NULL;
 	}
-
+	
 	return image;
 }
 
@@ -346,7 +346,7 @@ void *plugin_init (char *whoami)
 {
 	pluginRegister (whoami,
 		PLUGIN_ID_OUTPUT_VIDEO,
-		0,
+		"hmm",
 		&video_sdl);
 
 	return &video_sdl;

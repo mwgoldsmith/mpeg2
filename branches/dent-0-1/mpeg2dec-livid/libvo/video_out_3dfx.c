@@ -1,3 +1,6 @@
+//PLUGIN_INFO(INFO_NAME, "3DFX (/dev/3dfx)");
+//PLUGIN_INFO(INFO_AUTHOR, "Colin Cross <colin@mit.edu>");
+
 /* 
  *    video_out_3dfx.c
  *
@@ -26,13 +29,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "config.h"
-#include "video_out.h"
-#include "video_out_internal.h"
+#include <config.h>
 
-LIBVO_EXTERN(3dfx)
-
-#ifdef HAVE_3DFX
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -40,23 +38,16 @@ LIBVO_EXTERN(3dfx)
 #include <errno.h>
 #include <wchar.h>
 #include <signal.h>
+#include <inttypes.h>
 
 #include <X11/Xlib.h>
 #include <X11/extensions/xf86dga.h>
 #include <X11/Xutil.h>
 
-//#define LOG(x) syslog(LOG_USER | LOG_DEBUG,x)
-#define LOG(x)
+#include <oms/plugin/output_video.h>
+#include <oms/log.h>
 
 #include "drivers/3dfx.h"
-
-static vo_info_t vo_info = 
-{
-	"3dfx (/dev/3dfx)",
-	"3dfx",
-	"Colin Cross <colin@MIT.EDU>",
-	""
-};
 
 static uint32_t is_fullscreen = 1;
 
@@ -101,24 +92,76 @@ static int bpp;
 static XWindowAttributes attribs;
 static int X_already_started = 0;
 
+static struct 3dfx_priv_s {
+        int fd;
+} _3dfx_priv;
 
-static void 
-restore(void) 
+static plugin_output_video_t video_3dfx = {
+	open:           _3dfx_open,
+	close:          _3dfx_close,
+	setup:          _3dfx_setup,
+	flip_page:      _3dfx_flip_page,
+	allocate_image_buffer:  allocate_image_buffer,
+	free_image_buffer:      free_image_buffer
+};
+
+
+/**
+ *
+ **/
+
+static int _3dfx_open (plugin_t *plugin, void *name)
 {
-	//reg_IO->vidDesktopStartAddr = vidpage0offset;
-	XF86DGADirectVideo(display,0,0);
+	if ((_3dfx_priv.fd = open ((char *) name, O_RDWR)) < 0) {
+		LOG (LOG_ERROR, "Can't open %s\n", (char *) name);
+		return -1;
+	}
+
+	return 0;
 }
 
-static void 
-sighup(int foo) 
+
+/**
+ *
+ **/
+
+static int _3dfx_close (plugin_t *plugin)
+{
+	close (_3dfx_priv.fd);
+	_mga_3dfxv.fd = -1;
+
+	return 0;
+}
+
+
+/**
+ *
+ **/
+
+static void restore (void) 
 {
 	//reg_IO->vidDesktopStartAddr = vidpage0offset;
-	XF86DGADirectVideo(display,0,0);
+	XF86DGADirectVideo (display,0,0);
+}
+
+
+/**
+ *
+ **/
+
+static void sighup (int foo) 
+{
+	//reg_IO->vidDesktopStartAddr = vidpage0offset;
+	XF86DGADirectVideo (display,0,0);
 	exit(0);
 }
 
-static void 
-restore_regs(voodoo_2d_reg *regs) 
+
+/**
+ *
+ **/
+
+static void restore_regs(voodoo_2d_reg *regs) 
 {
 	reg_2d->commandExtra = regs->commandExtra;
 	reg_2d->clip0Min = regs->clip0Min;
@@ -137,8 +180,12 @@ restore_regs(voodoo_2d_reg *regs)
 	reg_2d->command = 0;
 }
 
-static uint32_t 
-create_window(Display *display) 
+
+/**
+ *
+ **/
+
+static uint32_t create_window(Display *display) 
 {
 	int screen;
 	unsigned int fg, bg;
@@ -214,8 +261,12 @@ create_window(Display *display)
 	return 0;
 }
 
-static void 
-dump_yuv_planar(uint32_t *y, uint32_t *u, uint32_t *v, uint32_t to, uint32_t width, uint32_t height) 
+
+/**
+ *
+ **/
+
+static void dump_yuv_planar (uint32_t *y, uint32_t *u, uint32_t *v, uint32_t to, uint32_t width, uint32_t height) 
 {
 	// YUV conversion works like this:
 	//
@@ -232,42 +283,43 @@ dump_yuv_planar(uint32_t *y, uint32_t *u, uint32_t *v, uint32_t to, uint32_t wid
 	reg_YUV->yuvBaseAddr = to;
 	reg_YUV->yuvStride = screenwidth*2;
 
-	LOG("video_out_3dfx: starting planar dump\n");
+	LOG (LOG_DEBUG,  "video_out_3dfx: starting planar dump\n");
 	jmax = height>>1;	// vidheight/2, height of U and V planes
 	y_imax = width>>2;	// Y plane is twice as wide as U and V planes
 	uv_imax = width>>3;	// vidwidth/2/4, width of U and V planes in 32-bit words
 
-	for (j=0;j<jmax;j++) 
-	{
-		memcpy(fb_YUV->U + (uint_32) VOODOO_YUV_STRIDE*  j       ,
-			u + (uint_32) uv_imax*  j       , uv_imax<<2);
-		memcpy(fb_YUV->V + (uint_32) VOODOO_YUV_STRIDE*  j       ,
-			v + (uint_32) uv_imax*  j       , uv_imax<<2);
-		memcpy(fb_YUV->Y + (uint_32) VOODOO_YUV_STRIDE* (j<<1)   ,
-			y + (uint_32) y_imax * (j<<1)   , y_imax<<2);
-		memcpy(fb_YUV->Y + (uint_32) VOODOO_YUV_STRIDE*((j<<1)+1),
-			y + (uint_32) y_imax *((j<<1)+1), y_imax<<2);
+	for (j=0;j<jmax;j++) {
+		memcpy(fb_YUV->U + (uint32_t) VOODOO_YUV_STRIDE*  j       ,
+			u + (uint32_t) uv_imax*  j       , uv_imax<<2);
+		memcpy(fb_YUV->V + (uint32_t) VOODOO_YUV_STRIDE*  j       ,
+			v + (uint32_t) uv_imax*  j       , uv_imax<<2);
+		memcpy(fb_YUV->Y + (uint32_t) VOODOO_YUV_STRIDE* (j<<1)   ,
+			y + (uint32_t) y_imax * (j<<1)   , y_imax<<2);
+		memcpy(fb_YUV->Y + (uint32_t) VOODOO_YUV_STRIDE*((j<<1)+1),
+			y + (uint32_t) y_imax *((j<<1)+1), y_imax<<2);
 	}
-  LOG("video_out_3dfx: done planar dump\n");
+	LOG (LOG_DEBUG, "video_out_3dfx: done planar dump\n");
 }
 
-static void 
-screen_to_screen_stretch_blt(uint32_t to, uint32_t from, uint32_t width, uint32_t height) 
+
+/**
+ *
+ **/
+
+static void screen_to_screen_stretch_blt(uint32_t to, uint32_t from, uint32_t width, uint32_t height) 
 {
 	//FIXME - this function should be called by a show_frame function that
 	//        uses a series of blts to show only those areas not covered
 	//        by another window
 	voodoo_2d_reg saved_regs;
 
-	LOG("video_out_3dfx: saving registers\n");
+	LOG (LOG_DEBUG, "video_out_3dfx: saving registers\n");
 	// Save VGA regs (so X kinda works when we're done)
 	saved_regs = *reg_2d;
 
-	/* The following lines set up the screen to screen stretch blt from page2 to
-		 page 1
-	*/
+// The following lines set up the screen to screen stretch blt from page2 to page 1
 
-	LOG("video_out_3dfx: setting blt registers\n");
+	LOG (LOG_DEBUG, "video_out_3dfx: setting blt registers\n");
 	reg_2d->commandExtra = 4; //disable colorkeying, enable wait for v-refresh (0100b)
 	reg_2d->clip0Min = 0;
 	reg_2d->clip0Max = 0xFFFFFFFF; //no clipping
@@ -283,18 +335,22 @@ screen_to_screen_stretch_blt(uint32_t to, uint32_t from, uint32_t width, uint32_
 
 	reg_2d->dstSize = width | (height << 16);
 
-	LOG("video_out_3dfx: starting blt\n");
+	LOG (LOG_DEBUG, "video_out_3dfx: starting blt\n");
 	// Executes screen to screen stretch blt
 	reg_2d->command = 2 | 1<<8 | 0xCC<<24;
 
-	LOG("video_out_3dfx: restoring regs\n");
+	LOG (LOG_DEBUG, "video_out_3dfx: restoring regs\n");
 	restore_regs(&saved_regs);
 
-	LOG("video_out_3dfx: done blt\n");
+	LOG (LOG_DEBUG, "video_out_3dfx: done blt\n");
 }
 
-static void 
-update_target(void) 
+
+/**
+ *
+ **/
+
+static void update_target (void) 
 {
 	uint32_t xp, yp, w, h, b, d;
 	Window root;
@@ -312,17 +368,20 @@ update_target(void)
 		targetoffset = vidpage0offset + (dispy*screenwidth + dispx)*screendepth;
 }
 
-static uint32_t 
-init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title) 
+
+/**
+ *
+ **/
+
+static int _3dfx_setup (plugin_output_video_attr_t *attr)
 {
-	int fd;
-	char *name = ":0.0";
 	pioData data;
 	uint32_t retval;
 
-	if(getenv("DISPLAY"))
-		name = getenv("DISPLAY");
-	display = XOpenDisplay(name);
+	if (getenv("DISPLAY"))
+		display = XOpenDisplay (getenv("DISPLAY"));
+	else
+		display = XOpenDisplay(":0.0");
 
 	screenwidth = XDisplayWidth(display,0);
 	screenheight = XDisplayHeight(display,0);
@@ -335,18 +394,11 @@ init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 	signal(SIGALRM,sighup);
 	//alarm(120);
 
-	// Open driver device
-	if ( (fd = open("/dev/3dfx",O_RDWR) ) == -1) 
-	{
-		fprintf(stderr,"Couldn't open /dev/3dfx\n");
-		exit(1);
-	}
-
 	// Store sizes for later
-	vidwidth = width;
-	vidheight = height;
+	vidwidth = attr->width;
+	vidheight = attr->height;
 
-	is_fullscreen = fullscreen = 0;
+	is_fullscreen = attr->fullscreen = 0;
 	if (!is_fullscreen) 
 		create_window(display);
 
@@ -355,8 +407,7 @@ init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 	data.size = 4;
 	data.value = &baseAddr0;
 	data.device = 0;
-	if ((retval = ioctl(fd,_IOC(_IOC_READ,'3',3,0),&data)) < 0) 
-	{
+	if ((retval = ioctl(_3dfx_priv.fd,_IOC(_IOC_READ,'3',3,0),&data)) < 0) {
 		printf("Error: %d\n",retval);
 		//return -1;
 	}
@@ -366,15 +417,15 @@ init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 	data.size = 4;
 	data.value = &baseAddr1;
 	data.device = 0;
-	if ((retval = ioctl(fd,_IOC(_IOC_READ,'3',3,0),&data)) < 0) 
+	if ((retval = ioctl(_3dfx_priv.fd,_IOC(_IOC_READ,'3',3,0),&data)) < 0) 
 	{
 		printf("Error: %d\n",retval);
 		//return -1;
 	}
 
 	// Map all 3dfx memory areas
-	memBase0 = mmap(0,0x1000000,PROT_READ | PROT_WRITE,MAP_SHARED,fd,baseAddr0);
-	memBase1 = mmap(0,3*page_space,PROT_READ | PROT_WRITE,MAP_SHARED,fd,baseAddr1);
+	memBase0 = mmap(0,0x1000000,PROT_READ | PROT_WRITE,MAP_SHARED,_3dfx_priv.fd,baseAddr0);
+	memBase1 = mmap(0,3*page_space,PROT_READ | PROT_WRITE,MAP_SHARED,_3dfx_priv.fd,baseAddr1);
 	if (memBase0 == (uint32_t *) 0xFFFFFFFF || memBase1 == (uint32_t *) 0xFFFFFFFF) 
 	{
 		printf("Couldn't map 3dfx memory areas: %p,%p,%d\n", 
@@ -422,27 +473,29 @@ init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title)
 	return 0;
 }
 
-static const vo_info_t*
-get_info(void)
-{
-	return &vo_info;
-}
 
-static uint32_t 
-draw_frame(uint8_t *src[]) 
+/**
+ *
+ **/
+
+static uint32_t draw_frame(uint8_t *src[]) 
 {
-	LOG("video_out_3dfx: starting display_frame\n");
+	LOG (LOG_DEBUG, "video_out_3dfx: starting display_frame\n");
 
 	// Put packed data onto page 2
 	dump_yuv_planar((uint32_t *)src[0],(uint32_t *)src[1],(uint32_t *)src[2],
 			vidpage2offset,vidwidth,vidheight);
 
-	LOG("video_out_3dfx: done display_frame\n");
+	LOG (LOG_DEBUG, "video_out_3dfx: done display_frame\n");
 	return 0;
 }
 
-static uint32_t 
-draw_slice(uint8_t *src[], uint32_t slice_num) 
+
+/**
+ *
+ **/
+
+static uint32_t draw_slice(uint8_t *src[], uint32_t slice_num) 
 {
 	uint32_t target;
 
@@ -451,32 +504,77 @@ draw_slice(uint8_t *src[], uint32_t slice_num)
 	return 0;
 }
 
-static void 
-flip_page(void) 
+
+/**
+ *
+ **/
+
+static void _3dfx_flip_page (void) 
 {
 	//FIXME - update_target() should be called by event handler when window
 	//        is resized or moved
 	update_target();
-	LOG("video_out_3dfx: calling blt function\n");
+	LOG (LOG_DEBUG, "video_out_3dfx: calling blt function\n");
 	screen_to_screen_stretch_blt(targetoffset, vidpage2offset, dispwidth, dispheight);
 }
 
-static vo_image_buffer_t* 
-allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format)
+
+/**
+ *
+ **/
+
+static vo_image_buffer_t* allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format)
 {
-	//use the generic fallback
-	return allocate_image_buffer_common(height,width,format);
+	vo_image_buffer_t *image;
+
+	if (!(image = malloc (sizeof (vo_image_buffer_t))))
+		return NULL;
+
+	image->height   = height;
+	image->width    = width;
+	image->format   = format;
+
+	//we only know how to do 4:2:0 planar yuv right now.
+	if (!(image->base = malloc (width * height * 3 / 2))) {
+		free(image);
+		return NULL;
+	}
+
+	return image;
 }
 
-static void	
-free_image_buffer(vo_image_buffer_t* image)
+
+/**
+ *
+ **_
+
+static void free_image_buffer(vo_image_buffer_t* image)
 {
-	//use the generic fallback
-	free_image_buffer_common(image);
+	free (image->base);
+	free (image);
 }
 
-#else /* HAVE_3DFX */
 
-LIBVO_DUMMY_FUNCTIONS(3dfx);
+/**
+ * Initialize Plugin.
+ **/
 
-#endif
+void *plugin_init (char *whoami)
+{
+	pluginRegister (whoami,
+		PLUGIN_ID_OUTPUT_VIDEO,
+		0,
+		&video_3dfx);
+
+	return &video_3dfx;
+}
+
+
+/**
+ * Cleanup Plugin.
+ **/
+
+void plugin_exit (void)
+{
+}
+

@@ -177,3 +177,15 @@ dnl
 AC_SUBST(LIBS_VIDEO_OUTPUT)
 AC_SUBST(YUV_ACCEL_OBJS)
 AC_SUBST(YUV_ACCEL_LIBS)
+
+echo "
+output video
+------------
+mlib			: ${HAVE_MLIB}
+x11			: ${HAVE_X11}
+	xv		: ${HAVE_XV}
+	dga		: ${HAVE_DGA}
+SDL			: ${HAVE_SDL}
+3dfx			: ${HAVE_3DFX}
+matrox g200/g400	: ${HAVE_MGA}
+" >> config

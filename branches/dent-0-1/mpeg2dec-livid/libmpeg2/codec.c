@@ -285,16 +285,10 @@ static int _mpeg2dec_read (plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t
 			break;
 		default:	
 			if (code >= SLICE_START_CODE_MIN && code <= SLICE_START_CODE_MAX) {
-				is_frame_done = slice_process (&picture,chunk_buffer);
-#if 0
-				if ((is_frame_done = slice_process (&picture,chunk_buffer)) < 0) {
-					has_sync = 0;	// resync
-					continue;
-				}
-#endif
+				is_frame_done = slice_process (&picture, chunk_buffer);
 
 				if(picture.picture_coding_type == B_TYPE) {
-					codec_mpeg2dec.output->draw_slice (picture.throwaway_frame,chunk_buffer[0] - 1);
+					codec_mpeg2dec.output->draw_slice (picture.throwaway_frame, chunk_buffer[0] - 1);
 
 					picture.current_frame[0] = picture.throwaway_frame[0] - 
 						(chunk_buffer[0]) * 16 * picture.coded_picture_width;

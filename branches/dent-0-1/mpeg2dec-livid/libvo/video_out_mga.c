@@ -55,7 +55,6 @@ static struct mga_priv_s {
 	uint32_t fullscreen;
 	uint32_t x_org;
 	uint32_t y_org;
-	char *title;
 } _mga_priv;
 
 static plugin_output_video_t video_mga = {
@@ -400,7 +399,7 @@ static int _mga_open (plugin_t *plugin, void *name)
 	_mga_priv.y_org = 10;
 
 	if ((_mga_priv.fd = open ((char *) name, O_RDWR)) < 0) {
-		fprintf (stderr, "Can't open %s\n", (char *) name); 
+		LOG (LOG_ERROR, "Can't open %s\n", (char *) name); 
 		return -1;
 	}
 
@@ -448,8 +447,8 @@ static int _mga_setup (plugin_output_video_attr_t *attr)
 
 	ioctl (_mga_priv.fd, MGA_VID_ON, 0);
 
-	_mga_priv.bespitch = (width + 31) & ~31;
-	frame_size	= _mga_priv.bespitch * height * 3 / 2;
+	_mga_priv.bespitch = (attr->width + 31) & ~31;
+	frame_size	= _mga_priv.bespitch * attr->height * 3 / 2;
 	frame_mem	= (char*)mmap (0, frame_size*2, PROT_WRITE, MAP_SHARED, _mga_priv.fd, 0);
 	_mga_priv.frame0	= frame_mem;
 	_mga_priv.frame1	= frame_mem + frame_size;
