@@ -1,6 +1,6 @@
 /*
  * video_out_dx.c
- * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
+ * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
  *
  * Contributed by Gildas Bazin <gbazin@netcourrier.com>
  *
