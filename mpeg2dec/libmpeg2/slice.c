@@ -30,11 +30,11 @@
 #include "mpeg2_internal.h"
 #include "attributes.h"
 
-extern mc_functions_t mc_functions;
-extern void (* idct_block_copy) (int16_t * block, uint8_t * dest, int stride);
-extern void (* idct_block_add) (int16_t * block, uint8_t * dest, int stride);
-extern void (* cpu_state_save) (cpu_state_t * state);
-extern void (* cpu_state_restore) (cpu_state_t * state);
+extern mpeg2_mc_t mpeg2_mc;
+extern void (* mpeg2_idct_copy) (int16_t * block, uint8_t * dest, int stride);
+extern void (* mpeg2_idct_add) (int16_t * block, uint8_t * dest, int stride);
+extern void (* mpeg2_cpu_state_save) (cpu_state_t * state);
+extern void (* mpeg2_cpu_state_restore) (cpu_state_t * state);
 
 #include "vlc.h"
 
@@ -973,7 +973,7 @@ static inline void slice_intra_DCT (picture_t * picture, int cc,
 	get_intra_block_B15 (picture);
     else
 	get_intra_block_B14 (picture);
-    idct_block_copy (picture->DCTblock, dest, stride);
+    mpeg2_idct_copy (picture->DCTblock, dest, stride);
 #undef bit_buf
 #undef bits
 #undef bit_ptr
@@ -987,7 +987,7 @@ static inline void slice_non_intra_DCT (picture_t * picture, uint8_t * dest,
 	get_mpeg1_non_intra_block (picture);
     else
 	get_non_intra_block (picture);
-    idct_block_add (picture->DCTblock, dest, stride);
+    mpeg2_idct_add (picture->DCTblock, dest, stride);
 }
 
 #define MOTION_Y(table,offset_x,offset_y,motion_x,motion_y,		\
@@ -1200,23 +1200,23 @@ static void motion_fr_dmv (picture_t * picture, motion_t * motion,
     NEEDBITS (bit_buf, bits, bit_ptr);
     dmv_y = get_dmv (picture);
 
-    motion_block (mc_functions.put, offset, picture->v_offset >> 1, 0, 0, 0,
+    motion_block (mpeg2_mc.put, offset, picture->v_offset >> 1, 0, 0, 0,
 		  motion_x, motion_y, dest, motion->ref[0], stride * 2, 8);
 
     m = picture->top_field_first ? 1 : 3;
     other_x = ((motion_x * m + (motion_x > 0)) >> 1) + dmv_x;
     other_y = ((motion_y * m + (motion_y > 0)) >> 1) + dmv_y - 1;
-    motion_block (mc_functions.avg, offset, picture->v_offset >> 1, 0, stride, 0,
+    motion_block (mpeg2_mc.avg, offset, picture->v_offset >> 1, 0, stride, 0,
 		  other_x, other_y, dest, motion->ref[0], stride * 2, 8);
 
-    motion_block (mc_functions.put, offset, picture->v_offset >> 1,
+    motion_block (mpeg2_mc.put, offset, picture->v_offset >> 1,
 		  0, stride, stride,
 		  motion_x, motion_y, dest, motion->ref[0], stride * 2, 8);
 
     m = picture->top_field_first ? 3 : 1;
     other_x = ((motion_x * m + (motion_x > 0)) >> 1) + dmv_x;
     other_y = ((motion_y * m + (motion_y > 0)) >> 1) + dmv_y + 1;
-    motion_block (mc_functions.avg, offset, picture->v_offset >> 1, 0, 0, stride,
+    motion_block (mpeg2_mc.avg, offset, picture->v_offset >> 1, 0, 0, stride,
 		  other_x, other_y, dest, motion->ref[0], stride * 2, 8);
 #undef bit_buf
 #undef bits
@@ -1384,14 +1384,14 @@ static void motion_fi_dmv (picture_t * picture, motion_t * motion,
     NEEDBITS (bit_buf, bits, bit_ptr);
     dmv_y = get_dmv (picture);
 
-    motion_block (mc_functions.put, offset, picture->v_offset, 0, 0, 0,
+    motion_block (mpeg2_mc.put, offset, picture->v_offset, 0, 0, 0,
 		  motion_x, motion_y,
 		  dest, motion->ref[picture->current_field], stride, 16);
 
     motion_x = ((motion_x + (motion_x > 0)) >> 1) + dmv_x;
     motion_y = ((motion_y + (motion_y > 0)) >> 1) + dmv_y +
 	2 * picture->current_field - 1;
-    motion_block (mc_functions.avg, offset, picture->v_offset, 0, 0, 0,
+    motion_block (mpeg2_mc.avg, offset, picture->v_offset, 0, 0, 0,
 		  motion_x, motion_y,
 		  dest, motion->ref[!picture->current_field], stride, 16);
 #undef bit_buf
@@ -1448,11 +1448,11 @@ static void motion_fi_conceal (picture_t * picture)
 do {									\
     if ((direction) & MACROBLOCK_MOTION_FORWARD)			\
 	routine (picture, &(picture->f_motion), dest, offset, stride,	\
-		 mc_functions.put);					\
+		 mpeg2_mc.put);						\
     if ((direction) & MACROBLOCK_MOTION_BACKWARD)			\
 	routine (picture, &(picture->b_motion), dest, offset, stride,	\
 		 ((direction) & MACROBLOCK_MOTION_FORWARD ?		\
-		  mc_functions.avg : mc_functions.put));		\
+		  mpeg2_mc.avg : mpeg2_mc.put));			\
 } while (0)
 
 #define NEXT_MACROBLOCK							\
@@ -1472,15 +1472,15 @@ do {									\
 	} while (0);							\
 	picture->v_offset += 16;					\
 	if (picture->v_offset >= picture->coded_picture_height) {	\
-	    if (cpu_state_restore)					\
-		cpu_state_restore (&cpu_state);				\
+	    if (mpeg2_cpu_state_restore)				\
+		mpeg2_cpu_state_restore (&cpu_state);			\
 	    return;							\
 	}								\
 	offset = 0;							\
     }									\
 } while (0)
 
-void slice_process (picture_t * picture, int code, uint8_t * buffer)
+void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer)
 {
 #define bit_buf (picture->bitstream_buf)
 #define bits (picture->bitstream_bits)
@@ -1604,8 +1604,8 @@ void slice_process (picture_t * picture, int code, uint8_t * buffer)
     if (picture->v_offset >= picture->coded_picture_height)
 	return;
 
-    if (cpu_state_save)
-	cpu_state_save (&cpu_state);
+    if (mpeg2_cpu_state_save)
+	mpeg2_cpu_state_save (&cpu_state);
 
     while (1) {
 	int mba_inc;
@@ -1777,8 +1777,8 @@ void slice_process (picture_t * picture, int code, uint8_t * buffer)
 		NEEDBITS (bit_buf, bits, bit_ptr);
 		continue;
 	    default:	/* end of slice, or error */
-		if (cpu_state_restore)
-		    cpu_state_restore (&cpu_state);
+		if (mpeg2_cpu_state_restore)
+		    mpeg2_cpu_state_restore (&cpu_state);
 		return;
 	    }
 	}

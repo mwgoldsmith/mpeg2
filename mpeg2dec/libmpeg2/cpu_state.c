@@ -33,8 +33,8 @@
 #include "mmx.h"
 #endif
 
-void (* cpu_state_save) (cpu_state_t * state) = NULL;
-void (* cpu_state_restore) (cpu_state_t * state) = NULL;
+void (* mpeg2_cpu_state_save) (cpu_state_t * state) = NULL;
+void (* mpeg2_cpu_state_restore) (cpu_state_t * state) = NULL;
 
 #ifdef ARCH_X86
 static void state_restore_mmx (cpu_state_t * state)
@@ -101,17 +101,17 @@ static void state_restore_altivec (cpu_state_t * state)
 }
 #endif
 
-void cpu_state_init (uint32_t mm_accel)
+void mpeg2_cpu_state_init (uint32_t mm_accel)
 {
 #ifdef ARCH_X86
     if (mm_accel & MM_ACCEL_X86_MMX) {
-	cpu_state_restore = state_restore_mmx;
+	mpeg2_cpu_state_restore = state_restore_mmx;
     }
 #endif
 #ifdef ARCH_PPC
     if (mm_accel & MM_ACCEL_PPC_ALTIVEC) {
-	cpu_state_save = state_save_altivec;
-	cpu_state_restore = state_restore_altivec;
+	mpeg2_cpu_state_save = state_save_altivec;
+	mpeg2_cpu_state_restore = state_restore_altivec;
     }
 #endif
 }
