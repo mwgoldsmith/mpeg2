@@ -33,9 +33,9 @@ struct vo_frame_s {
 typedef vo_instance_t * vo_open_t (void);
 
 struct vo_instance_s {
-    int (* setup) (vo_instance_t * this, int width, int height);
-    void (* close) (vo_instance_t * this);
-    vo_frame_t * (* get_frame) (vo_instance_t * this, int flags);
+    int (* setup) (vo_instance_t * instance, int width, int height);
+    void (* close) (vo_instance_t * instance);
+    vo_frame_t * (* get_frame) (vo_instance_t * instance, int flags);
 };
 
 typedef struct vo_driver_s {
@@ -48,20 +48,20 @@ void vo_accel (uint32_t accel);
 /* return NULL terminated array of all drivers */
 vo_driver_t * vo_drivers (void);
 
-static vo_instance_t * vo_open (vo_open_t * open)
+static inline vo_instance_t * vo_open (vo_open_t * open)
 {
     return open ();
 }
 
-static int vo_setup (vo_instance_t * this, int width, int height)
+static inline int vo_setup (vo_instance_t * instance, int width, int height)
 {
-    return this->setup (this, width, height);
+    return instance->setup (instance, width, height);
 }
 
-static inline void vo_close (vo_instance_t * this)
+static inline void vo_close (vo_instance_t * instance)
 {
-    if (this->close)
-	this->close (this);
+    if (instance->close)
+	instance->close (instance);
 }
 
 #define VO_TOP_FIELD 1
@@ -69,9 +69,9 @@ static inline void vo_close (vo_instance_t * this)
 #define VO_BOTH_FIELDS (VO_TOP_FIELD | VO_BOTTOM_FIELD)
 #define VO_PREDICTION_FLAG 4
 
-static inline vo_frame_t * vo_get_frame (vo_instance_t * this, int flags)
+static inline vo_frame_t * vo_get_frame (vo_instance_t * instance, int flags)
 {
-    return this->get_frame (this, flags);
+    return instance->get_frame (instance, flags);
 }
 
 static inline void vo_field (vo_frame_t * frame, int flags)

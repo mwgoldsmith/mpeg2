@@ -60,7 +60,7 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
     mpeg2dec->chunk_buffer = memalign (16, BUFFER_SIZE + 4);
     mpeg2dec->picture = memalign (16, sizeof (picture_t));
 
-    mpeg2dec->shift = 0;
+    mpeg2dec->shift = 0xffffff00;
     mpeg2dec->is_sequence_needed = 1;
     mpeg2dec->drop_flag = 0;
     mpeg2dec->drop_frame = 0;
