@@ -150,8 +150,8 @@ static inline void mmx_unpack_16rgb (uint8_t * image, int cpu)
     por_r2r (mm2, mm0);
     movntq (mm0, *image);
 
-    punpcklbw_r2r (mm4, mm7);
-    punpcklbw_r2r (mm1, mm5);
+    punpckhbw_r2r (mm4, mm7);
+    punpckhbw_r2r (mm1, mm5);
     psllq_i2r (3, mm7);
     por_r2r (mm7, mm5);
     movntq (mm5, *(image+8));
