@@ -26,7 +26,7 @@ sis_vid.o: sis_vid.c sis_vid.h
 
 
 mga_vid_test: mga_vid_test.c
-	$(CC) -g -O -Wall $(INCLUDES) -o $@ $@.c
+	$(CC) -g -O -Wall $(INCLUDES) -idirafter ../compatibility -o $@ $@.c
 
 clean: 
 	rm -f *.o
