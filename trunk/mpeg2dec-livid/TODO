@@ -1,13 +1,14 @@
 * things we dont get quite right yet (though we dont see the difference)
 	* IDCT routine compliant with IEEE1180
-	* display last picture of a stream, etc
 
 * things we dont implement yet
 	* field pictures
 	* missing MC modes
 	* mpeg1 - do oddification, full-pixel MC, D pictures
-	* conformance testing
 	* dont crash on bad streams, make sure we can resync after a while
+		* possible chunk buffer overflow (writing or reading back)
+		* destination macroblock overflow
+		* MC source out of bounds (maybe signal handler for that one ?)
 	* make the decoder reentrant (if the speed impact is small enough)
 
 * structural optimizations
