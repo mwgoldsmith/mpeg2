@@ -13,4 +13,4 @@ libcpuaccel_la_LDFLAGS = -no-undefined
 
 man_MANS = mpeg2dec.1 extract_mpeg2.1
 
-EXTRA_DIST = configure.incl getopt.h
+EXTRA_DIST = configure.incl getopt.h $(man_MANS)
