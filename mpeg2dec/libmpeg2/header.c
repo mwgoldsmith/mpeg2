@@ -602,14 +602,13 @@ int mpeg2_header_extension (mpeg2dec_t * mpeg2dec)
 
 int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec)
 {
-    uint8_t * chunk_ptr;
-
-    if (mpeg2dec->info.user_data != NULL)
-	return 1;
-    chunk_ptr = mpeg2dec->chunk_ptr - 4;
-    mpeg2dec->info.user_data = mpeg2dec->chunk_start;
-    mpeg2dec->info.user_data_len = chunk_ptr - mpeg2dec->chunk_start;
-    mpeg2dec->chunk_start = chunk_ptr;
+    if (!mpeg2dec->info.user_data_len)
+	mpeg2dec->info.user_data = mpeg2dec->chunk_start;
+    else
+	mpeg2dec->info.user_data_len += 3;
+    mpeg2dec->info.user_data_len += (mpeg2dec->chunk_ptr - 4 -
+				     mpeg2dec->chunk_start);
+    mpeg2dec->chunk_start = mpeg2dec->chunk_ptr - 1;
     
     return 0;
 }
