@@ -73,7 +73,23 @@ AC_DEFUN([AC_C_ATTRIBUTE_ALIGNED],
 	[ac_cv_c_attribute_aligned=0
 	for ac_cv_c_attr_align_try in 2 4 8 16 32 64; do
 	    AC_TRY_COMPILE([],
-		[static char c __attribute__ ((aligned($ac_cv_c_attr_align_try))) = 0; return c;],
+		[static struct s {
+		    char a;
+		    char b __attribute__ ((aligned($ac_cv_c_attr_align_try)));
+		} S = {0, 0};
+		extern int i;
+		switch (i) {
+		    case (int)(&((struct s *)0)->b):
+		    case (($ac_cv_c_attr_align_try != 1) ? 1 : 0):
+		    case (($ac_cv_c_attr_align_try != 2) ? 2 : 0):
+		    case (($ac_cv_c_attr_align_try != 4) ? 4 : 0):
+		    case (($ac_cv_c_attr_align_try != 8) ? 8 : 0):
+		    case (($ac_cv_c_attr_align_try != 16) ? 16 : 0):
+		    case (($ac_cv_c_attr_align_try != 32) ? 32 : 0):
+		    case (($ac_cv_c_attr_align_try != 64) ? 64 : 0):
+			return i;
+		}
+		return S.a;],
 		[ac_cv_c_attribute_aligned=$ac_cv_c_attr_align_try])
 	done])
     if test x"$ac_cv_c_attribute_aligned" != x"0"; then
