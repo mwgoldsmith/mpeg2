@@ -1,12 +1,12 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.52)
+AC_PREREQ(2.54)
 AC_INIT
 AC_CONFIG_SRCDIR([src/mpeg2dec.c])
 AC_CONFIG_AUX_DIR(autotools)
 AC_CONFIG_FILES([Makefile autotools/Makefile include/Makefile test/Makefile
     doc/Makefile src/Makefile libmpeg2/Makefile libvo/Makefile vc++/Makefile])
 AM_INIT_AUTOMAKE([mpeg2dec],[0.2.2-cvs])
-AM_CONFIG_HEADER(include/config.h)
+AC_CONFIG_HEADERS([include/config.h])
 AM_MAINTAINER_MODE
 AC_CANONICAL_HOST
 
