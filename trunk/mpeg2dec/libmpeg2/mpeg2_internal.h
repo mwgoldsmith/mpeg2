@@ -21,6 +21,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#define STATE_INTERNAL_NORETURN ((mpeg2_state_t)-1)
+
 /* macroblock modes */
 #define MACROBLOCK_INTRA 1
 #define MACROBLOCK_PATTERN 2

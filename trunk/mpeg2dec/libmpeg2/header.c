@@ -843,7 +843,7 @@ mpeg2_state_t mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec)
 			 mpeg2dec->fbuf[b_type]->buf);
     }
     mpeg2dec->action = NULL;
-    return (mpeg2_state_t)-1;
+    return STATE_INTERNAL_NORETURN;
 }
 
 static mpeg2_state_t seek_sequence (mpeg2dec_t * mpeg2dec)
