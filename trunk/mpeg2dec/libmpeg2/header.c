@@ -24,6 +24,7 @@
 #include "config.h"
 
 #include <inttypes.h>
+#include <stdlib.h>	/* defines NULL */
 
 #include "video_out.h"
 #include "mpeg2.h"
@@ -73,9 +74,10 @@ uint8_t mpeg2_scan_alt[64] ATTR_ALIGN(16) = {
     53, 61, 22, 30,  7, 15, 23, 31, 38, 46, 54, 62, 39, 47, 55, 63
 };
 
-void mpeg2_header_state_init (decoder_t * decoder)
+void mpeg2_header_state_init (mpeg2dec_t * mpeg2dec)
 {
-    decoder->scan = mpeg2_scan_norm;
+    mpeg2dec->decoder->scan = mpeg2_scan_norm;
+    mpeg2dec->picture = mpeg2dec->pictures;
 }
 
 static void simplify (unsigned int * num, unsigned int * denum) 
@@ -181,6 +183,16 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
     decoder->second_field = 0;
 
     mpeg2dec->ext_state = SEQ_EXT;
+    mpeg2dec->state = STATE_SEQUENCE;
+
+    mpeg2dec->info.sequence = sequence;
+    mpeg2dec->info.current_picture = NULL;
+    mpeg2dec->info.current_picture_2nd = NULL;
+    mpeg2dec->info.current_fbuf = NULL;
+    mpeg2dec->info.display_picture = NULL;
+    mpeg2dec->info.display_picture_2nd = NULL;
+    mpeg2dec->info.display_fbuf = NULL;
+    mpeg2dec->info.discard_fbuf = NULL;
 
     return 0;
 }
@@ -303,20 +315,66 @@ static int sequence_display_ext (mpeg2dec_t * mpeg2dec)
 
 int mpeg2_header_gop (mpeg2dec_t * mpeg2dec)
 {
+    mpeg2dec->state = STATE_GOP;
     mpeg2dec->ext_state = USER_DATA;
+    mpeg2dec->info.current_picture = NULL;
+    mpeg2dec->info.current_picture_2nd = NULL;
+    mpeg2dec->info.current_fbuf = NULL;
+    mpeg2dec->info.display_picture = NULL;
+    mpeg2dec->info.display_picture_2nd = NULL;
+    mpeg2dec->info.display_fbuf = NULL;
+    mpeg2dec->info.discard_fbuf = NULL;
     return 0;
 }
 
 int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 {
     uint8_t * buffer = mpeg2dec->chunk_buffer;
-    picture_t * picture = &(mpeg2dec->picture);
+    picture_t * picture = mpeg2dec->picture;
     decoder_t * decoder = mpeg2dec->decoder;
     int type;
 
+    type = (buffer [1] >> 3) & 7;
+
+    if (mpeg2dec->state != STATE_SLICE_1ST) {
+	picture_t * other;
+
+	mpeg2dec->state = STATE_PICTURE;
+	decoder->second_field = 0;
+	if ((picture < mpeg2dec->pictures + 2) ^
+	    (decoder->coding_type != PIC_FLAG_CODING_TYPE_B)) {
+	    picture = mpeg2dec->pictures + 2;
+	    other = mpeg2dec->pictures;
+	} else {
+	    picture = mpeg2dec->pictures;
+	    other = mpeg2dec->pictures + 2;
+	}
+	mpeg2dec->info.current_picture = picture;
+	mpeg2dec->info.current_picture_2nd = NULL;
+	if (type == PIC_FLAG_CODING_TYPE_B) {
+	    mpeg2dec->info.display_picture = picture;
+	    mpeg2dec->info.display_picture_2nd = NULL;
+	} else {
+	    mpeg2dec->info.display_fbuf = mpeg2dec->backward_reference_frame;
+	    mpeg2dec->info.discard_fbuf = mpeg2dec->forward_reference_frame;
+	    mpeg2dec->info.display_picture = other;
+	    if (other->nb_fields == 1)
+		mpeg2dec->info.display_picture_2nd = other + 1;
+	}
+    } else {
+	mpeg2dec->state = STATE_PICTURE_2ND;
+	decoder->second_field = 1;
+	picture++;	/* second field picture */
+	mpeg2dec->info.current_picture_2nd = picture;
+	if (type == PIC_FLAG_CODING_TYPE_B)
+	    mpeg2dec->info.display_picture_2nd = picture;
+    }
+    mpeg2dec->ext_state = PIC_CODING_EXT;
+    mpeg2dec->picture = picture;
+
     picture->temporal_reference = (buffer[0] << 2) | (buffer[1] >> 6);
 
-    decoder->coding_type = picture->flags = type = (buffer [1] >> 3) & 7;
+    decoder->coding_type = picture->flags = type;
 
     if (type == PIC_FLAG_CODING_TYPE_P || type == PIC_FLAG_CODING_TYPE_B) {
 	/* forward_f_code and backward_f_code - used in mpeg1 only */
@@ -327,15 +385,10 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 	decoder->b_motion.f_code[0] = ((buffer[4] >> 3) & 7) - 1;
     }
 
-    /* XXX move somewhere else ???? */
-    decoder->second_field =
-	(decoder->picture_structure != FRAME_PICTURE) &&
-	!(decoder->second_field);
-
     /* XXXXXX decode extra_information_picture as well */
 
-    mpeg2dec->ext_state = PIC_CODING_EXT;
     picture->nb_fields = 2;
+
 
     return 0;
 }
@@ -343,7 +396,7 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 static int picture_coding_ext (mpeg2dec_t * mpeg2dec)
 {
     uint8_t * buffer = mpeg2dec->chunk_buffer;
-    picture_t * picture = &(mpeg2dec->picture);
+    picture_t * picture = mpeg2dec->picture;
     decoder_t * decoder = mpeg2dec->decoder;
     uint32_t flags;
 
@@ -447,4 +500,35 @@ int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec)
 	return 1;
     mpeg2dec->ext_state &= ~USER_DATA;
     return 0;
+}
+
+void mpeg2_header_slice (mpeg2dec_t * mpeg2dec)
+{
+    mpeg2dec->state = ((mpeg2dec->picture->nb_fields > 1 ||
+			mpeg2dec->state == STATE_PICTURE_2ND) ?
+		       STATE_SLICE : STATE_SLICE_1ST);
+    mpeg2dec->info.current_fbuf = mpeg2dec->current_frame;
+    if (mpeg2dec->decoder->coding_type == B_TYPE) {
+	mpeg2dec->info.display_fbuf = mpeg2dec->current_frame;
+	mpeg2dec->info.discard_fbuf = mpeg2dec->current_frame;
+    }
+}
+
+void mpeg2_header_end (mpeg2dec_t * mpeg2dec)
+{
+    picture_t * picture;
+
+    picture = mpeg2dec->pictures;
+    if (mpeg2dec->picture < picture + 2)
+	picture = mpeg2dec->pictures + 2;
+
+    mpeg2dec->state = STATE_INVALID;
+    mpeg2dec->info.current_picture = NULL;
+    mpeg2dec->info.current_picture_2nd = NULL;
+    mpeg2dec->info.current_fbuf = NULL;
+    mpeg2dec->info.display_picture = picture;
+    if (picture->nb_fields == 1)
+	mpeg2dec->info.display_picture_2nd = picture + 1;
+    mpeg2dec->info.display_fbuf = mpeg2dec->backward_reference_frame;
+    mpeg2dec->info.discard_fbuf = mpeg2dec->forward_reference_frame;
 }
