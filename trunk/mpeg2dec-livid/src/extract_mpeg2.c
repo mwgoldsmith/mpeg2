@@ -81,7 +81,7 @@ static void ps_loop (void)
 	buf = buffer;
 
 	while (buf + 4 <= end) {
-	    // check start code
+	    /* check start code */
 	    if (buf[0] || buf[1] || (buf[2] != 0x01)) {
 		if (complain_loudly) {
 		    fprintf (stderr, "missing start code at %#lx\n",

@@ -14,8 +14,6 @@
 #ifndef __LINUX_HW_BES_H
 #define __LINUX_HW_BES_H
 
-//#include <inttypes.h>
-
 typedef struct mga_vid_config_s
 {
 uint32_t card_type;

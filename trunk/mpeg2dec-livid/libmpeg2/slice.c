@@ -108,7 +108,7 @@ static inline int get_macroblock_modes (slice_t * slice, int picture_structure,
 	    }
 	    return macroblock_modes;
 	} else if (frame_pred_frame_dct) {
-	    //if (! (macroblock_modes & MACROBLOCK_INTRA))
+	    /* if (! (macroblock_modes & MACROBLOCK_INTRA)) */
 	    macroblock_modes |= MC_FRAME;
 	    return macroblock_modes;
 	} else {
@@ -384,7 +384,7 @@ static void get_intra_block_B14 (picture_t * picture, slice_t * slice,
 
 	    i += tab->run;
 	    if (i >= 64)
-		break;	// end of block
+		break;	/* end of block */
 
 	normal_code:
 	    j = scan[i];
@@ -392,7 +392,7 @@ static void get_intra_block_B14 (picture_t * picture, slice_t * slice,
 	    bits += tab->len + 1;
 	    val = (tab->level * quantizer_scale * quant_matrix[j]) >> 4;
 
-	    // if (bitstream_get (1)) val = -val;
+	    /* if (bitstream_get (1)) val = -val; */
 	    val = (val ^ SBITS (bit_buf, 1)) - SBITS (bit_buf, 1);
 
 	    SATURATE (val);
@@ -412,11 +412,11 @@ static void get_intra_block_B14 (picture_t * picture, slice_t * slice,
 	    if (i < 64)
 		goto normal_code;
 
-	    // escape code
+	    /* escape code */
 
 	    i += UBITS (bit_buf << 6, 6) - 64;
 	    if (i >= 64)
-		break;	// illegal, but check needed to avoid buffer overflow
+		break;	/* illegal, check needed to avoid buffer overflow */
 
 	    j = scan[i];
 
@@ -457,10 +457,10 @@ static void get_intra_block_B14 (picture_t * picture, slice_t * slice,
 	    if (i < 64)
 		goto normal_code;
 	}
-	break;	// illegal, but check needed to avoid buffer overflow
+	break;	/* illegal, check needed to avoid buffer overflow */
     }
     dest[63] ^= mismatch & 1;
-    DUMPBITS (bit_buf, bits, 2);	// dump end of block code
+    DUMPBITS (bit_buf, bits, 2);	/* dump end of block code */
     slice->bitstream_buf = bit_buf;
     slice->bitstream_bits = bits;
     slice->bitstream_ptr = bit_ptr;
@@ -504,7 +504,7 @@ static void get_intra_block_B15 (picture_t * picture, slice_t * slice,
 		bits += tab->len + 1;
 		val = (tab->level * quantizer_scale * quant_matrix[j]) >> 4;
 
-		// if (bitstream_get (1)) val = -val;
+		/* if (bitstream_get (1)) val = -val; */
 		val = (val ^ SBITS (bit_buf, 1)) - SBITS (bit_buf, 1);
 
 		SATURATE (val);
@@ -518,16 +518,16 @@ static void get_intra_block_B15 (picture_t * picture, slice_t * slice,
 
 	    } else {
 
-		// end of block. I commented out this code because if we
-		// dont exit here we will still exit at the later test :)
+		/* end of block. I commented out this code because if we */
+		/* dont exit here we will still exit at the later test :) */
 
-		//if (i >= 128) break;	// end of block
+		/* if (i >= 128) break;	*/	/* end of block */
 
-		// escape code
+		/* escape code */
 
 		i += UBITS (bit_buf << 6, 6) - 64;
 		if (i >= 64)
-		    break;	// illegal, but check against buffer overflow
+		    break;	/* illegal, check against buffer overflow */
 
 		j = scan[i];
 
@@ -569,10 +569,10 @@ static void get_intra_block_B15 (picture_t * picture, slice_t * slice,
 	    if (i < 64)
 		goto normal_code;
 	}
-	break;	// illegal, but check needed to avoid buffer overflow
+	break;	/* illegal, check needed to avoid buffer overflow */
     }
     dest[63] ^= mismatch & 1;
-    DUMPBITS (bit_buf, bits, 4);	// dump end of block code
+    DUMPBITS (bit_buf, bits, 4);	/* dump end of block code */
     slice->bitstream_buf = bit_buf;
     slice->bitstream_bits = bits;
     slice->bitstream_ptr = bit_ptr;
@@ -615,7 +615,7 @@ static void get_non_intra_block (picture_t * picture, slice_t * slice,
 	entry_1:
 	    i += tab->run;
 	    if (i >= 64)
-		break;	// end of block
+		break;	/* end of block */
 
 	normal_code:
 	    j = scan[i];
@@ -623,7 +623,7 @@ static void get_non_intra_block (picture_t * picture, slice_t * slice,
 	    bits += tab->len + 1;
 	    val = ((2*tab->level+1) * quantizer_scale * quant_matrix[j]) >> 5;
 
-	    // if (bitstream_get (1)) val = -val;
+	    /* if (bitstream_get (1)) val = -val; */
 	    val = (val ^ SBITS (bit_buf, 1)) - SBITS (bit_buf, 1);
 
 	    SATURATE (val);
@@ -646,11 +646,11 @@ static void get_non_intra_block (picture_t * picture, slice_t * slice,
 	    if (i < 64)
 		goto normal_code;
 
-	    // escape code
+	    /* escape code */
 
 	    i += UBITS (bit_buf << 6, 6) - 64;
 	    if (i >= 64)
-		break;	// illegal, but check needed to avoid buffer overflow
+		break;	/* illegal, check needed to avoid buffer overflow */
 
 	    j = scan[i];
 
@@ -691,10 +691,10 @@ static void get_non_intra_block (picture_t * picture, slice_t * slice,
 	    if (i < 64)
 		goto normal_code;
 	}
-	break;	// illegal, but check needed to avoid buffer overflow
+	break;	/* illegal, check needed to avoid buffer overflow */
     }
     dest[63] ^= mismatch & 1;
-    DUMPBITS (bit_buf, bits, 2);	// dump end of block code
+    DUMPBITS (bit_buf, bits, 2);	/* dump end of block code */
     slice->bitstream_buf = bit_buf;
     slice->bitstream_bits = bits;
     slice->bitstream_ptr = bit_ptr;
@@ -729,7 +729,7 @@ static void get_mpeg1_intra_block (picture_t * picture, slice_t * slice,
 
 	    i += tab->run;
 	    if (i >= 64)
-		break;	// end of block
+		break;	/* end of block */
 
 	normal_code:
 	    j = scan[i];
@@ -737,10 +737,10 @@ static void get_mpeg1_intra_block (picture_t * picture, slice_t * slice,
 	    bits += tab->len + 1;
 	    val = (tab->level * quantizer_scale * quant_matrix[j]) >> 4;
 
-	    // oddification
+	    /* oddification */
 	    val = (val - 1) | 1;
 
-	    // if (bitstream_get (1)) val = -val;
+	    /* if (bitstream_get (1)) val = -val; */
 	    val = (val ^ SBITS (bit_buf, 1)) - SBITS (bit_buf, 1);
 
 	    SATURATE (val);
@@ -759,11 +759,11 @@ static void get_mpeg1_intra_block (picture_t * picture, slice_t * slice,
 	    if (i < 64)
 		goto normal_code;
 
-	    // escape code
+	    /* escape code */
 
 	    i += UBITS (bit_buf << 6, 6) - 64;
 	    if (i >= 64)
-		break;	// illegal, but check needed to avoid buffer overflow
+		break;	/* illegal, check needed to avoid buffer overflow */
 
 	    j = scan[i];
 
@@ -776,7 +776,7 @@ static void get_mpeg1_intra_block (picture_t * picture, slice_t * slice,
 	    }
 	    val = (val * quantizer_scale * quant_matrix[j]) / 16;
 
-	    // oddification
+	    /* oddification */
 	    val = (val + ~SBITS (val, 1)) | 1;
 
 	    SATURATE (val);
@@ -810,9 +810,9 @@ static void get_mpeg1_intra_block (picture_t * picture, slice_t * slice,
 	    if (i < 64)
 		goto normal_code;
 	}
-	break;	// illegal, but check needed to avoid buffer overflow
+	break;	/* illegal, check needed to avoid buffer overflow */
     }
-    DUMPBITS (bit_buf, bits, 2);	// dump end of block code
+    DUMPBITS (bit_buf, bits, 2);	/* dump end of block code */
     slice->bitstream_buf = bit_buf;
     slice->bitstream_bits = bits;
     slice->bitstream_ptr = bit_ptr;
@@ -853,7 +853,7 @@ static void get_mpeg1_non_intra_block (picture_t * picture, slice_t * slice,
 	entry_1:
 	    i += tab->run;
 	    if (i >= 64)
-		break;	// end of block
+		break;	/* end of block */
 
 	normal_code:
 	    j = scan[i];
@@ -861,10 +861,10 @@ static void get_mpeg1_non_intra_block (picture_t * picture, slice_t * slice,
 	    bits += tab->len + 1;
 	    val = ((2*tab->level+1) * quantizer_scale * quant_matrix[j]) >> 5;
 
-	    // oddification
+	    /* oddification */
 	    val = (val - 1) | 1;
 
-	    // if (bitstream_get (1)) val = -val;
+	    /* if (bitstream_get (1)) val = -val; */
 	    val = (val ^ SBITS (bit_buf, 1)) - SBITS (bit_buf, 1);
 
 	    SATURATE (val);
@@ -886,11 +886,11 @@ static void get_mpeg1_non_intra_block (picture_t * picture, slice_t * slice,
 	    if (i < 64)
 		goto normal_code;
 
-	    // escape code
+	    /* escape code */
 
 	    i += UBITS (bit_buf << 6, 6) - 64;
 	    if (i >= 64)
-		break;	// illegal, but check needed to avoid buffer overflow
+		break;	/* illegal, check needed to avoid buffer overflow */
 
 	    j = scan[i];
 
@@ -904,7 +904,7 @@ static void get_mpeg1_non_intra_block (picture_t * picture, slice_t * slice,
 	    val = 2 * (val + SBITS (val, 1)) + 1;
 	    val = (val * quantizer_scale * quant_matrix[j]) / 32;
 
-	    // oddification
+	    /* oddification */
 	    val = (val + ~SBITS (val, 1)) | 1;
 
 	    SATURATE (val);
@@ -938,9 +938,9 @@ static void get_mpeg1_non_intra_block (picture_t * picture, slice_t * slice,
 	    if (i < 64)
 		goto normal_code;
 	}
-	break;	// illegal, but check needed to avoid buffer overflow
+	break;	/* illegal, check needed to avoid buffer overflow */
     }
-    DUMPBITS (bit_buf, bits, 2);	// dump end of block code
+    DUMPBITS (bit_buf, bits, 2);	/* dump end of block code */
     slice->bitstream_buf = bit_buf;
     slice->bitstream_bits = bits;
     slice->bitstream_ptr = bit_ptr;
@@ -967,14 +967,14 @@ static inline int get_macroblock_address_increment (slice_t * slice)
 	    DUMPBITS (bit_buf, bits, tab->len);
 	    return mba + tab->mba;
 	} else switch (UBITS (bit_buf, 11)) {
-	case 8:		// macroblock_escape
+	case 8:		/* macroblock_escape */
 	    mba += 33;
-	    // no break here on purpose
-	case 15:	// macroblock_stuffing (MPEG1 only)
+	    /* no break here on purpose */
+	case 15:	/* macroblock_stuffing (MPEG1 only) */
 	    DUMPBITS (bit_buf, bits, 11);
 	    NEEDBITS (bit_buf, bits, bit_ptr);
 	    break;
-	default:	// end of slice, or error
+	default:	/* end of slice, or error */
 	    return 0;
 	}
     }
@@ -991,7 +991,7 @@ static inline void slice_intra_DCT (picture_t * picture, slice_t * slice,
 #define bits (slice->bitstream_bits)  
 #define bit_ptr (slice->bitstream_ptr)
     NEEDBITS (bit_buf, bits, bit_ptr);
-    //Get the intra DC coefficient and inverse quantize it
+    /* Get the intra DC coefficient and inverse quantize it */
     if (cc == 0)
 	slice->dc_dct_pred[0] += get_luma_dc_dct_diff (slice);
     else
@@ -1155,7 +1155,7 @@ static void motion_fr_field (slice_t * slice, motion_t * motion,
     NEEDBITS (bit_buf, bits, bit_ptr);
     motion_y = (motion->pmv[0][1] >> 1) + get_motion_delta (slice,
 							    motion->f_code[1]);
-    //motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
+    /* motion_y = bound_motion_vector (motion_y, motion->f_code[1]); */
     motion->pmv[0][1] = motion_y << 1;
 
     motion_block (table, motion_x, motion_y, dest, offset,
@@ -1173,7 +1173,7 @@ static void motion_fr_field (slice_t * slice, motion_t * motion,
     NEEDBITS (bit_buf, bits, bit_ptr);
     motion_y = (motion->pmv[1][1] >> 1) + get_motion_delta (slice,
 							    motion->f_code[1]);
-    //motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
+    /* motion_y = bound_motion_vector (motion_y, motion->f_code[1]); */
     motion->pmv[1][1] = motion_y << 1;
 
     motion_block (table, motion_x, motion_y, dest, offset + width,
@@ -1208,7 +1208,7 @@ static void motion_fr_dmv (slice_t * slice, motion_t * motion,
     NEEDBITS (bit_buf, bits, bit_ptr);
     motion_y = (motion->pmv[0][1] >> 1) + get_motion_delta (slice,
 							    motion->f_code[1]);
-    //motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
+    /* motion_y = bound_motion_vector (motion_y, motion->f_code[1]); */
     motion->pmv[1][1] = motion->pmv[0][1] = motion_y << 1;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
@@ -1236,7 +1236,7 @@ static void motion_fr_dmv (slice_t * slice, motion_t * motion,
 #undef bit_ptr
 }
 
-// like motion_frame, but reuse previous motion vectors
+/* like motion_frame, but reuse previous motion vectors */
 static void motion_fr_reuse (slice_t * slice, motion_t * motion,
 			     uint8_t * dest[3], int offset, int width,
 			     void (** table) (uint8_t *, uint8_t *, int, int))
@@ -1245,7 +1245,7 @@ static void motion_fr_reuse (slice_t * slice, motion_t * motion,
 		  motion->ref[0], offset, width, 16, 0);
 }
 
-// like motion_frame, but use null motion vectors
+/* like motion_frame, but use null motion vectors */
 static void motion_fr_zero (slice_t * slice, motion_t * motion,
 			    uint8_t * dest[3], int offset, int width,
 			    void (** table) (uint8_t *, uint8_t *, int, int))
@@ -1254,7 +1254,7 @@ static void motion_fr_zero (slice_t * slice, motion_t * motion,
 		  motion->ref[0], offset, width, 16, 0);
 }
 
-// like motion_frame, but parsing without actual motion compensation
+/* like motion_frame, but parsing without actual motion compensation */
 static void motion_fr_conceal (slice_t * slice, motion_t * motion)
 {
 #define bit_buf (slice->bitstream_buf)
@@ -1272,7 +1272,7 @@ static void motion_fr_conceal (slice_t * slice, motion_t * motion)
     tmp = bound_motion_vector (tmp, motion->f_code[1]);
     motion->pmv[1][1] = motion->pmv[0][1] = tmp;
 
-    DUMPBITS (bit_buf, bits, 1); // remove marker_bit
+    DUMPBITS (bit_buf, bits, 1); /* remove marker_bit */
 #undef bit_buf
 #undef bits
 #undef bit_ptr
@@ -1421,7 +1421,7 @@ static void motion_fi_conceal (slice_t * slice, motion_t * motion)
     int tmp;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
-    DUMPBITS (bit_buf, bits, 1); // remove field_select
+    DUMPBITS (bit_buf, bits, 1); /* remove field_select */
 
     NEEDBITS (bit_buf, bits, bit_ptr);
     tmp = motion->pmv[0][0] + get_motion_delta (slice, motion->f_code[0]);
@@ -1433,7 +1433,7 @@ static void motion_fi_conceal (slice_t * slice, motion_t * motion)
     tmp = bound_motion_vector (tmp, motion->f_code[1]);
     motion->pmv[1][1] = motion->pmv[0][1] = tmp;
 
-    DUMPBITS (bit_buf, bits, 1); // remove marker_bit
+    DUMPBITS (bit_buf, bits, 1); /* remove marker_bit */
 #undef bit_buf
 #undef bits
 #undef bit_ptr
@@ -1532,12 +1532,12 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	dest[0] += width;
 	dest[1] += width >> 1;
 	dest[2] += width >> 1;
-	// follow thru
+	/* follow thru */
     case TOP_FIELD:
 	width <<= 1;
     }
 
-    //reset intra dc predictor
+    /* reset intra dc predictor */
     slice.dc_dct_pred[0]=slice.dc_dct_pred[1]=slice.dc_dct_pred[2]= 
 	1<< (picture->intra_dc_precision + 7) ;
 
@@ -1546,7 +1546,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     slice.quantizer_scale = get_quantizer_scale (&slice,
 						 picture->q_scale_type);
 
-    //Ignore intra_slice and all the extra data
+    /* ignore intra_slice and all the extra data */
     while (bit_buf & 0x80000000) {
 	DUMPBITS (bit_buf, bits, 9);
 	NEEDBITS (bit_buf, bits, bit_ptr);
@@ -1564,7 +1564,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 				  picture->picture_coding_type,
 				  picture->frame_pred_frame_dct);
 
-	// maybe integrate MACROBLOCK_QUANT test into get_macroblock_modes ?
+	/* maybe integrate MACROBLOCK_QUANT test into get_macroblock_modes ? */
 	if (macroblock_modes & MACROBLOCK_QUANT)
 	    slice.quantizer_scale =
 		get_quantizer_scale (&slice, picture->q_scale_type);
@@ -1593,7 +1593,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		DCT_stride = width;
 	    }
 
-	    // Decode lum blocks
+	    /* Decode lum blocks */
 	    slice_intra_DCT (picture, &slice, 0,
 			     dest[0] + offset, DCT_stride);
 	    slice_intra_DCT (picture, &slice, 0,
@@ -1603,7 +1603,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	    slice_intra_DCT (picture, &slice, 0,
 			     dest[0] + offset + DCT_offset + 8, DCT_stride);
 
-	    // Decode chroma blocks
+	    /* Decode chroma blocks */
 	    slice_intra_DCT (picture, &slice, 1,
 			     dest[1] + (offset>>1), width>>1);
 	    slice_intra_DCT (picture, &slice, 2,
@@ -1620,7 +1620,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		    MOTION (motion_mp1, macroblock_modes, slice,
 			    dest, offset,width);
 		else {
-		    // non-intra mb without forward mv in a P picture
+		    /* non-intra mb without forward mv in a P picture */
 		    slice.f_motion.pmv[0][0] = slice.f_motion.pmv[0][1] = 0;
 		    slice.f_motion.pmv[1][0] = slice.f_motion.pmv[1][1] = 0;
 
@@ -1646,7 +1646,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		    break;
 
 		case 0:
-		    // non-intra mb without forward mv in a P picture
+		    /* non-intra mb without forward mv in a P picture */
 		    slice.f_motion.pmv[0][0] = slice.f_motion.pmv[0][1] = 0;
 		    slice.f_motion.pmv[1][0] = slice.f_motion.pmv[1][1] = 0;
 
@@ -1673,7 +1673,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		    break;
 
 		case 0:
-		    // non-intra mb without forward mv in a P picture
+		    /* non-intra mb without forward mv in a P picture */
 		    slice.f_motion.pmv[0][0] = slice.f_motion.pmv[0][1] = 0;
 		    slice.f_motion.pmv[1][0] = slice.f_motion.pmv[1][1] = 0;
 
@@ -1682,7 +1682,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		    break;
 		}
 
-	    //6.3.17.4 Coded block pattern
+	    /* 6.3.17.4 Coded block pattern */
 	    if (macroblock_modes & MACROBLOCK_PATTERN) {
 		int coded_block_pattern;
 		int DCT_offset, DCT_stride;
@@ -1697,7 +1697,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 
 		coded_block_pattern = get_coded_block_pattern (&slice);
 
-		// Decode lum blocks
+		/* Decode lum blocks */
 
 		if (coded_block_pattern & 0x20)
 		    slice_non_intra_DCT (picture, &slice,
@@ -1714,7 +1714,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 					 dest[0] + offset + DCT_offset + 8,
 					 DCT_stride);
 
-		// Decode chroma blocks
+		/* Decode chroma blocks */
 
 		if (coded_block_pattern & 0x2)
 		    slice_non_intra_DCT (picture, &slice,
@@ -1742,12 +1742,12 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	    if (!mba_inc)
 		break;
 
-	    //reset intra dc predictor on skipped block
+	    /* reset intra dc predictor on skipped block */
 	    slice.dc_dct_pred[0]=slice.dc_dct_pred[1]=slice.dc_dct_pred[2]=
 		1<< (picture->intra_dc_precision + 7);
 
-	    //handling of skipped mb's differs between P_TYPE and B_TYPE
-	    //pictures
+	    /* handling of skipped mb's differs between P_TYPE and B_TYPE */
+	    /* pictures */
 	    if (picture->picture_coding_type == P_TYPE) {
 		slice.f_motion.pmv[0][0] = slice.f_motion.pmv[0][1] = 0;
 		slice.f_motion.pmv[1][0] = slice.f_motion.pmv[1][1] = 0;

@@ -145,7 +145,7 @@ static void handle_args (int argc, char * argv[])
 	}
     }
 
-    // -o not specified, use a default driver 
+    /* -o not specified, use a default driver */
     if (video_out == NULL)
 	video_out = video_out_drivers[0];
 
@@ -183,7 +183,7 @@ static void ps_loop (void)
 	buf = buffer;
 
 	while (buf + 4 <= end) {
-	    // check start code
+	    /* check start code */
 	    if (buf[0] || buf[1] || (buf[2] != 0x01)) {
 		if (complain_loudly) {
 		    fprintf (stderr, "missing start code at %#lx\n",

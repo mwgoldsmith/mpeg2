@@ -56,13 +56,13 @@ static void yuv2rgb_c (void * dst, uint8_t * py,
 {
     height >>= 1;
     do {
-	yuv2rgb_c_internal (py, py + y_stride, pu, pv, dst, dst + rgb_stride,
-			    width);
+	yuv2rgb_c_internal (py, py + y_stride, pu, pv,
+			    dst, ((uint8_t *)dst) + rgb_stride, width);
 
 	py += 2 * y_stride;
 	pu += uv_stride;
 	pv += uv_stride;
-	dst += 2 * rgb_stride;
+	dst = ((uint8_t *)dst) + 2 * rgb_stride;
     } while (--height);
 }
 
@@ -95,11 +95,11 @@ void * table_gU[256];
 int table_gV[256];
 void * table_bU[256];
 
-#define RGB(i)					\
-	U = pu[i];				\
-	V = pv[i];				\
-	r = table_rV[V];			\
-	g = table_gU[U] + table_gV[V];		\
+#define RGB(i)							\
+	U = pu[i];						\
+	V = pv[i];						\
+	r = table_rV[V];					\
+	g = (void *) (((uint8_t *)table_gU[U]) + table_gV[V]);	\
 	b = table_bU[U];
 
 #define DST1(i)					\
@@ -176,7 +176,7 @@ static void yuv2rgb_c_32 (uint8_t * py_1, uint8_t * py_2,
     } while (--width);
 }
 
-// This is very near from the yuv2rgb_c_32 code
+/* This is very near from the yuv2rgb_c_32 code */
 static void yuv2rgb_c_24_rgb (uint8_t * py_1, uint8_t * py_2,
 			      uint8_t * pu, uint8_t * pv,
 			      void * _dst_1, void * _dst_2, int width)
@@ -215,7 +215,7 @@ static void yuv2rgb_c_24_rgb (uint8_t * py_1, uint8_t * py_2,
     } while (--width);
 }
 
-// only trivial mods from yuv2rgb_c_24_rgb
+/* only trivial mods from yuv2rgb_c_24_rgb */
 static void yuv2rgb_c_24_bgr (uint8_t * py_1, uint8_t * py_2,
 			      uint8_t * pu, uint8_t * pv,
 			      void * _dst_1, void * _dst_2, int width)
@@ -254,8 +254,8 @@ static void yuv2rgb_c_24_bgr (uint8_t * py_1, uint8_t * py_2,
     } while (--width);
 }
 
-// This is exactly the same code as yuv2rgb_c_32 except for the types of
-// r, g, b, dst_1, dst_2
+/* This is exactly the same code as yuv2rgb_c_32 except for the types of */
+/* r, g, b, dst_1, dst_2 */
 static void yuv2rgb_c_16 (uint8_t * py_1, uint8_t * py_2,
 			  uint8_t * pu, uint8_t * pv,
 			  void * _dst_1, void * _dst_2, int width)
@@ -396,9 +396,12 @@ static void yuv2rgb_c_init (int bpp, int mode)
     }
 
     for (i = 0; i < 256; i++) {
-	table_rV[i] = table_r + entry_size * div_round (crv * (i-128), 76309);
-	table_gU[i] = table_g + entry_size * div_round (cgu * (i-128), 76309);
+	table_rV[i] = (((uint8_t *)table_r) +
+		       entry_size * div_round (crv * (i-128), 76309));
+	table_gU[i] = (((uint8_t *)table_g) +
+		       entry_size * div_round (cgu * (i-128), 76309));
 	table_gV[i] = entry_size * div_round (cgv * (i-128), 76309);
-	table_bU[i] = table_b + entry_size * div_round (cbu * (i-128), 76309);
+	table_bU[i] = (((uint8_t *)table_b) +
+		       entry_size * div_round (cbu * (i-128), 76309));
     }
 }
