@@ -192,7 +192,7 @@ typedef struct picture_s
 	//stuff derived from bitstream
 	
 	//pointer to the zigzag scan we're supposed to be using
-	uint_8 *scan;
+	const uint_8 *scan;
 
 	//Pointer to the current planar frame buffer (Y,Cr,CB)
 	uint_8 *current_frame[3];
@@ -253,3 +253,15 @@ typedef struct macroblock_s
 //The only global variable,
 //the config struct
 extern mpeg2_config_t config;
+
+
+
+
+//FIXME remove
+int Get_Luma_DC_dct_diff(void);
+int Get_Chroma_DC_dct_diff(void);
+int Get_macroblock_type(int picture_coding_type);
+int Get_motion_code(void);
+int Get_dmvector(void);
+int Get_coded_block_pattern(void);
+int Get_macroblock_address_increment(void);

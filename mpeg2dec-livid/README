@@ -2,7 +2,7 @@ mpeg2dec - a free MPEG-2 video stream decoder
 
 Written by Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
 
-Contributions by:
+Contributions by (in no particular order):
 	Bajusz Peter <hyp-x@inf.bme.hu> - motion comp fixes
 	Real Ouellet <realo@sympatico.ca> - g200 fixes
 	Brion Vibber <brion@gizmo.usc.edu> - x11 fixes
@@ -11,6 +11,8 @@ Contributions by:
 	Didier Gautheron <dgautheron@magic.fr> - bug fixes
   Gerd Knorr <kraxel@goldbach.in-berlin.de> - Xv support
 	Michel LESPINASSE <walken@windriver.com> - motion comp cleanup et al.
+  David I. Lehn <dlehn@vt.edu> - motion_comp mmx code
+	Fredrik Vraalsen <vraalsen@cs.uiuc.edu> - general hackage and good stuff
 	(let me know if I've forgotten anyone)
 
 First of all, this is very early code. If you're not interested

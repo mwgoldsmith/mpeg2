@@ -23,8 +23,8 @@
 #include <errno.h>
 
 #include <config.h>
-#include "mpeg2.h"
-#include "mpeg2_internal.h"
+#include "libmpeg2/mpeg2.h"
+#include "libmpeg2/mpeg2_internal.h"
 #include "yuv2rgb.h"
 
 

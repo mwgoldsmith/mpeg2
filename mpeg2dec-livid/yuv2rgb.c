@@ -31,14 +31,19 @@
 #include <stdlib.h>
 
 #include "config.h"
-#include "mpeg2.h"
-#include "mpeg2_internal.h" // Only for config.flags
+
+#ifdef __i386__
+#include "libmpeg2/mmx.h"
+#endif 
+
+#include "libmpeg2/mpeg2.h"
+#include "libmpeg2/mpeg2_internal.h" // Only for config.flags
 #include "yuv2rgb.h"
 #include "yuv2rgb_mlib.h"
 
 uint_32 matrix_coefficients = 6;
 
-sint_32 Inverse_Table_6_9[8][4] =
+const sint_32 Inverse_Table_6_9[8][4] =
 {
   {117504, 138453, 13954, 34903}, /* no sequence_display_extension */
   {117504, 138453, 13954, 34903}, /* ITU-R Rec. 709 (1990) */
@@ -57,13 +62,12 @@ yuv2rgb_fun yuv2rgb;
 
 void yuv2rgb_init(uint_32 bpp, uint_32 mode) 
 {
-/*
-#ifdef __i386__  // I realy think this should bee HAVE_MMX or some thing..
-  if(config.flags & MPEG2_MMX_ENABLE)
-    yuv2rgb = yuv2rgb_mmx_init(bpp, mode);
+#ifdef __i386__  
+  if(0 && mmx_ok())
+    //yuv2rgb = yuv2rgb_mmx_init(bpp, mode);
+		1;
   else
 #endif
-*/
 #ifdef HAVE_MLIB
   if(1 || config.flags & MPEG2_MLIB_ENABLE) // Fix me
     yuv2rgb = yuv2rgb_mlib_init(bpp, mode);

@@ -40,6 +40,10 @@
 #include "parse.h"
 #include "display.h"
 
+#ifdef __i386__
+#include "mmx.h"
+#endif
+
 //this is where we keep the state of the decoder
 static picture_t picture;
 static slice_t slice;
@@ -187,7 +191,7 @@ decode_reorder_frames(void)
 
 
 mpeg2_frame_t*
-mpeg2_decode_frame (char *new_data, u_int new_data_len) 
+mpeg2_decode_frame (void) 
 {
 	uint_32 mba;      //macroblock address
 	uint_32 last_mba; //last macroblock in frame
@@ -287,6 +291,12 @@ mpeg2_decode_frame (char *new_data, u_int new_data_len)
 	while(mba < last_mba);
 	
 	decode_flush_buffer();
+
+	//FIXME blah
+#ifdef __i386__
+	emms();
+#endif
+
 
 	//decide which frame to send to the display
 	if(picture.picture_coding_type == B_TYPE)

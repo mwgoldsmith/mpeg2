@@ -64,7 +64,7 @@ void (*idct)(mb_buffer_t *mb_buffer);
 
 // private prototypes 
 static void idct_row(sint_16 *blk);
-static void idct_col(sint_16 *blk);
+static void idct_col_s16(sint_16 *blk);
 static void idct_c(mb_buffer_t *mb_buffer);
 
 

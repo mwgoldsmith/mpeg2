@@ -53,7 +53,7 @@ uint_32 non_linear_quantizer_scale[32] =
 };
 
 #ifdef __i386__
-static uint_8 scan_norm_mmx[64] =
+static const uint_8 scan_norm_mmx[64] =
 { 
 	// MMX Zig-Zag scan pattern (transposed)  
 	 0, 8, 1, 2, 9,16,24,17,10, 3, 4,11,18,25,32,40,
@@ -62,7 +62,7 @@ static uint_8 scan_norm_mmx[64] =
 	23,31,38,45,52,59,60,53,46,39,47,54,61,62,55,63
 };
 
-static uint_8 scan_alt_mmx[64] = 
+static const uint_8 scan_alt_mmx[64] = 
 { 
 	// Alternate scan pattern (transposed)
 	 0, 1, 2, 3, 8, 9,16,17,10,11, 4, 5, 6, 7,15,14,
@@ -71,8 +71,7 @@ static uint_8 scan_alt_mmx[64] =
 	46,47,50,51,56,57,58,59,52,53,54,55,60,61,62,63,
 };
 #endif
-
-static uint_8 scan_norm[64] =
+static const uint_8 scan_norm[64] =
 { 
 	// Zig-Zag scan pattern
 	0,1,8,16,9,2,3,10,17,24,32,25,18,11,4,5,
@@ -81,7 +80,8 @@ static uint_8 scan_norm[64] =
 	58,59,52,45,38,31,39,46,53,60,61,54,47,55,62,63
 };
 
-static uint_8 scan_alt[64] =
+#ifdef __i386__
+static const uint_8 scan_alt[64] =
 { 
 	// Alternate scan pattern 
 	0,8,16,24,1,9,2,10,17,25,32,40,48,56,57,49,
@@ -89,6 +89,7 @@ static uint_8 scan_alt[64] =
 	51,59,20,28,5,13,6,14,21,29,36,44,52,60,37,45,
 	53,61,22,30,7,15,23,31,38,46,54,62,39,47,55,63
 };
+#endif
 
 static uint_8 default_intra_quantization_matrix[64] = 
 {
@@ -125,7 +126,14 @@ parse_state_init(picture_t *picture)
 	picture->non_intra_quantizer_matrix = default_non_intra_quantization_matrix;
 	//FIXME we should set pointers to the real scan matrices
 	//here (mmx vs normal) instead of the ifdefs in parse_picture_coding_extension
-	picture->scan = scan_norm;
+
+#ifdef __i386__
+		picture->scan = scan_norm_mmx;
+#else
+		picture->scan = scan_norm;
+#endif
+
+
 }
 
 //FIXME remove once we get everything working
@@ -392,7 +400,7 @@ parse_slice_header(const picture_t *picture, slice_t *slice)
 
 
 //This goes into vlc.c when it gets written
-sint_32
+inline sint_32
 vlc_get_block_coeff(uint_16 non_intra_dc,uint_16 intra_vlc_format)
 {
   uint_32 code;
@@ -482,7 +490,7 @@ parse_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint_32 
 	uint_32 j;
 	uint_16 run;
 	sint_16 val;
-	uint_8 *scan = picture->scan;
+	const uint_8 *scan = picture->scan;
 	uint_8 *quant_matrix = picture->intra_quantizer_matrix;
 	sint_16 quantizer_scale = slice->quantizer_scale;
 
@@ -548,7 +556,7 @@ parse_non_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint
 	uint_32 j;
 	uint_16 run;
 	sint_16 val;
-	uint_8 *scan = picture->scan;
+	const uint_8 *scan = picture->scan;
 	uint_8 *quant_matrix = picture->non_intra_quantizer_matrix;
 	sint_16 quantizer_scale = slice->quantizer_scale;
 

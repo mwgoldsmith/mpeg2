@@ -33,7 +33,7 @@
 
 extern uint_32 matrix_coefficients;
 
-extern sint_32 Inverse_Table_6_9[8][4];
+extern const sint_32 Inverse_Table_6_9[8][4];
 
 typedef void (*yuv2rgb_fun) (uint_8* image,
 			    const uint_8* py,
