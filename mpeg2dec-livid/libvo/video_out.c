@@ -37,6 +37,7 @@ extern vo_output_video_t video_out_xv;
 extern vo_output_video_t video_out_xshm;
 extern vo_output_video_t video_out_x11;
 extern vo_output_video_t video_out_sdl;
+extern vo_output_video_t video_out_mga;
 extern vo_output_video_t video_out_null;
 extern vo_output_video_t video_out_pgm;
 extern vo_output_video_t video_out_md5;
@@ -55,6 +56,9 @@ vo_output_video_t * video_out_drivers[] =
 #endif
 #ifdef LIBVO_XVSHM
     &video_out_xvshm,
+#endif
+#ifdef LIBVO_MGA
+	&video_out_mga,
 #endif
 #ifdef LIBVO_SDL
     &video_out_sdl,
