@@ -90,14 +90,15 @@ static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
     stats_header (code, buffer);
 
     picture = mpeg2dec->picture;
-    is_frame_done = mpeg2dec->in_slice && ((!code) || (code >= 0xb0));
+    is_frame_done = 0;
 
-    if (is_frame_done) {
+    if (mpeg2dec->in_slice && ((!code) || (code >= 0xb0))) {
 	mpeg2dec->in_slice = 0;
 
 	if (((picture->picture_structure == FRAME_PICTURE) ||
 	     (picture->second_field)) &&
 	    (!(mpeg2dec->drop_frame))) {
+	    is_frame_done = 1;
 	    vo_draw ((picture->picture_coding_type == B_TYPE) ?
 		     picture->current_frame :
 		     picture->forward_reference_frame);
