@@ -31,6 +31,8 @@
 #include "mpeg2_internal.h"
 #include "convert.h"
 
+static int mpeg2_accels = 0;
+
 #define BUFFER_SIZE (1194 * 1024)
 
 const mpeg2_info_t * mpeg2_info (mpeg2dec_t * mpeg2dec)
@@ -293,20 +295,20 @@ int mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
 }
 
 void mpeg2_convert (mpeg2dec_t * mpeg2dec,
-		    void (* convert) (int, int, void *,
+		    void (* convert) (int, int, uint32_t, void *,
 				      struct convert_init_s *), void * arg)
 {
     convert_init_t convert_init;
     int size;
 
     convert_init.id = NULL;
-    convert (mpeg2dec->decoder.width, mpeg2dec->decoder.height, arg,
-	     &convert_init);
+    convert (mpeg2dec->decoder.width, mpeg2dec->decoder.height,
+	     mpeg2_accels, arg, &convert_init);
     if (convert_init.id_size) {
 	convert_init.id = mpeg2dec->convert_id =
 	    mpeg2_malloc (convert_init.id_size, ALLOC_CONVERT_ID);
-	convert (mpeg2dec->decoder.width, mpeg2dec->decoder.height, arg,
-		 &convert_init);
+	convert (mpeg2dec->decoder.width, mpeg2dec->decoder.height,
+		 mpeg2_accels, arg, &convert_init);
     }
     mpeg2dec->convert_size[0] = size = convert_init.buf_size[0];
     mpeg2dec->convert_size[1] = size += convert_init.buf_size[1];
@@ -375,8 +377,6 @@ void mpeg2_pts (mpeg2dec_t * mpeg2dec, uint32_t pts)
 
 uint32_t mpeg2_accel (uint32_t accel)
 {
-    static int mpeg2_accels = 0;
-
     if (!mpeg2_accels) {
 	if (accel & MPEG2_ACCEL_DETECT)
 	    accel |= mpeg2_detect_accel ();
