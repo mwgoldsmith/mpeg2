@@ -32,7 +32,7 @@
 #include "mpeg2_internal.h"
 
 #include "motion_comp.h"
-#include "bitstream.h"
+#include "vlc.h"
 #include "idct.h"
 
 extern mc_functions_t mc_functions;
@@ -43,179 +43,271 @@ extern void (*idct_block_add) (int16_t * block, uint8_t * dest, int stride);
 static slice_t slice;
 int16_t DCTblock[64] ALIGN_16_BYTE;
 
-typedef struct {
-    uint8_t run;
-    uint8_t level;
-    uint8_t len;
-} DCTtab;
+static uint32_t bitstream_buf;
+static int bitstream_bits;
+static uint8_t * bitstream_ptr;
 
-DCTtab DCT_16 [] = {
-    {129, 0, 0}, {129, 0, 0}, {129, 0, 0}, {129, 0, 0},
-    {129, 0, 0}, {129, 0, 0}, {129, 0, 0}, {129, 0, 0},
-    {129, 0, 0}, {129, 0, 0}, {129, 0, 0}, {129, 0, 0},
-    {129, 0, 0}, {129, 0, 0}, {129, 0, 0}, {129, 0, 0},
-    {  2,18, 0}, {  2,17, 0}, {  2,16, 0}, {  2,15, 0},
-    {  7, 3, 0}, { 17, 2, 0}, { 16, 2, 0}, { 15, 2, 0},
-    { 14, 2, 0}, { 13, 2, 0}, { 12, 2, 0}, { 32, 1, 0},
-    { 31, 1, 0}, { 30, 1, 0}, { 29, 1, 0}, { 28, 1, 0}
+static int non_linear_quantizer_scale [] = {
+     0,  1,  2,  3,  4,  5,   6,   7,
+     8, 10, 12, 14, 16, 18,  20,  22,
+    24, 28, 32, 36, 40, 44,  48,  52,
+    56, 64, 72, 80, 88, 96, 104, 112
 };
 
-DCTtab DCT_15 [] = {
-    {  1,40,15}, {  1,39,15}, {  1,38,15}, {  1,37,15},
-    {  1,36,15}, {  1,35,15}, {  1,34,15}, {  1,33,15},
-    {  1,32,15}, {  2,14,15}, {  2,13,15}, {  2,12,15},
-    {  2,11,15}, {  2,10,15}, {  2, 9,15}, {  2, 8,15},
-    {  1,31,14}, {  1,31,14}, {  1,30,14}, {  1,30,14},
-    {  1,29,14}, {  1,29,14}, {  1,28,14}, {  1,28,14},
-    {  1,27,14}, {  1,27,14}, {  1,26,14}, {  1,26,14},
-    {  1,25,14}, {  1,25,14}, {  1,24,14}, {  1,24,14},
-    {  1,23,14}, {  1,23,14}, {  1,22,14}, {  1,22,14},
-    {  1,21,14}, {  1,21,14}, {  1,20,14}, {  1,20,14},
-    {  1,19,14}, {  1,19,14}, {  1,18,14}, {  1,18,14},
-    {  1,17,14}, {  1,17,14}, {  1,16,14}, {  1,16,14}
-};
-
-DCTtab DCT_13 [] = {
-    { 11, 2,13}, { 10, 2,13}, {  6, 3,13}, {  4, 4,13},
-    {  3, 5,13}, {  2, 7,13}, {  2, 6,13}, {  1,15,13},
-    {  1,14,13}, {  1,13,13}, {  1,12,13}, { 27, 1,13},
-    { 26, 1,13}, { 25, 1,13}, { 24, 1,13}, { 23, 1,13},
-    {  1,11,12}, {  1,11,12}, {  9, 2,12}, {  9, 2,12},
-    {  5, 3,12}, {  5, 3,12}, {  1,10,12}, {  1,10,12},
-    {  3, 4,12}, {  3, 4,12}, {  8, 2,12}, {  8, 2,12},
-    { 22, 1,12}, { 22, 1,12}, { 21, 1,12}, { 21, 1,12},
-    {  1, 9,12}, {  1, 9,12}, { 20, 1,12}, { 20, 1,12},
-    { 19, 1,12}, { 19, 1,12}, {  2, 5,12}, {  2, 5,12},
-    {  4, 3,12}, {  4, 3,12}, {  1, 8,12}, {  1, 8,12},
-    {  7, 2,12}, {  7, 2,12}, { 18, 1,12}, { 18, 1,12}
-};
-
-DCTtab DCT_B14_10 [] = {
-    { 17, 1,10}, {  6, 2,10}, {  1, 7,10}, {  3, 3,10},
-    {  2, 4,10}, { 16, 1,10}, { 15, 1,10}, {  5, 2,10}
-};
-
-DCTtab DCT_B14_8 [] = {
-    { 65, 0, 6}, { 65, 0, 6}, { 65, 0, 6}, { 65, 0, 6},
-    {  3, 2, 7}, {  3, 2, 7}, { 10, 1, 7}, { 10, 1, 7},
-    {  1, 4, 7}, {  1, 4, 7}, {  9, 1, 7}, {  9, 1, 7},
-    {  8, 1, 6}, {  8, 1, 6}, {  8, 1, 6}, {  8, 1, 6},
-    {  7, 1, 6}, {  7, 1, 6}, {  7, 1, 6}, {  7, 1, 6},
-    {  2, 2, 6}, {  2, 2, 6}, {  2, 2, 6}, {  2, 2, 6},
-    {  6, 1, 6}, {  6, 1, 6}, {  6, 1, 6}, {  6, 1, 6},
-    { 14, 1, 8}, {  1, 6, 8}, { 13, 1, 8}, { 12, 1, 8},
-    {  4, 2, 8}, {  2, 3, 8}, {  1, 5, 8}, { 11, 1, 8}
-};
-
-DCTtab DCT_B14AC_5 [] = {
-		 {  1, 3, 5}, {  5, 1, 5}, {  4, 1, 5},
-    {  1, 2, 4}, {  1, 2, 4}, {  3, 1, 4}, {  3, 1, 4},
-    {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3},
-    {129, 0, 2}, {129, 0, 2}, {129, 0, 2}, {129, 0, 2},
-    {129, 0, 2}, {129, 0, 2}, {129, 0, 2}, {129, 0, 2},
-    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
-    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}
-};
-
-DCTtab DCT_B14DC_5 [] = {
-		 {  1, 3, 5}, {  5, 1, 5}, {  4, 1, 5},
-    {  1, 2, 4}, {  1, 2, 4}, {  3, 1, 4}, {  3, 1, 4},
-    {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3},
-    {  1, 1, 1}, {  1, 1, 1}, {  1, 1, 1}, {  1, 1, 1},
-    {  1, 1, 1}, {  1, 1, 1}, {  1, 1, 1}, {  1, 1, 1},
-    {  1, 1, 1}, {  1, 1, 1}, {  1, 1, 1}, {  1, 1, 1},
-    {  1, 1, 1}, {  1, 1, 1}, {  1, 1, 1}, {  1, 1, 1}
-};
-
-DCTtab DCT_B15_10 [] = {
-    {  6, 2, 9}, {  6, 2, 9}, { 15, 1, 9}, { 15, 1, 9},
-    {  3, 4,10}, { 17, 1,10}, { 16, 1, 9}, { 16, 1, 9}
-};
-
-DCTtab DCT_B15_8 [] = {
-    { 65, 0, 6}, { 65, 0, 6}, { 65, 0, 6}, { 65, 0, 6},
-    {  8, 1, 7}, {  8, 1, 7}, {  9, 1, 7}, {  9, 1, 7},
-    {  7, 1, 7}, {  7, 1, 7}, {  3, 2, 7}, {  3, 2, 7},
-    {  1, 7, 6}, {  1, 7, 6}, {  1, 7, 6}, {  1, 7, 6},
-    {  1, 6, 6}, {  1, 6, 6}, {  1, 6, 6}, {  1, 6, 6},
-    {  5, 1, 6}, {  5, 1, 6}, {  5, 1, 6}, {  5, 1, 6},
-    {  6, 1, 6}, {  6, 1, 6}, {  6, 1, 6}, {  6, 1, 6},
-    {  2, 5, 8}, { 12, 1, 8}, {  1,11, 8}, {  1,10, 8},
-    { 14, 1, 8}, { 13, 1, 8}, {  4, 2, 8}, {  2, 4, 8},
-    {  3, 1, 5}, {  3, 1, 5}, {  3, 1, 5}, {  3, 1, 5},
-    {  3, 1, 5}, {  3, 1, 5}, {  3, 1, 5}, {  3, 1, 5},
-    {  2, 2, 5}, {  2, 2, 5}, {  2, 2, 5}, {  2, 2, 5},
-    {  2, 2, 5}, {  2, 2, 5}, {  2, 2, 5}, {  2, 2, 5},
-    {  4, 1, 5}, {  4, 1, 5}, {  4, 1, 5}, {  4, 1, 5},
-    {  4, 1, 5}, {  4, 1, 5}, {  4, 1, 5}, {  4, 1, 5},
-    {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3},
-    {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3},
-    {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3},
-    {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3},
-    {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3},
-    {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3},
-    {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3},
-    {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3}, {  2, 1, 3},
-    {129, 0, 4}, {129, 0, 4}, {129, 0, 4}, {129, 0, 4},
-    {129, 0, 4}, {129, 0, 4}, {129, 0, 4}, {129, 0, 4},
-    {129, 0, 4}, {129, 0, 4}, {129, 0, 4}, {129, 0, 4},
-    {129, 0, 4}, {129, 0, 4}, {129, 0, 4}, {129, 0, 4},
-    {  1, 3, 4}, {  1, 3, 4}, {  1, 3, 4}, {  1, 3, 4},
-    {  1, 3, 4}, {  1, 3, 4}, {  1, 3, 4}, {  1, 3, 4},
-    {  1, 3, 4}, {  1, 3, 4}, {  1, 3, 4}, {  1, 3, 4},
-    {  1, 3, 4}, {  1, 3, 4}, {  1, 3, 4}, {  1, 3, 4},
-    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
-    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
-    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
-    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
-    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
-    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
-    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
-    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
-    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
-    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
-    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
-    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
-    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
-    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
-    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
-    {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2}, {  1, 1, 2},
-    {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3},
-    {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3},
-    {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3},
-    {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3},
-    {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3},
-    {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3},
-    {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3},
-    {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3}, {  1, 2, 3},
-    {  1, 4, 5}, {  1, 4, 5}, {  1, 4, 5}, {  1, 4, 5},
-    {  1, 4, 5}, {  1, 4, 5}, {  1, 4, 5}, {  1, 4, 5},
-    {  1, 5, 5}, {  1, 5, 5}, {  1, 5, 5}, {  1, 5, 5},
-    {  1, 5, 5}, {  1, 5, 5}, {  1, 5, 5}, {  1, 5, 5},
-    { 10, 1, 7}, { 10, 1, 7}, {  2, 3, 7}, {  2, 3, 7},
-    { 11, 1, 7}, { 11, 1, 7}, {  1, 8, 7}, {  1, 8, 7},
-    {  1, 9, 7}, {  1, 9, 7}, {  1,12, 8}, {  1,13, 8},
-    {  3, 3, 8}, {  5, 2, 8}, {  1,14, 8}, {  1,15, 8}
-};
-
-static int non_linear_quantizer_scale[32] =
+static inline int get_macroblock_modes (int picture_coding_type,
+					int frame_pred_frame_dct)
 {
-     0, 1, 2, 3, 4, 5, 6, 7,
-     8,10,12,14,16,18,20,22,
-    24,28,32,36,40,44,48,52,
-    56,64,72,80,88,96,104,112
-};
+#define bit_buf bitstream_buf
+#define bits bitstream_bits
+    int macroblock_modes;
+    MBtab * tab;
+
+    switch (picture_coding_type) {
+    case I_TYPE:
+
+	tab = MB_I + UBITS (bit_buf, 1);
+	DUMPBITS (bit_buf, bits, tab->len);
+	macroblock_modes = tab->modes;
+
+	if (! frame_pred_frame_dct) {
+	    macroblock_modes |= UBITS (bit_buf, 1) * DCT_TYPE_INTERLACED;
+	    DUMPBITS (bit_buf, bits, 1);
+	}
+
+	return macroblock_modes;
+
+    case P_TYPE:
+
+	tab = MB_P + UBITS (bit_buf, 5);
+	DUMPBITS (bit_buf, bits, tab->len);
+	macroblock_modes = tab->modes;
+
+	if (frame_pred_frame_dct) {
+	    if (macroblock_modes & MACROBLOCK_MOTION_FORWARD)
+		macroblock_modes |= MC_FRAME;
+	    return macroblock_modes;
+	} else {
+	    if (macroblock_modes & MACROBLOCK_MOTION_FORWARD) {
+		macroblock_modes |= UBITS (bit_buf, 2) * MOTION_TYPE_BASE;
+		DUMPBITS (bit_buf, bits, 2);
+	    }
+	    if (macroblock_modes & (MACROBLOCK_INTRA | MACROBLOCK_PATTERN)) {
+		macroblock_modes |= UBITS (bit_buf, 1) * DCT_TYPE_INTERLACED;
+		DUMPBITS (bit_buf, bits, 1);
+	    }
+	    return macroblock_modes;
+	}
+
+    case B_TYPE:
+
+	tab = MB_B + UBITS (bit_buf, 6);
+	DUMPBITS (bit_buf, bits, tab->len);
+	macroblock_modes = tab->modes;
+
+	if (frame_pred_frame_dct) {
+	    //if (! (macroblock_modes & MACROBLOCK_INTRA))
+	    macroblock_modes |= MC_FRAME;
+	    return macroblock_modes;
+	} else {
+	    if (macroblock_modes & MACROBLOCK_INTRA)
+		goto intra;
+	    macroblock_modes |= UBITS (bit_buf, 2) * MOTION_TYPE_BASE;
+	    DUMPBITS (bit_buf, bits, 2);
+	    if (macroblock_modes & (MACROBLOCK_INTRA | MACROBLOCK_PATTERN)) {
+	    intra:
+		macroblock_modes |= UBITS (bit_buf, 1) * DCT_TYPE_INTERLACED;
+		DUMPBITS (bit_buf, bits, 1);
+	    }
+	    return macroblock_modes;
+	}
+
+    default:
+	return 0;
+    }
+#undef bit_buf
+#undef bits
+}
 
 static inline int get_quantizer_scale (int q_scale_type)
 {
+#define bit_buf bitstream_buf
+#define bits bitstream_bits
+
     int quantizer_scale_code;
 
-    quantizer_scale_code = bitstream_get (5);
+    quantizer_scale_code = UBITS (bit_buf, 5);
+    DUMPBITS (bit_buf, bits, 5);
 
     if (q_scale_type)
-	return non_linear_quantizer_scale[quantizer_scale_code];
+	return non_linear_quantizer_scale [quantizer_scale_code];
     else
 	return quantizer_scale_code << 1;
+#undef bit_buf
+#undef bits
+}
+
+static inline int get_motion_delta (int f_code)
+{
+#define bit_buf bitstream_buf
+#define bits bitstream_bits
+
+    int delta;
+    int sign;
+    MVtab * tab;
+
+    if (bit_buf & 0x80000000) {
+	DUMPBITS (bit_buf, bits, 1);
+	return 0;
+    } else if (bit_buf >= 0x0c000000) {
+
+	tab = MV_6 - 3 + UBITS (bit_buf, 6);
+	delta = (tab->delta << f_code) + 1;
+	bits += tab->len + f_code + 1;
+	bit_buf <<= tab->len;
+
+	sign = SBITS (bit_buf, 1);
+	bit_buf <<= 1;
+
+	if (f_code)
+	    delta += UBITS (bit_buf, f_code);
+	bit_buf <<= f_code;
+
+	return (delta ^ sign) - sign;
+
+    } else {
+
+	tab = MV_10 + UBITS (bit_buf, 10);
+	delta = (tab->delta << f_code) + 1;
+	bits += tab->len + 1;
+	bit_buf <<= tab->len;
+
+	sign = SBITS (bit_buf, 1);
+	bit_buf <<= 1;
+
+	if (f_code) {
+	    NEEDBITS (bit_buf, bits);
+	    delta += UBITS (bit_buf, f_code);
+	    DUMPBITS (bit_buf, bits, f_code);
+	}
+
+	return (delta ^ sign) - sign;
+
+    }
+#undef bit_buf
+#undef bits
+}
+
+static inline int bound_motion_vector (int vector, int f_code)
+{
+#if 1
+    int limit;
+
+    limit = 16 << f_code;
+
+    if (vector >= limit)
+	return vector - 2*limit;
+    else if (vector < -limit)
+	return vector + 2*limit;
+    else return vector;
+#else
+    return (vector << (27 - f_code)) >> (27 - f_code);
+#endif
+}
+
+static inline int get_coded_block_pattern (void)
+{
+#define bit_buf bitstream_buf
+#define bits bitstream_bits
+
+    CBPtab * tab;
+
+    NEEDBITS (bit_buf, bits);
+
+    if (bit_buf >= 0x20000000) {
+
+	tab = CBP_7 - 16 + UBITS (bit_buf, 7);
+	DUMPBITS (bit_buf, bits, tab->len);
+	return tab->cbp;
+
+    } else {
+
+	tab = CBP_9 + UBITS (bit_buf, 9);
+	DUMPBITS (bit_buf, bits, tab->len);
+	return tab->cbp;
+    }
+
+#undef bit_buf
+#undef bits
+}
+
+static inline int get_luma_dc_dct_diff (void)
+{
+#define bit_buf bitstream_buf
+#define bits bitstream_bits
+    DCtab * tab;
+    int size;
+    int dc_diff;
+
+    if (bit_buf < 0xf8000000) {
+	tab = DC_lum_5 + UBITS (bit_buf, 5);
+	size = tab->size;
+	if (size) {
+	    bits += tab->len + size;
+	    bit_buf <<= tab->len;
+	    dc_diff =
+		UBITS (bit_buf, size) - UBITS (SBITS (~bit_buf, 1), size);
+	    bit_buf <<= size;
+	    return dc_diff;
+	} else {
+	    DUMPBITS (bit_buf, bits, 3);
+	    return 0;
+	}
+    } else {
+	tab = DC_long - 0x1e0 + UBITS (bit_buf, 9);
+	size = tab->size;
+	bits += tab->len + size;
+	bit_buf <<= tab->len;
+	dc_diff = UBITS (bit_buf, size) - UBITS (SBITS (~bit_buf, 1), size);
+	bit_buf <<= size;
+	return dc_diff;
+    }
+#undef bit_buf
+#undef bits
+}
+
+static inline int get_chroma_dc_dct_diff (void)
+{
+#define bit_buf bitstream_buf
+#define bits bitstream_bits
+    DCtab * tab;
+    int size;
+    int dc_diff;
+
+    if (bit_buf < 0xf8000000) {
+	tab = DC_chrom_5 + UBITS (bit_buf, 5);
+	size = tab->size;
+	if (size) {
+	    bits += tab->len + size;
+	    bit_buf <<= tab->len;
+	    dc_diff =
+		UBITS (bit_buf, size) - UBITS (SBITS (~bit_buf, 1), size);
+	    bit_buf <<= size;
+	    return dc_diff;
+	} else {
+	    DUMPBITS (bit_buf, bits, 2);
+	    return 0;
+	}
+    } else {
+	tab = DC_long - 0x3e0 + UBITS (bit_buf, 10);
+	size = tab->size;
+	bits += tab->len + 1 + size;
+	bit_buf <<= tab->len + 1;
+	dc_diff = UBITS (bit_buf, size) - UBITS (SBITS (~bit_buf, 1), size);
+	bit_buf <<= size;
+	return dc_diff;
+    }
+#undef bit_buf
+#undef bits
 }
 
 static void slice_get_intra_block_B14 (const picture_t * picture,
@@ -235,8 +327,8 @@ static void slice_get_intra_block_B14 (const picture_t * picture,
     i = 0;
     mismatch = ~dest[0];
 
-    bit_buf = bitstream_buffer;
-    bits = bitstream_avail_bits;
+    bit_buf = bitstream_buf;
+    bits = bitstream_bits;
 
     NEEDBITS (bit_buf, bits);
 
@@ -322,8 +414,8 @@ static void slice_get_intra_block_B14 (const picture_t * picture,
     }
     dest[63] ^= mismatch & 1;
     DUMPBITS (bit_buf, bits, 2);	// dump end of block code
-    bitstream_buffer = bit_buf;
-    bitstream_avail_bits = bits;
+    bitstream_buf = bit_buf;
+    bitstream_bits = bits;
 }
 
 static void slice_get_intra_block_B15 (const picture_t * picture,
@@ -343,8 +435,8 @@ static void slice_get_intra_block_B15 (const picture_t * picture,
     i = 0;
     mismatch = ~dest[0];
 
-    bit_buf = bitstream_buffer;
-    bits = bitstream_avail_bits;
+    bit_buf = bitstream_buf;
+    bits = bitstream_bits;
 
     NEEDBITS (bit_buf, bits);
 
@@ -429,8 +521,8 @@ static void slice_get_intra_block_B15 (const picture_t * picture,
     }
     dest[63] ^= mismatch & 1;
     DUMPBITS (bit_buf, bits, 4);	// dump end of block code
-    bitstream_buffer = bit_buf;
-    bitstream_avail_bits = bits;
+    bitstream_buf = bit_buf;
+    bitstream_bits = bits;
 }
 
 static void slice_get_non_intra_block (const picture_t * picture,
@@ -450,8 +542,8 @@ static void slice_get_non_intra_block (const picture_t * picture,
     i = -1;
     mismatch = 1;
 
-    bit_buf = bitstream_buffer;
-    bits = bitstream_avail_bits;
+    bit_buf = bitstream_buf;
+    bits = bitstream_bits;
 
     NEEDBITS (bit_buf, bits);
     if (bit_buf >= 0x28000000) {
@@ -546,19 +638,57 @@ static void slice_get_non_intra_block (const picture_t * picture,
     }
     dest[63] ^= mismatch & 1;
     DUMPBITS (bit_buf, bits, 2);	// dump end of block code
-    bitstream_buffer = bit_buf;
-    bitstream_avail_bits = bits;
+    bitstream_buf = bit_buf;
+    bitstream_bits = bits;
+}
+
+static inline int get_macroblock_address_increment (void)
+{
+#define bit_buf bitstream_buf
+#define bits bitstream_bits
+
+    MBAtab * tab;
+    int mba;
+
+    mba = 0;
+
+    while (1) {
+	if (bit_buf >= 0x10000000) {
+	    tab = MBA_5 - 2 + UBITS (bit_buf, 5);
+	    DUMPBITS (bit_buf, bits, tab->len);
+	    return mba + tab->mba;
+	} else if (bit_buf >= 0x03000000) {
+	    tab = MBA_11 - 24 + UBITS (bit_buf, 11);
+	    DUMPBITS (bit_buf, bits, tab->len);
+	    return mba + tab->mba;
+	} else switch (UBITS (bit_buf, 11)) {
+	case 8:		// macroblock_escape
+	    mba += 33;
+	    // no break here on purpose
+	case 15:	// macroblock_stuffing (MPEG1 only)
+	    DUMPBITS (bit_buf, bits, 11);
+	    NEEDBITS (bit_buf, bits);
+	    break;
+	default:	// end of slice, or error
+	    return 0;
+	}
+    }
+
+#undef bit_buf
+#undef bits
 }
 
 static inline void slice_intra_DCT (picture_t * picture, slice_t * slice,
 				    int cc, uint8_t * dest, int stride)
 {
-    needbits ();
+#define bit_buf bitstream_buf
+#define bits bitstream_bits
+    NEEDBITS (bit_buf, bits);
     //Get the intra DC coefficient and inverse quantize it
     if (cc == 0)
-	slice->dc_dct_pred[0] += Get_Luma_DC_dct_diff ();
+	slice->dc_dct_pred[0] += get_luma_dc_dct_diff ();
     else
-	slice->dc_dct_pred[cc] += Get_Chroma_DC_dct_diff ();
+	slice->dc_dct_pred[cc] += get_chroma_dc_dct_diff ();
     DCTblock[0] = slice->dc_dct_pred[cc] << (3 - picture->intra_dc_precision);
 
     if (picture->intra_vlc_format)
@@ -566,7 +696,9 @@ static inline void slice_intra_DCT (picture_t * picture, slice_t * slice,
     else
 	slice_get_intra_block_B14 (picture, slice, DCTblock);
     idct_block_copy (DCTblock, dest, stride);
-    memset (DCTblock, 0, sizeof (int16_t) * 64);
+    memset (DCTblock, 0, sizeof (DCTblock));
+#undef bit_buf
+#undef bits
 }
 
 static inline void slice_non_intra_DCT (picture_t * picture, slice_t * slice,
@@ -574,97 +706,11 @@ static inline void slice_non_intra_DCT (picture_t * picture, slice_t * slice,
 {
     slice_get_non_intra_block (picture, slice, DCTblock);
     idct_block_add (DCTblock, dest, stride);
-    memset (DCTblock, 0, sizeof (int16_t) * 64);
+    memset (DCTblock, 0, sizeof (DCTblock));
 }
 
-typedef struct {
-    uint8_t delta;
-    uint8_t len;
-} MVtab;
-
-static inline int get_motion_delta (int f_code)
-{
-#define bit_buf bitstream_buffer
-#define bits bitstream_avail_bits
-
-    int delta;
-    int sign;
-    MVtab * tab;
-
-    static MVtab MV_6 [] = {
-				   { 3, 6}, { 2, 4}, { 2, 4}, { 2, 4}, { 2, 4},
-	{ 1, 3}, { 1, 3}, { 1, 3}, { 1, 3}, { 1, 3}, { 1, 3}, { 1, 3}, { 1, 3},
-	{ 0, 2}, { 0, 2}, { 0, 2}, { 0, 2}, { 0, 2}, { 0, 2}, { 0, 2}, { 0, 2},
-	{ 0, 2}, { 0, 2}, { 0, 2}, { 0, 2}, { 0, 2}, { 0, 2}, { 0, 2}, { 0, 2}
-    };
-
-    static MVtab MV_10 [] = {
-	{ 0,10}, { 0,10}, { 0,10}, { 0,10}, { 0,10}, { 0,10}, { 0,10}, { 0,10},
-	{ 0,10}, { 0,10}, { 0,10}, { 0,10}, {15,10}, {14,10}, {13,10}, {12,10},
-	{11,10}, {10,10}, { 9, 9}, { 9, 9}, { 8, 9}, { 8, 9}, { 7, 9}, { 7, 9},
-	{ 6, 7}, { 6, 7}, { 6, 7}, { 6, 7}, { 6, 7}, { 6, 7}, { 6, 7}, { 6, 7},
-	{ 5, 7}, { 5, 7}, { 5, 7}, { 5, 7}, { 5, 7}, { 5, 7}, { 5, 7}, { 5, 7},
-	{ 4, 7}, { 4, 7}, { 4, 7}, { 4, 7}, { 4, 7}, { 4, 7}, { 4, 7}, { 4, 7}
-    };
-
-    if (bit_buf & 0x80000000) {
-	DUMPBITS (bit_buf, bits, 1);
-	return 0;
-    } else if (bit_buf >= 0x0c000000) {
-
-	tab = MV_6 - 3 + UBITS (bit_buf, 6);
-	delta = (tab->delta << f_code) + 1;
-	bits += tab->len + f_code + 1;
-	bit_buf <<= tab->len;
-
-	sign = SBITS (bit_buf, 1);
-	bit_buf <<= 1;
-
-	if (f_code)
-	    delta += UBITS (bit_buf, f_code);
-	bit_buf <<= f_code;
-
-	return (delta ^ sign) - sign;
-
-    } else {
-
-	tab = MV_10 + UBITS (bit_buf, 10);
-	delta = (tab->delta << f_code) + 1;
-	bits += tab->len + 1;
-	bit_buf <<= tab->len;
-
-	sign = SBITS (bit_buf, 1);
-	bit_buf <<= 1;
-
-	if (f_code) {
-	    NEEDBITS (bit_buf, bits);
-	    delta += UBITS (bit_buf, f_code);
-	    DUMPBITS (bit_buf, bits, f_code);
-	}
-
-	return (delta ^ sign) - sign;
-
-    }
-#undef bit_buf
-#undef bits
-}
-
-static inline int bound_motion_vector (int vector, int f_code)
-{
-#if 1
-    int limit;
-
-    limit = 16 << f_code;
-
-    if (vector >= limit)
-	return vector - 2*limit;
-    else if (vector < -limit)
-	return vector + 2*limit;
-    else return vector;
-#else
-    return (vector << (27 - f_code)) >> (27 - f_code);
-#endif
-}
+#define bit_buf bitstream_buf
+#define bits bitstream_bits
 
 static void motion_frame (motion_t * motion, uint8_t * dest[3],
 			  int offset, int width,
@@ -672,12 +718,12 @@ static void motion_frame (motion_t * motion, uint8_t * dest[3],
 {
     int motion_x, motion_y;
 
-    needbits ();
+    NEEDBITS (bit_buf, bits);
     motion_x = motion->pmv[0][0] + get_motion_delta (motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[1][0] = motion->pmv[0][0] = motion_x;
 
-    needbits ();
+    NEEDBITS (bit_buf, bits);
     motion_y = motion->pmv[0][1] + get_motion_delta (motion->f_code[1]);
     motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
     motion->pmv[1][1] = motion->pmv[0][1] = motion_y;
@@ -693,14 +739,15 @@ static void motion_field (motion_t * motion, uint8_t * dest[3],
     int vertical_field_select;
     int motion_x, motion_y;
 
-    needbits ();
-    vertical_field_select = bitstream_get (1);
+    NEEDBITS (bit_buf, bits);
+    vertical_field_select = UBITS (bit_buf, 1);
+    DUMPBITS (bit_buf, bits, 1);
 
     motion_x = motion->pmv[0][0] + get_motion_delta (motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[0][0] = motion_x;
 
-    needbits ();
+    NEEDBITS (bit_buf, bits);
     motion_y = (motion->pmv[0][1] >> 1) + get_motion_delta (motion->f_code[1]);
     //motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
     motion->pmv[0][1] = motion_y << 1;
@@ -709,14 +756,15 @@ static void motion_field (motion_t * motion, uint8_t * dest[3],
 		  motion->ref_frame, offset + vertical_field_select * width,
 		  width * 2, 8);
 
-    needbits ();
-    vertical_field_select = bitstream_get (1);
+    NEEDBITS (bit_buf, bits);
+    vertical_field_select = UBITS (bit_buf, 1);
+    DUMPBITS (bit_buf, bits, 1);
 
     motion_x = motion->pmv[1][0] + get_motion_delta (motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[1][0] = motion_x;
 
-    needbits ();
+    NEEDBITS (bit_buf, bits);
     motion_y = (motion->pmv[1][1] >> 1) + get_motion_delta (motion->f_code[1]);
     //motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
     motion->pmv[1][1] = motion_y << 1;
@@ -749,18 +797,21 @@ static void motion_conceal (motion_t * motion)
 {
     int tmp;
 
-    needbits ();
+    NEEDBITS (bit_buf, bits);
     tmp = motion->pmv[0][0] + get_motion_delta (motion->f_code[0]);
     tmp = bound_motion_vector (tmp, motion->f_code[0]);
     motion->pmv[1][0] = motion->pmv[0][0] = tmp;
 
-    needbits ();
+    NEEDBITS (bit_buf, bits);
     tmp = motion->pmv[0][1] + get_motion_delta (motion->f_code[1]);
     tmp = bound_motion_vector (tmp, motion->f_code[1]);
     motion->pmv[1][1] = motion->pmv[0][1] = tmp;
 
-    bitstream_flush (1); // remove marker_bit
+    DUMPBITS (bit_buf, bits, 1); // remove marker_bit
 }
+
+#undef bit_buf
+#undef bits
 
 #define MOTION(routine,direction,slice,dest,offset,stride)	\
 do {								\
@@ -773,140 +824,11 @@ do {								\
 		  mc_functions.avg : mc_functions.put));	\
 } while (0)
 
-typedef struct {
-    uint8_t modes;
-    uint8_t len;
-} MBtab;
-
-static inline int get_macroblock_modes (int picture_coding_type,
-					int frame_pred_frame_dct)
-{
-#define bit_buf bitstream_buffer
-#define bits bitstream_avail_bits
-    int macroblock_modes;
-    MBtab * tab;
-
-#define INTRA MACROBLOCK_INTRA
-#define QUANT MACROBLOCK_QUANT
-
-    static MBtab MB_I [] = {
-	{INTRA|QUANT, 2}, {INTRA, 1}
-    };
-
-#define MC MACROBLOCK_MOTION_FORWARD
-#define CODED MACROBLOCK_PATTERN
-#define INTRA MACROBLOCK_INTRA
-#define QUANT MACROBLOCK_QUANT
-
-    static MBtab MB_P [] = {
-	{INTRA|QUANT, 6}, {CODED|QUANT, 5}, {MC|CODED|QUANT, 5}, {INTRA,    5},
-	{MC,          3}, {MC,          3}, {MC,             3}, {MC,       3},
-	{CODED,       2}, {CODED,       2}, {CODED,          2}, {CODED,    2},
-	{CODED,       2}, {CODED,       2}, {CODED,          2}, {CODED,    2},
-	{MC|CODED,    1}, {MC|CODED,    1}, {MC|CODED,       1}, {MC|CODED, 1},
-	{MC|CODED,    1}, {MC|CODED,    1}, {MC|CODED,       1}, {MC|CODED, 1},
-	{MC|CODED,    1}, {MC|CODED,    1}, {MC|CODED,       1}, {MC|CODED, 1},
-	{MC|CODED,    1}, {MC|CODED,    1}, {MC|CODED,       1}, {MC|CODED, 1}
-    };
-
-#define FWD MACROBLOCK_MOTION_FORWARD
-#define BWD MACROBLOCK_MOTION_BACKWARD
-#define INTER MACROBLOCK_MOTION_FORWARD|MACROBLOCK_MOTION_BACKWARD
-#define CODED MACROBLOCK_PATTERN
-#define INTRA MACROBLOCK_INTRA
-#define QUANT MACROBLOCK_QUANT
-
-    static MBtab MB_B [] = {
-	{0,                 0},	{INTRA|QUANT,       6},
-	{BWD|CODED|QUANT,   6}, {FWD|CODED|QUANT,   6},
-	{INTER|CODED|QUANT, 5}, {INTER|CODED|QUANT, 5},
-					    {INTRA,       5}, {INTRA,       5},
-	{FWD,         4}, {FWD,         4}, {FWD,         4}, {FWD,         4},
-	{FWD|CODED,   4}, {FWD|CODED,   4}, {FWD|CODED,   4}, {FWD|CODED,   4},
-	{BWD,         3}, {BWD,         3}, {BWD,         3}, {BWD,         3},
-	{BWD,         3}, {BWD,         3}, {BWD,         3}, {BWD,         3},
-	{BWD|CODED,   3}, {BWD|CODED,   3}, {BWD|CODED,   3}, {BWD|CODED,   3},
-	{BWD|CODED,   3}, {BWD|CODED,   3}, {BWD|CODED,   3}, {BWD|CODED,   3},
-	{INTER,       2}, {INTER,       2}, {INTER,       2}, {INTER,       2},
-	{INTER,       2}, {INTER,       2}, {INTER,       2}, {INTER,       2},
-	{INTER,       2}, {INTER,       2}, {INTER,       2}, {INTER,       2},
-	{INTER,       2}, {INTER,       2}, {INTER,       2}, {INTER,       2},
-	{INTER|CODED, 2}, {INTER|CODED, 2}, {INTER|CODED, 2}, {INTER|CODED, 2},
-	{INTER|CODED, 2}, {INTER|CODED, 2}, {INTER|CODED, 2}, {INTER|CODED, 2},
-	{INTER|CODED, 2}, {INTER|CODED, 2}, {INTER|CODED, 2}, {INTER|CODED, 2},
-	{INTER|CODED, 2}, {INTER|CODED, 2}, {INTER|CODED, 2}, {INTER|CODED, 2}
-    };
-
-    switch (picture_coding_type) {
-    case I_TYPE:
-
-	tab = MB_I + UBITS (bit_buf, 1);
-	DUMPBITS (bit_buf, bits, tab->len);
-	macroblock_modes = tab->modes;
-
-	if (! frame_pred_frame_dct) {
-	    macroblock_modes |= UBITS (bit_buf, 1) * DCT_TYPE_INTERLACED;
-	    DUMPBITS (bit_buf, bits, 1);
-	}
-
-	return macroblock_modes;
-
-    case P_TYPE:
-
-	tab = MB_P + UBITS (bit_buf, 5);
-	DUMPBITS (bit_buf, bits, tab->len);
-	macroblock_modes = tab->modes;
-
-	if (frame_pred_frame_dct) {
-	    if (macroblock_modes & MACROBLOCK_MOTION_FORWARD)
-		macroblock_modes |= MC_FRAME;
-	    return macroblock_modes;
-	} else {
-	    if (macroblock_modes & MACROBLOCK_MOTION_FORWARD) {
-		macroblock_modes |= UBITS (bit_buf, 2) * MOTION_TYPE_BASE;
-		DUMPBITS (bit_buf, bits, 2);
-	    }
-	    if (macroblock_modes & (MACROBLOCK_INTRA | MACROBLOCK_PATTERN)) {
-		macroblock_modes |= UBITS (bit_buf, 1) * DCT_TYPE_INTERLACED;
-		DUMPBITS (bit_buf, bits, 1);
-	    }
-	    return macroblock_modes;
-	}
-
-    case B_TYPE:
-
-	tab = MB_B + UBITS (bit_buf, 6);
-	DUMPBITS (bit_buf, bits, tab->len);
-	macroblock_modes = tab->modes;
-
-	if (frame_pred_frame_dct) {
-	    //if (! (macroblock_modes & MACROBLOCK_INTRA))
-	    macroblock_modes |= MC_FRAME;
-	    return macroblock_modes;
-	} else {
-	    if (macroblock_modes & MACROBLOCK_INTRA)
-		goto intra;
-	    macroblock_modes |= UBITS (bit_buf, 2) * MOTION_TYPE_BASE;
-	    DUMPBITS (bit_buf, bits, 2);
-	    if (macroblock_modes & (MACROBLOCK_INTRA | MACROBLOCK_PATTERN)) {
-	    intra:
-		macroblock_modes |= UBITS (bit_buf, 1) * DCT_TYPE_INTERLACED;
-		DUMPBITS (bit_buf, bits, 1);
-	    }
-	    return macroblock_modes;
-	}
-
-    default:
-	return 0;
-    }
-#undef bit_buf
-#undef bits
-}
-
 int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 {
+#define bit_buf bitstream_buf
+#define bits bitstream_bits
     int mba; 
-    int mba_inc;
     int macroblock_modes;
     int width;
     uint8_t * dest[3];
@@ -947,17 +869,25 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     slice.quantizer_scale = get_quantizer_scale (picture->q_scale_type);
 
     //Ignore intra_slice and all the extra data
-    while (bitstream_get (1)) {
-	bitstream_flush (8);
-	needbits ();
+    while (bit_buf & 0x80000000) {
+	DUMPBITS (bit_buf, bits, 9);
+	NEEDBITS (bit_buf, bits);
     }
 
-    mba_inc = Get_macroblock_address_increment () - 1;
-    mba += mba_inc;
-    offset = mba_inc << 4;
+    if (bit_buf & 0x40000000) {
+	DUMPBITS (bit_buf, bits, 2);
+	offset = 0;
+    } else {
+	int mba_inc;
+
+	DUMPBITS (bit_buf, bits, 1);
+	mba_inc = get_macroblock_address_increment ();
+	mba += mba_inc;
+	offset = mba_inc << 4;
+    }
 
     while (1) {
-	needbits ();
+	NEEDBITS (bit_buf, bits);
 
 	macroblock_modes =
 	    get_macroblock_modes (picture->picture_coding_type,
@@ -1041,8 +971,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 		    DCT_stride = width;
 		}
 
-		needbits ();
-		coded_block_pattern = Get_coded_block_pattern ();
+		coded_block_pattern = get_coded_block_pattern ();
 
 		// Decode lum blocks
 
@@ -1078,13 +1007,17 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	mba++;
 	offset += 16;
 
-	needbits ();
-	if (! (bitstream_show () & 0xffe00000))
-	    break;
+	NEEDBITS (bit_buf, bits);
 
-	mba_inc = Get_macroblock_address_increment () - 1;
+	if (bit_buf & 0x80000000) {
+	    DUMPBITS (bit_buf, bits, 1);
+	} else {
+	    int mba_inc;
 
-	if (mba_inc) {
+	    mba_inc = get_macroblock_address_increment ();
+	    if (!mba_inc)
+		break;
+
 	    //reset intra dc predictor on skipped block
 	    slice.dc_dct_pred[0]=slice.dc_dct_pred[1]=slice.dc_dct_pred[2]=
 		1<< (picture->intra_dc_precision + 7);
@@ -1115,4 +1048,6 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     }
 
     return (mba >= picture->last_mba);
+#undef bit_buf
+#undef bits
 }
