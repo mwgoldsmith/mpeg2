@@ -170,6 +170,7 @@ parse_sequence_header(picture_t *picture)
 	//XXX this needs field fixups
 	picture->coded_picture_height = ((picture->vertical_size + 15)/16) * 16;
 	picture->coded_picture_width  = ((picture->horizontal_size   + 15)/16) * 16;
+	picture->last_mba = ((picture->coded_picture_height * picture->coded_picture_width) >> 8) - 1;
 
   picture->aspect_ratio_information    = bitstream_get(4);
   picture->frame_rate_code             = bitstream_get(4);

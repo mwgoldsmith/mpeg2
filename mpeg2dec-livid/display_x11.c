@@ -357,7 +357,8 @@ void display_init(uint_32 width, uint_32 height)
 #endif
    
 	 //XXX why the heck was this here?
-   //bpp = myximage->bits_per_pixel;
+	 //revert this for now -ah 5/1/00
+   bpp = myximage->bits_per_pixel;
 
    // If we have blue in the lowest bit then obviously RGB 
    mode = ((myximage->blue_mask & 0x01) != 0) ? MODE_RGB : MODE_BGR;
@@ -366,55 +367,47 @@ void display_init(uint_32 width, uint_32 height)
 #else
    if (myximage->byte_order != LSBFirst) 
 #endif
-     {
-       fprintf( stderr, "No support fon non-native XImage byte order!\n" );
-       exit(1);
-     }
+	 {
+		 fprintf( stderr, "No support fon non-native XImage byte order!\n" );
+		 exit(1);
+	 }
    yuv2rgb_init(bpp, mode);
    
    X_already_started++;
 }
 
-void Terminate_Display_Process() {
+void Terminate_Display_Process() 
+{
    getchar();	/* wait for enter to remove window */
 #ifdef SH_MEM
-    if (Shmem_Flag) {
-	XShmDetach(mydisplay, &Shminfo1);
-	XDestroyImage(myximage);
-	shmdt(Shminfo1.shmaddr);
-    }
+	if (Shmem_Flag) 
+	{
+		XShmDetach(mydisplay, &Shminfo1);
+		XDestroyImage(myximage);
+		shmdt(Shminfo1.shmaddr);
+	}
 #endif
     XDestroyWindow(mydisplay, mywindow);
     XCloseDisplay(mydisplay);
     X_already_started = 0;
 }
 
-static void Display_Image(myximage, ImageData)
-XImage *myximage;
-unsigned char *ImageData;
+static void Display_Image(XImage *myximage, uint_8 *ImageData)
 {
 #ifdef SH_MEM
-    if (Shmem_Flag) {
+	if (Shmem_Flag) 
+	{
 	XShmPutImage(mydisplay, mywindow, mygc, myximage,
-		0, 0, 0, 0, myximage->width, myximage->height, True);
+	0, 0, 0, 0, myximage->width, myximage->height, True);
 	XFlush(mydisplay);
 
-#if 0
-	//I don't know why this code is here, but it craashes
-	//when I don't compile with -pg. Very odd.
-	while (1) {
-	    XEvent xev;
-
-	    XNextEvent(mydisplay, &xev);
-	    if (xev.type == CompletionType)
-		break;
+	} 
+	else
+#endif
+	{
+		XPutImage(mydisplay, mywindow, mygc, myximage, 0, 0, 0, 0, 
+			myximage->width, myximage->height);
 	}
-#endif
-    } else
-
-#endif
-	XPutImage(mydisplay, mywindow, mygc, myximage, 0, 0,
-		0, 0, myximage->width, myximage->height);
 }
 
 void display_frame(uint_8 *src[])

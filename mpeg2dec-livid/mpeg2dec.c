@@ -90,26 +90,15 @@ static void signal_handler(int sig)
 	signal(sig, SIG_DFL);
 	raise(sig);
 }
-void fill_buffer(uint_8 **start,uint_8 **end)
+
+static mpeg2_display_t my_display = 
 {
-	uint_32 bytes_read;
-
-	bytes_read = fread(buf,1,2048,in_file);
-
-	*start = buf;
-	*end   = buf + bytes_read;
-
-	if(bytes_read < 2048)
-	{
-		print_fps(1);
-		exit(0);
-	}
-}
+	display_init,
+	display_frame
+};
 
 int main(int argc,char *argv[])
 {
-	mpeg2_frame_t *my_frame = NULL;
-
 	if(argc < 2)
 	{
 		fprintf(stderr,"usage: %s video_stream\n",argv[0]);
@@ -132,29 +121,29 @@ int main(int argc,char *argv[])
 	else
 		in_file = stdin;
 
-
-	//FIXME this should go in mpeg2_init
-	bitstream_init(fill_buffer);
-
-	mpeg2_init();
-
 	signal(SIGINT, signal_handler);
+
+	mpeg2_init(&my_display);
 
 	gettimeofday(&tv_beg, NULL);
 
-	while (my_frame == NULL)    // better safe than sorry.
-		my_frame = mpeg2_decode_frame();
-
-	display_init(my_frame->width,my_frame->height);
-
 	while(1)
 	{
-		if(my_frame != NULL) 
-		{
-			display_frame(my_frame->frame);
+		uint_32 bytes_read;
+		uint_32 num_frames;
+		
+		bytes_read = fread(buf,1,2048,in_file);
+		
+		num_frames = mpeg2_decode_data(buf, buf + bytes_read);
+
+		while(num_frames--)
 			print_fps(0);
+
+		if(bytes_read < 2048)
+		{
+			print_fps(1);
+			exit(0);
 		}
-		my_frame = mpeg2_decode_frame();
 	}
   return 0;
 }

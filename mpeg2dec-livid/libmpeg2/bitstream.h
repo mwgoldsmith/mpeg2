@@ -51,7 +51,7 @@ extern uint_32 bits_left;
 extern uint_32 current_word;
 extern uint_32 next_word;
 
-void bitstream_init(void(*fill_function)(uint_8**,uint_8**));
+void bitstream_init(uint_8 *start);
 void bitstream_byte_align(void);
 inline uint_32 bitstream_show_bh(uint_32 num_bits);
 inline uint_32 bitstream_get_bh(uint_32 num_bits);
