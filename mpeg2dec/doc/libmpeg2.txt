@@ -31,7 +31,7 @@ Basic Usage Pseudocode
         while (data_available) {
                 state=mpeg2_parse(handle);
                 switch (state) {
-                case -1:
+                case STATE_BUFFER:
                         read some data
                         mpeg2_buffer(handle,data_start,data_end);
                         break;
@@ -53,9 +53,10 @@ Basic Usage Explained
 libmpeg2 uses an opaque pointer which is the active "handle" to the mpeg2
 decoder.  To get this handle (of type "mpeg2dec_t"), call "mpeg2_init()".
 
-Data is loaded into the decoder with "mpeg2_buffer" whenever "mpeg2_parse"
-is ready for more data (return state is -1).  Pictures are available whenever
-"mpeg2_parse"'s return state is STATE_SLICE or STATE_END.
+Data is loaded into the decoder with "mpeg2_buffer" whenever
+"mpeg2_parse" is ready for more data (return state is STATE_BUFFER).
+Pictures are available whenever "mpeg2_parse"'s return state is
+STATE_SLICE or STATE_END.
 
         This means the *previous* picture is available, right?  In other
         words, when STATE_SLICE is seen, that means that the *previous*
@@ -137,7 +138,7 @@ const mpeg2_info_t * mpeg2_info(mpeg2dec_t * handle)
 int mpeg2_parse(mpeg2dec_t * handle)
         Parses available data and returns state of the decoder:
 
-        -1:
+        STATE_BUFFER:
                 ready for more data.  decoder has finished reading
                 the buffer sent with mpeg2_buffer.
 
@@ -171,10 +172,10 @@ int mpeg2_parse(mpeg2dec_t * handle)
 void mpeg2_buffer(mpeg2dec_t * handle, uint8_t * start, uint8_t * end)
         Makes data between "start" and "end" available for processing.
         If a subsequent call to "mpeg2_parse" doesn't find anything useful
-        (returns -1) then this data will be copied into the mpeg2 decoder's
-        private data area.  This process repeats until something useful is
-        found with mpeg2_parse (returns something other than -1), or the
-        buffer fills up.
+        (returns STATE_BUFFER) then this data will be copied into the mpeg2
+        decoder's private data area.  This process repeats until something
+        useful is found with mpeg2_parse (returns something other than
+        STATE_BUFFER), or the buffer fills up.
 
 
 void mpeg2_close(mpeg2dec_t * handle)
