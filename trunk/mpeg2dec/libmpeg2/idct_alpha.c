@@ -44,12 +44,6 @@
 static uint8_t clip_lut[1024];
 #define CLIP(i) ((clip_lut+384)[(i)])
 
-#ifdef __alpha_ev6__
-#define SKIP_ZERO_TEST 1
-#else
-#define SKIP_ZERO_TEST 0
-#endif
-
 /* 0: all entries 0, 1: only first entry nonzero, 2: otherwise	*/
 static inline int idct_row(int16_t *row)
 {
@@ -61,7 +55,11 @@ static inline int idct_row(int16_t *row)
     if (l == 0 && r == 0)
 	return 0;
 
-    a0 = W4 * sextw(l) + (1 << (ROW_SHIFT - 1));
+    a0 = 1 << (ROW_SHIFT - 1);
+
+    t = sextw(l);
+    if (t)
+	a0 += W4 * t;
 
     if (((l & ~0xffffUL) | r) == 0) {
 	a0 >>= ROW_SHIFT;
@@ -79,7 +77,7 @@ static inline int idct_row(int16_t *row)
     a3 = a0;
 
     t = extwl(l, 4);		/* row[2] */
-    if (SKIP_ZERO_TEST || t != 0) {
+    if (t) {
 	t = sextw(t);
 	a0 += W2 * t;
 	a1 += W6 * t;
@@ -88,7 +86,7 @@ static inline int idct_row(int16_t *row)
     }
 
     t = extwl(r, 0);		/* row[4] */
-    if (SKIP_ZERO_TEST || t != 0) {
+    if (t) {
 	t = sextw(t);
 	a0 += W4 * t;
 	a1 -= W4 * t;
@@ -97,7 +95,7 @@ static inline int idct_row(int16_t *row)
     }
 
     t = extwl(r, 4);		/* row[6] */
-    if (SKIP_ZERO_TEST || t != 0) {
+    if (t) {
 	t = sextw(t);
 	a0 += W6 * t;
 	a1 -= W2 * t;
@@ -106,7 +104,7 @@ static inline int idct_row(int16_t *row)
     }
 
     t = extwl(l, 2);		/* row[1] */
-    if (SKIP_ZERO_TEST || t != 0) {
+    if (t) {
 	t = sextw(t);
 	b0 = W1 * t;
 	b1 = W3 * t;
@@ -120,7 +118,7 @@ static inline int idct_row(int16_t *row)
     }
 
     t = extwl(l, 6);		/* row[3] */
-    if (SKIP_ZERO_TEST || t != 0) {
+    if (t) {
 	t = sextw(t);
 	b0 += W3 * t;
 	b1 -= W7 * t;
@@ -130,7 +128,7 @@ static inline int idct_row(int16_t *row)
 
     
     t = extwl(r, 2);		/* row[5] */
-    if (SKIP_ZERO_TEST || t != 0) {
+    if (t) {
 	t = sextw(t);
 	b0 += W5 * t;
 	b1 -= W1 * t;
@@ -139,7 +137,7 @@ static inline int idct_row(int16_t *row)
     }
 
     t = extwl(r, 6);		/* row[7] */
-    if (SKIP_ZERO_TEST || t != 0) {
+    if (t) {
 	t = sextw(t);
 	b0 += W7 * t;
 	b1 -= W5 * t;
@@ -163,35 +161,30 @@ static inline void idct_col(int16_t *col)
 {
     int_fast32_t a0, a1, a2, a3, b0, b1, b2, b3;
 
-    col[0] += (1 << (COL_SHIFT - 1)) / W4;
+    a0 = a1 = a2 = a3 = W4 * col[8 * 0] + (1 << (COL_SHIFT - 1));
 
-    a0 = W4 * col[8 * 0];
-    a1 = W4 * col[8 * 0];
-    a2 = W4 * col[8 * 0];
-    a3 = W4 * col[8 * 0];
-
-    if (SKIP_ZERO_TEST || col[8 * 2]) {
+    if (col[8 * 2]) {
 	a0 += W2 * col[8 * 2];
 	a1 += W6 * col[8 * 2];
 	a2 -= W6 * col[8 * 2];
 	a3 -= W2 * col[8 * 2];
     }
 
-    if (SKIP_ZERO_TEST || col[8 * 4]) {
+    if (col[8 * 4]) {
 	a0 += W4 * col[8 * 4];
 	a1 -= W4 * col[8 * 4];
 	a2 -= W4 * col[8 * 4];
 	a3 += W4 * col[8 * 4];
     }
 
-    if (SKIP_ZERO_TEST || col[8 * 6]) {
+    if (col[8 * 6]) {
 	a0 += W6 * col[8 * 6];
 	a1 -= W2 * col[8 * 6];
 	a2 += W2 * col[8 * 6];
 	a3 -= W6 * col[8 * 6];
     }
 
-    if (SKIP_ZERO_TEST || col[8 * 1]) {
+    if (col[8 * 1]) {
 	b0 = W1 * col[8 * 1];
 	b1 = W3 * col[8 * 1];
 	b2 = W5 * col[8 * 1];
@@ -203,21 +196,21 @@ static inline void idct_col(int16_t *col)
 	b3 = 0;
     }
 
-    if (SKIP_ZERO_TEST || col[8 * 3]) {
+    if (col[8 * 3]) {
 	b0 += W3 * col[8 * 3];
 	b1 -= W7 * col[8 * 3];
 	b2 -= W1 * col[8 * 3];
 	b3 -= W5 * col[8 * 3];
     }
 
-    if (SKIP_ZERO_TEST || col[8 * 5]) {
+    if (col[8 * 5]) {
 	b0 += W5 * col[8 * 5];
 	b1 -= W1 * col[8 * 5];
 	b2 += W7 * col[8 * 5];
 	b3 += W3 * col[8 * 5];
     }
 
-    if (SKIP_ZERO_TEST || col[8 * 7]) {
+    if (col[8 * 7]) {
 	b0 += W7 * col[8 * 7];
 	b1 -= W5 * col[8 * 7];
 	b2 += W3 * col[8 * 7];
@@ -249,7 +242,6 @@ void mpeg2_idct_copy_alpha (int16_t *restrict block, uint8_t *restrict dest,
 	int i = 8;
 	uint64_t clampmask = zap(-1, 0xaa); /* 0x00ff00ff00ff00ff */
 
-	ASM_ACCEPT_MVI;
 	do {
 	    uint64_t shorts0, shorts1;
 
@@ -307,7 +299,6 @@ void mpeg2_idct_add_alpha (const int last, int16_t *restrict block,
 	    uint64_t signmask  = zap(-1, 0x33);
 	    signmask ^= signmask >> 1;	/* 0x8000800080008000 */
 
-	    ASM_ACCEPT_MVI;
 	    do {
 		uint64_t shorts0, pix0, signs0;
 		uint64_t shorts1, pix1, signs1;
