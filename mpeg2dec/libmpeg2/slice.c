@@ -1505,7 +1505,7 @@ do {									\
     }									\
 } while (0)
 
-void slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
+void slice_process (picture_t * picture, int code, uint8_t * buffer)
 {
 #define bit_buf (picture->bitstream_buf)
 #define bits (picture->bitstream_bits)

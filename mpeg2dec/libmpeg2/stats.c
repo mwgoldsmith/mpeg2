@@ -152,7 +152,7 @@ static void stats_group (uint8_t * buffer)
 	     (buffer[4] & 0x20) ? " broken_link" : "");
 }
 
-static void stats_slice (uint8_t code, uint8_t * buffer)
+static void stats_slice (int code, uint8_t * buffer)
 {
     /* fprintf (stderr, " (slice %d)\n", code); */
 }
@@ -257,7 +257,7 @@ static void stats_picture_coding_extension (uint8_t * buffer)
 	     alternate_scan, repeat_first_field, progressive_frame);
 }
 
-void stats_header (uint8_t code, uint8_t * buffer)
+void stats_header (int code, uint8_t * buffer)
 {
     if (! (debug_is_on ()))
 	return;
