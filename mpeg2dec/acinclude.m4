@@ -17,6 +17,30 @@ AC_DEFUN([AC_C_RESTRICT],
 	*)	AC_DEFINE_UNQUOTED([restrict],$ac_cv_c_restrict) ;;
     esac])
 
+dnl AC_C_BUILTIN_EXPECT
+dnl Check whether compiler understands __builtin_expect.
+AC_DEFUN([AC_C_BUILTIN_EXPECT],
+    [AC_CACHE_CHECK([for __builtin_expect],[ac_cv_builtin_expect],
+	[cat > conftest.c <<EOF
+#line __oline__ "configure"
+int foo (int a)
+{
+    a = __builtin_expect (a, 10);
+    return a == 10 ? 0 : 1;
+}
+EOF
+	if AC_TRY_COMMAND([${CC-cc} $CFLAGS -nostdlib -nostartfiles
+            -o conftest conftest.c -lgcc >&AC_FD_CC]); then
+	    ac_cv_builtin_expect=yes
+	else
+	    ac_cv_builtin_expect=no
+	fi
+	rm -f conftest*])
+    if test x"$ac_cv_builtin_expect" = x"yes"; then
+	AC_DEFINE(HAVE_BUILTIN_EXPECT,[1],
+	    [Define to 1 if you have the `__builtin_expect' function.])
+    fi])
+
 dnl AC_C_ALWAYS_INLINE
 dnl Define inline to something appropriate, including the new always_inline
 dnl attribute from gcc 3.1

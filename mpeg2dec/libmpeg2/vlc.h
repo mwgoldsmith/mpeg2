@@ -38,7 +38,7 @@ static inline void bitstream_init (decoder_t * decoder, const uint8_t * start)
 /* make sure that there are at least 16 valid bits in bit_buf */
 #define NEEDBITS(bit_buf,bits,bit_ptr)		\
 do {						\
-    if (bits > 0) {				\
+    if (unlikely (bits > 0)) {			\
 	GETWORD (bit_buf, bits, bit_ptr);	\
 	bits -= 16;				\
     }						\
