@@ -52,3 +52,4 @@ typedef struct mpeg2_config_s {
 void mpeg2_init (void);
 int mpeg2_decode_data (vo_functions_t *, uint8_t * data_start, uint8_t * data_end);
 void mpeg2_close (vo_functions_t *);
+void mpeg2_drop (int flag);
