@@ -1,12 +1,18 @@
-#FIXME should remove
+
+libdir = $(PLUGIN_DIR)
+
+EXTRA_DIST = configure.incl vlc.h mpeg2_internal.h mpeg2.h
 INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/libvo
 
 CFLAGS = @CFLAGS@ @LIBMPEG2_CFLAGS@
 
-noinst_LTLIBRARIES = libmpeg2.la
+lib_LTLIBRARIES 	=	libmpeg2.la
+
+
 libmpeg2_la_SOURCES = decode.c header.c stats.c slice.c \
 		      motion_comp.c motion_comp_mlib.c motion_comp_mmx.c \
-		      idct.c idct_mlib.c idct_mmx.c
+		      idct.c idct_mlib.c idct_mmx.c dec_mpeg2.c
+
 # the source ordering seems to impact the speed.
 # On my setup the following ordering is about 2% faster.
 # I'll have to investigate...
@@ -14,5 +20,4 @@ libmpeg2_la_SOURCES = decode.c header.c stats.c slice.c \
 # decode.c idct_mmx.c motion_comp_mmx.c
 libmpeg2_la_LIBADD = @LIBMPEG2_LIBS@
 
-#EXTRA_DIST = configure.incl vlc.h mpeg2_internal.h
-EXTRA_DIST = configure.incl vlc.h mpeg2_internal.h mpeg2.h
+
