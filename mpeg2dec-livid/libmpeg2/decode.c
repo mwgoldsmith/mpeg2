@@ -77,6 +77,13 @@ static int in_slice = 0;
 void mpeg2_init (void)
 {
     config.flags = mm_accel () | MM_ACCEL_MLIB;
+	/*try this if you have problems: replace mm_accel () with one of
+	MM_ACCEL_MLIB
+	MM_ACCEL_X86_MMX
+	MM_ACCEL_X86_3DNOW
+	MM_ACCEL_X86_MMXEXT
+	this is only temporary...
+	*/
 
     //intialize the decoder state 
     shift = 0;
@@ -96,7 +103,7 @@ static void decode_allocate_image_buffers (INITTYPE * output,
     frame_size = picture->coded_picture_width * picture->coded_picture_height;
 
     // allocate images in YV12 format
-    tmp = output->allocate_image_buffer2 (picture->coded_picture_width, 
+    tmp = output->allocate_image_buffer (picture->coded_picture_width, 
 					  picture->coded_picture_height, 
 					  0x32315659 USERDATA );
 
@@ -104,14 +111,14 @@ static void decode_allocate_image_buffers (INITTYPE * output,
     picture->throwaway_frame[1] = tmp->base + frame_size * 5 / 4;
     picture->throwaway_frame[2] = tmp->base + frame_size;
 
-    tmp = output->allocate_image_buffer2 (picture->coded_picture_width, 
+    tmp = output->allocate_image_buffer (picture->coded_picture_width, 
 					  picture->coded_picture_height, 
 					  0x32315659 USERDATA );
     picture->backward_reference_frame[0] = tmp->base;
     picture->backward_reference_frame[1] = tmp->base + frame_size * 5 / 4;
     picture->backward_reference_frame[2] = tmp->base + frame_size;
     
-    tmp = output->allocate_image_buffer2 (picture->coded_picture_width, 
+    tmp = output->allocate_image_buffer (picture->coded_picture_width, 
 					  picture->coded_picture_height, 
 					  0x32315659 USERDATA );
     picture->forward_reference_frame[0] = tmp->base;
