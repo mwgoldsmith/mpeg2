@@ -9,6 +9,9 @@
 /* maximum supported data alignment */
 /* #undef ATTRIBUTE_ALIGNED_MAX */
 
+/* Define to 1 if you have the `__builtin_expect' function. */
+/* #undef HAVE_BUILTIN_EXPECT */
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 /* #undef HAVE_DLFCN_H */
 
