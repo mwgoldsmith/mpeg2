@@ -1471,12 +1471,6 @@ do {									\
 #define CHECK_DISPLAY							\
 do {									\
     if (offset == picture->coded_picture_width) {			\
-	picture->f_motion.ref[0][0] += 16 * stride;			\
-	picture->f_motion.ref[0][1] += 4 * stride;			\
-	picture->f_motion.ref[0][2] += 4 * stride;			\
-	picture->b_motion.ref[0][0] += 16 * stride;			\
-	picture->b_motion.ref[0][1] += 4 * stride;			\
-	picture->b_motion.ref[0][2] += 4 * stride;			\
 	do { /* just so we can use the break statement */		\
 	    if (picture->current_frame->copy) {				\
 		picture->current_frame->copy (picture->current_frame,	\
@@ -1488,6 +1482,17 @@ do {									\
 	    dest[1] += 4 * stride;					\
 	    dest[2] += 4 * stride;					\
 	} while (0);							\
+	if (! (picture->mpeg1))						\
+	    return 0;							\
+	vertical_offset += 16;						\
+	if (vertical_offset >= picture->coded_picture_height)		\
+	    return 0;							\
+	picture->f_motion.ref[0][0] += 16 * stride;			\
+	picture->f_motion.ref[0][1] += 4 * stride;			\
+	picture->f_motion.ref[0][2] += 4 * stride;			\
+	picture->b_motion.ref[0][0] += 16 * stride;			\
+	picture->b_motion.ref[0][1] += 4 * stride;			\
+	picture->b_motion.ref[0][2] += 4 * stride;			\
 	offset = 0;							\
     }									\
 } while (0)
@@ -1502,9 +1507,11 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     uint8_t * dest[3];
     int offset;
     uint8_t ** forward_ref[2];
+    int vertical_offset;
 
     stride = picture->coded_picture_width;
     offset = (code - 1) * stride * 4;
+    vertical_offset = (code - 1) * 16;
 
     forward_ref[0] = picture->forward_reference_frame->base;
     if (picture->picture_structure != FRAME_PICTURE) {
