@@ -210,6 +210,8 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 	if (code >= 0xb0)
 	    break;
 
+	drop_frame |= drop_flag && (picture.picture_coding_type == B_TYPE);
+	
 	if (!drop_frame) {
 	    uint8_t ** bar;
 
