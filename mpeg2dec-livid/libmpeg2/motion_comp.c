@@ -39,6 +39,10 @@
 #include "motion_comp_mmx.h"
 //#include "motion_comp_mlib.h"
 
+void (*motion_comp_idct_copy) (uint_8 * dst, sint_16 * block, uint_32 stride);
+void (*motion_comp_idct_add) (uint_8 * dst, sint_16 * block, uint_32 stride);
+
+#if 1
 static void (* put_table [8]) (uint_8 *, uint_8 *, sint_32, sint_32) = 
 {
 	motion_comp_put_16x16_mmx,   motion_comp_put_x_16x16_mmx,
@@ -56,10 +60,7 @@ static void (* ave_table [8]) (uint_8 *, uint_8 *, sint_32, sint_32) =
 };
 
 
-void (*motion_comp_idct_copy) (uint_8 * dst, sint_16 * block, uint_32 stride);
-void (*motion_comp_idct_add) (uint_8 * dst, sint_16 * block, uint_32 stride);
-
-#if 0
+#else 
 static void (* put_table [8]) (uint_8 *, uint_8 *, sint_32, sint_32) = 
 {
 	motion_comp_put_16x16,   motion_comp_put_x_16x16,
