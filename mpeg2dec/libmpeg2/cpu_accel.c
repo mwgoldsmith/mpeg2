@@ -136,8 +136,13 @@ static inline uint32_t arch_accel (void)
 
     canjump = 1;
 
+#ifdef HAVE_ALTIVEC_H	/* gnu */
+#define VAND(a,b,c) "vand " #a "," #b "," #c "\n\t"
+#else			/* apple */
+#define VAND(a,b,c) "vand v" #a ",v" #b ",v" #c "\n\t"
+#endif
     asm volatile ("mtspr 256, %0\n\t"
-		  "vand %%v0, %%v0, %%v0"
+		  VAND (0, 0, 0)
 		  :
 		  : "r" (-1));
 

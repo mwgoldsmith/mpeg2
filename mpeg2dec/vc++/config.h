@@ -18,6 +18,9 @@
 /* debug mode configuration */
 /* #undef DEBUG */
 
+/* Define to 1 if you have the <altivec.h> header file. */
+/* #undef HAVE_ALTIVEC_H */
+
 /* Define if you have the `__builtin_expect' function. */
 /* #undef HAVE_BUILTIN_EXPECT */
 
