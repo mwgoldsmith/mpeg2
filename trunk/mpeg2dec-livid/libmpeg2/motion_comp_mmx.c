@@ -475,7 +475,7 @@ motion_comp_avg_xy_mmx( const uint_8 width, const sint_32 height, uint_8 *curr_b
 		mmx_interp_average_4_U8(curr_block, ref_block, ref_block + 1, ref_block_next, ref_block_next + 1);
 
 		if(width == 16)
-			mmx_interp_average_4_U8(curr_block + 8, ref_block, ref_block + 9, ref_block_next + 8, ref_block_next + 9);
+			mmx_interp_average_4_U8(curr_block + 8, ref_block + 8, ref_block + 9, ref_block_next + 8, ref_block_next + 9);
 
 		curr_block     += stride;
 		ref_block      += stride;
