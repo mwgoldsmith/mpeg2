@@ -1,0 +1,48 @@
+##
+## Process this file with automake to produce Makefile.in
+##
+
+libdir = $(PLUGIN_DIR)
+
+
+## Libs
+lib_LTLIBRARIES = dec_mpeg2.la
+
+include_HEADERS = mpeg2.h 
+
+
+################# FIX THE CONDITIONAL BUILD !!!
+LIBMPEG2_OBJS=
+
+if HAVE_MLIB
+	LIBMPEG2_OBJS="idct_mlib.lo motion_comp_mlib.lo"
+endif
+
+if HAVE_MMX
+	LIBMPEG2_OBJS="idct_mmx.lo idct_block_mmx.lo motion_comp_mmx.lo"
+endif
+
+#dec_mpeg2_la_LIBADD = $(LIBMPEG2_OBJS)
+#dec_mpeg2_la_DEPENDENCIES = $(LIBMPEG2_OBJS)
+dec_mpeg2_la_LIBADD = idct_mmx.lo idct_block_mmx.lo motion_comp_mmx.lo
+dec_mpeg2_la_DEPENDENCIES = idct_mmx.lo idct_block_mmx.lo motion_comp_mmx.lo
+dec_mpeg2_la_CFLAGS = @MM_CFLAGS@
+dec_mpeg2_la_LDFLAGS = -avoid-version -module Wl,-soname,dec_mpeg2 @MM_LIBS@
+
+#libmpeg2_la_LIBADD = @LIBMPEG2_CONFIG_OBJS@ 
+#libmpeg2_la_DEPENDENCIES = @LIBMPEG2_CONFIG_OBJS@
+#libmpeg2_la_LDFLAGS = -version-info 1:6:1 -export-symbols libmpeg2.sym
+
+
+dec_mpeg2_la_SOURCES = slice.c header.c stats.c idct.c motion_comp.c\
+	decode.c debug.c dec_mpeg2.c
+EXTRA_dec_mpeg2_la_SOURCES = idct_mmx.c idct_block_mmx.S idct_mlib.c\
+	motion_comp_mmx.c motion_comp_mlib.c
+
+
+#libmpeg2_la_SOURCES = slice.c header.c stats.c idct.c motion_comp.c\
+#	decode.c debug.c
+#EXTRA_libmpeg2_la_SOURCES = idct_mmx.c idct_block_mmx.S idct_mlib.c\
+#	motion_comp_mmx.c motion_comp_mlib.c libmpeg2.sym 
+#noinst_HEADERS = mpeg2.h stats.h header.h slice.h motion_comp.h\
+#	mpeg2_internal.h idct.h debug.h vlc.h idct_mmx.h idct_mlib.h mmx.h

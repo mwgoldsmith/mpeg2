@@ -94,7 +94,7 @@ static void decode_allocate_image_buffers (vo_functions_t * output, picture_t * 
 
 	// allocate images in YV12 format
 #ifdef __OMS__
-	tmp = output->allocate_image_buffer(picture->coded_picture_width, picture_coded_picture_height, 0x32315659);
+	tmp = output->allocate_image_buffer (picture->coded_picture_width, picture->coded_picture_height, 0x32315659);
 #else
 	tmp = output->allocate_image_buffer();
 #endif
@@ -103,7 +103,7 @@ static void decode_allocate_image_buffers (vo_functions_t * output, picture_t * 
 	picture->throwaway_frame[2] = tmp->base + frame_size;
 
 #ifdef __OMS__
-	tmp = output->allocate_image_buffer(picture->coded_picture_width, picture_coded_picture_height, 0x32315659);
+	tmp = output->allocate_image_buffer(picture->coded_picture_width, picture->coded_picture_height, 0x32315659);
 #else
 	tmp = output->allocate_image_buffer();
 #endif
@@ -112,7 +112,7 @@ static void decode_allocate_image_buffers (vo_functions_t * output, picture_t * 
 	picture->backward_reference_frame[2] = tmp->base + frame_size;
     
 #ifdef __OMS__
-	tmp = output->allocate_image_buffer(picture->coded_picture_width, picture_coded_picture_height, 0x32315659);
+	tmp = output->allocate_image_buffer(picture->coded_picture_width, picture->coded_picture_height, 0x32315659);
 #else
 	tmp = output->allocate_image_buffer();
 #endif
