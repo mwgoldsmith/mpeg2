@@ -23,30 +23,26 @@
 #include "video_out.h"
 #include "video_out_internal.h"
 
-LIBVO_EXTERN (pgm)
+LIBVO_EXTERN (md5)
 
 static vo_info_t vo_info = 
 {
-	"PGM",
-	"pgm",
+	"MD5",
+	"md5",
 	"walken",
 	""
 };
 
-static int image_width;
-static int image_height;
-static char header[1024];
+extern vo_functions_t video_out_pgm;
+
+static FILE * md5_file;
 static int framenum = -2;
 
 static uint32_t
 init(uint32_t width, uint32_t height, uint32_t fullscreen, char *title, uint32_t format)
 {
-    image_height = height;
-    image_width = width;
-
-    sprintf (header, "P5\n\n%d %d\n255\n", width, height*3/2);
-
-    return 0;
+    md5_file = fopen ("md5", "w");
+    return video_out_pgm.init (width, height, fullscreen, title, format);
 }
 
 static const vo_info_t*
@@ -64,43 +60,40 @@ static uint32_t draw_slice(uint8_t * src[], uint32_t slice_num)
     return 0;
 }
 
-uint32_t output_pgm_frame (char * fname, uint8_t * src[])
-{
-    FILE * f;
-    int i;
-
-    f = fopen (fname, "wb");
-    if (f == NULL) return 1;
-    fwrite (header, strlen (header), 1, f);
-    fwrite (src[0], image_width, image_height, f);
-    for (i = 0; i < image_height/2; i++) {
-	fwrite (src[1]+i*image_width/2, image_width/2, 1, f);
-	fwrite (src[2]+i*image_width/2, image_width/2, 1, f);
-    }
-    fclose (f);
-
-    return 0;
-}
+extern uint32_t output_pgm_frame (char * fname, uint8_t * src[]);
 
 static uint32_t draw_frame(uint8_t * src[])
 {
     char buf[100];
+    char buf2[100];
+    FILE * f;
+    int i;
 
     if (++framenum < 0)
 	return 0;
 
     sprintf (buf, "%d.pgm", framenum);
-    return output_pgm_frame (buf, src);
+    output_pgm_frame (buf, src);
+
+    sprintf (buf2, "md5sum %s", buf);
+    f = popen (buf2, "r");
+    i = fread (buf2, 1, sizeof(buf2), f);
+    pclose (f);
+    fwrite (buf2, 1, i, md5_file);
+
+    remove (buf);
+
+    return 0;
 }
 
 static vo_image_buffer_t* 
 allocate_image_buffer()
 {
-    return allocate_image_buffer_common(image_height,image_width,0x32315659);
+    return video_out_pgm.allocate_image_buffer ();
 }
 
 static void	
 free_image_buffer(vo_image_buffer_t* image)
 {
-    free_image_buffer_common(image);
+    return video_out_pgm.free_image_buffer (image);
 }
