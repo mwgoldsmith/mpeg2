@@ -29,9 +29,9 @@ typedef struct mpeg2dec_s {
 
     // here we store the allocated images, which we get from
     // the output interface
-    img_buf_t * forward_reference_frame;
-    img_buf_t * backward_reference_frame;
-    img_buf_t * throwaway_frame;
+    frame_t * forward_reference_frame;
+    frame_t * backward_reference_frame;
+    frame_t * throwaway_frame;
 
     // this is where we keep the state of the decoder
     struct picture_s * picture;
