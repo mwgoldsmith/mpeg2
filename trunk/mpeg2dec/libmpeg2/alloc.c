@@ -49,14 +49,14 @@ void * mpeg2_malloc (int size, int reason)
     }
 
 #if defined(HAVE_MEMALIGN) && !defined(__cplusplus) && !defined(DEBUG)
-    return memalign (16, size);
+    return memalign (64, size);
 #else
-    buf = (char *) malloc (size + 15 + sizeof (void **));
+    buf = (char *) malloc (size + 63 + sizeof (void **));
     if (buf) {
 	char * align_buf;
 
-	align_buf = buf + 15 + sizeof (void **);
-	align_buf -= (long)align_buf & 15;
+	align_buf = buf + 63 + sizeof (void **);
+	align_buf -= (long)align_buf & 63;
 	*(((void **)align_buf) - 1) = buf;
 	return align_buf;
     }
