@@ -214,21 +214,7 @@ static inline int get_motion_delta (mpeg2_decoder_t * const decoder,
 
 static inline int bound_motion_vector (const int vector, const int f_code)
 {
-#if 0
-    unsigned int limit;
-    int sign;
-
-    limit = 16 << f_code;
-
-    if ((unsigned int)(vector + limit) < 2 * limit)
-	return vector;
-    else {
-	sign = ((int32_t)vector) >> 31;
-	return vector - ((2 * limit) ^ sign) + sign;
-    }
-#else
     return ((int32_t)vector << (27 - f_code)) >> (27 - f_code);
-#endif
 }
 
 static inline int get_dmv (mpeg2_decoder_t * const decoder)
@@ -999,11 +985,11 @@ static inline void slice_non_intra_DCT (mpeg2_decoder_t * const decoder,
 #define MOTION(table,ref,motion_x,motion_y,size,y)			      \
     pos_x = 2 * decoder->offset + motion_x;				      \
     pos_y = 2 * decoder->v_offset + motion_y + 2 * y;			      \
-    if (pos_x > decoder->limit_x) {					      \
+    if (unlikely (pos_x > decoder->limit_x)) {				      \
 	pos_x = ((int)pos_x < 0) ? 0 : decoder->limit_x;		      \
 	motion_x = pos_x - 2 * decoder->offset;				      \
     }									      \
-    if (pos_y > decoder->limit_y_ ## size) {				      \
+    if (unlikely (pos_y > decoder->limit_y_ ## size)) {			      \
 	pos_y = ((int)pos_y < 0) ? 0 : decoder->limit_y_ ## size;	      \
 	motion_y = pos_y - 2 * decoder->v_offset - 2 * y;		      \
     }									      \
@@ -1026,11 +1012,11 @@ static inline void slice_non_intra_DCT (mpeg2_decoder_t * const decoder,
 #define MOTION_FIELD(table,ref,motion_x,motion_y,dest_field,op,src_field)     \
     pos_x = 2 * decoder->offset + motion_x;				      \
     pos_y = decoder->v_offset + motion_y;				      \
-    if (pos_x > decoder->limit_x) {					      \
+    if (unlikely (pos_x > decoder->limit_x)) {				      \
 	pos_x = ((int)pos_x < 0) ? 0 : decoder->limit_x;		      \
 	motion_x = pos_x - 2 * decoder->offset;				      \
     }									      \
-    if (pos_y > decoder->limit_y) {					      \
+    if (unlikely (pos_y > decoder->limit_y)) {				      \
 	pos_y = ((int)pos_y < 0) ? 0 : decoder->limit_y;		      \
 	motion_y = pos_y - decoder->v_offset;				      \
     }									      \
@@ -1196,11 +1182,11 @@ static void motion_fr_dmv (mpeg2_decoder_t * const decoder,
 
     pos_x = 2 * decoder->offset + motion_x;
     pos_y = decoder->v_offset + motion_y;
-    if (pos_x > decoder->limit_x) {
+    if (unlikely (pos_x > decoder->limit_x)) {
 	pos_x = ((int)pos_x < 0) ? 0 : decoder->limit_x;
 	motion_x = pos_x - 2 * decoder->offset;
     }
-    if (pos_y > decoder->limit_y) {
+    if (unlikely (pos_y > decoder->limit_y)) {
 	pos_y = ((int)pos_y < 0) ? 0 : decoder->limit_y;
 	motion_y = pos_y - decoder->v_offset;
     }
