@@ -1,27 +1,26 @@
-- add page flipping to the mga_vid driver
-- Tweak the slice at a time code to do half a slice as a smaller
-	chunk will fit much better in the puny 16 kb L1 of the P6 core.
-	This will require draw_slice to take a destination rectangle.
-- Do idct after motion_comp and add the motion comp block where
-  appropriate. The idea here is to get rid of the intermediate
-  s16 write for every idct block. Convert this to mmx when it's working. -ah
-- Separate the display_* stuff into libvo (vo for video-out)
-- Tweak the mc mmx code to use the previous bottom line as the next top
-  line in the y interp case. (partially done) -ah
-- try and see if interlacing U and V is better -ml
-- implement the missing mpeg features... DMV motion compensation, field
-  pictures, etc... and eventually try to use the mpeg conformance
-  verification bitstreams
-- DGA display support
-- Fix the mlib/sparc stuff once the interfaces have settled down
-  a bit.
-- Change y_blocks,cr_blocks,and cb_blocks in macroblock_t  and just do
-  blocks[]. I think this could potentially make a lot of code simpler.
+* things we dont get quite right yet (though we dont see the difference)
+	* motion vectors (chroma is wrong I think)
+	* DCT block parsing (rounding, oddification, ...)
+	* IDCT routine compliant with IEEE1180
 
-DONE
-- rewrite the library interface to take a chunk of data at a time
-  and return something useful if we finished a frame. -ah
-- rewrite yuv2rgb to use lut for intermediate results - ml DONE
-- process frames one slice at a time and write the results immediately
-  to the output. (this reduces the cache footprint significantly).
-  this actually ties in with (1) -ah
+* things we dont implement yet
+	* field pictures
+	* missing MC modes
+	* mpeg1 (aaron ?)
+	* conformance testing
+
+* structural optimizations
+	* integrate idct_add and idct_copy into the main idct routine
+	* get rid of slice structure, put it into picture
+	* do yuv per sub-slice (probably big speed boost)
+	* try different memory arrangements for pictures (yuyv, pitch, ...)
+
+* local optimizations
+	* review the use of static inline functions
+	* improve MMX motion comp inner routines
+	* work on bit parsing (needbits only when necessary)
+	* optimize vlc parsing routines
+	* optimize DCT for very sparse input matrixes ?
+	* optimize startcode search loop ?
+
+* synchronization stuff 
