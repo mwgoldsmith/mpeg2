@@ -70,7 +70,12 @@ static uint8_t clip_lut[1024];
 void idct_init (void)
 {
 #ifdef __i386__
-    if (config.flags & MPEG2_MMX_ENABLE) {
+    if (config.flags & OMS_ACCEL_X86_MMXEXT) {
+	fprintf (stderr, "Using SSE for IDCT transform\n");
+	idct_block_copy = idct_block_copy_sse;
+	idct_block_add = idct_block_add_sse;
+	idct_mmx_init ();
+    } else if (config.flags & OMS_ACCEL_X86_MMX) {
 	fprintf (stderr, "Using MMX for IDCT transform\n");
 	idct_block_copy = idct_block_copy_mmx;
 	idct_block_add = idct_block_add_mmx;
@@ -78,7 +83,7 @@ void idct_init (void)
     } else
 #endif
 #ifdef HAVE_MLIB
-    if (config.flags & MPEG2_MLIB_ENABLE) {
+    if (config.flags & OMS_ACCEL_MLIB) {
 	fprintf (stderr, "Using mlib for IDCT transform\n");
 	idct_block_copy = idct_block_copy_mlib;
 	idct_block_add = idct_block_add_mlib;
