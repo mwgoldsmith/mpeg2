@@ -806,11 +806,6 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
 	//FIXME remove
 	//fprintf(stderr,"(mb) cbp %02x\n",mb->coded_block_pattern);
 
-	//XXX FIXME no need to zero everything
-	memset(mb->y_blocks, 0, 16*16*sizeof(sint_16));
-	memset(mb->cr_blocks, 0, 8*8*sizeof(sint_16));
-	memset(mb->cb_blocks, 0, 8*8*sizeof(sint_16));
-
 	//coded_block_pattern is set only if there are blocks in bitstream
   if(mb->coded_block_pattern)
 	{
@@ -877,6 +872,7 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
     // non-intra mb without forward mv in a P picture 
     // 7.6.3.4 Resetting motion vector predictors 
 		parse_reset_pmv(slice);
+		memset(mb->f_motion_vectors[0],0,8);
 		mb->macroblock_type |= MACROBLOCK_MOTION_FORWARD;
 
     //6.3.17.1 Macroblock modes, frame_motion_type 

@@ -1,5 +1,7 @@
 .*.sw[po]
 *~
+*.diff
+*.patch
 mpeg2dec
 Makefile
 Makefile.in

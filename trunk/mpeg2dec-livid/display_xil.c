@@ -177,6 +177,7 @@ void display_init(uint_32 width, uint_32 height)
    // XIL sends error message to stderr if xil_create_from_window fail
    if (!(displayimage = xil_create_from_window(xilstate, mydisplay, mywindow)))
      exit(1);
+   xil_set_synchronize(displayimage, 1);
    
    renderimage = xil_create(xilstate, image_width, image_height, 4, XIL_BYTE);
    if (renderimage == NULL) {
@@ -224,7 +225,7 @@ void resize() {
   // Create new image with new geometry
   xil_destroy(displayimage);
   displayimage = xil_create_from_window(xilstate, mydisplay, mywindow);
-    
+  xil_set_synchronize(displayimage, 1);
   XSelectInput(mydisplay, mywindow, StructureNotifyMask);
 
 }
@@ -248,7 +249,7 @@ void display_frame(uint_8 *src[])
   xil_import(renderimage, TRUE);
    
   if (resized){
-    xil_scale(copyimage, displayimage, "general", 
+    xil_scale(copyimage, displayimage, "bilinear", 
 	      horizontal_factor, vertical_factor);
   }
   else {

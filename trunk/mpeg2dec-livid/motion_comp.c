@@ -24,7 +24,7 @@
 //
 // This will get amusing in a few months I'm sure
 //
-// motion_comp.c rewrite counter:  3
+// motion_comp.c rewrite counter:  4
 //
 
 #include <stdlib.h>
@@ -37,6 +37,7 @@
 #include "mb_buffer.h"
 #include "motion_comp.h"
 #include "motion_comp_mmx.h"
+#include "motion_comp_mlib.h"
 
 // motion_comp main entry point 
 void (*motion_comp)(picture_t *picture,mb_buffer_t *mb_buffer);
@@ -44,6 +45,22 @@ void (*motion_comp)(picture_t *picture,mb_buffer_t *mb_buffer);
 void motion_comp_c(picture_t *picture,mb_buffer_t *mb_buffer);
 
 static uint_8 clip_lut[1024], *clip;
+
+#include "soft_video.c" // FIXME
+
+void
+motion_comp_0mv_block(uint_8 *dst, sint_16 *block,uint_32 stride)
+{
+	int x,y;
+	int jump = stride - 8;
+
+  for (y = 0; y < 8; y++) {
+    for (x = 0; x < 8; x++)
+			*dst++ = clip_to_u8(*block++);
+		dst += jump;
+	}
+}
+
 
 void
 motion_comp_init(void)
@@ -62,371 +79,12 @@ motion_comp_init(void)
 		motion_comp = motion_comp_mmx;
 	else
 #endif
-		motion_comp = motion_comp_c;
-}
-
-
-
-//
-// The motion_comp heavy lifting functions have the following
-// naming convention:
-//
-// motion_comp_?mv_[no_]block
-//
-// Where the ? specifies the number of motion vectors to combine
-// The _no_block specifies that there is no dct coded block to
-// add to the final output
-//
-
-static void
-motion_comp_0mv_block(sint_16 *block,uint_8 *dst,uint_32 pitch)
-{
-	uint_32 i;
-
-	pitch = pitch - 8;
-
-	for(i=0;i<8;i++)
-	{
-		*dst++ = clip[*block++];
-		*dst++ = clip[*block++];
-		*dst++ = clip[*block++];
-		*dst++ = clip[*block++];
-
-		*dst++ = clip[*block++];
-		*dst++ = clip[*block++];
-		*dst++ = clip[*block++];
-		*dst++ = clip[*block++];
-		dst += pitch;
-	}
-}
-
-static void
-motion_comp_block_2mv_no_block(uint_8 *pred,uint_8 *pred2,uint_8 *dst,uint_32 pitch)
-{
-	uint_32 i;
-
-	pitch = pitch - 8;
-
-	for(i=0;i<8;i++)
-	{
-		*dst++ = clip[*pred++ + *pred2++];
-		*dst++ = clip[*pred++ + *pred2++];
-		*dst++ = clip[*pred++ + *pred2++];
-		*dst++ = clip[*pred++ + *pred2++];
-
-		*dst++ = clip[*pred++ + *pred2++];
-		*dst++ = clip[*pred++ + *pred2++];
-		*dst++ = clip[*pred++ + *pred2++];
-		*dst++ = clip[*pred++ + *pred2++];
-
-		pred  += pitch;
-		pred2 += pitch;
-		dst += pitch;
-	}
-}
-
-static void
-motion_comp_block_1mv_no_block(uint_8 *pred,uint_8 *dst,uint_32 pitch)
-{
-	uint_32 i;
-
-	pitch = pitch - 8;
-
-	//This should be two 32 bit reads and writes instead...the
-	//unalignedness of pred could be a problem
-	for(i=0;i<8;i++)
-	{
-		*dst++ = *pred++;
-		*dst++ = *pred++;
-		*dst++ = *pred++;
-		*dst++ = *pred++;
-
-		*dst++ = *pred++;
-		*dst++ = *pred++;
-		*dst++ = *pred++;
-		*dst++ = *pred++;
-
-		pred += pitch;
-		dst += pitch;
-	}
-}
-
-static void
-motion_comp_block_1mv_block(uint_8 *pred,sint_16 *block,uint_8 *dst,uint_32 pitch)
-{
-	uint_32 i;
-
-	pitch = pitch - 8;
-
-	for(i=0;i<8;i++)
-	{
-		*dst++ = clip[*pred++ + *block++];
-		*dst++ = clip[*pred++ + *block++];
-		*dst++ = clip[*pred++ + *block++];
-		*dst++ = clip[*pred++ + *block++];
-
-		*dst++ = clip[*pred++ + *block++];
-		*dst++ = clip[*pred++ + *block++];
-		*dst++ = clip[*pred++ + *block++];
-		*dst++ = clip[*pred++ + *block++];
-
-		pred += pitch;
-		dst += pitch;
-	}
-}
-
-
-inline void
-motion_comp_no_block(picture_t *picture,macroblock_t * mb)
-{
-	uint_32 width,x,y;
-	uint_32 mb_width;
-	uint_32 pitch;
-	uint_32 d;
-	uint_8 *dst;
-	uint_32 x_pred,y_pred;
-	uint_32 x_pred2,y_pred2;
-	uint_8 *pred;
-	uint_8 *pred2;
-
-	width = picture->coded_picture_width;
-	mb_width = picture->coded_picture_width >> 4;
-
-	d = 8;
-	pitch = width;
-
-	//FIXME I'd really like to take these two divides out.
-	//maybe do 16.16 fixed point mult 
-	x = mb->mba % mb_width;
-	y = mb->mba / mb_width;
-
-	if (0)
-	//this doesn't work in some case as we're adding the
-	//wrong fields together
-	//if((mb->macroblock_type & MACROBLOCK_MOTION_FORWARD) && 
-		 //(mb->macroblock_type & MACROBLOCK_MOTION_BACKWARD))
-	{
-		//fprintf(stderr,"(motion_comp) backward_mv %d,%d\n",mb->b_motion_vectors[0][0] >> 1,mb->b_motion_vectors[0][1] >> 1);
-		x_pred = (mb->f_motion_vectors[0][0] >> 1) + x * 16;
-		y_pred = (mb->f_motion_vectors[0][1] >> 1) + y * 16;
-		x_pred2 = (mb->b_motion_vectors[0][0] >> 1) + x * 16;
-		y_pred2 = (mb->b_motion_vectors[0][1] >> 1) + y * 16;
-
-		//Do y component
-		dst =  &picture->current_frame[0][x * 16 + y * width * 16];
-		pred = &picture->forward_reference_frame[0][x_pred  + y_pred  * width];
-		pred2 =&picture->backward_reference_frame[0][x_pred2 + y_pred2 * width];
-
-		motion_comp_block_2mv_no_block(pred                ,pred2                , dst                , pitch);
-		motion_comp_block_2mv_no_block(pred + 8            ,pred2 + 8            , dst + 8            , pitch);
-		motion_comp_block_2mv_no_block(pred + width * 8    ,pred2 + width * 8    , dst + width * d    , pitch);
-		motion_comp_block_2mv_no_block(pred + width * 8 + 8,pred2 + width * 8 + 8, dst + width * d + 8, pitch);
-
-		x_pred  = (mb->f_motion_vectors[0][0] >> 2) + x * 8;
-		y_pred  = (mb->f_motion_vectors[0][1] >> 2) + y * 8;
-		x_pred2 = (mb->b_motion_vectors[0][0] >> 2) + x * 8;
-		y_pred2 = (mb->b_motion_vectors[0][1] >> 2) + y * 8;
-
-		//Do Cr component
-		dst = &picture->current_frame[1][x * 8 + y * width/2 * 8];
-		pred =&picture->forward_reference_frame[1][x_pred   + y_pred  * width/2];
-		pred2=&picture->backward_reference_frame[1][x_pred2 + y_pred2 * width/2];
-		motion_comp_block_2mv_no_block(pred, pred2,  dst, width/2);
-		
-
-		//Do Cb component
-		dst = &picture->current_frame[2][x * 8 + y * width/2 * 8];
-		pred =&picture->forward_reference_frame[2][x_pred + y_pred * width/2];
-		pred2=&picture->backward_reference_frame[2][x_pred2 + y_pred2 * width/2];
-		motion_comp_block_2mv_no_block(pred, pred2,  dst, width/2);
-		exit(1);
-
-	}
-	else if(mb->macroblock_type & MACROBLOCK_MOTION_BACKWARD)
-	{
-		//fprintf(stderr,"(motion_comp) backward_mv %d,%d\n",mb->b_motion_vectors[0][0] >> 1,mb->b_motion_vectors[0][1] >> 1);
-		x_pred = (mb->b_motion_vectors[0][0] >> 1) + x * 16;
-		y_pred = (mb->b_motion_vectors[0][1] >> 1) + y * 16;
-
-		//Do y component
-		dst = &picture->current_frame[0][x * 16 + y * width * 16];
-		pred =&picture->backward_reference_frame[0][x_pred + y_pred * width];
-
-		motion_comp_block_1mv_no_block(pred                , dst                , pitch);
-		motion_comp_block_1mv_no_block(pred + 8            , dst + 8            , pitch);
-		motion_comp_block_1mv_no_block(pred + width * 8    , dst + width * d    , pitch);
-		motion_comp_block_1mv_no_block(pred + width * 8 + 8, dst + width * d + 8, pitch);
-
-		x_pred = (mb->b_motion_vectors[0][0] >> 2) + x * 8;
-		y_pred = (mb->b_motion_vectors[0][1] >> 2) + y * 8;
-
-		//Do Cr component
-		dst = &picture->current_frame[1][x * 8 + y * width/2 * 8];
-		pred =&picture->backward_reference_frame[1][x_pred + y_pred * width/2];
-		motion_comp_block_1mv_no_block(pred,  dst, width/2);
-		
-
-		//Do Cb component
-		dst = &picture->current_frame[2][x * 8 + y * width/2 * 8];
-		pred =&picture->backward_reference_frame[2][x_pred + y_pred * width/2];
-		motion_comp_block_1mv_no_block(pred,  dst, width/2);
-	}
-	else if(mb->macroblock_type & MACROBLOCK_MOTION_FORWARD)
-	{
-		//fprintf(stderr,"(motion_comp) forward_mv %d,%d\n",mb->f_motion_vectors[0][0] >> 1,mb->f_motion_vectors[0][1] >> 1);
-		x_pred = (mb->f_motion_vectors[0][0] >> 1) + x * 16;
-		y_pred = (mb->f_motion_vectors[0][1] >> 1) + y * 16;
-
-		//Do y component
-		dst = &picture->current_frame[0][x * 16 + y * width * 16];
-		pred =&picture->forward_reference_frame[0][x_pred + y_pred * width];
-
-		motion_comp_block_1mv_no_block(pred                , dst                , pitch);
-		motion_comp_block_1mv_no_block(pred + 8            , dst + 8            , pitch);
-		motion_comp_block_1mv_no_block(pred + width * 8    , dst + width * d    , pitch);
-		motion_comp_block_1mv_no_block(pred + width * 8 + 8, dst + width * d + 8, pitch);
-
-		x_pred = (mb->f_motion_vectors[0][0] >> 2) + x * 8;
-		y_pred = (mb->f_motion_vectors[0][1] >> 2) + y * 8;
-
-		//Do Cr component
-		dst = &picture->current_frame[1][x * 8 + y * width/2 * 8];
-		pred =&picture->forward_reference_frame[1][x_pred + y_pred * width/2];
-		motion_comp_block_1mv_no_block(pred, dst, width/2);
-		
-
-		//Do Cb component
-		dst = &picture->current_frame[2][x * 8 + y * width/2 * 8];
-		pred =&picture->forward_reference_frame[2][x_pred + y_pred * width/2];
-		motion_comp_block_1mv_no_block(pred,  dst, width/2);
-	}
+#if HAVE_MLIB
+	if(1 || config.flags & MPEG2_MLIB_ENABLE) // FIXME
+		motion_comp = motion_comp_mlib;
 	else
-	{
-		//should never get here
-		exit(1);
-
-	}
-}
-
-inline void
-motion_comp_block(picture_t *picture,macroblock_t * mb)
-{
-	uint_32 width,x,y;
-	uint_32 mb_width;
-	uint_32 pitch;
-	uint_32 d;
-	uint_8 *dst;
-	uint_32 x_pred,y_pred;
-	uint_8 *pred;
-	uint_8 **reference_frame;
-
-	width = picture->coded_picture_width;
-	mb_width = picture->coded_picture_width >> 4;
-
-	//handle interlaced blocks
-	if (mb->dct_type) 
-	{
-		d = 1;
-		pitch = width *2;
-	}
-	else 
-	{
-		d = 8;
-		pitch = width;
-	}
-
-	//FIXME I'd really to take these two divides out.
-	//maybe do 16.16 fixed point mult 
-	x = mb->mba % mb_width;
-	y = mb->mba / mb_width;
-
-	if(mb->macroblock_type & (MACROBLOCK_MOTION_BACKWARD | MACROBLOCK_MOTION_FORWARD))
-	{
-		//fprintf(stderr,"(motion_comp) backward_mv %d,%d\n",mb->b_motion_vectors[0][0] >> 1,mb->b_motion_vectors[0][1] >> 1);
-
-		if(mb->macroblock_type == MACROBLOCK_MOTION_FORWARD)
-		{
-			x_pred = (mb->f_motion_vectors[0][0] >> 1) + x * 16;
-			y_pred = (mb->f_motion_vectors[0][1] >> 1) + y * 16;
-      reference_frame = picture->forward_reference_frame;
-		}
-		else
-		{
-			x_pred = (mb->b_motion_vectors[0][0] >> 1) + x * 16;
-			y_pred = (mb->b_motion_vectors[0][1] >> 1) + y * 16;
-      reference_frame = picture->backward_reference_frame;
-		}
-
-		//Do y component
-		dst = &picture->current_frame[0][x * 16 + y * width * 16];
-		pred =&reference_frame[0][x_pred + y_pred * width];
-
-		if(mb->coded_block_pattern == 0x20)
-			motion_comp_block_1mv_block(pred, mb->y_blocks, dst, pitch);
-		else
-			motion_comp_block_1mv_no_block(pred, dst, pitch);
-
-		if(mb->coded_block_pattern == 0x10)
-			motion_comp_block_1mv_block(pred + 8, mb->y_blocks + 64, dst + 8, pitch);
-		else
-			motion_comp_block_1mv_no_block(pred + 8, dst + 8, pitch);
-
-		if(mb->coded_block_pattern == 0x08)
-			motion_comp_block_1mv_block(pred + width * 8, mb->y_blocks + 2*64, dst + width * d    , pitch);
-		else
-			motion_comp_block_1mv_no_block(pred + width * 8, dst + width * d, pitch);
-
-		if(mb->coded_block_pattern == 0x04)
-			motion_comp_block_1mv_block(pred + width * 8 + 8, mb->y_blocks + 3*64, dst + width * d + 8, pitch);
-		else
-			motion_comp_block_1mv_no_block(pred + width * 8 + 8, dst + width * d + 8, pitch);
-
-		if(mb->macroblock_type == MACROBLOCK_MOTION_FORWARD)
-		{
-			x_pred = (mb->f_motion_vectors[0][0] >> 2) + x * 8;
-			y_pred = (mb->f_motion_vectors[0][1] >> 2) + y * 8;
-		}
-		else
-		{
-			x_pred = (mb->b_motion_vectors[0][0] >> 2) + x * 8;
-			y_pred = (mb->b_motion_vectors[0][1] >> 2) + y * 8;
-		}
-
-		//Do Cr component
-		dst = &picture->current_frame[1][x * 8 + y * width/2 * 8];
-		pred = &reference_frame[1][x_pred + y_pred * width/2];
-		if(mb->coded_block_pattern == 0x02)
-			motion_comp_block_1mv_block(pred, mb->cr_blocks, dst, width/2);
-		else
-			motion_comp_block_1mv_no_block(pred, dst, width/2);
-
-		//Do Cb component
-		dst = &picture->current_frame[2][x * 8 + y * width/2 * 8];
-		pred =&reference_frame[2][x_pred + y_pred * width/2];
-		if(mb->coded_block_pattern == 0x01)
-			motion_comp_block_1mv_block(pred, mb->cb_blocks, dst, width/2);
-		else
-			motion_comp_block_1mv_no_block(pred, dst, width/2);
-	}
-	else 
-	{
-		//Do y component
-		dst = &picture->current_frame[0][x * 16 + y * width * 16];
-
-		motion_comp_0mv_block(mb->y_blocks       , dst                , pitch);
-		motion_comp_0mv_block(mb->y_blocks +   64, dst + 8            , pitch);
-		motion_comp_0mv_block(mb->y_blocks + 2*64, dst + width * d    , pitch);
-		motion_comp_0mv_block(mb->y_blocks + 3*64, dst + width * d + 8, pitch);
-
-		//Do Cr component
-		dst = &picture->current_frame[1][x * 8 + y * width/2 * 8];
-		motion_comp_0mv_block(mb->cr_blocks, dst, width/2);
-		
-
-		//Do Cb component
-		dst = &picture->current_frame[2][x * 8 + y * width/2 * 8];
-		motion_comp_0mv_block(mb->cb_blocks, dst, width/2);
-	}
+#endif
+		motion_comp = motion_comp_c;
 }
 
 void
@@ -434,20 +92,16 @@ motion_comp_c(picture_t *picture,mb_buffer_t *mb_buffer)
 {
 	macroblock_t *macroblocks   = mb_buffer->macroblocks,*mb;
 	uint_32 num_blocks = mb_buffer->num_blocks;
-	uint_32 i;
-	uint_32 width,x,y;
-	uint_32 mb_width;
-	uint_32 pitch;
-	uint_32 d;
-	uint_8 *dst;
-	uint_32 x_pred,y_pred;
-	uint_8 *pred;
-	uint_8 **reference_frame;
+	int i;
+	int width,x,y;
+	int mb_width;
+	int pitch;
+	int d;
+	uint_8 *dst_y,*dst_cr,*dst_cb;
 
 	width = picture->coded_picture_width;
 	mb_width = picture->coded_picture_width >> 4;
 
-	//just do backward prediction for now
 	for(i=0;i<num_blocks;i++)
 	{
 		mb = macroblocks + i;
@@ -469,98 +123,137 @@ motion_comp_c(picture_t *picture,mb_buffer_t *mb_buffer)
 		x = mb->mba % mb_width;
 		y = mb->mba / mb_width;
 
-		if(mb->macroblock_type & (MACROBLOCK_MOTION_BACKWARD | MACROBLOCK_MOTION_FORWARD))
+		dst_y = &picture->current_frame[0][x * 16 + y * width * 16];
+		dst_cr = &picture->current_frame[1][x * 8 + y * width/2 * 8];
+		dst_cb = &picture->current_frame[2][x * 8 + y * width/2 * 8];
+		
+		if(mb->macroblock_type & MACROBLOCK_INTRA)
 		{
-			//fprintf(stderr,"(motion_comp) backward_mv %d,%d\n",mb->b_motion_vectors[0][0] >> 1,mb->b_motion_vectors[0][1] >> 1);
-
-			if(mb->macroblock_type & MACROBLOCK_MOTION_FORWARD)
-			{
-				x_pred = (mb->f_motion_vectors[0][0] >> 1) + x * 16;
-				y_pred = (mb->f_motion_vectors[0][1] >> 1) + y * 16;
-				reference_frame = picture->forward_reference_frame;
-			}
-			else
-			{
-				x_pred = (mb->b_motion_vectors[0][0] >> 1) + x * 16;
-				y_pred = (mb->b_motion_vectors[0][1] >> 1) + y * 16;
-				reference_frame = picture->backward_reference_frame;
-			}
-
-			//Do y component
-			dst = &picture->current_frame[0][x * 16 + y * width * 16];
-			pred =&reference_frame[0][x_pred + y_pred * width];
-
-			if(mb->coded_block_pattern == 0x20)
-				motion_comp_block_1mv_block(pred, mb->y_blocks, dst, pitch);
-			else
-				motion_comp_block_1mv_no_block(pred, dst, pitch);
-
-			if(mb->coded_block_pattern == 0x10)
-				motion_comp_block_1mv_block(pred + 8, mb->y_blocks + 64, dst + 8, pitch);
-			else
-				motion_comp_block_1mv_no_block(pred + 8, dst + 8, pitch);
-
-			if(mb->coded_block_pattern == 0x08)
-				motion_comp_block_1mv_block(pred + width * 8, mb->y_blocks + 2*64, dst + width * d    , pitch);
-			else
-				motion_comp_block_1mv_no_block(pred + width * 8, dst + width * d, pitch);
-
-			if(mb->coded_block_pattern == 0x04)
-				motion_comp_block_1mv_block(pred + width * 8 + 8, mb->y_blocks + 3*64, dst + width * d + 8, pitch);
-			else
-				motion_comp_block_1mv_no_block(pred + width * 8 + 8, dst + width * d + 8, pitch);
-
-			if(mb->macroblock_type & MACROBLOCK_MOTION_FORWARD)
-			{
-				x_pred = (mb->f_motion_vectors[0][0] >> 2) + x * 8;
-				y_pred = (mb->f_motion_vectors[0][1] >> 2) + y * 8;
-			}
-			else
-			{
-				x_pred = (mb->b_motion_vectors[0][0] >> 2) + x * 8;
-				y_pred = (mb->b_motion_vectors[0][1] >> 2) + y * 8;
-			}
-
-			//Do Cr component
-			dst = &picture->current_frame[1][x * 8 + y * width/2 * 8];
-			pred = &reference_frame[1][x_pred + y_pred * width/2];
-			if(mb->coded_block_pattern == 0x02)
-				motion_comp_block_1mv_block(pred, mb->cr_blocks, dst, width/2);
-			else
-				motion_comp_block_1mv_no_block(pred, dst, width/2);
-
-			//Do Cb component
-			dst = &picture->current_frame[2][x * 8 + y * width/2 * 8];
-			pred =&reference_frame[2][x_pred + y_pred * width/2];
-			if(mb->coded_block_pattern == 0x01)
-				motion_comp_block_1mv_block(pred, mb->cb_blocks, dst, width/2);
-			else
-				motion_comp_block_1mv_no_block(pred, dst, width/2);
-		}
-		else 
-		{
-			if(picture->picture_coding_type != I_TYPE)
-				fprintf(stderr,"macroblock_type = %d\n",mb->macroblock_type);
-
-
-			//Do y component
-			dst = &picture->current_frame[0][x * 16 + y * width * 16];
-
-			motion_comp_0mv_block(mb->y_blocks       , dst                , pitch);
-			motion_comp_0mv_block(mb->y_blocks +   64, dst + 8            , pitch);
-			motion_comp_0mv_block(mb->y_blocks + 2*64, dst + width * d    , pitch);
-			motion_comp_0mv_block(mb->y_blocks + 3*64, dst + width * d + 8, pitch);
-
-			//Do Cr component
-			dst = &picture->current_frame[1][x * 8 + y * width/2 * 8];
-			motion_comp_0mv_block(mb->cr_blocks, dst, width/2);
+			// FIXME
+			// The idct transform should write these right into the frame earlier.
 			
-
-			//Do Cb component
-			dst = &picture->current_frame[2][x * 8 + y * width/2 * 8];
-			motion_comp_0mv_block(mb->cb_blocks, dst, width/2);
+			motion_comp_0mv_block(dst_y                , mb->y_blocks       , pitch);
+			motion_comp_0mv_block(dst_y + 8            , mb->y_blocks +   64, pitch);
+			motion_comp_0mv_block(dst_y + width * d    , mb->y_blocks + 2*64, pitch);
+			motion_comp_0mv_block(dst_y + width * d + 8, mb->y_blocks + 3*64, pitch);
+			motion_comp_0mv_block(dst_cr, mb->cr_blocks, width/2);
+			motion_comp_0mv_block(dst_cb, mb->cb_blocks, width/2);
+			
+		}
+		else // Not an intra block
+		{
+		
+			if(mb->macroblock_type & MACROBLOCK_MOTION_FORWARD)
+			{
+				int x_half   = (mb->f_motion_vectors[0][0] & 1);
+				int y_half   = (mb->f_motion_vectors[0][1] & 1);
+				int x_pred_y = (mb->f_motion_vectors[0][0] >> 1) + x * 16;
+				int y_pred_y = (mb->f_motion_vectors[0][1] >> 1) + y * 16;
+				int x_pred_c = x_pred_y / 2;
+				int y_pred_c = y_pred_y / 2;
+				
+				uint_8 *pred_y  = &picture->forward_reference_frame[0][x_pred_y + y_pred_y * width];
+				uint_8 *pred_cr = &picture->forward_reference_frame[1][x_pred_c + y_pred_c * width/2];				
+				uint_8 *pred_cb = &picture->forward_reference_frame[2][x_pred_c + y_pred_c * width/2];
+				
+				if (x_half && y_half) {
+					soft_VideoInterpXY_U8_U8_16x16(dst_y,  pred_y,  width,   width);
+					soft_VideoInterpXY_U8_U8_8x8  (dst_cr, pred_cr, width/2, width/2);
+					soft_VideoInterpXY_U8_U8_8x8  (dst_cb, pred_cb, width/2, width/2);
+				} else if (x_half) {
+					soft_VideoInterpX_U8_U8_16x16(dst_y,  pred_y,  width,   width);
+					soft_VideoInterpX_U8_U8_8x8  (dst_cr, pred_cr, width/2, width/2);
+					soft_VideoInterpX_U8_U8_8x8  (dst_cb, pred_cb, width/2, width/2);
+				} else if (y_half) {
+					soft_VideoInterpY_U8_U8_16x16(dst_y,  pred_y,  width,   width);
+					soft_VideoInterpY_U8_U8_8x8  (dst_cr, pred_cr, width/2, width/2);
+					soft_VideoInterpY_U8_U8_8x8  (dst_cb, pred_cb, width/2, width/2);
+				} else {
+					soft_VideoCopyRef_U8_U8_16x16(dst_y,  pred_y,  width);
+					soft_VideoCopyRef_U8_U8_8x8  (dst_cr, pred_cr, width/2);
+					soft_VideoCopyRef_U8_U8_8x8  (dst_cb, pred_cb, width/2);
+				}
+			}
+		
+			if(mb->macroblock_type & MACROBLOCK_MOTION_BACKWARD)
+			{
+				int x_half   = (mb->b_motion_vectors[0][0] & 1);
+				int y_half   = (mb->b_motion_vectors[0][1] & 1);
+				int x_pred_y = (mb->b_motion_vectors[0][0] >> 1) + x * 16;
+				int y_pred_y = (mb->b_motion_vectors[0][1] >> 1) + y * 16;
+				int x_pred_c = x_pred_y / 2;
+				int y_pred_c = y_pred_y / 2;
+				
+				uint_8 *pred_y  = &picture->backward_reference_frame[0][x_pred_y + y_pred_y * width];
+				uint_8 *pred_cr = &picture->backward_reference_frame[1][x_pred_c + y_pred_c * width/2];
+				uint_8 *pred_cb = &picture->backward_reference_frame[2][x_pred_c + y_pred_c * width/2];
+				
+				if(mb->macroblock_type & MACROBLOCK_MOTION_FORWARD)
+				{
+					if (x_half && y_half) {
+						soft_VideoInterpAveXY_U8_U8_16x16(dst_y,  pred_y,  width,   width);
+						soft_VideoInterpAveXY_U8_U8_8x8  (dst_cr, pred_cr, width/2, width/2);
+						soft_VideoInterpAveXY_U8_U8_8x8  (dst_cb, pred_cb, width/2, width/2);
+					} else if (x_half) {
+						soft_VideoInterpAveX_U8_U8_16x16(dst_y,  pred_y,  width,   width);
+						soft_VideoInterpAveX_U8_U8_8x8  (dst_cr, pred_cr, width/2, width/2);
+						soft_VideoInterpAveX_U8_U8_8x8  (dst_cb, pred_cb, width/2, width/2);
+					} else if (y_half) {
+						soft_VideoInterpAveY_U8_U8_16x16(dst_y,  pred_y,  width,   width);
+						soft_VideoInterpAveY_U8_U8_8x8  (dst_cr, pred_cr, width/2, width/2);
+						soft_VideoInterpAveY_U8_U8_8x8  (dst_cb, pred_cb, width/2, width/2);
+					} else {
+						soft_VideoCopyRefAve_U8_U8_16x16(dst_y,  pred_y,  width);
+						soft_VideoCopyRefAve_U8_U8_8x8  (dst_cr, pred_cr, width/2);
+						soft_VideoCopyRefAve_U8_U8_8x8  (dst_cb, pred_cb, width/2);
+					}
+				}
+				else
+				{
+					if (x_half && y_half) {
+						soft_VideoInterpXY_U8_U8_16x16(dst_y,  pred_y,  width,   width);
+						soft_VideoInterpXY_U8_U8_8x8  (dst_cr, pred_cr, width/2, width/2);
+						soft_VideoInterpXY_U8_U8_8x8  (dst_cb, pred_cb, width/2, width/2);
+					} else if (x_half) {
+						soft_VideoInterpX_U8_U8_16x16(dst_y,  pred_y,  width,   width);
+						soft_VideoInterpX_U8_U8_8x8  (dst_cr, pred_cr, width/2, width/2);
+						soft_VideoInterpX_U8_U8_8x8  (dst_cb, pred_cb, width/2, width/2);
+					} else if (y_half) {
+						soft_VideoInterpY_U8_U8_16x16(dst_y,  pred_y,  width,   width);
+						soft_VideoInterpY_U8_U8_8x8  (dst_cr, pred_cr, width/2, width/2);
+						soft_VideoInterpY_U8_U8_8x8  (dst_cb, pred_cb, width/2, width/2);
+					} else {
+						soft_VideoCopyRef_U8_U8_16x16(dst_y,  pred_y,  width);
+						soft_VideoCopyRef_U8_U8_8x8  (dst_cr, pred_cr, width/2);
+						soft_VideoCopyRef_U8_U8_8x8  (dst_cb, pred_cb, width/2);
+					}
+				}
+			}
+				
+			if(mb->macroblock_type & MACROBLOCK_PATTERN)
+			{
+				// Asume zero forward motion if the block has none.	
+				if( !(mb->macroblock_type & (MACROBLOCK_MOTION_FORWARD | MACROBLOCK_MOTION_BACKWARD)) )
+				{
+					fprintf(stderr, "PATTERN - NO MOTION");
+					exit(2);
+				}
+			
+				if(mb->coded_block_pattern & 0x20)
+					soft_VideoAddBlock_U8_S16(dst_y,                 mb->y_blocks + 0 * 64, width);
+				if(mb->coded_block_pattern & 0x10)
+					soft_VideoAddBlock_U8_S16(dst_y + 8,             mb->y_blocks + 1 * 64, width);
+				if(mb->coded_block_pattern & 0x08)
+					soft_VideoAddBlock_U8_S16(dst_y + width * d,     mb->y_blocks + 2 * 64, width);
+				if(mb->coded_block_pattern & 0x04)
+					soft_VideoAddBlock_U8_S16(dst_y + width * d + 8, mb->y_blocks + 3 * 64, width);
+				
+				if(mb->coded_block_pattern & 0x02)
+					soft_VideoAddBlock_U8_S16(dst_cr, mb->cr_blocks, width/2);
+				if(mb->coded_block_pattern & 0x01)
+					soft_VideoAddBlock_U8_S16(dst_cb, mb->cb_blocks, width/2);
+				
+			}	
 		}
 	}
 }
-
-
