@@ -11,6 +11,7 @@ configure
 .deps
 .libs
 aclocal.m4
+autom4te.cache
 config.log
 config.cache
 libtool
