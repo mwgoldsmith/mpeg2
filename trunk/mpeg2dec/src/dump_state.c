@@ -224,20 +224,9 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
 		 gop->hours, gop->minutes, gop->seconds, gop->pictures);
 	break;
     case STATE_PICTURE:
-	pic = info->current_picture;
-	goto show_pic;
     case STATE_PICTURE_2ND:
-	pic = info->current_picture_2nd;
-	goto show_pic;
-    case STATE_SLICE:
-	pic = info->display_picture_2nd;
-	if (pic)
-	    goto show_pic;
-    case STATE_SLICE_1ST:
-	pic = info->display_picture;
-	if (!pic)
-	    goto done_pic;
-    show_pic:
+	pic = ((state == STATE_PICTURE) ?
+	       info->current_picture : info->current_picture_2nd);
 	fprintf (f, " %c",
 		 coding_type[pic->flags & PIC_MASK_CODING_TYPE]);
 	if (pic->flags & PIC_FLAG_PROGRESSIVE_FRAME)
@@ -259,7 +248,6 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
 	for (i = 0; i < nb_pos; i++)
 	    fprintf (f, " %d/%d",
 		     pic->display_offset[i].x, pic->display_offset[i].y);
-    done_pic:
 	fprintf (f, "\n");
 	break;
     default:
