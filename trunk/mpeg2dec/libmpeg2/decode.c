@@ -121,7 +121,7 @@ int mpeg2_getpos (mpeg2dec_t * mpeg2dec)
     return mpeg2dec->buf_end - mpeg2dec->buf_start;
 }
 
-static inline state_t seek_chunk (mpeg2dec_t * mpeg2dec)
+static inline mpeg2_state_t seek_chunk (mpeg2dec_t * mpeg2dec)
 {
     int size, skipped;
 
@@ -133,10 +133,10 @@ static inline state_t seek_chunk (mpeg2dec_t * mpeg2dec)
     }
     mpeg2dec->bytes_since_pts += skipped;
     mpeg2dec->code = mpeg2dec->buf_start[-1];
-    return (state_t)-1;
+    return (mpeg2_state_t)-1;
 }
 
-static state_t seek_header (mpeg2dec_t * mpeg2dec)
+static mpeg2_state_t seek_header (mpeg2dec_t * mpeg2dec)
 {
     while (mpeg2dec->code != 0xb3 &&
 	   ((mpeg2dec->code != 0xb7 && mpeg2dec->code != 0xb8 &&
@@ -148,7 +148,7 @@ static state_t seek_header (mpeg2dec_t * mpeg2dec)
 	    mpeg2_header_picture_start (mpeg2dec));
 }
 
-state_t mpeg2_seek_sequence (mpeg2dec_t * mpeg2dec)
+mpeg2_state_t mpeg2_seek_sequence (mpeg2dec_t * mpeg2dec)
 {
     mpeg2dec->sequence.width = (unsigned)-1;
     return seek_header (mpeg2dec);
@@ -156,12 +156,12 @@ state_t mpeg2_seek_sequence (mpeg2dec_t * mpeg2dec)
 
 #define RECEIVED(code,state) (((state) << 8) + (code))
 
-state_t mpeg2_parse (mpeg2dec_t * mpeg2dec)
+mpeg2_state_t mpeg2_parse (mpeg2dec_t * mpeg2dec)
 {
     int size_buffer, size_chunk, copied;
 
     if (mpeg2dec->action) {
-	state_t state;
+	mpeg2_state_t state;
 
 	state = mpeg2dec->action (mpeg2dec);
 	if ((int)state >= 0)
@@ -221,7 +221,7 @@ state_t mpeg2_parse (mpeg2dec_t * mpeg2dec)
     return (mpeg2dec->state == STATE_SLICE) ? STATE_SLICE : STATE_INVALID;
 }
 
-state_t mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
+mpeg2_state_t mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
 {
     static int (* process_header[]) (mpeg2dec_t * mpeg2dec) = {
 	mpeg2_header_picture, mpeg2_header_extension, mpeg2_header_user_data,
@@ -337,7 +337,7 @@ void mpeg2_convert (mpeg2dec_t * mpeg2dec,
 
 void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id)
 {
-    fbuf_t * fbuf;
+    mpeg2_fbuf_t * fbuf;
 
     if (mpeg2dec->custom_fbuf) {
 	mpeg2_set_fbuf (mpeg2dec, mpeg2dec->decoder.coding_type);

@@ -48,7 +48,7 @@ static void sample2 (FILE * file)
     uint8_t buffer[BUFFER_SIZE];
     mpeg2dec_t * mpeg2dec;
     const mpeg2_info_t * info;
-    state_t state;
+    mpeg2_state_t state;
     int size;
     int framenum = 0;
 
