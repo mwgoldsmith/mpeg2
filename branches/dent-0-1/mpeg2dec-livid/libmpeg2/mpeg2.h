@@ -22,16 +22,7 @@
  */
 
 
-#ifndef AARONS_TYPES
-#define AARONS_TYPES
-//typedef to appropriate type for your architecture
-typedef unsigned char uint_8;
-typedef unsigned short uint_16;
-typedef unsigned int uint_32;
-typedef signed int sint_32;
-typedef signed short sint_16;
-typedef signed char sint_8;
-#endif
+#include <inttypes.h>
 
 //config flags
 #define MPEG2_MMX_ENABLE        0x1
@@ -44,7 +35,7 @@ typedef signed char sint_8;
 typedef struct mpeg2_config_s
 {
 	//Bit flags that enable various things
-	uint_32 flags;
+	uint32_t flags;
 	//Callback that points the decoder to new stream data
-  void   (*fill_buffer_callback)(uint_8 **, uint_8 **);
+  void   (*fill_buffer_callback)(uint8_t **, uint8_t **);
 } mpeg2_config_t;

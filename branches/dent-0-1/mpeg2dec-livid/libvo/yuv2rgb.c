@@ -30,6 +30,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <oms/oms.h>
 #include <oms/plugin/output_video.h>
 

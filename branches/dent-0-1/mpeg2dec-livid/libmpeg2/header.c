@@ -36,7 +36,7 @@
 #include "bitstream.h"
 #include "stats.h"
 
-static const uint_8 default_intra_quantization_matrix[64] ALIGN_16_BYTE = 
+static const uint8_t default_intra_quantization_matrix[64] ALIGN_16_BYTE = 
 {
    8, 16, 19, 22, 26, 27, 29, 34,
   16, 16, 22, 24, 27, 29, 34, 37,
@@ -48,7 +48,7 @@ static const uint_8 default_intra_quantization_matrix[64] ALIGN_16_BYTE =
   27, 29, 35, 38, 46, 56, 69, 83
 };
 
-static const uint_8 default_non_intra_quantization_matrix[64] ALIGN_16_BYTE = 
+static const uint8_t default_non_intra_quantization_matrix[64] ALIGN_16_BYTE = 
 {
 	16, 16, 16, 16, 16, 16, 16, 16, 
 	16, 16, 16, 16, 16, 16, 16, 16, 
@@ -61,7 +61,7 @@ static const uint_8 default_non_intra_quantization_matrix[64] ALIGN_16_BYTE =
 };
 
 #ifdef __i386__
-static const uint_8 scan_norm_mmx[64] ALIGN_16_BYTE  =
+static const uint8_t scan_norm_mmx[64] ALIGN_16_BYTE  =
 { 
 	// MMX Zig-Zag scan pattern (transposed)  
 	0,  8, 1,  2, 9,16,24,17,
@@ -74,7 +74,7 @@ static const uint_8 scan_norm_mmx[64] ALIGN_16_BYTE  =
 	46,39,47,54,61,62,55,63
 };
 
-static const uint_8 scan_alt_mmx[64] ALIGN_16_BYTE = 
+static const uint8_t scan_alt_mmx[64] ALIGN_16_BYTE = 
 { 
 	// Alternate scan pattern (transposed)
 	0, 1, 2, 3, 8, 9,16,17,
@@ -88,7 +88,7 @@ static const uint_8 scan_alt_mmx[64] ALIGN_16_BYTE =
 };
 #endif
 
-static const uint_8 scan_norm[64] ALIGN_16_BYTE =
+static const uint8_t scan_norm[64] ALIGN_16_BYTE =
 { 
 	// Zig-Zag scan pattern
 	 0, 1, 8,16, 9, 2, 3,10,
@@ -101,7 +101,7 @@ static const uint_8 scan_norm[64] ALIGN_16_BYTE =
 	53,60,61,54,47,55,62,63
 };
 
-static const uint_8 scan_alt[64] ALIGN_16_BYTE =
+static const uint8_t scan_alt[64] ALIGN_16_BYTE =
 { 
 	// Alternate scan pattern 
 	0,8,16,24,1,9,2,10,17,25,32,40,48,56,57,49,
@@ -117,8 +117,8 @@ static void header_process_picture_coding_extension(picture_t *picture);
 void
 header_state_init(picture_t *picture)
 {
-	picture->intra_quantizer_matrix = (uint_8*) default_intra_quantization_matrix;
-	picture->non_intra_quantizer_matrix = (uint_8*) default_non_intra_quantization_matrix;
+	picture->intra_quantizer_matrix = (uint8_t*) default_intra_quantization_matrix;
+	picture->non_intra_quantizer_matrix = (uint8_t*) default_non_intra_quantization_matrix;
 	//FIXME we should set pointers to the real scan matrices
 	//here (mmx vs normal) instead of the ifdefs in header_process_picture_coding_extension
 
@@ -146,7 +146,7 @@ void header_get_marker_bit(char *string)
 void 
 header_process_sequence_header(picture_t *picture)
 {
-	uint_32 i;
+	uint32_t i;
 
   picture->horizontal_size             = bitstream_get(12);
   picture->vertical_size               = bitstream_get(12);
@@ -170,7 +170,7 @@ header_process_sequence_header(picture_t *picture)
       picture->custom_intra_quantization_matrix[scan_norm[i]] = bitstream_get(8);
   }
 	else
-		picture->intra_quantizer_matrix = (uint_8*) default_intra_quantization_matrix;
+		picture->intra_quantizer_matrix = (uint8_t*) default_intra_quantization_matrix;
 
   if((picture->use_custom_non_intra_quantizer_matrix = bitstream_get(1)))
   {
@@ -179,7 +179,7 @@ header_process_sequence_header(picture_t *picture)
       picture->custom_non_intra_quantization_matrix[scan_norm[i]] = bitstream_get(8);
   }
 	else
-		picture->non_intra_quantizer_matrix = (uint_8*) default_non_intra_quantization_matrix;
+		picture->non_intra_quantizer_matrix = (uint8_t*) default_non_intra_quantization_matrix;
 
 	stats_sequence_header(picture);
 
@@ -188,7 +188,7 @@ header_process_sequence_header(picture_t *picture)
 void
 header_process_extension(picture_t *picture)
 {
-	uint_32 code;
+	uint32_t code;
 
 	code = bitstream_get(4);
 		

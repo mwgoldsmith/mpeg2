@@ -27,12 +27,14 @@
 
 #include <stdio.h>
 #include <mmx.h>
+#include <inttypes.h>
+
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 
 #include "idct.h"
 
-void idct_block_mmx(sint_16* foo);
+void idct_block_mmx(int16_t * foo);
 
 void
 idct_end_mmx()

@@ -17,6 +17,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <oms/oms.h>
 #include <oms/plugin/output_video.h>
 
@@ -676,7 +680,7 @@ void *plugin_init (char *whoami)
 {               
         pluginRegister (whoami,
                 PLUGIN_ID_OUTPUT_VIDEO,
-                0,
+                "x11",
                 &video_x11);
 
         return &video_x11;

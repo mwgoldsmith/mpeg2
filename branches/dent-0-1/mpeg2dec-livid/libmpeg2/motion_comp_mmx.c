@@ -57,7 +57,7 @@ mmx_zero_reg()
 }
 
 static inline void
-mmx_average_2_U8(uint_8 *dst, uint_8 *src1, uint_8 *src2)
+mmx_average_2_U8(uint8_t *dst, uint8_t *src1, uint8_t *src2)
 {
    //
    // *dst = clip_to_u8((*src1 + *src2 + 1)/2);
@@ -90,7 +90,7 @@ mmx_average_2_U8(uint_8 *dst, uint_8 *src1, uint_8 *src2)
 }
 
 static inline void
-mmx_interp_average_2_U8(uint_8 *dst, uint_8 *src1, uint_8 *src2)
+mmx_interp_average_2_U8(uint8_t *dst, uint8_t *src1, uint8_t *src2)
 {
    //
    // *dst = clip_to_u8((*dst + (*src1 + *src2 + 1)/2 + 1)/2);
@@ -137,7 +137,7 @@ mmx_interp_average_2_U8(uint_8 *dst, uint_8 *src1, uint_8 *src2)
 }
 
 static inline void
-mmx_average_4_U8(uint_8 *dst, uint_8 *src1, uint_8 *src2, uint_8 *src3, uint_8 *src4)
+mmx_average_4_U8(uint8_t *dst, uint8_t *src1, uint8_t *src2, uint8_t *src3, uint8_t *src4)
 {
    //
    // *dst = clip_to_u8((*src1 + *src2 + *src3 + *src4 + 2)/4);
@@ -192,7 +192,7 @@ mmx_average_4_U8(uint_8 *dst, uint_8 *src1, uint_8 *src2, uint_8 *src3, uint_8 *
 }
 
 static inline void
-mmx_interp_average_4_U8(uint_8 *dst, uint_8 *src1, uint_8 *src2, uint_8 *src3, uint_8 *src4)
+mmx_interp_average_4_U8(uint8_t *dst, uint8_t *src1, uint8_t *src2, uint8_t *src3, uint8_t *src4)
 {
    //
    // *dst = clip_to_u8((*dst + (*src1 + *src2 + *src3 + *src4 + 2)/4 + 1)/2);
@@ -263,7 +263,7 @@ mmx_interp_average_4_U8(uint_8 *dst, uint_8 *src1, uint_8 *src2, uint_8 *src3, u
 }
 
 void 
-motion_comp_idct_copy_mmx (uint_8 *dst, sint_16 *block, uint_32 stride)
+motion_comp_idct_copy_mmx (uint8_t *dst, int16_t *block, uint32_t stride)
 {
 	int y;
 
@@ -281,7 +281,7 @@ motion_comp_idct_copy_mmx (uint_8 *dst, sint_16 *block, uint_32 stride)
 
 // Add a motion compensated 8x8 block to the current block
 void
-motion_comp_idct_add_mmx( uint_8 *dst, sint_16 *block, uint_32 stride) 
+motion_comp_idct_add_mmx( uint8_t *dst, int16_t *block, uint32_t stride) 
 {
 	int y;
 
@@ -312,8 +312,8 @@ motion_comp_idct_add_mmx( uint_8 *dst, sint_16 *block, uint_32 stride)
 //-----------------------------------------------------------------------
 
 static inline void 
-motion_comp_avg_mmx( const uint_8 width, const sint_32 height, uint_8 *curr_block,
-      uint_8 *ref_block, const sint_32 stride)
+motion_comp_avg_mmx( const uint8_t width, const int32_t height, uint8_t *curr_block,
+      uint8_t *ref_block, const int32_t stride)
 {
 	int y;
 
@@ -332,15 +332,15 @@ motion_comp_avg_mmx( const uint_8 width, const sint_32 height, uint_8 *curr_bloc
 }
 
 void
-motion_comp_avg_16x16_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 stride, 
-		const sint_32 height)
+motion_comp_avg_16x16_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t stride, 
+		const int32_t height)
 {
    motion_comp_avg_mmx( 16, height, curr_block, ref_block, stride);
 }
 
 void
-motion_comp_avg_8x8_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 stride, 
-		const sint_32 height)
+motion_comp_avg_8x8_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t stride, 
+		const int32_t height)
 {
    motion_comp_avg_mmx( 8, height, curr_block, ref_block, stride);
 }
@@ -348,8 +348,8 @@ motion_comp_avg_8x8_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 st
 //-----------------------------------------------------------------------
 
 static inline void
-motion_comp_put_mmx( const uint_8 width, const sint_32 height, uint_8 *curr_block, 
-		uint_8 *ref_block, const sint_32 stride)
+motion_comp_put_mmx( const uint8_t width, const int32_t height, uint8_t *curr_block, 
+		uint8_t *ref_block, const int32_t stride)
 {
 	int y;
 
@@ -372,13 +372,13 @@ motion_comp_put_mmx( const uint_8 width, const sint_32 height, uint_8 *curr_bloc
 }
 
 void
-motion_comp_put_16x16_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 stride, const sint_32 height)
+motion_comp_put_16x16_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t stride, const int32_t height)
 {
    motion_comp_put_mmx( 16, height, curr_block, ref_block, stride);
 }
 
 void
-motion_comp_put_8x8_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 stride, const sint_32 height)
+motion_comp_put_8x8_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t stride, const int32_t height)
 {
    motion_comp_put_mmx( 8, height, curr_block, ref_block, stride);
 }
@@ -387,8 +387,8 @@ motion_comp_put_8x8_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 st
 
 // Half pixel interpolation in the x direction
 static inline void 
-motion_comp_avg_x_mmx( const uint_8 width, const sint_32 height, uint_8 *curr_block, 
-		uint_8 *ref_block, const sint_32 stride) 
+motion_comp_avg_x_mmx( const uint8_t width, const int32_t height, uint8_t *curr_block, 
+		uint8_t *ref_block, const int32_t stride) 
 {
 	int y;
 
@@ -407,15 +407,15 @@ motion_comp_avg_x_mmx( const uint_8 width, const sint_32 height, uint_8 *curr_bl
 }
 
 void 
-motion_comp_avg_x_16x16_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 frame_stride, 
-		const sint_32 height) 
+motion_comp_avg_x_16x16_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
    motion_comp_avg_x_mmx( 16, height, curr_block, ref_block, frame_stride);
 }
 
 void 
-motion_comp_avg_x_8x8_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 frame_stride, 
-		const sint_32 height) 
+motion_comp_avg_x_8x8_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
    motion_comp_avg_x_mmx( 8, height, curr_block, ref_block, frame_stride);
 }
@@ -423,8 +423,8 @@ motion_comp_avg_x_8x8_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 
 //-----------------------------------------------------------------------
 
 static inline void
-motion_comp_put_x_mmx( const uint_8 width, const sint_32 height, uint_8 *curr_block, uint_8 *ref_block, 
-		sint_32 stride) 
+motion_comp_put_x_mmx( const uint8_t width, const int32_t height, uint8_t *curr_block, uint8_t *ref_block, 
+		int32_t stride) 
 {
 	int y;
 
@@ -443,15 +443,15 @@ motion_comp_put_x_mmx( const uint_8 width, const sint_32 height, uint_8 *curr_bl
 }
 
 void 
-motion_comp_put_x_16x16_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 frame_stride, 
-		const sint_32 height) 
+motion_comp_put_x_16x16_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
    motion_comp_put_x_mmx( 16, height, curr_block, ref_block, frame_stride);
 }
 
 void 
-motion_comp_put_x_8x8_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 frame_stride, 
-		const sint_32 height) 
+motion_comp_put_x_8x8_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
    motion_comp_put_x_mmx( 8, height, curr_block, ref_block, frame_stride);
 }
@@ -460,11 +460,11 @@ motion_comp_put_x_8x8_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 
 //-----------------------------------------------------------------------
 
 static inline void 
-motion_comp_avg_xy_mmx( const uint_8 width, const sint_32 height, uint_8 *curr_block, uint_8 *ref_block, 
-		const sint_32 stride) 
+motion_comp_avg_xy_mmx( const uint8_t width, const int32_t height, uint8_t *curr_block, uint8_t *ref_block, 
+		const int32_t stride) 
 {
 	int y;
-	uint_8 *ref_block_next = ref_block + stride;
+	uint8_t *ref_block_next = ref_block + stride;
 
 	mmx_zero_reg();
 
@@ -482,15 +482,15 @@ motion_comp_avg_xy_mmx( const uint_8 width, const sint_32 height, uint_8 *curr_b
 }
 
 void 
-motion_comp_avg_xy_16x16_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 frame_stride, 
-		const sint_32 height) 
+motion_comp_avg_xy_16x16_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
    motion_comp_avg_xy_mmx( 16, height, curr_block, ref_block, frame_stride);
 }
 
 void 
-motion_comp_avg_xy_8x8_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 frame_stride, 
-		const sint_32 height) 
+motion_comp_avg_xy_8x8_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
    motion_comp_avg_xy_mmx( 8, height, curr_block, ref_block, frame_stride);
 }
@@ -498,11 +498,11 @@ motion_comp_avg_xy_8x8_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32
 //-----------------------------------------------------------------------
 
 static inline void 
-motion_comp_put_xy_mmx( const uint_8 width, const sint_32 height, uint_8 *curr_block, uint_8 *ref_block, 
-		const sint_32 stride) 
+motion_comp_put_xy_mmx( const uint8_t width, const int32_t height, uint8_t *curr_block, uint8_t *ref_block, 
+		const int32_t stride) 
 {
 	int y;
-	uint_8 *ref_block_next = ref_block + stride;
+	uint8_t *ref_block_next = ref_block + stride;
 
 	mmx_zero_reg();
 
@@ -520,15 +520,15 @@ motion_comp_put_xy_mmx( const uint_8 width, const sint_32 height, uint_8 *curr_b
 }
 
 void 
-motion_comp_put_xy_16x16_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 frame_stride, 
-		const sint_32 height) 
+motion_comp_put_xy_16x16_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
    motion_comp_put_xy_mmx( 16, height, curr_block, ref_block, frame_stride);
 }
 
 void 
-motion_comp_put_xy_8x8_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 frame_stride, 
-		const sint_32 height) 
+motion_comp_put_xy_8x8_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
    motion_comp_put_xy_mmx( 8, height, curr_block, ref_block, frame_stride);
 }
@@ -536,11 +536,11 @@ motion_comp_put_xy_8x8_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32
 //-----------------------------------------------------------------------
 
 static inline void 
-motion_comp_avg_y_mmx( const uint_8 width, const sint_32 height, uint_8 *curr_block, uint_8 *ref_block,
-      const sint_32 stride) 
+motion_comp_avg_y_mmx( const uint8_t width, const int32_t height, uint8_t *curr_block, uint8_t *ref_block,
+      const int32_t stride) 
 {
 	int y;
-	uint_8 *ref_block_next = ref_block + stride;
+	uint8_t *ref_block_next = ref_block + stride;
 
 	mmx_zero_reg();
 
@@ -558,15 +558,15 @@ motion_comp_avg_y_mmx( const uint_8 width, const sint_32 height, uint_8 *curr_bl
 }
 
 void 
-motion_comp_avg_y_16x16_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 frame_stride, 
-		const sint_32 height) 
+motion_comp_avg_y_16x16_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
    motion_comp_avg_y_mmx( 16, height, curr_block, ref_block, frame_stride);
 }
 
 void 
-motion_comp_avg_y_8x8_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 frame_stride, 
-		const sint_32 height) 
+motion_comp_avg_y_8x8_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
    motion_comp_avg_y_mmx( 8, height, curr_block, ref_block, frame_stride);
 }
@@ -574,11 +574,11 @@ motion_comp_avg_y_8x8_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 
 //-----------------------------------------------------------------------
 
 static inline void
-motion_comp_put_y_mmx( const uint_8 width, const sint_32 height, uint_8 *curr_block, uint_8 *ref_block, 
-		const sint_32 stride) 
+motion_comp_put_y_mmx( const uint8_t width, const int32_t height, uint8_t *curr_block, uint8_t *ref_block, 
+		const int32_t stride) 
 {
 	int y;
-	uint_8 *ref_block_next = ref_block + stride;
+	uint8_t *ref_block_next = ref_block + stride;
 
 	mmx_zero_reg();
 
@@ -596,15 +596,15 @@ motion_comp_put_y_mmx( const uint_8 width, const sint_32 height, uint_8 *curr_bl
 }
 
 void 
-motion_comp_put_y_16x16_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 frame_stride, 
-		const sint_32 height) 
+motion_comp_put_y_16x16_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
    motion_comp_put_y_mmx( 16, height, curr_block, ref_block, frame_stride);
 }
 
 void 
-motion_comp_put_y_8x8_mmx( uint_8 *curr_block, uint_8 *ref_block, const sint_32 frame_stride, 
-		const sint_32 height) 
+motion_comp_put_y_8x8_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
    motion_comp_put_y_mmx( 8, height, curr_block, ref_block, frame_stride);
 }

@@ -36,15 +36,12 @@
 #include <oms/oms.h>
 #include <oms/plugin/output_video.h>
 #include "mga_vid.h"
+#include "mmx.h"
 
 static int _mga_open		(plugin_t *plugin, void *name);
 static int _mga_close		(plugin_t *plugin);
 static int _mga_setup		(uint32_t width, uint32_t height, uint32_t fullscreen, char *title);
-static int draw_frame_g200	(uint8_t *src[]);
-static int draw_frame_g400	(uint8_t *src[]);
-static int draw_slice_g200	(uint8_t *src[], uint32_t slice_num);
-static int draw_slice_g400	(uint8_t *src[], uint32_t slice_num);
-static void flip_page		(void);
+static void _mga_flip_page		(void);
 static void free_image_buffer	(vo_image_buffer_t* image);
 static vo_image_buffer_t *allocate_image_buffer (uint32_t height, uint32_t width, uint32_t format);
 
@@ -55,8 +52,6 @@ static struct mga_priv_s {
 	int next_frame;
 	int fd;
 	uint32_t bespitch;
-	uint32_t width;
-	uint32_t height;
 	uint32_t fullscreen;
 	uint32_t x_org;
 	uint32_t y_org;
@@ -68,22 +63,24 @@ static plugin_output_video_t video_mga = {
 	open:		_mga_open,
 	close:		_mga_close,
 	setup:		_mga_setup,
-	NULL,		// will be inserted when opened (see below)
-	NULL,		// will be inserted when opened (see below)
-	flip_page,
-	allocate_image_buffer,
-	free_image_buffer
+	flip_page:	_mga_flip_page,
+	allocate_image_buffer:  allocate_image_buffer,
+	free_image_buffer:      free_image_buffer
 };
 
 
+#ifndef __i386__
 /**
  *
  **/
 
-static inline void write_frame_g200 (uint8_t *y, uint8_t *cr, uint8_t *cb)
+static int _mga_write_frame_g200 (uint8_t *src[])
 {
 	uint8_t *dest;
 	uint32_t h,w;
+	uint8_t *y = src[0];
+	uint8_t *cb = src[1];
+	uint8_t *cr = src[2];
 
 	dest = _mga_priv.vid_data;
 
@@ -100,12 +97,22 @@ static inline void write_frame_g200 (uint8_t *y, uint8_t *cr, uint8_t *cb)
 		}
 		dest += _mga_priv.bespitch - _mga_priv.mga_vid_config.src_width;
 	}
+	_mga_flip_page();
+	return 0;
 }
+#else
 
-static inline void write_frame_g200_mmx (uint8_t *y, uint8_t *cr, uint8_t *cb)
+/**
+ *
+ **/
+
+static int _mga_write_frame_g200_mmx (uint8_t *src[])
 {
 	uint8_t *dest;
 	uint32_t h,w;
+	uint8_t *y = src[0];
+	uint8_t *cb = src[1];
+	uint8_t *cr = src[2];
 
 	dest = _mga_priv.vid_data;
 
@@ -124,24 +131,33 @@ static inline void write_frame_g200_mmx (uint8_t *y, uint8_t *cr, uint8_t *cb)
 			"punpckhbw         (%2),%%mm1\n\t" 
 			"movq 		  %%mm0,(%0)\n\t"
 			"movq 		  %%mm1,8(%0)\n\t"
-			"emms\n\t"
-			:"+r" (dest): "r" (cb),"r" (cr));
+			: "+r" (dest) : "r" (cb), "r" (cr));
+
 			dest += 16;
 			cb += 8;
 			cr += 8;
 		}
 		dest += _mga_priv.bespitch - _mga_priv.mga_vid_config.src_width;
 	}
+	_mga_flip_page();
+
+	emms ();
+
+	return 0;
 }
+#endif
 
 /**
  *
  **/
 
-static inline void write_frame_g400 (uint8_t *y,uint8_t *cr, uint8_t *cb)
+static int _mga_write_frame_g400 (uint8_t *src[])
 {
 	uint8_t *dest;
-	uint32_t h;
+	int h;
+	uint8_t *y = src[0];
+	uint8_t *cb = src[1];
+	uint8_t *cr = src[2];
 
 	dest = _mga_priv.vid_data;
 
@@ -162,67 +178,75 @@ static inline void write_frame_g400 (uint8_t *y,uint8_t *cr, uint8_t *cb)
 		cr += _mga_priv.mga_vid_config.src_width/2;
 		dest += _mga_priv.bespitch/2;
 	}
+	_mga_flip_page();
+	return 0;
 }
 
-
+#ifndef __i386__
 /**
  *
  **/
 
-static inline void write_slice_g200 (uint8_t *y,uint8_t *cr, uint8_t *cb,uint32_t slice_num)
+static int _mga_write_slice_g200 (uint8_t *src[], uint32_t slice_num)
 {
 	uint8_t *dest;
-	uint32_t h,w;
+	int h,w;
+	uint8_t *y = src[0];
+	uint8_t *cb = src[1];
+	uint8_t *cr = src[2];
 
 	dest = _mga_priv.vid_data + _mga_priv.bespitch * 16 * slice_num;
 
 	for (h=0; h < 16; h++) {
-		memcpy(dest, y, _mga_priv.mga_vid_config.src_width);
+		memcpy (dest, y, _mga_priv.mga_vid_config.src_width);
 		y += _mga_priv.mga_vid_config.src_width;
 		dest += _mga_priv.bespitch;
 	}
 
-	dest = _mga_priv.vid_data +  _mga_priv.bespitch * _mga_priv.mga_vid_config.src_height + 
-		_mga_priv.bespitch * 8 * slice_num;
+	dest = _mga_priv.vid_data +  _mga_priv.bespitch * _mga_priv.mga_vid_config.src_height + _mga_priv.bespitch * 8 * slice_num;
 
 	for (h=0; h < 8; h++) {
-		for(w=0; w < _mga_priv.mga_vid_config.src_width/2; w++) {
+		for (w=0; w < _mga_priv.mga_vid_config.src_width/2; w++) {
 			*dest++ = *cb++;
 			*dest++ = *cr++;
 		}
 		dest += _mga_priv.bespitch - _mga_priv.mga_vid_config.src_width;
 	}
+
+	return 0;
 }
 
-static inline void write_slice_g200_mmx (uint8_t *y,uint8_t *cr, uint8_t *cb,uint32_t slice_num)
+#else
+/**
+ *
+ **/
+
+static int _mga_write_slice_g200_mmx (uint8_t *src[], uint32_t slice_num)
 {
 	uint8_t *dest;
-	uint32_t h,w;
+	int h,w;
+	uint8_t *y = src[0];
+	uint8_t *cb = src[1];
+	uint8_t *cr = src[2];
 
 	dest = _mga_priv.vid_data + _mga_priv.bespitch * 16 * slice_num;
 
 	for (h=0; h < 16; h++) {
-		memcpy(dest, y, _mga_priv.mga_vid_config.src_width);
-		y += _mga_priv.mga_vid_config.src_width;
-		dest += _mga_priv.bespitch;
+		for (w=0; w < _mga_priv.mga_vid_config.src_width/8; w++) {
+			asm volatile (
+				"movq       (%1),%%mm0\n\t"
+				"movq       %%mm0,(%0)\n\t"
+				: : "r" (dest), "r" (y));
+			y += 8;
+			dest += 8;
+		}
+		dest += _mga_priv.bespitch - _mga_priv.mga_vid_config.src_width;
 	}
 
-	dest = _mga_priv.vid_data +  _mga_priv.bespitch * _mga_priv.mga_vid_config.src_height + 
-		_mga_priv.bespitch * 8 * slice_num;
+	dest = _mga_priv.vid_data +  _mga_priv.bespitch * _mga_priv.mga_vid_config.src_height + _mga_priv.bespitch * 8 * slice_num;
         
 	for (h=0; h < 8; h++) {
 		for(w=0; w < _mga_priv.mga_vid_config.src_width/16; w++) {
-#if 0
-			movq_m2r (cb, mm0);
-			movq_r2r (%mm0, %mm1);
-			punpcklbw_m2r (cr, mm0);
-			punpckhbw_m2r (cr, mm1);
-			movq_r2m (mm0, dest);
-			asm (volatile (
-			"movq             %%mm1,8(%0)\n\t"
-			:"+r" (dest): "r" (cb),"r" (cr));
-			emms ();
-#endif
 			asm volatile (
 			"movq 		   (%1),%%mm0\n\t"
 			"movq 		  %%mm0,%%mm1\n\t"
@@ -230,8 +254,7 @@ static inline void write_slice_g200_mmx (uint8_t *y,uint8_t *cr, uint8_t *cb,uin
 			"punpckhbw         (%2),%%mm1\n\t" 
 			"movq 		  %%mm0,(%0)\n\t"
 			"movq 		  %%mm1,8(%0)\n\t"
-			"emms\n\t"
-			:"+r" (dest): "r" (cb),"r" (cr));
+			: "+r" (dest) : "r" (cb),"r" (cr));
 
 			dest += 16;
 			cb += 8;
@@ -239,16 +262,25 @@ static inline void write_slice_g200_mmx (uint8_t *y,uint8_t *cr, uint8_t *cb,uin
 		}
 		dest += _mga_priv.bespitch - _mga_priv.mga_vid_config.src_width;
 	}
-}
 
+	emms ();
+	return 0;
+}
+#endif
+
+
+#ifndef __i386__
 /**
  *
  **/
 
-static inline void write_slice_g400 (uint8_t *y,uint8_t *cr, uint8_t *cb,uint32_t slice_num)
+static int _mga_write_slice_g400 (uint8_t *src[], uint32_t slice_num)
 {
 	uint8_t *dest;
 	uint32_t h;
+	uint8_t *y = src[0];
+	uint8_t *cb = src[1];
+	uint8_t *cr = src[2];
 
 	dest = _mga_priv.vid_data + _mga_priv.bespitch * 16 * slice_num;
 
@@ -258,8 +290,7 @@ static inline void write_slice_g400 (uint8_t *y,uint8_t *cr, uint8_t *cb,uint32_
 		dest += _mga_priv.bespitch;
 	}
 
-	dest = _mga_priv.vid_data +  _mga_priv.bespitch * _mga_priv.mga_vid_config.src_height + 
-		_mga_priv.bespitch/2 * 8 * slice_num;
+	dest = _mga_priv.vid_data +  _mga_priv.bespitch * _mga_priv.mga_vid_config.src_height + _mga_priv.bespitch/2 * 8 * slice_num;
 
 	for(h=0; h < 8; h++) {
 		memcpy (dest, cb, _mga_priv.mga_vid_config.src_width/2);
@@ -274,38 +305,79 @@ static inline void write_slice_g400 (uint8_t *y,uint8_t *cr, uint8_t *cb,uint32_
 		cr += _mga_priv.mga_vid_config.src_width/2;
 		dest += _mga_priv.bespitch/2;
 	}
-}
-
-
-/**
- *
- **/
-
-static int draw_slice_g200 (uint8_t *src[], uint32_t slice_num)
-{
-	write_slice_g200(src[0],src[2],src[1],slice_num);
-
 	return 0;
 }
+#else
 
 
 /**
  *
  **/
 
-static int draw_slice_g400 (uint8_t *src[], uint32_t slice_num)
+static int _mga_write_slice_g400_mmx (uint8_t *src[], uint32_t slice_num)
 {
-	write_slice_g400(src[0],src[2],src[1],slice_num);
+	uint8_t *dest;
+	int h, w;
+	int w_max;
+	uint8_t *y = src[0];
+	uint8_t *cb = src[1];
+	uint8_t *cr = src[2];
 
+	dest = _mga_priv.vid_data + _mga_priv.bespitch * 16 * slice_num;
+	w_max = _mga_priv.mga_vid_config.src_width/8;
+
+	for (h=0; h < 16; h++) {
+		for (w=0; w < w_max; w++) {
+			asm volatile (
+				"movq       (%1),%%mm0\n\t"
+				"movq       %%mm0,(%0)\n\t"
+				: : "r" (dest), "r" (y));
+			y += 8;
+			dest += 8;
+		}
+		dest += _mga_priv.bespitch - _mga_priv.mga_vid_config.src_width;
+	}
+
+	dest = _mga_priv.vid_data +  _mga_priv.bespitch * _mga_priv.mga_vid_config.src_height + _mga_priv.bespitch/2 * 8 * slice_num;
+	w_max = _mga_priv.mga_vid_config.src_width/16;
+
+	for (h=0; h < 8; h++) {
+		for (w=0; w < w_max; w++) {
+			asm volatile (
+				"movq       (%1),%%mm0\n\t"
+				"movq       %%mm0,(%0)\n\t"
+				: : "r" (dest), "r" (cb));
+			cb += 8;
+			dest += 8;
+		}
+		dest += (_mga_priv.bespitch - _mga_priv.mga_vid_config.src_width)/2;
+	}
+
+	dest = _mga_priv.vid_data + _mga_priv.bespitch * _mga_priv.mga_vid_config.src_height + _mga_priv.bespitch * _mga_priv.mga_vid_config.src_height / 4 + _mga_priv.bespitch/2 * 8 * slice_num;
+
+	for (h=0; h < 8; h++) {
+		for (w=0; w < w_max; w++) {
+			asm volatile (
+				"movq       (%1),%%mm0\n\t"
+				"movq       %%mm0,(%0)\n\t"
+				: : "r" (dest), "r" (cr));
+			cr += 8;
+			dest += 8;
+		}
+		dest += (_mga_priv.bespitch - _mga_priv.mga_vid_config.src_width)/2;
+	}
+
+	emms ();
 	return 0;
 }
+#endif
 
 
 /**
  *
  **/
 
-static void flip_page (void)
+static void _mga_flip_page (void)
 {
 	ioctl (_mga_priv.fd, MGA_VID_FSEL, &_mga_priv.next_frame);
 
@@ -315,32 +387,6 @@ static void flip_page (void)
 		_mga_priv.vid_data = _mga_priv.frame1;
 	else
 		_mga_priv.vid_data = _mga_priv.frame0;
-}
-
-
-/**
- *
- **/
-
-static int draw_frame_g200 (uint8_t *src[])
-{
-	write_frame_g200(src[0], src[2], src[1]);
-	flip_page();
-
-	return 0;
-}
-
-
-/**
- *
- **/
-
-static int draw_frame_g400 (uint8_t *src[])
-{
-	write_frame_g400 (src[0], src[2], src[1]);
-	flip_page();
-
-	return 0;
 }
 
 
@@ -384,9 +430,6 @@ static int _mga_setup (uint32_t width, uint32_t height, uint32_t fullscreen, cha
 	char *frame_mem;
 	uint32_t frame_size;
 
-	_mga_priv.width = width;
-	_mga_priv.height = height;
-
 	_mga_priv.mga_vid_config.src_width	= width;
 	_mga_priv.mga_vid_config.src_height	= height;
 	_mga_priv.mga_vid_config.dest_width	= width;
@@ -398,14 +441,16 @@ static int _mga_setup (uint32_t width, uint32_t height, uint32_t fullscreen, cha
 	_mga_priv.mga_vid_config.x_org		= _mga_priv.x_org;
 	_mga_priv.mga_vid_config.y_org		= _mga_priv.y_org;
 
+	_mga_priv.mga_vid_config.colkey_on	= 1;
+
 	if (ioctl (_mga_priv.fd, MGA_VID_CONFIG, &_mga_priv.mga_vid_config))
 		perror ("Error in _mga_priv.mga_vid_config ioctl");
 
 	ioctl (_mga_priv.fd, MGA_VID_ON, 0);
 
-	_mga_priv.bespitch = (_mga_priv.width + 31) & ~31;
-	frame_size	= _mga_priv.bespitch * _mga_priv.height * 3 / 2;
-	frame_mem	= (char*)mmap(0,frame_size*2,PROT_WRITE,MAP_SHARED,_mga_priv.fd,0);
+	_mga_priv.bespitch = (width + 31) & ~31;
+	frame_size	= _mga_priv.bespitch * height * 3 / 2;
+	frame_mem	= (char*)mmap (0, frame_size*2, PROT_WRITE, MAP_SHARED, _mga_priv.fd, 0);
 	_mga_priv.frame0	= frame_mem;
 	_mga_priv.frame1	= frame_mem + frame_size;
 	_mga_priv.vid_data	= frame_mem;
@@ -416,18 +461,24 @@ static int _mga_setup (uint32_t width, uint32_t height, uint32_t fullscreen, cha
 
 	//set up drawing functions
 	if (_mga_priv.mga_vid_config.card_type == MGA_G200) {
-#ifdef _i386_
+#ifdef __i386__
 // FIXME: check if we REALLY do have MMX ops available
-		video_mga.draw_frame = draw_frame_g200_mmx;
-		video_mga.draw_slice = draw_slice_g200_mmx;
+		video_mga.draw_frame = _mga_write_frame_g200_mmx;
+		video_mga.draw_slice = _mga_write_slice_g200_mmx;
 #else
-		video_mga.draw_frame = draw_frame_g200;
-		video_mga.draw_slice = draw_slice_g200;
+		video_mga.draw_frame = _mga_write_frame_g200;
+		video_mga.draw_slice = _mga_write_slice_g200;
 #endif		
 	} else {
-		video_mga.draw_frame = draw_frame_g400;
-		video_mga.draw_slice = draw_slice_g400;
+#ifdef __i386__
+		video_mga.draw_frame = _mga_write_frame_g400;
+		video_mga.draw_slice = _mga_write_slice_g400_mmx;
+#else
+		video_mga.draw_frame = _mga_write_frame_g400;
+		video_mga.draw_slice = _mga_write_slice_g400;
+#endif		
 	}
+
 	return 0;
 }
 

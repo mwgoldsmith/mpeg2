@@ -22,6 +22,8 @@
  */
 
 #include <stdio.h>
+#include <inttypes.h>
+
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 
@@ -32,7 +34,7 @@
 #include <mlib_video.h>
 
 void
-idct_block_mlib(sint_16 *block)
+idct_block_mlib(int16_t *block)
 {
    // Aaron decided to integrate some scaling in the c/mmx code,
    // we need to undo that now before calling a standard IDCT.

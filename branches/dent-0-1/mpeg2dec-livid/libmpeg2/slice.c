@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "config.h"
 #include "mpeg2.h"
@@ -39,7 +40,7 @@
 
 // storage for dct coded blocks
 // y at blocks, cr at blocks + 4 * 64, cb at blocks + 5 * 64 
-static sint_16 blocks[6 * 64 ] ALIGN_16_BYTE;
+static int16_t blocks[6 * 64 ] ALIGN_16_BYTE;
 
 
 //XXX put these on the stack in slice_process?
@@ -58,7 +59,7 @@ extern DCTtab DCTtab2[],DCTtab3[],DCTtab4[],DCTtab5[],DCTtab6[];
 extern DCTtab DCTtab0a[],DCTtab1a[];
 
 
-uint_32 non_linear_quantizer_scale[32] =
+uint32_t non_linear_quantizer_scale[32] =
 {
 	 0, 1, 2, 3, 4, 5, 6, 7,
 	 8,10,12,14,16,18,20,22,
@@ -71,7 +72,7 @@ void
 slice_get_slice_header(const picture_t *picture, slice_t *slice)
 {
 
-	uint_32 intra_slice_flag;
+	uint32_t intra_slice_flag;
 
 	slice->quantizer_scale_code = bitstream_get(5);
 
@@ -103,10 +104,10 @@ slice_get_slice_header(const picture_t *picture, slice_t *slice)
 
 
 //This goes into vlc.c when it gets written
-inline uint_32
-slice_get_block_coeff(uint_16 *run, sint_16 *val, uint_16 non_intra_dc,uint_16 intra_vlc_format)
+inline uint32_t
+slice_get_block_coeff(uint16_t *run, int16_t *val, uint16_t non_intra_dc,uint16_t intra_vlc_format)
 {
-	uint_32 code;
+	uint32_t code;
 	DCTtab *tab;
 
 	//this routines handles intra AC and non-intra AC/DC coefficients
@@ -179,15 +180,15 @@ slice_get_block_coeff(uint_16 *run, sint_16 *val, uint_16 non_intra_dc,uint_16 i
 
 
 static void
-slice_get_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint_32 cc)
+slice_get_intra_block(const picture_t *picture,slice_t *slice,int16_t *dest,uint32_t cc)
 {
-	uint_32 i = 1;
-	uint_32 j;
-	uint_16 run;
-	sint_16 val;
-	const uint_8 *scan = picture->scan;
-	uint_8 *quant_matrix = picture->intra_quantizer_matrix;
-	sint_16 quantizer_scale = slice->quantizer_scale;
+	uint32_t i = 1;
+	uint32_t j;
+	uint16_t run;
+	int16_t val;
+	const uint8_t *scan = picture->scan;
+	uint8_t *quant_matrix = picture->intra_quantizer_matrix;
+	int16_t quantizer_scale = slice->quantizer_scale;
 
 	//Get the intra DC coefficient and inverse quantize it
 	if (cc == 0)
@@ -208,15 +209,15 @@ slice_get_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint
 }
 
 static void
-slice_get_non_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint_32 cc)
+slice_get_non_intra_block(const picture_t *picture,slice_t *slice,int16_t *dest,uint32_t cc)
 {
-	uint_32 i = 0;
-	uint_32 j;
-	uint_16 run;
-	sint_16 val;
-	const uint_8 *scan = picture->scan;
-	uint_8 *quant_matrix = picture->non_intra_quantizer_matrix;
-	sint_16 quantizer_scale = slice->quantizer_scale;
+	uint32_t i = 0;
+	uint32_t j;
+	uint16_t run;
+	int16_t val;
+	const uint8_t *scan = picture->scan;
+	uint8_t *quant_matrix = picture->non_intra_quantizer_matrix;
+	int16_t quantizer_scale = slice->quantizer_scale;
 
 	while((slice_get_block_coeff(&run,&val,i==0,0)))
 	{
@@ -227,10 +228,10 @@ slice_get_non_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,
 }
 
 //This should inline easily into slice_get_motion_vector
-static inline sint_16 compute_motion_vector(sint_16 vec,uint_16 r_size,sint_16 motion_code,
-		sint_16 motion_residual)
+static inline int16_t compute_motion_vector(int16_t vec,uint16_t r_size,int16_t motion_code,
+		int16_t motion_residual)
 {
-	sint_16 lim;
+	int16_t lim;
 
 	lim = 16<<r_size;
 
@@ -249,11 +250,11 @@ static inline sint_16 compute_motion_vector(sint_16 vec,uint_16 r_size,sint_16 m
 	return vec;
 }
 
-static void slice_get_motion_vector(sint_16 *prev_mv, sint_16 *curr_mv,const uint_8 *f_code,
+static void slice_get_motion_vector(int16_t *prev_mv, int16_t *curr_mv,const uint8_t *f_code,
 		macroblock_t *mb)
 {
-	sint_16 motion_code, motion_residual;
-	sint_16 r_size;
+	int16_t motion_code, motion_residual;
+	int16_t r_size;
 
 	//fprintf(stderr,"motion_vec: h_r_size %d v_r_size %d\n",f_code[0],f_code[1]);
 
@@ -354,15 +355,15 @@ static void slice_get_backward_motion_vectors(const picture_t *picture,slice_t *
 
 inline void slice_reset_pmv(slice_t *slice)
 {
-	memset(slice->b_pmv,0,sizeof(sint_16) * 4);
-	memset(slice->f_pmv,0,sizeof(sint_16) * 4);
+	memset(slice->b_pmv,0,sizeof(int16_t) * 4);
+	memset(slice->f_pmv,0,sizeof(int16_t) * 4);
 }
 
 void
 slice_get_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
 {
-	uint_32 quantizer_scale_code;
-	uint_32 picture_structure = picture->picture_structure;
+	uint32_t quantizer_scale_code;
+	uint32_t picture_structure = picture->picture_structure;
 
 	// get macroblock_type 
 	mb->macroblock_type = Get_macroblock_type(picture->picture_coding_type);
@@ -516,14 +517,14 @@ slice_init(void)
 }
 
 
-uint_32
-slice_process(picture_t *picture,uint_8 *slice_data)
+uint32_t
+slice_process(picture_t *picture,uint8_t *slice_data)
 {
-	uint_32 mba;      
-	uint_32 mba_inc;
-	uint_32 prev_macroblock_type = 0; 
-	uint_32 mb_width = picture->coded_picture_width >> 4;
-	uint_32 i;
+	uint32_t mba;      
+	uint32_t mba_inc;
+	uint32_t prev_macroblock_type = 0; 
+	uint32_t mb_width = picture->coded_picture_width >> 4;
+	uint32_t i;
 
 	mba = ((slice_data[0] &0xff) - 1) * mb_width - 1;
 

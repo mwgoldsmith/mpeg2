@@ -30,6 +30,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <inttypes.h>
+
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 
@@ -41,12 +43,12 @@
 //  This should serve as a reference implementation. Optimized versions
 //  in assembler are a must for speed.
 
-static uint_8 clip_lut[1024];
+static uint8_t clip_lut[1024];
 #define CLIP(i) ((clip_lut+384)[(i)])
 
 void motion_comp_c_init(void)
 {
-	sint_32 i;
+	int32_t i;
 
 	for ( i =-384; i < 640; i++)
 		clip_lut[i+384] = i < 0 ? 0 : (i > 255 ? 255 : i);
@@ -66,8 +68,8 @@ void motion_comp_c_init(void)
 // mc function template
 
 #define MC_FUNC(op,xy)							\
-static void motion_comp_##op####xy##_16x16_c (uint_8 *curr_block, uint_8 *ref_block, \
-				    sint_32 stride, sint_32 height)	\
+static void motion_comp_##op####xy##_16x16_c (uint8_t *curr_block, uint8_t *ref_block, \
+				    int32_t stride, int32_t height)	\
 {									\
 	int i;								\
 								\
@@ -93,10 +95,10 @@ static void motion_comp_##op####xy##_16x16_c (uint_8 *curr_block, uint_8 *ref_bl
 		curr_block += stride;						\
 	}									\
 }									\
-static void motion_comp_##op####xy##_8x8_c (uint_8 *curr_block, uint_8 *ref_block, \
-				   sint_32 stride, sint_32 height)	\
+static void motion_comp_##op####xy##_8x8_c (uint8_t *curr_block, uint8_t *ref_block, \
+				   int32_t stride, int32_t height)	\
 {									\
-	uint_32 i;								\
+	uint32_t i;								\
 								\
 	for (i = 0; i < height; i++)					\
 	{									\
@@ -126,9 +128,9 @@ MC_FUNC(avg,_xy)
 
 // idct copy/add functions
 
-static void motion_comp_idct_copy_c (uint_8 * dst, sint_16 * block, uint_32 stride)
+static void motion_comp_idct_copy_c (uint8_t * dst, int16_t * block, uint32_t stride)
 {
-	uint_32 i;
+	uint32_t i;
 
 	for (i = 0; i < 8; i++)
 	{
@@ -146,9 +148,9 @@ static void motion_comp_idct_copy_c (uint_8 * dst, sint_16 * block, uint_32 stri
 	}
 }
 
-static void motion_comp_idct_add_c (uint_8 * dst, sint_16 * block, uint_32 stride)
+static void motion_comp_idct_add_c (uint8_t * dst, int16_t * block, uint32_t stride)
 {
-	uint_32 i;
+	uint32_t i;
 
 	for (i = 0; i < 8; i++)
 	{

@@ -21,59 +21,30 @@
  *
  */
 
-//My new and improved vego-matic endian swapping routine
-//(stolen from the kernel)
-#ifdef WORDS_BIGENDIAN
 
-#	define swab32(x) (x)
+extern uint32_t bits_left;
+extern uint64_t current_word;
 
-#else
-
-#	if defined (__i386__)
-
-#	define swab32(x) __i386_swab32(x)
-	static inline const uint_32 __i386_swab32(uint_32 x)
-	{
-		__asm__("bswap %0" : "=r" (x) : "0" (x));
-		return x;
-	}
-
-#	else
-
-#	define swab32(x)\
-((((uint_8*)&x)[0] << 24) | (((uint_8*)&x)[1] << 16) |  \
- (((uint_8*)&x)[2] << 8)  | (((uint_8*)&x)[3]))
-
-#	endif
-#endif
-
-extern uint_32 bits_left;
-extern uint_32 current_word;
-extern uint_32 next_word;
-
-void bitstream_init(uint_8 *start);
+void bitstream_init(uint8_t *start);
 void bitstream_byte_align(void);
-inline uint_32 bitstream_show_bh(uint_32 num_bits);
-inline uint_32 bitstream_get_bh(uint_32 num_bits);
-inline void bitstream_flush_bh(uint_32 num_bits);
+inline uint32_t bitstream_show_bh(uint32_t num_bits);
+inline uint32_t bitstream_get_bh(uint32_t num_bits);
+inline void bitstream_flush_bh(uint32_t num_bits);
 
-static inline uint_32 
-bitstream_show(uint_32 num_bits)
+static inline uint32_t bitstream_show(uint32_t num_bits)
 {
 	if(num_bits <= bits_left)
-		return (current_word << (32 - bits_left)) >> (32 - num_bits);
+		return (current_word << (64 - bits_left)) >> (64 - num_bits);
 	
 	return bitstream_show_bh(num_bits);
 }
 
-static inline uint_32 
-bitstream_get(uint_32 num_bits)
+static inline uint32_t bitstream_get(uint32_t num_bits)
 {
-	uint_32 result;
+	uint32_t result;
 
-	if(num_bits < bits_left)
-	{
-		result = (current_word << (32 - bits_left)) >> (32 - num_bits);
+	if(num_bits < bits_left) {
+		result = (current_word << (64 - bits_left)) >> (64 - num_bits);
 		bits_left -= num_bits;
 		return result;
 	}
@@ -81,8 +52,7 @@ bitstream_get(uint_32 num_bits)
 	return bitstream_get_bh(num_bits);
 }
 
-static inline void 
-bitstream_flush(uint_32 num_bits)
+static inline void bitstream_flush(uint32_t num_bits)
 {
 	if(num_bits < bits_left)
 		bits_left -= num_bits;

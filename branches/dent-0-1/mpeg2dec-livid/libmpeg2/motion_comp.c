@@ -30,6 +30,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
+
 #include "config.h"
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
@@ -66,13 +68,13 @@ motion_comp_init (void)
 	}
 }
 
-void motion_block (void (** table) (uint_8 *, uint_8 *, sint_32, sint_32), 
+void motion_block (void (** table) (uint8_t *, uint8_t *, int32_t, int32_t), 
 		int x_pred, int y_pred, int field_select,
-		uint_8 * dst_y, uint_8 * dst_cr, uint_8 * dst_cb,
-		uint_8 * refframe[3], int pitch, int height)
+		uint8_t * dst_y, uint8_t * dst_cr, uint8_t * dst_cb,
+		uint8_t * refframe[3], int pitch, int height)
 {
-	uint_32 xy_half;
-	uint_8 *src1, *src2;
+	uint32_t xy_half;
+	uint8_t *src1, *src2;
 
 	xy_half = ((y_pred & 1) << 1) | (x_pred & 1);
 	x_pred >>= 1;
@@ -103,8 +105,8 @@ motion_comp (picture_t * picture, macroblock_t *mb)
 	int mb_width;
 	int pitch;
 	int d;
-	uint_8 *dst_y,*dst_cr,*dst_cb;
-	void (** table) (uint_8 *, uint_8 *, sint_32, sint_32);
+	uint8_t *dst_y,*dst_cr,*dst_cb;
+	void (** table) (uint8_t *, uint8_t *, int32_t, int32_t);
 
 	width = picture->coded_picture_width;
 	mb_width = width >> 4;
@@ -147,7 +149,7 @@ motion_comp (picture_t * picture, macroblock_t *mb)
 		mc_functions.idct_copy (dst_cb, &mb->blocks[5*64], width>>1);
 		
 		//clear the blocks for next time
-		memset(mb->blocks,0,sizeof(sint_16) * 6 * 64);
+		memset(mb->blocks,0,sizeof(int16_t) * 6 * 64);
 	} 
 	else 
 	{ 
@@ -224,7 +226,7 @@ motion_comp (picture_t * picture, macroblock_t *mb)
 			//clear the blocks for next time
 			//I've tried only clearing blocks that had patterns, but it
 			//wasn't a gain - ah
-			memset(mb->blocks,0,sizeof(sint_16) * 6 * 64);
+			memset(mb->blocks,0,sizeof(int16_t) * 6 * 64);
 		}
 	}
 }

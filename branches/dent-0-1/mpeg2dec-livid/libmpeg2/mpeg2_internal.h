@@ -21,6 +21,9 @@
  *
  */
 
+
+#include <inttypes.h>
+
 //header start codes
 #define PICTURE_START_CODE      0x00
 #define SLICE_START_CODE_MIN    0x01
@@ -96,163 +99,163 @@
 typedef struct picture_s
 {
 	//-- sequence header stuff --
-	uint_32 horizontal_size;
-	uint_32 vertical_size;
-	uint_32 aspect_ratio_information;
-	uint_32 frame_rate_code;
-	uint_32 bit_rate_value;
-	uint_32 vbv_buffer_size;
-	uint_32 constrained_parameters_flag;
-	uint_8 *intra_quantizer_matrix;
-	uint_8 *non_intra_quantizer_matrix;
+	uint32_t horizontal_size;
+	uint32_t vertical_size;
+	uint32_t aspect_ratio_information;
+	uint32_t frame_rate_code;
+	uint32_t bit_rate_value;
+	uint32_t vbv_buffer_size;
+	uint32_t constrained_parameters_flag;
+	uint8_t *intra_quantizer_matrix;
+	uint8_t *non_intra_quantizer_matrix;
 
-	uint_32 use_custom_intra_quantizer_matrix;
-	uint_32 use_custom_non_intra_quantizer_matrix;
-	uint_8 custom_intra_quantization_matrix[64];
-	uint_8 custom_non_intra_quantization_matrix[64];
+	uint32_t use_custom_intra_quantizer_matrix;
+	uint32_t use_custom_non_intra_quantizer_matrix;
+	uint8_t custom_intra_quantization_matrix[64];
+	uint8_t custom_non_intra_quantization_matrix[64];
 
 	//The width and height of the picture snapped to macroblock units
-	uint_32 coded_picture_width;
-	uint_32 coded_picture_height;
+	uint32_t coded_picture_width;
+	uint32_t coded_picture_height;
 
 	//--sequence extension stuff--
 	//a lot of the stuff in the sequence extension stuff we dont' care
 	//about, so it's not in here
 	
 	//color format of the sequence (4:2:0, 4:2:2, or 4:4:4)
-	uint_16 chroma_format;
+	uint16_t chroma_format;
 	//bool to indicate that only progressive frames are present in the
 	//bitstream
-	uint_16 progressive_sequence;
+	uint16_t progressive_sequence;
 
 	//-- sequence display extension stuff --
-	uint_16 video_format;
-	uint_16 display_horizontal_size;
-	uint_16 display_vertical_size;
-  uint_16 color_description;
-  uint_16 color_primaries;
-  uint_16 transfer_characteristics;
-  uint_16 matrix_coefficients;
+	uint16_t video_format;
+	uint16_t display_horizontal_size;
+	uint16_t display_vertical_size;
+  uint16_t color_description;
+  uint16_t color_primaries;
+  uint16_t transfer_characteristics;
+  uint16_t matrix_coefficients;
 	
 	//-- group of pictures header stuff --
 	
 	//these are all part of the time code for this gop
-	uint_32 drop_flag;
-	uint_32 hour;
-	uint_32 minute;
-	uint_32 sec;
-	uint_32 frame;
+	uint32_t drop_flag;
+	uint32_t hour;
+	uint32_t minute;
+	uint32_t sec;
+	uint32_t frame;
 
 	//set if the B frames in this gop don't reference outside of the gop
-	uint_32 closed_gop;
+	uint32_t closed_gop;
 	//set if the previous I frame is missing (ie don't decode)
-	uint_32 broken_link;
+	uint32_t broken_link;
 
 	//-- picture header stuff --
 	
 	//what type of picture this is (I,P,or B) D from MPEG-1 isn't supported
-	uint_32 picture_coding_type;	
-	uint_32 temporal_reference;	
-	uint_32 vbv_delay;	
+	uint32_t picture_coding_type;	
+	uint32_t temporal_reference;	
+	uint32_t vbv_delay;	
 
 
 	//MPEG-1 stuff
-	uint_8 full_pel_forward_vector;
-	uint_8 forward_f_code;
-	uint_8 full_pel_backward_vector;
-	uint_8 backward_f_code;
+	uint8_t full_pel_forward_vector;
+	uint8_t forward_f_code;
+	uint8_t full_pel_backward_vector;
+	uint8_t backward_f_code;
 	
 	//-- picture coding extension stuff --
 	
 	//quantization factor for motion vectors
-	uint_8 f_code[2][2];
+	uint8_t f_code[2][2];
 	//quantization factor for intra dc coefficients
-	uint_16 intra_dc_precision;
+	uint16_t intra_dc_precision;
 	//what type of picture is this (field or frame)
-	uint_16 picture_structure;
+	uint16_t picture_structure;
 	//bool to indicate the top field is first
-	uint_16 top_field_first;
+	uint16_t top_field_first;
 	//bool to indicate all predictions are frame based
-	uint_16 frame_pred_frame_dct;
+	uint16_t frame_pred_frame_dct;
 	//bool to indicate whether intra blocks have motion vectors 
 	//(for concealment)
-	uint_16 concealment_motion_vectors;
+	uint16_t concealment_motion_vectors;
 	//bit to indicate which quantization table to use
-	uint_16 q_scale_type;
+	uint16_t q_scale_type;
 	//bool to use different vlc tables
-	uint_16 intra_vlc_format;
+	uint16_t intra_vlc_format;
 	//bool to use different zig-zag pattern	
-	uint_16 alternate_scan;
+	uint16_t alternate_scan;
 	//wacky field stuff
-	uint_16 repeat_first_field;
+	uint16_t repeat_first_field;
 	//wacky field stuff
-	uint_16 progressive_frame;
+	uint16_t progressive_frame;
 	//wacky analog stuff (not used)
-	uint_16 composite_display_flag;
+	uint16_t composite_display_flag;
 
 	//last macroblock in the picture
-	uint_32 last_mba;
+	uint32_t last_mba;
 	//width of picture in macroblocks
-	uint_32 mb_width;
+	uint32_t mb_width;
 	
 
 	//stuff derived from bitstream
 	
 	//pointer to the zigzag scan we're supposed to be using
-	const uint_8 *scan;
+	const uint8_t *scan;
 
 	//Pointer to the current planar frame buffer (Y,Cr,CB)
-	uint_8 *current_frame[3];
+	uint8_t *current_frame[3];
 	//storage for reference frames plus a b-frame
-	uint_8 *forward_reference_frame[3];
-	uint_8 *backward_reference_frame[3];
-	uint_8 *throwaway_frame[3];
+	uint8_t *forward_reference_frame[3];
+	uint8_t *backward_reference_frame[3];
+	uint8_t *throwaway_frame[3];
 } picture_t;
 
 typedef struct slice_s
 {
-  uint_32 slice_vertical_position_extension;
-  uint_32 quantizer_scale_code;
-  uint_32 slice_picture_id_enable;
-  uint_32 slice_picture_id;
-  uint_32 extra_information_slice;
+  uint32_t slice_vertical_position_extension;
+  uint32_t quantizer_scale_code;
+  uint32_t slice_picture_id_enable;
+  uint32_t slice_picture_id;
+  uint32_t extra_information_slice;
 
 	//Motion vectors
 	//The f_ and b_ correspond to the forward and backward motion
 	//predictors
-	sint_16 f_pmv[2][2];
-	sint_16 b_pmv[2][2];
+	int16_t f_pmv[2][2];
+	int16_t b_pmv[2][2];
 
-	sint_16 dc_dct_pred[3];
-	uint_16 quantizer_scale;
+	int16_t dc_dct_pred[3];
+	uint16_t quantizer_scale;
 } slice_t;
 
 typedef struct macroblock_s
 {
-	sint_16 *blocks;
+	int16_t *blocks;
 
-	uint_16 mba;
-	uint_16 macroblock_type;
+	uint16_t mba;
+	uint16_t macroblock_type;
 
 	//Motion vector stuff
 	//The f_ and b_ correspond to the forward and backward motion
 	//predictors
-	uint_16 motion_type;
-	uint_16 motion_vector_count;
-	sint_16 b_motion_vectors[2][2];
-	sint_16 f_motion_vectors[2][2];
-	sint_16 f_motion_vertical_field_select[2];
-	sint_16 b_motion_vertical_field_select[2];
-	sint_16 dmvector[2];
-	uint_16 mv_format;
-	uint_16 mvscale;
+	uint16_t motion_type;
+	uint16_t motion_vector_count;
+	int16_t b_motion_vectors[2][2];
+	int16_t f_motion_vectors[2][2];
+	int16_t f_motion_vertical_field_select[2];
+	int16_t b_motion_vertical_field_select[2];
+	int16_t dmvector[2];
+	uint16_t mv_format;
+	uint16_t mvscale;
 
-	uint_16 dmv;
-	uint_16 dct_type;
-	uint_16 coded_block_pattern; 
-	uint_16 quantizer_scale_code;
+	uint16_t dmv;
+	uint16_t dct_type;
+	uint16_t coded_block_pattern; 
+	uint16_t quantizer_scale_code;
 
-	uint_16 skipped;
+	uint16_t skipped;
 } macroblock_t;
 
 //The only global variable,

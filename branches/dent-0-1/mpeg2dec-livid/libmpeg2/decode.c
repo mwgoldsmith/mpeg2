@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <inttypes.h>
 
 #include "config.h"
 #include "mpeg2.h"
@@ -57,13 +58,13 @@ vo_functions_t video_out;
 //we max out at 65536 bytes as that is the largest
 //slice we will see in MP@ML streams.
 //(we make no pretenses ofdecoding anything more than that)
-static uint_8 chunk_buffer[65536 + 4];
-static uint_8 *chunk_end = chunk_buffer;
-static uint_32 shift = 0;
-static uint_32 has_sync = 0;
+static uint8_t chunk_buffer[65536 + 4];
+static uint8_t *chunk_end = chunk_buffer;
+static uint32_t shift = 0;
+static uint32_t has_sync = 0;
 
-static uint_32 is_display_initialized = 0;
-static uint_32 is_sequence_needed = 1;
+static uint32_t is_display_initialized = 0;
+static uint32_t is_sequence_needed = 1;
 
 void
 mpeg2_init(vo_functions_t *foo)
@@ -89,8 +90,8 @@ mpeg2_init(vo_functions_t *foo)
 static void 
 decode_allocate_image_buffers(picture_t *picture)
 {
-	uint_32 frame_size;
-	uint_32 slice_size;
+	uint32_t frame_size;
+	uint32_t slice_size;
 	vo_image_buffer_t *tmp;
 
 	frame_size = picture->coded_picture_width * picture->coded_picture_height;
@@ -117,11 +118,11 @@ decode_allocate_image_buffers(picture_t *picture)
 // Buffer up to one the next start code. We process data one
 // "start code chunk" at a time
 //
-uint_32
-decode_buffer_chunk(uint_8 **start,uint_8 *end)
+uint32_t
+decode_buffer_chunk(uint8_t **start,uint8_t *end)
 {
-	uint_8 *cur;
-	uint_32 ret = 0;
+	uint8_t *cur;
+	uint32_t ret = 0;
 
 	cur = *start;
 
@@ -190,12 +191,12 @@ decode_reorder_frames(void)
 
 
 
-uint_32
-mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end) 
+uint32_t
+mpeg2_decode_data(uint8_t *data_start,uint8_t *data_end) 
 {
-	uint_32 code;
-	uint_32 ret = 0;
-	uint_32 is_frame_done = 0;
+	uint32_t code;
+	uint32_t ret = 0;
+	uint32_t is_frame_done = 0;
 
 	while(!(is_frame_done) && decode_buffer_chunk(&data_start,data_end))
 	{
@@ -250,7 +251,7 @@ mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end)
 			}
 			else
 			{
-				uint_8 *foo[3];
+				uint8_t *foo[3];
 
 				foo[0] = picture.forward_reference_frame[0] + (chunk_buffer[0]-1) * 16 *
 					picture.coded_picture_width;

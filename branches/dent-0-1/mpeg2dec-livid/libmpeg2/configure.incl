@@ -1,5 +1,6 @@
 AC_SUBST(LIBMPEG2_CFLAGS)
-AC_SUBST(LIBMPEG2_CONFIG_OBJS)
+AC_SUBST(LIBMPEG2_OBJS)
+AC_SUBST(LIBMPEG2_LIBS)
 
 LIBMPEG2_CFLAGS=-I../libvo
 
@@ -11,7 +12,8 @@ fi
 if test x$enable_mlib = xyes; then
   AC_CHECK_LIB(mlib, main, 
                [ LIBS="$LIBS -L/opt/SUNWmlib/lib -lmlib" 
-                 LIBMPEG2_CONFIG_OBJS="$LIBMPEG2_CONFIG_OBJS idct_mlib.lo motion_comp_mlib.lo" 
+                 LIBMPEG2_OBJS="$LIBMPEG2_OBJS idct_mlib.lo motion_comp_mlib.lo" 
+		 LIBMPEG2_LIBS="$LIBMPEG2_LIBS -L/opt/SUNWmlib/lib -R/opt/SUNWmlib/lib -lmlib"
                  LIBMPEG2_CFLAGS="$LIBMPEG2_CFLAGS -I/opt/SUNWmlib/include" 
                  AC_DEFINE(HAVE_MLIB) ],
 	       , -L/opt/SUNWmlib/lib)
@@ -21,7 +23,7 @@ fi
 dnl Do the right thing for architecture specific goodness
 case "$host_alias" in
 i?86-* | k?-*) dnl catch i386,i486,i586,i686,k6,k7
-	LIBMPEG2_CONFIG_OBJS="$LIBMPEG2_CONFIG_OBJS idct_mmx.lo idct_block_mmx.lo motion_comp_mmx.lo";;
+	LIBMPEG2_OBJS="$LIBMPEG2_OBJS idct_mmx.lo idct_block_mmx.lo motion_comp_mmx.lo";;
 alpha*-*) ;;
 sparc-*) ;;
 ppc-*) ;;

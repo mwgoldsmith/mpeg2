@@ -63,23 +63,23 @@
 
 
 // idct main entry point 
-static void (*idct_block)(sint_16 *block);
+static void (*idct_block)(int16_t *block);
 static void (*idct_end)();
 
 // private prototypes 
-static void idct_row_c(sint_16 *blk);
-static void idct_col_s16_c(sint_16 *blk);
-static void idct_block_c(sint_16 *block);
+static void idct_row_c(int16_t *blk);
+static void idct_col_s16_c(int16_t *blk);
+static void idct_block_c(int16_t *block);
 static void idct_end_c(void);
 
 // Clamp to [-256,255]
-static sint_16 clip_tbl[1024]; /* clipping table */
-static sint_16 *clip;
+static int16_t clip_tbl[1024]; /* clipping table */
+static int16_t *clip;
 
 void 
 idct_init(void)
 {
-	sint_32 i;
+	int32_t i;
 
 	clip = clip_tbl + 512;
 
@@ -122,9 +122,9 @@ idct_init(void)
  */
 
 static void inline
-idct_row_c(sint_16 *blk)
+idct_row_c(int16_t *blk)
 {
-  sint_32 x0, x1, x2, x3, x4, x5, x6, x7, x8;
+  int32_t x0, x1, x2, x3, x4, x5, x6, x7, x8;
 
   x1 = blk[4]<<7; 
   x2 = blk[6]>>4; 
@@ -193,9 +193,9 @@ idct_row_c(sint_16 *blk)
  */
 
 static void inline
-idct_col_s16_c(sint_16 *blk)
+idct_col_s16_c(int16_t *blk)
 {
-  sint_32 x0, x1, x2, x3, x4, x5, x6, x7, x8;
+  int32_t x0, x1, x2, x3, x4, x5, x6, x7, x8;
 
   /* shortcut */
   x1 = blk[8*4]<<8; 
@@ -254,9 +254,9 @@ idct_col_s16_c(sint_16 *blk)
 }
 
 void
-idct_block_c(sint_16 *block)
+idct_block_c(int16_t *block)
 {
-	uint_32 i;
+	int i;
 
 	for (i=0; i<8; i++)
 		idct_row_c(block + 8*i);

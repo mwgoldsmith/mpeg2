@@ -100,7 +100,7 @@ static int _mpeg2dec_open (plugin_t *plugin, void *foo)
 	codec_mpeg2dec.output = (plugin_output_video_t *) foo;
 
 	//FIXME setup config properly
-	config.flags = MPEG2_MMX_ENABLE;
+	config.flags = MPEG2_MMX_ENABLE | MPEG2_MLIB_ENABLE;
 	//config.flags = 0;
 
 	//intialize the decoder state 
@@ -235,8 +235,8 @@ void decode_reorder_frames (picture_t *pic)
 
 static int _mpeg2dec_read (plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t *buf_entry)
 {
-	uint_8 *data_start = buf_entry->data;
-	uint_8 *data_end = data_start+buf_entry->data_len;
+	uint8_t *data_start = buf_entry->data;
+	uint8_t *data_end = data_start+buf_entry->data_len;
 	uint32_t is_frame_done = 0;
 	uint32_t ret = 0;
 
@@ -311,7 +311,7 @@ static int _mpeg2dec_read (plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t
 			}
 		}
 
-		//FIXME blah
+//FIXME blah
 #ifdef __i386__
 		emms ();
 #endif

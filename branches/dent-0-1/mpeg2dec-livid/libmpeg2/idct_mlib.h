@@ -21,5 +21,5 @@
  *
  */
 
-void idct_block_mlib(sint_16 *mb);
+void idct_block_mlib(int16_t *mb);
 void idct_end_mlib();

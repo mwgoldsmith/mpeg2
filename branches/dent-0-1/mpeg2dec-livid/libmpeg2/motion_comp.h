@@ -27,10 +27,10 @@ void motion_comp (picture_t * picture, macroblock_t *mb);
 
 typedef struct mc_functions_s
 {
-    void (* idct_copy) (uint_8 *dst, sint_16 *block, uint_32 stride);
-    void (* idct_add) (uint_8 *dst, sint_16 *block, uint_32 stride);
-    void (* put [8]) (uint_8 *dst, uint_8 *, sint_32, sint_32);
-    void (* avg [8]) (uint_8 *dst, uint_8 *, sint_32, sint_32);
+    void (* idct_copy) (uint8_t *dst, int16_t *block, uint32_t stride);
+    void (* idct_add) (uint8_t *dst, int16_t *block, uint32_t stride);
+    void (* put [8]) (uint8_t *dst, uint8_t *, int32_t, int32_t);
+    void (* avg [8]) (uint8_t *dst, uint8_t *, int32_t, int32_t);
 } mc_functions_t;
 
 #define MOTION_COMP_EXTERN(x) mc_functions_t mc_functions_##x =\

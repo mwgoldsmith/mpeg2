@@ -23,26 +23,33 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <inttypes.h>
+
+#include <bswap.h>
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 
 #include "bitstream.h"
 
-uint_32 bits_left;
-uint_32 current_word;
-uint_32 next_word;
-uint_32 *buffer_start;
-uint_32 *buffer_end;
+uint32_t bits_left;
+uint64_t current_word;
+uint64_t *buffer_start;
+uint64_t *buffer_end;
 
 
-static inline void
-bitstream_fill_next()
+
+/**
+ *
+ **/
+
+static inline void bitstream_fill_current()
 {
-	//fprintf(stderr,"(fill) buffer_start %p, buffer_end %p, current_word 0x%08x, bits_left %d\n",buffer_start,buffer_end,current_word,bits_left);
-
-	next_word = *buffer_start++;
-	next_word = swab32(next_word);
+	current_word = bswap_64 (*buffer_start++);
 }
+
 
 //
 // The fast paths for _show, _flush, and _get are in the
@@ -53,68 +60,82 @@ bitstream_fill_next()
 // -ah
 //
 
-uint_32 
-bitstream_show_bh(uint_32 num_bits)
-{
-	uint_32 result;
 
-	result = (current_word << (32 - bits_left)) >> (32 - bits_left);
+/**
+ *
+ **/
+
+uint32_t bitstream_show_bh (uint32_t num_bits)
+{
+	uint32_t result;
+	uint64_t next_word = bswap_64 (*buffer_start);
+
+	result = (current_word << (64 - bits_left)) >> (64 - bits_left);
 	num_bits -= bits_left;
-	result = (result << num_bits) | (next_word >> (32 - num_bits));
+	result = (result << num_bits) | (next_word >> (64 - num_bits));
 
 	return result;
 }
 
-uint_32
-bitstream_get_bh(uint_32 num_bits)
+
+/**
+ *
+ **/
+
+uint32_t bitstream_get_bh (uint32_t num_bits)
 {
-	uint_32 result;
+	uint32_t result;
 
 	num_bits -= bits_left;
-	result = (current_word << (32 - bits_left)) >> (32 - bits_left);
+	result = (current_word << (64 - bits_left)) >> (64 - bits_left);
+
+	bitstream_fill_current ();
 
 	if(num_bits != 0)
-		result = (result << num_bits) | (next_word >> (32 - num_bits));
+		result = (result << num_bits) | (current_word >> (64 - num_bits));
 	
-	current_word = next_word;
-	bits_left = 32 - num_bits;
-	bitstream_fill_next();
+	bits_left = 64 - num_bits;
 
 	return result;
 }
 
-void 
-bitstream_flush_bh(uint_32 num_bits)
+
+/**
+ *
+ **/
+
+void bitstream_flush_bh (uint32_t num_bits)
 {
-	//fprintf(stderr,"(flush) current_word 0x%08x, next_word 0x%08x, bits_left %d, num_bits %d\n",current_word,next_word,bits_left,num_bits);
-	
-	current_word = next_word;
-	bits_left = (32 + bits_left) - num_bits; 
-	bitstream_fill_next();
+	bits_left = (64 + bits_left) - num_bits; 
+	bitstream_fill_current ();
 }
 
-void 
-bitstream_byte_align(void)
+
+/**
+ *
+ **/
+
+void bitstream_byte_align (void)
 {
 	//byte align the bitstream
-	bits_left = bits_left & ~7;
-	if(!bits_left)
-	{
-		current_word = next_word;
-		bits_left = 32;
-		bitstream_fill_next();
+	bits_left &= ~7;
+
+	if (!bits_left) {
+		bits_left = 64;
+		bitstream_fill_current ();
 	}
 }
 
-void
-bitstream_init(uint_8 *start)
+
+/**
+ *
+ **/
+
+void bitstream_init (uint8_t *start)
 {
-	buffer_start = (uint_32*)start;
+	buffer_start = (uint64_t*) start;
 	buffer_end = buffer_start + 65536; //XXX hack
 
-	bits_left = 32;
-	current_word = *buffer_start++;
-	current_word = swab32(current_word);
-	next_word    = *buffer_start++;
-	next_word    = swab32(next_word);
+	bits_left = 64;
+	current_word = bswap_64 (*buffer_start++);
 }

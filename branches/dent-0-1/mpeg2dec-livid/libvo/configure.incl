@@ -42,25 +42,6 @@ if test x$enable_mga = xyes; then
 fi
 
 
-dnl
-dnl MLIB support
-dnl
-
-AC_ARG_ENABLE(mlib,
-  [  --disable-mlib          make a version not using mediaLib],
-  enable_mlib=no, enable_mlib=yes)
-if test x$enable_mlib = xyes; then
-  AC_CHECK_LIB(mlib, main,
-               [ LIBS="$LIBS -L/opt/SUNWmlib/lib -lmlib"
-                 X11_CONFIG_SOURCES="$X11_CONFIG_SOURCES yuv2rgb_mlib.c"
-		 X11_YUV_ACCEL="$X11_YUV_ACCEL yuv2rgb_mlib.lo"
-                 X11_CFLAGS="$X11_CFLAGS -I/opt/SUNWmlib/include"
-                 AC_DEFINE(HAVE_MLIB) ],
-              , -L/opt/SUNWmlib/lib)
-else
-	AM_CONDITIONAL(HAVE_MLIB,false)
-fi
-
 
 dnl SDL option added by Ryan C. Gordon 04/23/2000
 dnl   !!! This really needs to check the SDL version.
@@ -85,10 +66,15 @@ dnl
 dnl Check for X11 lib
 dnl
 
-AC_CHECK_LIB(X11, XOpenDisplay, have_x11_lib=yes,
-               have_x11_lib=no, -L$x_libraries)
+AC_PATH_XTRA
+if test "x$no_x" = "xyes"; then
+	have_x11_lib=no
+else
+	have_x11_lib=yes
+fi
 
-if test "$have_x11_lib" = "yes"; then
+
+if test "x$have_x11_lib" = "xyes"; then
 	AC_DEFINE(HAVE_X11)
 	X_X11_LIB="-lX11"
 	LIBS_VIDEO_OUTPUT="$LIBS_VIDEO_OUTPUT display_x11.la"
@@ -110,13 +96,13 @@ dnl
 AC_ARG_ENABLE(xv,
   [  --disable-xv		make a version not using Xv],
   enable_xv=no, enable_xv=yes)
-AC_PATH_XTRA
-if test "$enable_xv" = "yes"; then
+if test "x$enable_xv" = "xyes"; then
 AC_CHECK_LIB(Xv, XvShmCreateImage, 
 	X_LIBS="$X_LIBS -lXv"
 	AC_DEFINE(HAVE_XV),,
 		-L$x_libraries -lXext -lX11)
 fi
+
 
 dnl
 dnl Checks for libraries. (Xxf86dga)
@@ -125,14 +111,36 @@ dnl
 AC_ARG_ENABLE(dga,
   [  --disable-dga		make a version not using DGA],
   enable_dga=no, enable_dga=yes)
-AC_PATH_XTRA
-if test "$enable_dga" = "yes"; then
+if test "x$enable_dga" = "xyes"; then
 	AC_PATH_XTRA
 	AC_CHECK_LIB(Xxf86dga, XF86DGAQueryExtension,
 		X_LIBS="$X_LIBS -lXxf86dga"
 		AC_DEFINE(HAVE_DGA),,
 		-L$x_libraries -lXext -lX11)
 fi
+
+
+dnl
+dnl MLIB support
+dnl
+
+if test x$enable_mlib = x; then
+AC_ARG_ENABLE(mlib,
+	[  --disable-mlib          make a version not using mediaLib],
+	enable_mlib=no, enable_mlib=yes)
+fi
+if test x$enable_mlib = xyes; then
+	AC_CHECK_LIB(mlib, main,
+		[ YUV_ACCEL_OBJS="$YUV_ACCEL_OBJS yuv2rgb_mlib.lo"
+		  YUV_ACCEL_LIBS="$YUV_ACCEL_LIBS -L/opt/SUNWmlib/lib
+-R/opt/SUNWmlib/lib -lmlib"
+		X_CFLAGS="$X_CFLAGS -I/opt/SUNWmlib/include"
+		AC_DEFINE(HAVE_MLIB) ],
+	, -L/opt/SUNWmlib/lib)
+else
+	AM_CONDITIONAL(HAVE_MLIB,false)
+fi
+
 
 dnl
 dnl There must be a better way to check for SMP....
@@ -154,9 +162,7 @@ dnl
 
 case "$host_alias" in
 i?86-* | k?-*) dnl catch i386,i486,i586,i686,k6,k7
-	X11_CONFIG_SOURCES="$X11_CONFIG_SOURCES yuv2rgb_mmx.c"
-	X11_CONFIG_OBJS="$X11_CONFIG_OBJS"
-	X11_YUV_ACCEL="$X11_YUV_ACCEL yuv2rgb_mmx.lo";;
+	YUV_ACCEL_OBJS="$YUV_ACCEL_OBJS yuv2rgb_mmx.lo";;	
 alpha*-*) ;;
 sparc-*) ;;
 ppc-*) ;;
@@ -168,6 +174,5 @@ dnl fill in all libraries which should be built
 dnl
 
 AC_SUBST(LIBS_VIDEO_OUTPUT)
-AC_SUBST(X11_CONFIG_SOURCES)
-AC_SUBST(X11_YUV_ACCEL)
-
+AC_SUBST(YUV_ACCEL_OBJS)
+AC_SUBST(YUV_ACCEL_LIBS)
