@@ -104,7 +104,7 @@ void libvo_common_free_frames (void (* free_frame) (frame_t *))
     free_frame (common_frame + 2);
 }
 
-frame_t * libvo_common_get_frame (int prediction)
+frame_t * libvo_common_get_frame (vo_instance_t * this, int prediction)
 {
     static int prediction_index = 0;
 

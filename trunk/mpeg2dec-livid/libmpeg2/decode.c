@@ -55,6 +55,7 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output)
     mpeg2dec->drop_frame = 0;
     mpeg2dec->in_slice = 0;
     mpeg2dec->output = output;
+    mpeg2dec->output_data = NULL;
     mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
     mpeg2dec->code = 0xff;
 
@@ -97,7 +98,7 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
     switch (code) {
     case 0x00:	/* picture_start_code */
 	if (header_process_picture_header (picture, buffer)) {
-	    printf ("bad picture header\n");
+	    fprintf (stderr, "bad picture header\n");
 	    exit (1);
 	}
 	mpeg2dec->drop_frame =
@@ -106,7 +107,7 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 
     case 0xb3:	/* sequence_header_code */
 	if (header_process_sequence_header (picture, buffer)) {
-	    printf ("bad sequence header\n");
+	    fprintf (stderr, "bad sequence header\n");
 	    exit (1);
 	}
 	mpeg2dec->is_sequence_needed = 0;
@@ -114,14 +115,14 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 
     case 0xb5:	/* extension_start_code */
 	if (header_process_extension (picture, buffer)) {
-	    printf ("bad extension\n");
+	    fprintf (stderr, "bad extension\n");
 	    exit (1);
 	}
 	break;
 
     default:
 	if (code >= 0xb9)
-	    printf ("stream not demultiplexed ?\n");
+	    fprintf (stderr, "stream not demultiplexed ?\n");
 
 	if (code >= 0xb0)
 	    break;
@@ -130,28 +131,33 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 	    mpeg2dec->in_slice = 1;
 
 	    if (!(mpeg2dec->is_display_initialized)) {
-		if (mpeg2dec->output->setup (picture->coded_picture_width,
-					     picture->coded_picture_height)) {
-		    printf ("display init failed\n");
+		mpeg2dec->output_data =
+		    mpeg2dec->output->setup (mpeg2dec->output_data,
+					     picture->coded_picture_width,
+					     picture->coded_picture_height);
+		if (mpeg2dec->output_data == NULL) {
+		    fprintf (stderr, "display setup failed\n");
 		    exit (1);
 		}
 		picture->forward_reference_frame =
-		    mpeg2dec->output->get_frame (1);
-		picture->backward_reference_frame = 
-		    mpeg2dec->output->get_frame (1);
+		    mpeg2dec->output->get_frame (mpeg2dec->output_data, 1);
+		picture->backward_reference_frame =
+		    mpeg2dec->output->get_frame (mpeg2dec->output_data, 1);
 		mpeg2dec->is_display_initialized = 1;
 	    }
 	    if (!(picture->second_field)) {
 		if (picture->picture_coding_type == B_TYPE)
-		    picture->current_frame = mpeg2dec->output->get_frame (0);
+		    picture->current_frame =
+			mpeg2dec->output->get_frame (mpeg2dec->output_data, 0);
 		else {
-		    picture->current_frame = mpeg2dec->output->get_frame (1);
+		    picture->current_frame =
+			mpeg2dec->output->get_frame (mpeg2dec->output_data, 1);
 		    picture->forward_reference_frame =
 			picture->backward_reference_frame;
 		    picture->backward_reference_frame = picture->current_frame;
 #ifdef ARCH_X86
 		    if (config.flags & MM_ACCEL_X86_MMX)
-			emms ();
+			emms ();	/* FIXME not needed ? */
 #endif
 		}
 	    }
@@ -219,6 +225,7 @@ void mpeg2_close (mpeg2dec_t * mpeg2dec)
     if (mpeg2dec->is_display_initialized)
 	mpeg2dec->output->draw_frame
 	    (mpeg2dec->picture->backward_reference_frame);
+    mpeg2dec->output->close (mpeg2dec->output_data);
 }
 
 void mpeg2_drop (mpeg2dec_t * mpeg2dec, int flag)

@@ -303,7 +303,6 @@ int main (int argc,char *argv[])
 	es_loop ();
 
     mpeg2_close (&mpeg2dec);
-    video_out->close ();
     print_fps (1);
     return 0;
 }

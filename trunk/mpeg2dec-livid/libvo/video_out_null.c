@@ -21,17 +21,20 @@
  *
  */
 
+#include <stdlib.h>	/* only used for NULL */
 #include <inttypes.h>
 
 #include "video_out.h"
 #include "video_out_internal.h"
 
-static int null_setup (int width, int height)
+static vo_instance_t * null_setup (vo_instance_t * this, int width, int height)
 {
-    return libvo_common_alloc_frames (libvo_common_alloc_frame, width, height);
+    if (libvo_common_alloc_frames (libvo_common_alloc_frame, width, height))
+	return NULL;
+    return (vo_instance_t *)1;
 }
 
-static int null_close (void)
+static int null_close (vo_instance_t * this)
 {
     libvo_common_free_frames (libvo_common_free_frame);
     return 0;
