@@ -1,0 +1,125 @@
+Dear MPEG colleagues,
+
+IMPORTANT: This bitstream is NOT intended to used for Video Conformance
+Testing.  However the information contained here may be relevant to the
+work of this AHG.
+
+tcela-12 is an MPEG-1 constrained bitstream that demonstrates the IDCT
+drift problem that has been discussed by John Morris in December 93.
+This problem is real and exists both with MPEG-1 and MPEG-2.
+
+The problem is caused by the fact that some IEEE compliant IDCT will
+output a non-zero block when given an input block with small
+coefficients for which a more precise IDCT (e.g. floating point) would
+output a zero block.
+
+Typically, the problem develops when encoding a fixed image (here, the
+first frame of popple).
+
+This bitstream was made by an encoder with a precise IDCT, (I used
+a floating-point implementation) but that generates non-zero
+coefficients even in cases where the output of its IDCT is zero (i.e.
+an encoder that does NOT follow the recommendation in Note-2 section
+7.4.4 of MPEG2).
+
+When decoded with a decoder with a precise IDCT, the reconstructed
+frames are OK.
+
+When decoded with a decoder with an IDCT that is not very precise,
+the reconstructed frames may drift very fast is this problem exist with
+the decoder's IDCT.
+
+You can verify this effect by decoding this bitstream with the
+public-domain X MPEG-1 viewer "mpeg_play" from Berkely University.
+Note that I am not convinced that the IDCT used in mpeg_play is IEEE
+compliant.
+
+Also, it is not clear to me whether an IDCT that output a non-zero
+block when given the following block as input can claim to be IEEE
+compliant:
+
+    0     0    -3     0     0     0     0     0 
+    0     0     0     0     0     0     0     0 
+    0     0     0     0     0     0     0     0 
+    0     0     0     0     0     0     0     0 
+    0     0     0     0     0     0     0     0 
+    0     0     0     0     0     0     0     0 
+    0     0     0     0     0     0     0     0 
+    0     0     0     0     0     0     0     0 
+
+John Morris claimed, in a message dated December 14, 1993, that it is
+indeed possible.  He gave the example of an IEEE compliant IDCT
+developed by Pioneer (for more details, please contact Adrian Wise at
+adrian@pdd.pioneer.co.uk), that exhibits this problem.
+
+Note that a floating-point IDCT output for this block is:
+
+  -0.4900   -0.2029    0.2029    0.4900    0.4900    0.2029   -0.2029   -0.4900 
+  -0.4900   -0.2029    0.2029    0.4900    0.4900    0.2029   -0.2029   -0.4900 
+  -0.4900   -0.2029    0.2029    0.4900    0.4900    0.2029   -0.2029   -0.4900 
+  -0.4900   -0.2029    0.2029    0.4900    0.4900    0.2029   -0.2029   -0.4900 
+  -0.4900   -0.2029    0.2029    0.4900    0.4900    0.2029   -0.2029   -0.4900 
+  -0.4900   -0.2029    0.2029    0.4900    0.4900    0.2029   -0.2029   -0.4900 
+  -0.4900   -0.2029    0.2029    0.4900    0.4900    0.2029   -0.2029   -0.4900 
+  -0.4900   -0.2029    0.2029    0.4900    0.4900    0.2029   -0.2029   -0.4900 
+
+The current position of MPEG is (in essence): It is "recommended" that:
+
+1) well behaved video encoders use a precises IDCT
+
+2) if in the encoder reconstruction process, the IDCT of a block of dequantized
+coefficient outputs a zero block, then the encoder should transmit no coefficients
+for this block.
+
+When the problem was discussed, it was agreed that this could be a
+serious interoperability issue, and that it was a conformance issue.  I
+believe that we should discuss this problem in the Video Conformance
+Testing AHG.
+
+-----------------------------------------------------------------------
+
+Bit rate:               1.0 Mbit/sec 
+Sampling dimensions:    352  x 240 x 29.97 Hz 
+
+
+
+    Bitstream file             tcela-12.bits
+    Reconstructed frames*      tcela-12.decoded
+    Decoding trace **          tcela-12.trace
+    picture structure          I P P P P...
+
+     *frame format:
+
+                4:2:0 frame ("display" order) 8 bit
+
+                       width
+                +---------------+
+                |               |
+                |      Y0       | height
+                |width/2        |
+                +-------+-------+
+                |  Cb0  | height/2
+                +-------+
+                |  Cr0  | height/2
+                +-------+-------+
+                |               |
+                |      Y1       |
+                |               |
+                +-------+-------+
+                |       |
+                  etc...
+
+        ** Only the first row of MBs is traced.
+           More complete traces are available on special order.
+
+
+Best regards,
+
+Tristan
+
+-------------------------------------------------------------
+ Tristan Savatier                  E-mail: tristan@la.tce.com
+ THOMSON CONSUMER ELECTRONICS            TEL: +1 310 568 9003
+ Los Angeles Laboratory                  FAX: +1 310 568 9002
+ 5601 W. Slauson Ave., Suite 262, Culver City,  CA 90230, USA
+-------------------------------------------------------------

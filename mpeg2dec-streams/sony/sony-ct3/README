@@ -1,0 +1,79 @@
+                                        Thu Sep 29 13:48:56 JST 1994
+                                                                Sony
+
+Dear Video Conformance AHG members,
+Dear Bitstream Exchange AHG members,
+
+
+This bitstream is created for the Video Conformance Testing AHG.
+Parameters of the bitstream "sony-ct3" are the following:
+
+
+Bitstream ID:  6.
+Description:   Alternating top/bottom, ZZ/Alternative, Intra/Non-intra VLC 
+               tables in I pictures, Field and Frame pictures, variable M/N,
+               downloaded quantization weighting matrices
+Profile and Level: Main
+Description: Various syntax switches are toggled from frame-to-frame
+Functional stage: Parser and control
+Purpose: Sloppy decoders may not handle all scenarios.
+Organizations: Sony
+Parameters:     
+
+	
+	--- sony-ct3 ---
+        Bitstream file          sony-ct3.bs
+        Reconstructed frames    sony-ct3.dec
+        Decoding trace          sony-ct3.trace ( Picture Layer Level)
+
+	Bit rate:               4 Mbit/sec 
+	Sampling dimensions:    720 x 480  24 Hz 
+	Number of frames:	7 frames
+	IDCT:                   double precision
+
+        
+        *frame format:
+
+	4:2:0 frame ("display" order) 8 bit
+
+	              width              
+                +---------------+       
+                |               |          
+                |      Y0       | height
+                |               |
+                |  width/2      |
+                +-------+-------+
+                |  Cb0  | 
+                |       |height/2
+                +-------+
+                |  Cr0  |height/2
+                |       |
+                +-------+-------+        
+                |               |
+                |      Y1       |
+                |               |        
+                |               |        
+                +-------+-------+ 
+                |       |
+
+
+
+Please check that you can decode it.  Thank-you.
+
+	Best regards,
+
+	Katsumi Tahara
+	Motoki Kato
+
+                        ======================================
+                        Phone   +81-3-5448-5605
+                        Fax     +81-3-5448-5611
+                        E-mail  tahara@av.crl.sony.co.jp
+				mkato@av.crl.sony.co.jp
+
+                        Image Processing Technology Department
+                        Corporate Research Laboratories
+                        Sony Corporation
+                        Tokyo,Japan
+                        ======================================
+

@@ -1,0 +1,68 @@
+tcela-16 is an MPEG-1 constrained-parameter bitstream designed for testing
+that MPEG-2 (and MPEG-1) decoders implement properly quantization matrices,
+i.e. that they do not accidentally use the transposed matrices.
+
+This bitstream will be added to the MPEG-2 Video Conformance Testing bitstream
+set.  There is not ID yet defined for this test.
+
+Note:  MPEG-1 constrained-parameter bitstream like this one should be
+decodable by all MPEG-2 compliant decoders.
+
+Parameters are the following:
+
+Description:    A bitstream with custom quantization matrices that
+are not symetrical at all;
+
+The matrices are so asymetrical that an incorrect implementation is
+visually obvious (the reconstructed frames will look terrible).
+
+Stresses:       nothing - checks correct implementation of quantization matrices
+Parameters:     MPEG-1, 31 frames
+Organization:   TCE-LA
+
+Bit rate:               1.856000 Mbit/sec 
+Sampling dimensions:    352  x 240 x 30 Hz 
+vbv_buffer_size:        327680 bits 
+
+Please check that you can decode it.  Thank-you.
+
+        Bitstream file             tcela-16.bits
+        Reconstructed frames*      tcela-16.decoded
+        Decoding trace **          tcela-16.trace (first 3 frames)
+        picture structure          I0 P3 B1 B2 P6...
+
+        *frame format:
+
+                4:2:0 frame ("display" order) 8 bit
+
+                       width
+                +---------------+
+                |               |
+                |      Y0       | height
+                |width/2        |
+                +-------+-------+
+                |  Cb0  | height/2
+                +-------+
+                |  Cr0  | height/2
+                +-------+-------+
+                |               |
+                |      Y1       |
+                |               |
+                +-------+-------+
+                |       |
+                  etc...
+
+        ** Only the first row of MBs is traced.
+           More complete traces are available on special order.
+
+
+Best regards,
+
+Tristan
+
+-------------------------------------------------------------
+ Tristan Savatier                  E-mail: tristan@la.tce.com
+ THOMSON CONSUMER ELECTRONICS            TEL: +1 310 568 9003
+ Los Angeles Laboratory                  FAX: +1 310 568 9002
+ 5601 W. Slauson Ave., Suite 262, Culver City,  CA 90230, USA
+-------------------------------------------------------------
