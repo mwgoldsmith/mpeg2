@@ -17,3 +17,4 @@ config.cache
 libtool
 config.status
 gmon.out
+seed
