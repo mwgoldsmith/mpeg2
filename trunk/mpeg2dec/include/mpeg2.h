@@ -77,11 +77,6 @@ typedef struct {
 } picture_t;
 
 typedef struct {
-    sequence_t sequence;
-    picture_t picture;
-} mpeg2_info_t;
-
-typedef struct {
     vo_instance_t * output;
 
     /* this is where we keep the state of the decoder */
@@ -90,6 +85,7 @@ typedef struct {
     uint32_t shift;
     int is_display_initialized;
     int state;
+    uint32_t ext_state;
     int is_sequence_needed;
 
     /* the maximum chunk size is determined by vbv_buffer_size */
@@ -107,25 +103,18 @@ typedef struct {
     int num_pts;
     int bytes_since_pts;
 
-    mpeg2_info_t info;
+    sequence_t sequence;
+    picture_t picture;
 } mpeg2dec_t ;
 
 typedef struct decoder_s decoder_t;
 
 void mpeg2_header_state_init (decoder_t * decoder);
-int mpeg2_header_sequence (uint8_t * buffer, sequence_t * sequence,
-			   decoder_t * decoder);
-int mpeg2_header_sequence_ext (uint8_t * buffer, sequence_t * sequence,
-                               decoder_t * decoder);
-int mpeg2_header_sequence_display_ext (uint8_t * buffer,
-				       sequence_t * sequence);
-int mpeg2_header_picture (uint8_t * buffer, picture_t * picture,
-			  decoder_t * decoder);
-int mpeg2_header_picture_coding_ext (uint8_t * buffer, picture_t * picture, 
-				     decoder_t * decoder);
-int mpeg2_header_quant_matrix_ext (uint8_t * buffer, decoder_t * decoder);
-int mpeg2_header_extension (uint8_t * buffer, mpeg2_info_t * info,
-			    decoder_t * decoder);
+int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec);
+int mpeg2_header_gop (mpeg2dec_t * mpeg2dec);
+int mpeg2_header_picture (mpeg2dec_t * mpeg2dec);
+int mpeg2_header_extension (mpeg2dec_t * mpeg2dec);
+int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec);
 
 void mpeg2_slice (decoder_t * decoder, int code, uint8_t * buffer);
 

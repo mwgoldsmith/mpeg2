@@ -192,6 +192,9 @@ startcode:
 
 int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 {
+    static int next_state[] = {
+	STATE_PICTURE, STATE_SEQUENCE, 0, STATE_INVALID, STATE_GOP
+    };
     int state;
     uint8_t code;
     decoder_t * decoder;
@@ -213,24 +216,20 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 
 	switch (code) {
 	case 0x00:	/* picture_start_code */
-	    mpeg2_header_picture (mpeg2dec->chunk_buffer,
-				  &(mpeg2dec->info.picture), decoder);
+	    mpeg2_header_picture (mpeg2dec);
 	    break;
 	case 0xb2:	/* user_data_start_code */
-	    /* XXXXXXXX check correctness */
+	    mpeg2_header_user_data (mpeg2dec);
 	    break;
 	case 0xb3:	/* sequence_header_code */
-	    mpeg2_header_sequence (mpeg2dec->chunk_buffer,
-				   &(mpeg2dec->info.sequence), decoder);
+	    mpeg2_header_sequence (mpeg2dec);
 	    state = STATE_SEQUENCE;
 	    break;
 	case 0xb5:	/* extension_start_code */
-	    /* XXXXXXXXXXXXX check correctness */
-	    mpeg2_header_extension (mpeg2dec->chunk_buffer,
-				    &(mpeg2dec->info), decoder);
+	    mpeg2_header_extension (mpeg2dec);
 	    break;
 	case 0xb8:	/* group_start_code */
-	    /* XXXXXXXXXXXX parse */
+	    mpeg2_header_gop (mpeg2dec);
 	    break;
 	default:
 	    if (code < 0xb0)
@@ -249,16 +248,7 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 	case RECEIVED (0xb7, STATE_SLICE):
 	case RECEIVED (0xb8, STATE_SEQUENCE):
 	case RECEIVED (0xb8, STATE_SLICE):
-	    switch (mpeg2dec->code) {
-	    case 0x00:	/* picture_start_code */
-		mpeg2dec->state = STATE_PICTURE;	break;
-	    case 0xb3:	/* sequence_header_code */
-		mpeg2dec->state = STATE_SEQUENCE;	break;
-	    case 0xb7:	/* sequence_end_code */
-		mpeg2dec->state = STATE_INVALID;	break;
-	    case 0xb8:	/* group_start_code */
-		mpeg2dec->state = STATE_GOP;		break;
-	    }
+	    mpeg2dec->state = next_state[(mpeg2dec->code >> 1) & 7];
 	    return state;
 
 	/* legal headers within a given state */

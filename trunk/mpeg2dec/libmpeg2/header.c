@@ -30,6 +30,14 @@
 #include "mpeg2_internal.h"
 #include "attributes.h"
 
+#define SEQ_EXT 2
+#define SEQ_DISPLAY_EXT 4
+#define QUANT_MATRIX_EXT 8
+#define COPYRIGHT_EXT 0x10
+#define PIC_DISPLAY_EXT 0x80
+#define PIC_CODING_EXT 0x100
+#define USER_DATA 0x10000
+
 /* default intra quant matrix, in zig-zag order */
 static uint8_t default_intra_quantizer_matrix[64] ATTR_ALIGN(16) = {
     8,
@@ -85,9 +93,11 @@ static void simplify (unsigned int * num, unsigned int * denum)
     *denum /= b;
 }
 
-int mpeg2_header_sequence (uint8_t * buffer, sequence_t * sequence,
-			   decoder_t * decoder)
+int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
 {
+    uint8_t * buffer = mpeg2dec->chunk_buffer;
+    sequence_t * sequence = &(mpeg2dec->sequence);
+    decoder_t * decoder = mpeg2dec->decoder;
     static unsigned int frame_period[9] = {
 	0, 1126125, 1125000, 1080000, 900900, 900000, 540000, 450450, 450000
     };
@@ -170,12 +180,16 @@ int mpeg2_header_sequence (uint8_t * buffer, sequence_t * sequence,
     decoder->picture_structure = FRAME_PICTURE;
     decoder->second_field = 0;
 
+    mpeg2dec->ext_state = SEQ_EXT;
+
     return 0;
 }
 
-int mpeg2_header_sequence_ext (uint8_t * buffer, sequence_t * sequence,
-			       decoder_t * decoder)
+static int sequence_ext (mpeg2dec_t * mpeg2dec)
 {
+    uint8_t * buffer = mpeg2dec->chunk_buffer;
+    sequence_t * sequence = &(mpeg2dec->sequence);
+    decoder_t * decoder = mpeg2dec->decoder;
     int width, height;
     uint32_t flags;
 
@@ -244,11 +258,15 @@ int mpeg2_header_sequence_ext (uint8_t * buffer, sequence_t * sequence,
 
     decoder->mpeg1 = 0;
 
+    mpeg2dec->ext_state = SEQ_DISPLAY_EXT | USER_DATA;
+
     return 0;
 }
 
-int mpeg2_header_sequence_display_ext (uint8_t * buffer, sequence_t * sequence)
+static int sequence_display_ext (mpeg2dec_t * mpeg2dec)
 {
+    uint8_t * buffer = mpeg2dec->chunk_buffer;
+    sequence_t * sequence = &(mpeg2dec->sequence);
     uint32_t flags;
 
     if ((buffer[0] & 0xf0) != 0x20)
@@ -283,9 +301,17 @@ int mpeg2_header_sequence_display_ext (uint8_t * buffer, sequence_t * sequence)
     return 0;
 }
 
-int mpeg2_header_picture (uint8_t * buffer, picture_t * picture,
-			  decoder_t * decoder)
+int mpeg2_header_gop (mpeg2dec_t * mpeg2dec)
 {
+    mpeg2dec->ext_state = USER_DATA;
+    return 0;
+}
+
+int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
+{
+    uint8_t * buffer = mpeg2dec->chunk_buffer;
+    picture_t * picture = &(mpeg2dec->picture);
+    decoder_t * decoder = mpeg2dec->decoder;
     int type;
 
     picture->temporal_reference = (buffer[0] << 2) | (buffer[1] >> 6);
@@ -308,12 +334,16 @@ int mpeg2_header_picture (uint8_t * buffer, picture_t * picture,
 
     /* XXXXXX decode extra_information_picture as well */
 
+    mpeg2dec->ext_state = PIC_CODING_EXT;
+
     return 0;
 }
 
-int mpeg2_header_picture_coding_ext (uint8_t * buffer, picture_t * picture,
-				     decoder_t * decoder)
+static int picture_coding_ext (mpeg2dec_t * mpeg2dec)
 {
+    uint8_t * buffer = mpeg2dec->chunk_buffer;
+    picture_t * picture = &(mpeg2dec->picture);
+    decoder_t * decoder = mpeg2dec->decoder;
     uint32_t flags;
 
     if ((buffer[0] & 0xf0) != 0x80)
@@ -356,11 +386,26 @@ int mpeg2_header_picture_coding_ext (uint8_t * buffer, picture_t * picture,
 		  PIC_MASK_COMPOSITE_DISPLAY) | PIC_FLAG_COMPOSITE_DISPLAY;
     picture->flags = flags;
 
+    mpeg2dec->ext_state =
+	PIC_DISPLAY_EXT | COPYRIGHT_EXT | QUANT_MATRIX_EXT | USER_DATA;
+
     return 0;
 }
 
-int mpeg2_header_quant_matrix_ext (uint8_t * buffer, decoder_t * decoder)
+static int picture_display_ext (mpeg2dec_t * mpeg2dec)
 {
+    return 0;
+}
+
+static int copyright_ext (mpeg2dec_t * mpeg2dec)
+{
+    return 0;
+}
+
+static int quant_matrix_ext (mpeg2dec_t * mpeg2dec)
+{
+    uint8_t * buffer = mpeg2dec->chunk_buffer;
+    decoder_t * decoder = mpeg2dec->decoder;
     int i;
 
     if (buffer[0] & 8) {
@@ -378,23 +423,27 @@ int mpeg2_header_quant_matrix_ext (uint8_t * buffer, decoder_t * decoder)
     return 0;
 }
 
-int mpeg2_header_extension (uint8_t * buffer, mpeg2_info_t * info,
-			    decoder_t * decoder)
+int mpeg2_header_extension (mpeg2dec_t * mpeg2dec)
 {
-    switch (buffer[0] & 0xf0) {
-    case 0x10:	/* sequence extension */
-	return mpeg2_header_sequence_ext (buffer, &(info->sequence), decoder);
+    static int (* parser[]) (mpeg2dec_t *) = {
+	0, sequence_ext, sequence_display_ext, quant_matrix_ext,
+	copyright_ext, 0, 0, picture_display_ext, picture_coding_ext
+    };
+    int ext, ext_bit;
 
-    case 0x20:	/* sequence display extension */
-	return mpeg2_header_sequence_display_ext (buffer, &(info->sequence));
+    ext = mpeg2dec->chunk_buffer[0] >> 4;
+    ext_bit = 1 << ext;
 
-    case 0x30:	/* quant matrix extension */
-	return mpeg2_header_quant_matrix_ext (buffer, decoder);
+    if (!(mpeg2dec->ext_state & ext_bit))
+	return 1;	/* illegal extension */
+    mpeg2dec->ext_state &= ~ext_bit;
+    return parser[ext] (mpeg2dec);
+}
 
-    case 0x80:	/* picture coding extension */
-	return mpeg2_header_picture_coding_ext (buffer, &(info->picture),
-						decoder);
-    }
-
+int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec)
+{
+    if (!(mpeg2dec->ext_state & USER_DATA))
+	return 1;
+    mpeg2dec->ext_state &= ~USER_DATA;
     return 0;
 }
