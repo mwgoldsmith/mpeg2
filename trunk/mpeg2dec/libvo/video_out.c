@@ -38,6 +38,7 @@ extern vo_open_t vo_dx_open;
 extern vo_open_t vo_sdl_open;
 extern vo_open_t vo_null_open;
 extern vo_open_t vo_nullslice_open;
+extern vo_open_t vo_nullskip_open;
 extern vo_open_t vo_nullrgb16_open;
 extern vo_open_t vo_nullrgb32_open;
 extern vo_open_t vo_pgm_open;
@@ -61,6 +62,7 @@ static vo_driver_t video_out_drivers[] = {
 #endif
     {"null", vo_null_open},
     {"nullslice", vo_nullslice_open},
+    {"nullskip", vo_nullskip_open},
     {"nullrgb16", vo_nullrgb16_open},
     {"nullrgb32", vo_nullrgb32_open},
     {"pgm", vo_pgm_open},

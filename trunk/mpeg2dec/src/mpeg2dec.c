@@ -337,9 +337,10 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 	case STATE_INVALID_END:
 	    /* draw current picture */
 	    /* might free frame buffer */
-	    if (output->draw && info->display_fbuf) {
-		output->draw (output, info->display_fbuf->buf,
-			      info->display_fbuf->id);
+	    if (info->display_fbuf) {
+		if (output->draw)
+		    output->draw (output, info->display_fbuf->buf,
+				  info->display_fbuf->id);
 		print_fps (0);
 	    }
 	    if (output->discard && info->discard_fbuf)

@@ -38,7 +38,9 @@ static void null_draw_frame (vo_instance_t * instance,
 static vo_instance_t * internal_open (int setup (vo_instance_t *, unsigned int,
 						 unsigned int, unsigned int,
 						 unsigned int,
-						 vo_setup_result_t *))
+						 vo_setup_result_t *),
+				      void draw (vo_instance_t *,
+						 uint8_t * const *, void *))
 {
     vo_instance_t * instance;
 
@@ -50,7 +52,7 @@ static vo_instance_t * internal_open (int setup (vo_instance_t *, unsigned int,
     instance->setup_fbuf = NULL;
     instance->set_fbuf = NULL;
     instance->start_fbuf = NULL;
-    instance->draw = null_draw_frame;
+    instance->draw = draw;
     instance->discard = NULL;
     instance->close = (void (*) (vo_instance_t *)) free;
 
@@ -67,7 +69,12 @@ static int null_setup (vo_instance_t * instance, unsigned int width,
 
 vo_instance_t * vo_null_open (void)
 {
-    return internal_open (null_setup);
+    return internal_open (null_setup, null_draw_frame);
+}
+
+vo_instance_t * vo_nullskip_open (void)
+{
+    return internal_open (null_setup, NULL);
 }
 
 static void nullslice_start (void * id, const mpeg2_fbuf_t * fbuf,
@@ -101,7 +108,7 @@ static int nullslice_setup (vo_instance_t * instance, unsigned int width,
 
 vo_instance_t * vo_nullslice_open (void)
 {
-    return internal_open (nullslice_setup);
+    return internal_open (nullslice_setup, null_draw_frame);
 }
 
 static int nullrgb16_setup (vo_instance_t * instance, unsigned int width,
@@ -124,10 +131,10 @@ static int nullrgb32_setup (vo_instance_t * instance, unsigned int width,
 
 vo_instance_t * vo_nullrgb16_open (void)
 {
-    return internal_open (nullrgb16_setup);
+    return internal_open (nullrgb16_setup, null_draw_frame);
 }
 
 vo_instance_t * vo_nullrgb32_open (void)
 {
-    return internal_open (nullrgb32_setup);
+    return internal_open (nullrgb32_setup, null_draw_frame);
 }
