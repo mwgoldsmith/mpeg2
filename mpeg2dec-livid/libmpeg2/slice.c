@@ -32,8 +32,6 @@ extern mc_functions_t mc_functions;
 extern void (* idct_block_copy) (int16_t * block, uint8_t * dest, int stride);
 extern void (* idct_block_add) (int16_t * block, uint8_t * dest, int stride);
 
-static int16_t DCTblock[64] ATTR_ALIGN(16);
-
 #include "vlc.h"
 
 static int non_linear_quantizer_scale [] = {
@@ -351,8 +349,7 @@ do {					\
 	val = (val > 0) ? 2047 : -2048;	\
 } while (0)
 
-static void get_intra_block_B14 (picture_t * picture, slice_t * slice,
-				 int16_t * dest)
+static void get_intra_block_B14 (picture_t * picture, slice_t * slice)
 {
     int i;
     int j;
@@ -365,7 +362,9 @@ static void get_intra_block_B14 (picture_t * picture, slice_t * slice,
     uint32_t bit_buf;
     int bits;
     uint8_t * bit_ptr;
+    int16_t * dest;
 
+    dest = slice->DCTblock;
     i = 0;
     mismatch = ~dest[0];
 
@@ -464,8 +463,7 @@ static void get_intra_block_B14 (picture_t * picture, slice_t * slice,
     slice->bitstream_ptr = bit_ptr;
 }
 
-static void get_intra_block_B15 (picture_t * picture, slice_t * slice,
-				 int16_t * dest)
+static void get_intra_block_B15 (picture_t * picture, slice_t * slice)
 {
     int i;
     int j;
@@ -478,7 +476,9 @@ static void get_intra_block_B15 (picture_t * picture, slice_t * slice,
     uint32_t bit_buf;
     int bits;
     uint8_t * bit_ptr;
+    int16_t * dest;
 
+    dest = slice->DCTblock;
     i = 0;
     mismatch = ~dest[0];
 
@@ -576,8 +576,7 @@ static void get_intra_block_B15 (picture_t * picture, slice_t * slice,
     slice->bitstream_ptr = bit_ptr;
 }
 
-static void get_non_intra_block (picture_t * picture, slice_t * slice,
-				 int16_t * dest)
+static void get_non_intra_block (picture_t * picture, slice_t * slice)
 {
     int i;
     int j;
@@ -590,9 +589,11 @@ static void get_non_intra_block (picture_t * picture, slice_t * slice,
     uint32_t bit_buf;
     int bits;
     uint8_t * bit_ptr;
+    int16_t * dest;
 
     i = -1;
     mismatch = 1;
+    dest = slice->DCTblock;
 
     bit_buf = slice->bitstream_buf;
     bits = slice->bitstream_bits;
@@ -698,8 +699,7 @@ static void get_non_intra_block (picture_t * picture, slice_t * slice,
     slice->bitstream_ptr = bit_ptr;
 }
 
-static void get_mpeg1_intra_block (picture_t * picture, slice_t * slice,
-				   int16_t * dest)
+static void get_mpeg1_intra_block (picture_t * picture, slice_t * slice)
 {
     int i;
     int j;
@@ -711,8 +711,10 @@ static void get_mpeg1_intra_block (picture_t * picture, slice_t * slice,
     uint32_t bit_buf;
     int bits;
     uint8_t * bit_ptr;
+    int16_t * dest;
 
     i = 0;
+    dest = slice->DCTblock;
 
     bit_buf = slice->bitstream_buf;
     bits = slice->bitstream_bits;
@@ -816,8 +818,7 @@ static void get_mpeg1_intra_block (picture_t * picture, slice_t * slice,
     slice->bitstream_ptr = bit_ptr;
 }
 
-static void get_mpeg1_non_intra_block (picture_t * picture, slice_t * slice,
-				       int16_t * dest)
+static void get_mpeg1_non_intra_block (picture_t * picture, slice_t * slice)
 {
     int i;
     int j;
@@ -829,8 +830,10 @@ static void get_mpeg1_non_intra_block (picture_t * picture, slice_t * slice,
     uint32_t bit_buf;
     int bits;
     uint8_t * bit_ptr;
+    int16_t * dest;
 
     i = -1;
+    dest = slice->DCTblock;
 
     bit_buf = slice->bitstream_buf;
     bits = slice->bitstream_bits;
@@ -994,17 +997,18 @@ static inline void slice_intra_DCT (picture_t * picture, slice_t * slice,
 	slice->dc_dct_pred[0] += get_luma_dc_dct_diff (slice);
     else
 	slice->dc_dct_pred[cc] += get_chroma_dc_dct_diff (slice);
-    DCTblock[0] = slice->dc_dct_pred[cc] << (3 - picture->intra_dc_precision);
+    slice->DCTblock[0] =
+	slice->dc_dct_pred[cc] << (3 - picture->intra_dc_precision);
 
+    memset (slice->DCTblock, 0, sizeof (slice->DCTblock));
     if (picture->mpeg1) {
 	if (picture->picture_coding_type != D_TYPE)
-	    get_mpeg1_intra_block (picture, slice, DCTblock);
+	    get_mpeg1_intra_block (picture, slice);
     } else if (picture->intra_vlc_format)
-	get_intra_block_B15 (picture, slice, DCTblock);
+	get_intra_block_B15 (picture, slice);
     else
-	get_intra_block_B14 (picture, slice, DCTblock);
-    idct_block_copy (DCTblock, dest, stride);
-    memset (DCTblock, 0, sizeof (DCTblock));
+	get_intra_block_B14 (picture, slice);
+    idct_block_copy (slice->DCTblock, dest, stride);
 #undef bit_buf
 #undef bits
 #undef bit_ptr
@@ -1013,12 +1017,12 @@ static inline void slice_intra_DCT (picture_t * picture, slice_t * slice,
 static inline void slice_non_intra_DCT (picture_t * picture, slice_t * slice,
 					uint8_t * dest, int stride)
 {
+    memset (slice->DCTblock, 0, sizeof (slice->DCTblock));
     if (picture->mpeg1)
-	get_mpeg1_non_intra_block (picture, slice, DCTblock);
+	get_mpeg1_non_intra_block (picture, slice);
     else
-	get_non_intra_block (picture, slice, DCTblock);
-    idct_block_add (DCTblock, dest, stride);
-    memset (DCTblock, 0, sizeof (DCTblock));
+	get_non_intra_block (picture, slice);
+    idct_block_add (slice->DCTblock, dest, stride);
 }
 
 static inline void motion_block (void (** table) (uint8_t *, uint8_t *,

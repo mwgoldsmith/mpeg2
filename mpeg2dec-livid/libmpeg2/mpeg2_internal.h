@@ -117,6 +117,9 @@ typedef struct motion_s {
 /* state that is carried from one macroblock to the next inside */
 /* of a same slice */
 typedef struct slice_s {
+    /* DCT coefficients - should be kept aligned ! */
+    int16_t DCTblock[64];
+
     /* bit parsing stuff */
     uint32_t bitstream_buf;	/* current 32 bit working set of buffer */
     int bitstream_bits;		/* used bits in working set */
