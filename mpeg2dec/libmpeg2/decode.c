@@ -190,7 +190,15 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
     if (mpeg2dec->state == STATE_INVALID && code != 0xb3)
 	goto next_chunk;
 
-    switch (code) {
+    if ((unsigned) (code - 1) < 0xb0 - 1) {
+	if (mpeg2dec->state != STATE_SLICE &&
+	    mpeg2dec->state != STATE_SLICE_1ST)
+	    mpeg2_header_slice (mpeg2dec);
+	if (! (mpeg2dec->picture->flags & PIC_FLAG_SKIP))
+	    mpeg2_slice (&(mpeg2dec->decoder), code, mpeg2dec->chunk_start);
+	if ((unsigned) (mpeg2dec->code - 1) < 0xb0 - 1)
+	    goto next_chunk;
+    } else switch (code) {
     case 0x00:	/* picture_start_code */
 	mpeg2_header_picture (mpeg2dec);
 	break;
@@ -206,16 +214,6 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
     case 0xb8:	/* group_start_code */
 	mpeg2_header_gop (mpeg2dec);
 	break;
-    default:
-	if (code >= 0xb0)
-	    break;
-	if (mpeg2dec->state != STATE_SLICE &&
-	    mpeg2dec->state != STATE_SLICE_1ST)
-	    mpeg2_header_slice (mpeg2dec);
-	if (! (mpeg2dec->picture->flags & PIC_FLAG_SKIP))
-	    mpeg2_slice (&(mpeg2dec->decoder), code, mpeg2dec->chunk_start);
-	if ((unsigned) (mpeg2dec->code - 1) < 0xb0)
-	    goto next_chunk;
     }
 
 #define RECEIVED(code,state) (((state) << 8) + (code))
