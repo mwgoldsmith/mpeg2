@@ -35,10 +35,6 @@ extern void (* idct_block_add) (int16_t * block, uint8_t * dest, int stride);
 static slice_t slice;
 static int16_t DCTblock[64] ATTR_ALIGN(16);
 
-static uint32_t bitstream_buf;
-static int bitstream_bits;
-static uint8_t * bitstream_ptr;
-
 #include "vlc.h"
 
 static int non_linear_quantizer_scale [] = {
@@ -51,8 +47,9 @@ static int non_linear_quantizer_scale [] = {
 static inline int get_macroblock_modes (int picture_coding_type,
 					int frame_pred_frame_dct)
 {
-#define bit_buf bitstream_buf
-#define bits bitstream_bits
+#define bit_buf (slice.bitstream_buf)
+#define bits (slice.bitstream_bits)
+#define bit_ptr (slice.bitstream_ptr)
     int macroblock_modes;
     MBtab * tab;
 
@@ -125,12 +122,14 @@ static inline int get_macroblock_modes (int picture_coding_type,
     }
 #undef bit_buf
 #undef bits
+#undef bit_ptr
 }
 
 static inline int get_quantizer_scale (int q_scale_type)
 {
-#define bit_buf bitstream_buf
-#define bits bitstream_bits
+#define bit_buf (slice.bitstream_buf)
+#define bits (slice.bitstream_bits)
+#define bit_ptr (slice.bitstream_ptr)
 
     int quantizer_scale_code;
 
@@ -143,12 +142,14 @@ static inline int get_quantizer_scale (int q_scale_type)
 	return quantizer_scale_code << 1;
 #undef bit_buf
 #undef bits
+#undef bit_ptr
 }
 
 static inline int get_motion_delta (int f_code)
 {
-#define bit_buf bitstream_buf
-#define bits bitstream_bits
+#define bit_buf (slice.bitstream_buf)
+#define bits (slice.bitstream_bits)
+#define bit_ptr (slice.bitstream_ptr)
 
     int delta;
     int sign;
@@ -184,7 +185,7 @@ static inline int get_motion_delta (int f_code)
 	bit_buf <<= 1;
 
 	if (f_code) {
-	    NEEDBITS (bit_buf, bits);
+	    NEEDBITS (bit_buf, bits, bit_ptr);
 	    delta += UBITS (bit_buf, f_code);
 	    DUMPBITS (bit_buf, bits, f_code);
 	}
@@ -194,6 +195,7 @@ static inline int get_motion_delta (int f_code)
     }
 #undef bit_buf
 #undef bits
+#undef bit_ptr
 }
 
 static inline int bound_motion_vector (int vector, int f_code)
@@ -215,8 +217,9 @@ static inline int bound_motion_vector (int vector, int f_code)
 
 static inline int get_dmv (void)
 {
-#define bit_buf bitstream_buf
-#define bits bitstream_bits
+#define bit_buf (slice.bitstream_buf)
+#define bits (slice.bitstream_bits)
+#define bit_ptr (slice.bitstream_ptr)
 
     DMVtab * tab;
 
@@ -225,16 +228,18 @@ static inline int get_dmv (void)
     return tab->dmv;
 #undef bit_buf
 #undef bits
+#undef bit_ptr
 }
 
 static inline int get_coded_block_pattern (void)
 {
-#define bit_buf bitstream_buf
-#define bits bitstream_bits
+#define bit_buf (slice.bitstream_buf)
+#define bits (slice.bitstream_bits)
+#define bit_ptr (slice.bitstream_ptr)
 
     CBPtab * tab;
 
-    NEEDBITS (bit_buf, bits);
+    NEEDBITS (bit_buf, bits, bit_ptr);
 
     if (bit_buf >= 0x20000000) {
 
@@ -251,12 +256,14 @@ static inline int get_coded_block_pattern (void)
 
 #undef bit_buf
 #undef bits
+#undef bit_ptr
 }
 
 static inline int get_luma_dc_dct_diff (void)
 {
-#define bit_buf bitstream_buf
-#define bits bitstream_bits
+#define bit_buf (slice.bitstream_buf)
+#define bits (slice.bitstream_bits)
+#define bit_ptr (slice.bitstream_ptr)
     DCtab * tab;
     int size;
     int dc_diff;
@@ -279,19 +286,21 @@ static inline int get_luma_dc_dct_diff (void)
 	tab = DC_long - 0x1e0 + UBITS (bit_buf, 9);
 	size = tab->size;
 	DUMPBITS (bit_buf, bits, tab->len);
-	NEEDBITS (bit_buf, bits);
+	NEEDBITS (bit_buf, bits, bit_ptr);
 	dc_diff = UBITS (bit_buf, size) - UBITS (SBITS (~bit_buf, 1), size);
 	DUMPBITS (bit_buf, bits, size);
 	return dc_diff;
     }
 #undef bit_buf
 #undef bits
+#undef bit_ptr
 }
 
 static inline int get_chroma_dc_dct_diff (void)
 {
-#define bit_buf bitstream_buf
-#define bits bitstream_bits
+#define bit_buf (slice.bitstream_buf)
+#define bits (slice.bitstream_bits)
+#define bit_ptr (slice.bitstream_ptr)
     DCtab * tab;
     int size;
     int dc_diff;
@@ -314,13 +323,14 @@ static inline int get_chroma_dc_dct_diff (void)
 	tab = DC_long - 0x3e0 + UBITS (bit_buf, 10);
 	size = tab->size;
 	DUMPBITS (bit_buf, bits, tab->len + 1);
-	NEEDBITS (bit_buf, bits);
+	NEEDBITS (bit_buf, bits, bit_ptr);
 	dc_diff = UBITS (bit_buf, size) - UBITS (SBITS (~bit_buf, 1), size);
 	DUMPBITS (bit_buf, bits, size);
 	return dc_diff;
     }
 #undef bit_buf
 #undef bits
+#undef bit_ptr
 }
 
 #define SATURATE(val)		\
@@ -344,14 +354,16 @@ static void get_intra_block_B14 (picture_t * picture, slice_t * slice,
     DCTtab * tab;
     uint32_t bit_buf;
     int bits;
+    uint8_t * bit_ptr;
 
     i = 0;
     mismatch = ~dest[0];
 
-    bit_buf = bitstream_buf;
-    bits = bitstream_bits;
+    bit_buf = slice->bitstream_buf;
+    bits = slice->bitstream_bits;
+    bit_ptr = slice->bitstream_ptr;
 
-    NEEDBITS (bit_buf, bits);
+    NEEDBITS (bit_buf, bits, bit_ptr);
 
     while (1) {
 	if (bit_buf >= 0x28000000) {
@@ -376,7 +388,7 @@ static void get_intra_block_B14 (picture_t * picture, slice_t * slice,
 	    mismatch ^= val;
 
 	    bit_buf <<= 1;
-	    NEEDBITS (bit_buf, bits);
+	    NEEDBITS (bit_buf, bits, bit_ptr);
 
 	    continue;
 
@@ -397,7 +409,7 @@ static void get_intra_block_B14 (picture_t * picture, slice_t * slice,
 	    j = scan[i];
 
 	    DUMPBITS (bit_buf, bits, 12);
-	    NEEDBITS (bit_buf, bits);
+	    NEEDBITS (bit_buf, bits, bit_ptr);
 	    val = (SBITS (bit_buf, 12) *
 		   quantizer_scale * quant_matrix[j]) / 16;
 
@@ -406,7 +418,7 @@ static void get_intra_block_B14 (picture_t * picture, slice_t * slice,
 	    mismatch ^= val;
 
 	    DUMPBITS (bit_buf, bits, 12);
-	    NEEDBITS (bit_buf, bits);
+	    NEEDBITS (bit_buf, bits, bit_ptr);
 
 	    continue;
 
@@ -428,7 +440,7 @@ static void get_intra_block_B14 (picture_t * picture, slice_t * slice,
 	} else {
 	    tab = DCT_16 + UBITS (bit_buf, 16);
 	    bit_buf <<= 16;
-	    bit_buf |= getword () << (bits + 16);
+	    GETWORD (bit_buf, bits + 16, bit_ptr);
 	    i += tab->run;
 	    if (i < 64)
 		goto normal_code;
@@ -437,8 +449,9 @@ static void get_intra_block_B14 (picture_t * picture, slice_t * slice,
     }
     dest[63] ^= mismatch & 1;
     DUMPBITS (bit_buf, bits, 2);	// dump end of block code
-    bitstream_buf = bit_buf;
-    bitstream_bits = bits;
+    slice->bitstream_buf = bit_buf;
+    slice->bitstream_bits = bits;
+    slice->bitstream_ptr = bit_ptr;
 }
 
 static void get_intra_block_B15 (picture_t * picture, slice_t * slice,
@@ -454,14 +467,16 @@ static void get_intra_block_B15 (picture_t * picture, slice_t * slice,
     DCTtab * tab;
     uint32_t bit_buf;
     int bits;
+    uint8_t * bit_ptr;
 
     i = 0;
     mismatch = ~dest[0];
 
-    bit_buf = bitstream_buf;
-    bits = bitstream_bits;
+    bit_buf = slice->bitstream_buf;
+    bits = slice->bitstream_bits;
+    bit_ptr = slice->bitstream_ptr;
 
-    NEEDBITS (bit_buf, bits);
+    NEEDBITS (bit_buf, bits, bit_ptr);
 
     while (1) {
 	if (bit_buf >= 0x04000000) {
@@ -485,7 +500,7 @@ static void get_intra_block_B15 (picture_t * picture, slice_t * slice,
 		mismatch ^= val;
 
 		bit_buf <<= 1;
-		NEEDBITS (bit_buf, bits);
+		NEEDBITS (bit_buf, bits, bit_ptr);
 
 		continue;
 
@@ -505,7 +520,7 @@ static void get_intra_block_B15 (picture_t * picture, slice_t * slice,
 		j = scan[i];
 
 		DUMPBITS (bit_buf, bits, 12);
-		NEEDBITS (bit_buf, bits);
+		NEEDBITS (bit_buf, bits, bit_ptr);
 		val = (SBITS (bit_buf, 12) *
 		       quantizer_scale * quant_matrix[j]) / 16;
 
@@ -514,7 +529,7 @@ static void get_intra_block_B15 (picture_t * picture, slice_t * slice,
 		mismatch ^= val;
 
 		DUMPBITS (bit_buf, bits, 12);
-		NEEDBITS (bit_buf, bits);
+		NEEDBITS (bit_buf, bits, bit_ptr);
 
 		continue;
 
@@ -537,7 +552,7 @@ static void get_intra_block_B15 (picture_t * picture, slice_t * slice,
 	} else {
 	    tab = DCT_16 + UBITS (bit_buf, 16);
 	    bit_buf <<= 16;
-	    bit_buf |= getword () << (bits + 16);
+	    GETWORD (bit_buf, bits + 16, bit_ptr);
 	    i += tab->run;
 	    if (i < 64)
 		goto normal_code;
@@ -546,8 +561,9 @@ static void get_intra_block_B15 (picture_t * picture, slice_t * slice,
     }
     dest[63] ^= mismatch & 1;
     DUMPBITS (bit_buf, bits, 4);	// dump end of block code
-    bitstream_buf = bit_buf;
-    bitstream_bits = bits;
+    slice->bitstream_buf = bit_buf;
+    slice->bitstream_bits = bits;
+    slice->bitstream_ptr = bit_ptr;
 }
 
 static void get_non_intra_block (picture_t * picture, slice_t * slice,
@@ -563,14 +579,16 @@ static void get_non_intra_block (picture_t * picture, slice_t * slice,
     DCTtab * tab;
     uint32_t bit_buf;
     int bits;
+    uint8_t * bit_ptr;
 
     i = -1;
     mismatch = 1;
 
-    bit_buf = bitstream_buf;
-    bits = bitstream_bits;
+    bit_buf = slice->bitstream_buf;
+    bits = slice->bitstream_bits;
+    bit_ptr = slice->bitstream_ptr;
 
-    NEEDBITS (bit_buf, bits);
+    NEEDBITS (bit_buf, bits, bit_ptr);
     if (bit_buf >= 0x28000000) {
 	tab = DCT_B14DC_5 - 5 + UBITS (bit_buf, 5);
 	goto entry_1;
@@ -601,7 +619,7 @@ static void get_non_intra_block (picture_t * picture, slice_t * slice,
 	    mismatch ^= val;
 
 	    bit_buf <<= 1;
-	    NEEDBITS (bit_buf, bits);
+	    NEEDBITS (bit_buf, bits, bit_ptr);
 
 	    continue;
 
@@ -625,7 +643,7 @@ static void get_non_intra_block (picture_t * picture, slice_t * slice,
 	    j = scan[i];
 
 	    DUMPBITS (bit_buf, bits, 12);
-	    NEEDBITS (bit_buf, bits);
+	    NEEDBITS (bit_buf, bits, bit_ptr);
 	    val = 2 * (SBITS (bit_buf, 12) + SBITS (bit_buf, 1)) + 1;
 	    val = (val * quantizer_scale * quant_matrix[j]) / 32;
 
@@ -634,7 +652,7 @@ static void get_non_intra_block (picture_t * picture, slice_t * slice,
 	    mismatch ^= val;
 
 	    DUMPBITS (bit_buf, bits, 12);
-	    NEEDBITS (bit_buf, bits);
+	    NEEDBITS (bit_buf, bits, bit_ptr);
 
 	    continue;
 
@@ -656,7 +674,7 @@ static void get_non_intra_block (picture_t * picture, slice_t * slice,
 	} else {
 	    tab = DCT_16 + UBITS (bit_buf, 16);
 	    bit_buf <<= 16;
-	    bit_buf |= getword () << (bits + 16);
+	    GETWORD (bit_buf, bits + 16, bit_ptr);
 	    i += tab->run;
 	    if (i < 64)
 		goto normal_code;
@@ -665,8 +683,9 @@ static void get_non_intra_block (picture_t * picture, slice_t * slice,
     }
     dest[63] ^= mismatch & 1;
     DUMPBITS (bit_buf, bits, 2);	// dump end of block code
-    bitstream_buf = bit_buf;
-    bitstream_bits = bits;
+    slice->bitstream_buf = bit_buf;
+    slice->bitstream_bits = bits;
+    slice->bitstream_ptr = bit_ptr;
 }
 
 static void get_mpeg1_intra_block (picture_t * picture, slice_t * slice,
@@ -681,13 +700,15 @@ static void get_mpeg1_intra_block (picture_t * picture, slice_t * slice,
     DCTtab * tab;
     uint32_t bit_buf;
     int bits;
+    uint8_t * bit_ptr;
 
     i = 0;
 
-    bit_buf = bitstream_buf;
-    bits = bitstream_bits;
+    bit_buf = slice->bitstream_buf;
+    bits = slice->bitstream_bits;
+    bit_ptr = slice->bitstream_ptr;
 
-    NEEDBITS (bit_buf, bits);
+    NEEDBITS (bit_buf, bits, bit_ptr);
 
     while (1) {
 	if (bit_buf >= 0x28000000) {
@@ -714,7 +735,7 @@ static void get_mpeg1_intra_block (picture_t * picture, slice_t * slice,
 	    dest[j] = val;
 
 	    bit_buf <<= 1;
-	    NEEDBITS (bit_buf, bits);
+	    NEEDBITS (bit_buf, bits, bit_ptr);
 
 	    continue;
 
@@ -735,7 +756,7 @@ static void get_mpeg1_intra_block (picture_t * picture, slice_t * slice,
 	    j = scan[i];
 
 	    DUMPBITS (bit_buf, bits, 12);
-	    NEEDBITS (bit_buf, bits);
+	    NEEDBITS (bit_buf, bits, bit_ptr);
 	    val = SBITS (bit_buf, 8);
 	    if (! (val & 0x7f)) {
 		DUMPBITS (bit_buf, bits, 8);
@@ -750,7 +771,7 @@ static void get_mpeg1_intra_block (picture_t * picture, slice_t * slice,
 	    dest[j] = val;
 
 	    DUMPBITS (bit_buf, bits, 8);
-	    NEEDBITS (bit_buf, bits);
+	    NEEDBITS (bit_buf, bits, bit_ptr);
 
 	    continue;
 
@@ -772,7 +793,7 @@ static void get_mpeg1_intra_block (picture_t * picture, slice_t * slice,
 	} else {
 	    tab = DCT_16 + UBITS (bit_buf, 16);
 	    bit_buf <<= 16;
-	    bit_buf |= getword () << (bits + 16);
+	    GETWORD (bit_buf, bits + 16, bit_ptr);
 	    i += tab->run;
 	    if (i < 64)
 		goto normal_code;
@@ -780,8 +801,9 @@ static void get_mpeg1_intra_block (picture_t * picture, slice_t * slice,
 	break;	// illegal, but check needed to avoid buffer overflow
     }
     DUMPBITS (bit_buf, bits, 2);	// dump end of block code
-    bitstream_buf = bit_buf;
-    bitstream_bits = bits;
+    slice->bitstream_buf = bit_buf;
+    slice->bitstream_bits = bits;
+    slice->bitstream_ptr = bit_ptr;
 }
 
 static void get_mpeg1_non_intra_block (picture_t * picture, slice_t * slice,
@@ -796,13 +818,15 @@ static void get_mpeg1_non_intra_block (picture_t * picture, slice_t * slice,
     DCTtab * tab;
     uint32_t bit_buf;
     int bits;
+    uint8_t * bit_ptr;
 
     i = -1;
 
-    bit_buf = bitstream_buf;
-    bits = bitstream_bits;
+    bit_buf = slice->bitstream_buf;
+    bits = slice->bitstream_bits;
+    bit_ptr = slice->bitstream_ptr;
 
-    NEEDBITS (bit_buf, bits);
+    NEEDBITS (bit_buf, bits, bit_ptr);
     if (bit_buf >= 0x28000000) {
 	tab = DCT_B14DC_5 - 5 + UBITS (bit_buf, 5);
 	goto entry_1;
@@ -835,7 +859,7 @@ static void get_mpeg1_non_intra_block (picture_t * picture, slice_t * slice,
 	    dest[j] = val;
 
 	    bit_buf <<= 1;
-	    NEEDBITS (bit_buf, bits);
+	    NEEDBITS (bit_buf, bits, bit_ptr);
 
 	    continue;
 
@@ -859,7 +883,7 @@ static void get_mpeg1_non_intra_block (picture_t * picture, slice_t * slice,
 	    j = scan[i];
 
 	    DUMPBITS (bit_buf, bits, 12);
-	    NEEDBITS (bit_buf, bits);
+	    NEEDBITS (bit_buf, bits, bit_ptr);
 	    val = SBITS (bit_buf, 8);
 	    if (! (val & 0x7f)) {
 		DUMPBITS (bit_buf, bits, 8);
@@ -875,7 +899,7 @@ static void get_mpeg1_non_intra_block (picture_t * picture, slice_t * slice,
 	    dest[j] = val;
 
 	    DUMPBITS (bit_buf, bits, 8);
-	    NEEDBITS (bit_buf, bits);
+	    NEEDBITS (bit_buf, bits, bit_ptr);
 
 	    continue;
 
@@ -897,7 +921,7 @@ static void get_mpeg1_non_intra_block (picture_t * picture, slice_t * slice,
 	} else {
 	    tab = DCT_16 + UBITS (bit_buf, 16);
 	    bit_buf <<= 16;
-	    bit_buf |= getword () << (bits + 16);
+	    GETWORD (bit_buf, bits + 16, bit_ptr);
 	    i += tab->run;
 	    if (i < 64)
 		goto normal_code;
@@ -905,14 +929,16 @@ static void get_mpeg1_non_intra_block (picture_t * picture, slice_t * slice,
 	break;	// illegal, but check needed to avoid buffer overflow
     }
     DUMPBITS (bit_buf, bits, 2);	// dump end of block code
-    bitstream_buf = bit_buf;
-    bitstream_bits = bits;
+    slice->bitstream_buf = bit_buf;
+    slice->bitstream_bits = bits;
+    slice->bitstream_ptr = bit_ptr;
 }
 
 static inline int get_macroblock_address_increment (void)
 {
-#define bit_buf bitstream_buf
-#define bits bitstream_bits
+#define bit_buf (slice.bitstream_buf)
+#define bits (slice.bitstream_bits)
+#define bit_ptr (slice.bitstream_ptr)
 
     MBAtab * tab;
     int mba;
@@ -934,7 +960,7 @@ static inline int get_macroblock_address_increment (void)
 	    // no break here on purpose
 	case 15:	// macroblock_stuffing (MPEG1 only)
 	    DUMPBITS (bit_buf, bits, 11);
-	    NEEDBITS (bit_buf, bits);
+	    NEEDBITS (bit_buf, bits, bit_ptr);
 	    break;
 	default:	// end of slice, or error
 	    return 0;
@@ -943,14 +969,16 @@ static inline int get_macroblock_address_increment (void)
 
 #undef bit_buf
 #undef bits
+#undef bit_ptr
 }
 
 static inline void slice_intra_DCT (picture_t * picture, slice_t * slice,
 				    int cc, uint8_t * dest, int stride)
 {
-#define bit_buf bitstream_buf
-#define bits bitstream_bits
-    NEEDBITS (bit_buf, bits);
+#define bit_buf (slice->bitstream_buf)
+#define bits (slice->bitstream_bits)  
+#define bit_ptr (slice->bitstream_ptr)
+    NEEDBITS (bit_buf, bits, bit_ptr);
     //Get the intra DC coefficient and inverse quantize it
     if (cc == 0)
 	slice->dc_dct_pred[0] += get_luma_dc_dct_diff ();
@@ -969,6 +997,7 @@ static inline void slice_intra_DCT (picture_t * picture, slice_t * slice,
     memset (DCTblock, 0, sizeof (DCTblock));
 #undef bit_buf
 #undef bits
+#undef bit_ptr
 }
 
 static inline void slice_non_intra_DCT (picture_t * picture, slice_t * slice,
@@ -1015,8 +1044,9 @@ static inline void motion_block (void (** table) (uint8_t *, uint8_t *,
     table[4+xy_half] (dest[2] + dest_offset, src2, stride, height);
 }
 
-#define bit_buf bitstream_buf
-#define bits bitstream_bits
+#define bit_buf (slice.bitstream_buf)
+#define bits (slice.bitstream_bits)
+#define bit_ptr (slice.bitstream_ptr)
 
 static void motion_frame (motion_t * motion, uint8_t * dest[3],
 			  int offset, int width,
@@ -1024,12 +1054,12 @@ static void motion_frame (motion_t * motion, uint8_t * dest[3],
 {
     int motion_x, motion_y;
 
-    NEEDBITS (bit_buf, bits);
+    NEEDBITS (bit_buf, bits, bit_ptr);
     motion_x = motion->pmv[0][0] + get_motion_delta (motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[1][0] = motion->pmv[0][0] = motion_x;
 
-    NEEDBITS (bit_buf, bits);
+    NEEDBITS (bit_buf, bits, bit_ptr);
     motion_y = motion->pmv[0][1] + get_motion_delta (motion->f_code[1]);
     motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
     motion->pmv[1][1] = motion->pmv[0][1] = motion_y;
@@ -1045,7 +1075,7 @@ static void motion_field (motion_t * motion, uint8_t * dest[3],
     int vertical_field_select;
     int motion_x, motion_y;
 
-    NEEDBITS (bit_buf, bits);
+    NEEDBITS (bit_buf, bits, bit_ptr);
     vertical_field_select = UBITS (bit_buf, 1);
     DUMPBITS (bit_buf, bits, 1);
 
@@ -1053,7 +1083,7 @@ static void motion_field (motion_t * motion, uint8_t * dest[3],
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[0][0] = motion_x;
 
-    NEEDBITS (bit_buf, bits);
+    NEEDBITS (bit_buf, bits, bit_ptr);
     motion_y = (motion->pmv[0][1] >> 1) + get_motion_delta (motion->f_code[1]);
     //motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
     motion->pmv[0][1] = motion_y << 1;
@@ -1062,7 +1092,7 @@ static void motion_field (motion_t * motion, uint8_t * dest[3],
 		  motion->ref_frame, offset + vertical_field_select * width,
 		  width * 2, 8);
 
-    NEEDBITS (bit_buf, bits);
+    NEEDBITS (bit_buf, bits, bit_ptr);
     vertical_field_select = UBITS (bit_buf, 1);
     DUMPBITS (bit_buf, bits, 1);
 
@@ -1070,7 +1100,7 @@ static void motion_field (motion_t * motion, uint8_t * dest[3],
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[1][0] = motion_x;
 
-    NEEDBITS (bit_buf, bits);
+    NEEDBITS (bit_buf, bits, bit_ptr);
     motion_y = (motion->pmv[1][1] >> 1) + get_motion_delta (motion->f_code[1]);
     //motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
     motion->pmv[1][1] = motion_y << 1;
@@ -1090,20 +1120,20 @@ static void motion_dmv (motion_t * motion, uint8_t * dest[3],
     int m;
     int other_x, other_y;
 
-    NEEDBITS (bit_buf, bits);
+    NEEDBITS (bit_buf, bits, bit_ptr);
     motion_x = motion->pmv[0][0] + get_motion_delta (motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[1][0] = motion->pmv[0][0] = motion_x;
 
-    NEEDBITS (bit_buf, bits);
+    NEEDBITS (bit_buf, bits, bit_ptr);
     dmv_x = get_dmv ();
 
-    NEEDBITS (bit_buf, bits);
+    NEEDBITS (bit_buf, bits, bit_ptr);
     motion_y = (motion->pmv[0][1] >> 1) + get_motion_delta (motion->f_code[1]);
     //motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
     motion->pmv[1][1] = motion->pmv[0][1] = motion_y << 1;
 
-    NEEDBITS (bit_buf, bits);
+    NEEDBITS (bit_buf, bits, bit_ptr);
     dmv_y = get_dmv ();
 
     motion_block (mc_functions.put, motion_x, motion_y, dest, offset,
@@ -1148,12 +1178,12 @@ static void motion_conceal (motion_t * motion)
 {
     int tmp;
 
-    NEEDBITS (bit_buf, bits);
+    NEEDBITS (bit_buf, bits, bit_ptr);
     tmp = motion->pmv[0][0] + get_motion_delta (motion->f_code[0]);
     tmp = bound_motion_vector (tmp, motion->f_code[0]);
     motion->pmv[1][0] = motion->pmv[0][0] = tmp;
 
-    NEEDBITS (bit_buf, bits);
+    NEEDBITS (bit_buf, bits, bit_ptr);
     tmp = motion->pmv[0][1] + get_motion_delta (motion->f_code[1]);
     tmp = bound_motion_vector (tmp, motion->f_code[1]);
     motion->pmv[1][1] = motion->pmv[0][1] = tmp;
@@ -1163,6 +1193,7 @@ static void motion_conceal (motion_t * motion)
 
 #undef bit_buf
 #undef bits
+#undef bit_ptr
 
 #define MOTION(routine,direction,slice,dest,offset,stride)	\
 do {								\
@@ -1193,8 +1224,9 @@ do {							\
 
 int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 {
-#define bit_buf bitstream_buf
-#define bits bitstream_bits
+#define bit_buf (slice.bitstream_buf)
+#define bits (slice.bitstream_bits)
+#define bit_ptr (slice.bitstream_ptr)
     int mba; 
     int macroblock_modes;
     int width;
@@ -1236,14 +1268,14 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     slice.dc_dct_pred[0]=slice.dc_dct_pred[1]=slice.dc_dct_pred[2]= 
 	1<< (picture->intra_dc_precision + 7) ;
 
-    bitstream_init (buffer);
+    bitstream_init (&slice, buffer);
 
     slice.quantizer_scale = get_quantizer_scale (picture->q_scale_type);
 
     //Ignore intra_slice and all the extra data
     while (bit_buf & 0x80000000) {
 	DUMPBITS (bit_buf, bits, 9);
-	NEEDBITS (bit_buf, bits);
+	NEEDBITS (bit_buf, bits, bit_ptr);
     }
     DUMPBITS (bit_buf, bits, 1);
 
@@ -1252,7 +1284,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     offset <<= 4;
 
     while (1) {
-	NEEDBITS (bit_buf, bits);
+	NEEDBITS (bit_buf, bits, bit_ptr);
 
 	macroblock_modes =
 	    get_macroblock_modes (picture->picture_coding_type,
@@ -1301,7 +1333,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 			     dest[2] + (offset>>1), width>>1);
 
 	    if (picture->picture_coding_type == D_TYPE) {
-		NEEDBITS (bit_buf, bits);
+		NEEDBITS (bit_buf, bits, bit_ptr);
 		DUMPBITS (bit_buf, bits, 1);
 	    }
 	} else {
@@ -1383,7 +1415,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	offset += 16;
 	CHECK_DISPLAY;
 
-	NEEDBITS (bit_buf, bits);
+	NEEDBITS (bit_buf, bits, bit_ptr);
 
 	if (bit_buf & 0x80000000) {
 	    DUMPBITS (bit_buf, bits, 1);
@@ -1428,4 +1460,5 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     return (mba > picture->last_mba);
 #undef bit_buf
 #undef bits
+#undef bit_ptr
 }

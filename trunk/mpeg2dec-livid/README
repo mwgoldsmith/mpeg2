@@ -112,6 +112,7 @@ Other contributors include :
 	Bajusz Peter <hyp-x@inf.bme.hu> - motion comp fixes
 	Franck Sicard <Franck.Sicard@miniruth.solsoft.fr> - x11 fixes
 	Brion Vibber <brion@gizmo.usc.edu> - x11 fixes
+	Martin Vogt <mvogt@rhrk.uni-kl.de> - reentrancy fixes
 	Fredrik Vraalsen <vraalsen@cs.uiuc.edu> - general hackage and stuff
 
 (let me know if I forgot anyone)

@@ -122,6 +122,11 @@ typedef struct motion_s {
 
 // state that is carried from one macroblock to the next inside of a same slice
 typedef struct slice_s {
+    // bit parsing stuff
+    uint32_t bitstream_buf;	// current 32 bit working set of buffer
+    int bitstream_bits;		// used bits in working set
+    uint8_t * bitstream_ptr;	// buffer with stream data
+
     //Motion vectors
     //The f_ and b_ correspond to the forward and backward motion
     //predictors
