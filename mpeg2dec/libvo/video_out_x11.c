@@ -70,6 +70,12 @@ static void uyvy_start (void * _id, const mpeg2_fbuf_t * fbuf,
     }
 }
 
+#ifdef WORDS_BIGENDIAN
+#define PACK(a,b,c,d) (((a) << 24) | ((b) << 16) | ((c) << 8) | (d))
+#else
+#define PACK(a,b,c,d) (((d) << 24) | ((c) << 16) | ((b) << 8) | (a))
+#endif
+
 static void uyvy_line (uint8_t * py, uint8_t * pu, uint8_t * pv, void * _dst,
 		       int width)
 {
@@ -77,14 +83,14 @@ static void uyvy_line (uint8_t * py, uint8_t * pu, uint8_t * pv, void * _dst,
 
     width >>= 4;
     do {
-	dst[0] =  py[1] << 24 | pv[0] << 16 |  py[0] << 8 | pu[0];
-	dst[1] =  py[3] << 24 | pv[1] << 16 |  py[2] << 8 | pu[1];
-	dst[2] =  py[5] << 24 | pv[2] << 16 |  py[4] << 8 | pu[2];
-	dst[3] =  py[7] << 24 | pv[3] << 16 |  py[6] << 8 | pu[3];
-	dst[4] =  py[9] << 24 | pv[4] << 16 |  py[8] << 8 | pu[4];
-	dst[5] = py[11] << 24 | pv[5] << 16 | py[10] << 8 | pu[5];
-	dst[6] = py[13] << 24 | pv[6] << 16 | py[12] << 8 | pu[6];
-	dst[7] = py[15] << 24 | pv[7] << 16 | py[14] << 8 | pu[7];
+	dst[0] = PACK (pu[0],  py[0], pv[0],  py[1]);
+	dst[1] = PACK (pu[1],  py[2], pv[1],  py[3]);
+	dst[2] = PACK (pu[2],  py[4], pv[2],  py[5]);
+	dst[3] = PACK (pu[3],  py[6], pv[3],  py[7]);
+	dst[4] = PACK (pu[4],  py[8], pv[4],  py[9]);
+	dst[5] = PACK (pu[5], py[10], pv[5], py[11]);
+	dst[6] = PACK (pu[6], py[12], pv[6], py[13]);
+	dst[7] = PACK (pu[7], py[14], pv[7], py[15]);
 	py += 16;
 	pu += 8;
 	pv += 8;
