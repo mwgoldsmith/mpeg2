@@ -243,7 +243,8 @@ static int x11_close (void * dummy)
 {
     struct x11_priv_s * priv = &x11_priv;
 
-    XDestroyImage (priv->ximage);
+    if (priv->ximage)
+	XDestroyImage (priv->ximage);
     common_close ();
     return 0;
 }
@@ -509,7 +510,9 @@ static int xv_get_port (void)
     for (i = 0; i < adaptors; i++)
 	if (adaptorInfo[i].type & XvImageMask)
 	    for (j = 0; j < adaptorInfo[i].num_ports; j++)
-		if (! (xv_check_yv12 (adaptorInfo[i].base_id + j))) {
+		if ((! (xv_check_yv12 (adaptorInfo[i].base_id + j))) &&
+		    (XvGrabPort (priv->display, adaptorInfo[i].base_id + j,
+				 0) == Success)) {
 		    priv->port = adaptorInfo[i].base_id + j;
 		    XvFreeAdaptorInfo (adaptorInfo);
 		    return 0;
@@ -591,7 +594,9 @@ static int xv_close (void * dummy)
 {
     struct x11_priv_s * priv = &x11_priv;
 
-    XFree (priv->xvimage);
+    if (priv->xvimage)
+	XFree (priv->xvimage);
+    XvUngrabPort (priv->display, priv->port, 0);
     common_close ();
     return 0;
 }
@@ -699,6 +704,7 @@ static int xvshm_close (void * dummy)
 	xshm_destroy_shm ();
 	XFree (priv->xvimage);
     }
+    XvUngrabPort (priv->display, priv->port, 0);
     common_close ();
     return 0;
 }
