@@ -226,8 +226,8 @@ dump_yuv_planar(uint_32 *y, uint_32 *u, uint_32 *v, uint_32 to, uint_32 width, u
 
 	LOG("video_out_3dfx: starting planar dump\n");
 	jmax = height>>1; // vidheight/2, height of U and V planes
-	uv_imax = width>>3;  // vidwidth/2/4, width of U and V planes in 32-bit words
-	y_imax = uv_imax << 1; // Y plane is twice as wide as U and V planes
+	y_imax = width; // Y plane is twice as wide as U and V planes
+	uv_imax = width>>1;  // vidwidth/2/4, width of U and V planes in 32-bit words
 
 	for (j=0;j<jmax;j++) 
 	{
