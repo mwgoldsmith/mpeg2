@@ -3,7 +3,6 @@
 	* generic slice yuv2rgb handling, plus nullrgb and sdl implementations
 	* clean up frame_t declaration and usage (libvo/libmpeg2) + video_out.h
 	* clean up yuv2rgb for interlaced pictures (handling of uv)
-	* clean up yuv2rgb_mmx.c / yuv2rgb_mmx.h
 
 * things we dont implement yet
 	* dont crash on bad streams, make sure we can resync after a while
