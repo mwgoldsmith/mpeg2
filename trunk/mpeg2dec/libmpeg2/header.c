@@ -115,6 +115,7 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
     sequence->display_height = sequence->picture_height = height = i & 0xfff;
     decoder->width = sequence->width = width = (width + 15) & ~15;
     decoder->height = sequence->height = height = (height + 15) & ~15;
+    decoder->vertical_position_extension = (height > 2800);
     sequence->chroma_width = width >> 1;
     sequence->chroma_height = height >> 1;
 
@@ -190,6 +191,7 @@ static int sequence_ext (mpeg2dec_t * mpeg2dec)
 	((buffer[1] << 13) | (buffer[2] << 5)) & 0x3000;
     height = sequence->display_height = sequence->picture_height +=
 	(buffer[2] << 7) & 0x3000;
+    decoder->vertical_position_extension = (height > 2800);
     flags = sequence->flags | SEQ_FLAG_MPEG2;
     if (!(buffer[1] & 8)) {
 	flags &= ~SEQ_FLAG_PROGRESSIVE_SEQUENCE;

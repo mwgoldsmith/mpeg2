@@ -102,6 +102,7 @@ struct decoder_s {
     /* The width and height of the picture snapped to macroblock units */
     int width;
     int height;
+    int vertical_position_extension;
 
     /* picture header stuff */
 
