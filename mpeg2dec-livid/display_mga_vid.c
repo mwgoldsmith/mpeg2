@@ -119,7 +119,7 @@ display_init(uint_32 width, uint_32 height)
 
 	if(f == -1)
 	{
-		fprintf(stderr,"Couldn't open driver\n");
+		fprintf(stderr,"Couldn't open /dev/mga_vid\n");
 		exit(1);
 	}
 

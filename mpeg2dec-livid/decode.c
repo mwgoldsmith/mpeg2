@@ -130,7 +130,7 @@ mpeg2_init(void)
 	//FIXME this should go somewhere after we discover how big
 	//the frame is, or size it so that it will be big enough for
 	//all cases
-	frame_size = 720 * 480;
+	frame_size = 720 * 576;
 	picture.current_frame[0] = malloc(frame_size);
 	picture.current_frame[1] = malloc(frame_size / 4);
 	picture.current_frame[2] = malloc(frame_size / 4);
