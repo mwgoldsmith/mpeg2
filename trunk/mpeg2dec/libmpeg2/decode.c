@@ -138,36 +138,6 @@ void mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t * start, uint8_t * end)
     mpeg2dec->buf_end = end;
 }
 
-static inline int repeated_sequence (sequence_t * seq1, sequence_t * seq2)
-{
-    /*
-     * according to 6.1.1.6, repeat sequence headers should be
-     * identical to the original. However some DVDs dont respect that
-     * and have different bitrates in the repeat sequence headers. So
-     * we'll ignore that in the comparison and still consider these as
-     * repeat sequence headers - the drawback of this, though, is that
-     * the user will never get to see the new bitrate value.
-     */
-
-    return (seq1->width == seq2->width &&
-	    seq1->height == seq2->height &&
-	    seq1->chroma_width == seq2->chroma_width &&
-	    seq1->chroma_height == seq2->chroma_height &&
-	    seq1->vbv_buffer_size == seq2->vbv_buffer_size &&
-	    seq1->flags && seq2->flags &&
-	    seq1->picture_width == seq2->picture_width &&
-	    seq1->picture_height == seq2->picture_height &&
-	    seq1->display_width == seq2->display_width &&
-	    seq1->display_height == seq2->display_height &&
-	    seq1->pixel_width == seq2->pixel_width &&
-	    seq1->pixel_height == seq2->pixel_height &&
-	    seq1->frame_period == seq2->frame_period &&
-	    seq1->profile_level_id == seq2->profile_level_id &&
-	    seq1->colour_primaries == seq2->colour_primaries &&
-	    seq1->transfer_characteristics == seq2->transfer_characteristics &&
-	    seq1->matrix_coefficients == seq2->matrix_coefficients);
-}
-
 int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 {
     uint8_t code;
@@ -219,12 +189,21 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 
     switch (RECEIVED (mpeg2dec->code, mpeg2dec->state)) {
 
-	/* state transition after a sequence header */
+    /* state transition after a sequence header */
     case RECEIVED (0x00, STATE_SEQUENCE):
     case RECEIVED (0xb8, STATE_SEQUENCE):
 	mpeg2_header_sequence_finalize (mpeg2dec);
-	if (repeated_sequence (&(mpeg2dec->last_sequence),
-			       &(mpeg2dec->sequence)))
+
+	/*
+	 * according to 6.1.1.6, repeat sequence headers should be
+	 * identical to the original. However some DVDs dont respect that
+	 * and have different bitrates in the repeat sequence headers. So
+	 * we'll ignore that in the comparison and still consider these as
+	 * repeat sequence headers.
+	 */
+	mpeg2dec->last_sequence.byte_rate = mpeg2dec->sequence.byte_rate;
+	if (!memcmp (&(mpeg2dec->last_sequence), &(mpeg2dec->sequence),
+		     sizeof (sequence_t)))
 	    mpeg2dec->state = STATE_SEQUENCE_REPEATED;
 	mpeg2dec->last_sequence = mpeg2dec->sequence;
 	break;
