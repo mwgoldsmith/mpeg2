@@ -24,7 +24,6 @@
 #include "config.h"
 #include "attributes.h"
 
-#include <stdlib.h>
 #include <inttypes.h>
 
 #include "mpeg2.h"
@@ -346,7 +345,9 @@ static inline int div_round (int dividend, int divisor)
 	return -((-dividend + (divisor>>1)) / divisor);
 }
 
-static void rgb_c_init (mpeg2convert_rgb_order_t order, unsigned int bpp)
+static unsigned int rgb_c_init (convert_rgb_t * id,
+				mpeg2convert_rgb_order_t order,
+				unsigned int bpp)
 {
     int i;
     uint8_t table_Y[1024];
@@ -373,9 +374,9 @@ static void rgb_c_init (mpeg2convert_rgb_order_t order, unsigned int bpp)
 
     switch (bpp) {
     case 32:
-	table_32 = (uint32_t *) malloc ((197 + 2*682 + 256 + 132) *
-					sizeof (uint32_t));
-
+	if (!id)
+	    return (197 + 2*682 + 256 + 132) * sizeof (uint32_t);
+	table_32 = (uint32_t *) (id + 1);
 	entry_size = sizeof (uint32_t);
 	table_r = table_32 + 197;
 	table_b = table_32 + 197 + 685;
@@ -392,8 +393,9 @@ static void rgb_c_init (mpeg2convert_rgb_order_t order, unsigned int bpp)
 	break;
 
     case 24:
-	table_8 = (uint8_t *) malloc ((256 + 2*232) * sizeof (uint8_t));
-
+	if (!id)
+	    return (256 + 2*232) * sizeof (uint8_t);
+	table_8 = (uint8_t *) (id + 1);
 	entry_size = sizeof (uint8_t);
 	table_r = table_g = table_b = table_8 + 232;
 
@@ -403,9 +405,9 @@ static void rgb_c_init (mpeg2convert_rgb_order_t order, unsigned int bpp)
 
     case 15:
     case 16:
-	table_16 = (uint16_t *) malloc ((197 + 2*682 + 256 + 132) *
-					sizeof (uint16_t));
-
+	if (!id)
+	    return (197 + 2*682 + 256 + 132) * sizeof (uint16_t);
+	table_16 = (uint16_t *) (id + 1);
 	entry_size = sizeof (uint16_t);
 	table_r = table_16 + 197;
 	table_b = table_16 + 197 + 685;
@@ -435,9 +437,9 @@ static void rgb_c_init (mpeg2convert_rgb_order_t order, unsigned int bpp)
 	break;
 
     case 8:
-	table_332 = (uint8_t *) malloc ((197 + 2*682 + 256 + 232 + 71) *
-					sizeof (uint8_t));
-
+	if (!id)
+	    return (197 + 2*682 + 256 + 232 + 71) * sizeof (uint8_t);
+	table_332 = (uint8_t *) (id + 1);
 	entry_size = sizeof (uint8_t);
 	table_r = table_332 + 197;
 	table_g = table_332 + 197 + 682 + 30;
@@ -464,6 +466,8 @@ static void rgb_c_init (mpeg2convert_rgb_order_t order, unsigned int bpp)
 	table_bU[i] = (((uint8_t *)table_b) +
 		       entry_size * div_round (cbu * (i-128), 76309));
     }
+
+    return 0;
 }
 
 static void rgb_internal (mpeg2convert_rgb_order_t order, unsigned int bpp,
@@ -471,54 +475,60 @@ static void rgb_internal (mpeg2convert_rgb_order_t order, unsigned int bpp,
 			  void * arg, mpeg2_convert_init_t * result)
 {
     convert_rgb_t * id = (convert_rgb_t *) result->id;
+    mpeg2convert_copy_t * copy = (mpeg2convert_copy_t *) 0;
+    unsigned int id_size = sizeof (convert_rgb_t);
+    int chroma420 = (seq->chroma_height < seq->height);
+    int convert420 = 0;
+
+#ifdef ARCH_X86
+    if (!copy && (accel & MPEG2_ACCEL_X86_MMXEXT)) {
+	convert420 = 0;
+	copy = mpeg2convert_rgb_mmxext (order, bpp, seq);
+    }
+    if (!copy && (accel & MPEG2_ACCEL_X86_MMX)) {
+	convert420 = 0;
+	copy = mpeg2convert_rgb_mmx (order, bpp, seq);
+    }
+#endif
+#ifdef ARCH_SPARC
+    if (!copy && (accel & MPEG2_ACCEL_SPARC_VIS)) {
+	convert420 = chroma420;
+	copy = mpeg2convert_rgb_vis (order, bpp, seq);
+    }
+#endif
+    if (!copy) {
+	int src, dest;
+	static void (* rgb_c[3][5]) (void *, uint8_t * const *,
+				     unsigned int) =
+	    {{rgb_c_24_bgr_420, rgb_c_8_420, rgb_c_16_420,
+	      rgb_c_24_rgb_420, rgb_c_32_420},
+	     {rgb_c_24_bgr_422, rgb_c_8_422, rgb_c_16_422,
+	      rgb_c_24_rgb_422, rgb_c_32_422},
+	     {rgb_c_24_bgr_444, rgb_c_8_444, rgb_c_16_444,
+	      rgb_c_24_rgb_444, rgb_c_32_444}};
+
+	convert420 = chroma420;
+	id_size += rgb_c_init (id, order, bpp);
+	src = ((seq->chroma_width == seq->width) +
+	       (seq->chroma_height == seq->height));
+	dest = ((bpp == 24 && order == MPEG2CONVERT_BGR) ? 0 : (bpp + 7) >> 3);
+	copy = rgb_c[src][dest];
+    }
 
     if (!id)
-	result->id_size = sizeof (convert_rgb_t);
+	result->id_size = id_size;
     else {
 	id->width = seq->width >> 3;
 	id->y_stride_frame = seq->width;
 	id->uv_stride_frame = seq->chroma_width;
 	id->rgb_stride_frame = ((bpp + 7) >> 3) * seq->width;
-	id->chroma420 = id->convert420 = (seq->chroma_height < seq->height);
+	id->chroma420 = chroma420;
+	id->convert420 = convert420;
 
 	result->buf_size[0] = id->rgb_stride_frame * seq->height;
 	result->buf_size[1] = result->buf_size[2] = 0;
 	result->start = rgb_start;
-
-	result->copy = NULL;
-#ifdef ARCH_X86
-	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_X86_MMXEXT)) {
-	    id->convert420 = 0;
-	    result->copy = mpeg2convert_rgb_mmxext (order, bpp, seq);
-	}
-	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_X86_MMX)) {
-	    id->convert420 = 0;
-	    result->copy = mpeg2convert_rgb_mmx (order, bpp, seq);
-	}
-#endif
-#ifdef ARCH_SPARC
-	if ((result->copy == NULL) && (accel & MPEG2_ACCEL_SPARC_VIS))
-	    result->copy = mpeg2convert_rgb_vis (order, bpp, seq);
-#endif
-	if (result->copy == NULL) {
-	    int src, dest;
-	    static void (* rgb_c[3][5]) (void *, uint8_t * const *,
-					 unsigned int) =
-		{{rgb_c_24_bgr_420, rgb_c_8_420, rgb_c_16_420,
-		  rgb_c_24_rgb_420, rgb_c_32_420},
-		 {rgb_c_24_bgr_422, rgb_c_8_422, rgb_c_16_422,
-		  rgb_c_24_rgb_422, rgb_c_32_422},
-		 {rgb_c_24_bgr_444, rgb_c_8_444, rgb_c_16_444,
-		  rgb_c_24_rgb_444, rgb_c_32_444}};
-
-	    id->convert420 = id->chroma420;
-	    rgb_c_init (order, bpp);
-	    src = ((seq->chroma_width == seq->width) +
-		   (seq->chroma_height == seq->height));
-	    dest = ((bpp == 24 && order == MPEG2CONVERT_BGR) ?
-		    0 : (bpp + 7) >> 3);
-	    result->copy = rgb_c[src][dest];
-	}
+	result->copy = copy;
     }
 }
 
@@ -598,5 +608,5 @@ mpeg2_convert_t * mpeg2convert_rgb (mpeg2convert_rgb_order_t order,
 	else if (bpp >= 8 && bpp <= 32 && (bpp & 7) == 0)
 	    return table[bpp >> 3][order == MPEG2CONVERT_BGR];
     }
-    return NULL;
+    return (mpeg2_convert_t *) 0;
 }
