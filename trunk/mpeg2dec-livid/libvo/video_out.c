@@ -36,6 +36,7 @@ extern vo_functions_t video_out_sdl;
 extern vo_functions_t video_out_3dfx;
 extern vo_functions_t video_out_null;
 extern vo_functions_t video_out_pgm;
+extern vo_functions_t video_out_syncfb;
 
 vo_functions_t* video_out_drivers[] = 
 {
@@ -44,6 +45,7 @@ vo_functions_t* video_out_drivers[] =
 #endif
 #ifdef HAVE_MGA
 	&video_out_mga,
+	&video_out_syncfb,
 #endif
 #ifdef HAVE_3DFX
 	&video_out_3dfx,
