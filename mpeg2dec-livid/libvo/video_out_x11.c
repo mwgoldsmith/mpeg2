@@ -422,6 +422,7 @@ get_info(void)
 	return &vo_info;
 }
 
+#ifdef HAVE_XV
 static void
 allocate_xvimage(int foo)
 {
@@ -443,6 +444,7 @@ allocate_xvimage(int foo)
 
 	return;
 }
+#endif
 
 static void 
 Terminate_Display_Process(void) 
@@ -482,6 +484,7 @@ Display_Image(XImage *myximage, uint8_t *ImageData)
 #endif
 }
 
+#ifdef HAVE_XV
 static void
 check_events(void)
 {
@@ -497,6 +500,8 @@ check_events(void)
 		win_height = h;
 	}
 }
+#endif
+
 #ifdef HAVE_XV
 static inline void
 flip_page_xv(void)
@@ -627,6 +632,7 @@ draw_frame(uint8_t *src[])
 static vo_image_buffer_t* 
 allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format)
 {
+#ifdef HAVE_XV
 	xvimage_counter++;
 	
 	if ((xv_port != 0) && (xvimage_counter < MAX_BUFFERS))
@@ -647,6 +653,7 @@ allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format)
 		return image;
 	}
 	else
+#endif
 	{
 		//use the generic fallback
 		return allocate_image_buffer_common(height,width,format);
@@ -656,11 +663,13 @@ allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format)
 static void	
 free_image_buffer(vo_image_buffer_t* image)
 {
+#ifdef HAVE_XV
 	if (xv_port != 0)
 	{
 		// FIXME: properly deallocate XvImages
 	}
 	else
+#endif
 	{
 		//use the generic fallback
 		free_image_buffer_common(image);
