@@ -469,7 +469,7 @@ static void yuv2rgb_c_init (int order, int bpp)
 
 static void convert_internal (int order, int bpp, const mpeg2_sequence_t * seq,
 			      uint32_t accel, void * arg,
-			      convert_init_t * result)
+			      mpeg2_convert_init_t * result)
 {
     convert_rgb_t * id = (convert_rgb_t *) result->id;
 
@@ -523,66 +523,66 @@ static void convert_internal (int order, int bpp, const mpeg2_sequence_t * seq,
 }
 
 void convert_rgb32 (const mpeg2_sequence_t * seq, uint32_t accel, void * arg,
-		    convert_init_t * result)
+		    mpeg2_convert_init_t * result)
 {
     convert_internal (CONVERT_RGB, 32, seq, accel, arg, result);
 }
 
 void convert_rgb24 (const mpeg2_sequence_t * seq, uint32_t accel, void * arg,
-		    convert_init_t * result)
+		    mpeg2_convert_init_t * result)
 {
     convert_internal (CONVERT_RGB, 24, seq, accel, arg, result);
 }
 
 void convert_rgb16 (const mpeg2_sequence_t * seq, uint32_t accel, void * arg,
-		    convert_init_t * result)
+		    mpeg2_convert_init_t * result)
 {
     convert_internal (CONVERT_RGB, 16, seq, accel, arg, result);
 }
 
 void convert_rgb15 (const mpeg2_sequence_t * seq, uint32_t accel, void * arg,
-		    convert_init_t * result)
+		    mpeg2_convert_init_t * result)
 {
     convert_internal (CONVERT_RGB, 15, seq, accel, arg, result);
 }
 
 void convert_rgb8 (const mpeg2_sequence_t * seq, uint32_t accel, void * arg,
-		    convert_init_t * result)
+		   mpeg2_convert_init_t * result)
 {
     convert_internal (CONVERT_RGB, 8, seq, accel, arg, result);
 }
 
 void convert_bgr32 (const mpeg2_sequence_t * seq, uint32_t accel, void * arg,
-		    convert_init_t * result)
+		    mpeg2_convert_init_t * result)
 {
     convert_internal (CONVERT_BGR, 32, seq, accel, arg, result);
 }
 
 void convert_bgr24 (const mpeg2_sequence_t * seq, uint32_t accel, void * arg,
-		    convert_init_t * result)
+		    mpeg2_convert_init_t * result)
 {
     convert_internal (CONVERT_BGR, 24, seq, accel, arg, result);
 }
 
 void convert_bgr16 (const mpeg2_sequence_t * seq, uint32_t accel, void * arg,
-		    convert_init_t * result)
+		    mpeg2_convert_init_t * result)
 {
     convert_internal (CONVERT_BGR, 16, seq, accel, arg, result);
 }
 
 void convert_bgr15 (const mpeg2_sequence_t * seq, uint32_t accel, void * arg,
-		    convert_init_t * result)
+		    mpeg2_convert_init_t * result)
 {
     convert_internal (CONVERT_BGR, 15, seq, accel, arg, result);
 }
 
 void convert_bgr8 (const mpeg2_sequence_t * seq, uint32_t accel, void * arg,
-		   convert_init_t * result)
+		   mpeg2_convert_init_t * result)
 {
     convert_internal (CONVERT_BGR, 8, seq, accel, arg, result);
 }
 
-convert_t * convert_rgb (int order, int bpp)
+mpeg2_convert_t * convert_rgb (int order, int bpp)
 {
     if (order == CONVERT_RGB || order == CONVERT_BGR)
 	switch (bpp) {

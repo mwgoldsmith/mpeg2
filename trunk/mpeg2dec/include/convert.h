@@ -24,31 +24,19 @@
 #ifndef CONVERT_H
 #define CONVERT_H
 
-typedef struct convert_init_s {
-    void * id;
-    int id_size;
-    int buf_size[3];
-    void (* start) (void * id, const mpeg2_fbuf_t * fbuf,
-		    const mpeg2_picture_t * picture, const mpeg2_gop_t * gop);
-    void (* copy) (void * id, uint8_t * const * src, unsigned int v_offset);
-} convert_init_t;
-
-typedef void convert_t (const mpeg2_sequence_t * sequence, uint32_t accel,
-			void * arg, convert_init_t * result);
-
-convert_t convert_rgb32;
-convert_t convert_rgb24;
-convert_t convert_rgb16;
-convert_t convert_rgb15;
-convert_t convert_rgb8;
-convert_t convert_bgr32;
-convert_t convert_bgr24;
-convert_t convert_bgr16;
-convert_t convert_bgr15;
-convert_t convert_bgr8;
+mpeg2_convert_t convert_rgb32;
+mpeg2_convert_t convert_rgb24;
+mpeg2_convert_t convert_rgb16;
+mpeg2_convert_t convert_rgb15;
+mpeg2_convert_t convert_rgb8;
+mpeg2_convert_t convert_bgr32;
+mpeg2_convert_t convert_bgr24;
+mpeg2_convert_t convert_bgr16;
+mpeg2_convert_t convert_bgr15;
+mpeg2_convert_t convert_bgr8;
 
 #define CONVERT_RGB 0
 #define CONVERT_BGR 1
-convert_t * convert_rgb (int order, int bpp);
+mpeg2_convert_t * convert_rgb (int order, int bpp);
 
 #endif /* CONVERT_H */

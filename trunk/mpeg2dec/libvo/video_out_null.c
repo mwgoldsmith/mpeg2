@@ -89,7 +89,7 @@ static void nullslice_copy (void * id, uint8_t * const * src,
 }
 
 static void nullslice_convert (const mpeg2_sequence_t * seq, uint32_t accel,
-			       void * arg, convert_init_t * result)
+			       void * arg, mpeg2_convert_init_t * result)
 {
     result->id_size = 0;
     result->buf_size[0] = result->buf_size[1] = result->buf_size[2] = 0;

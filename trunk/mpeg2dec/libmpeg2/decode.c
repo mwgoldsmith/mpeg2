@@ -30,7 +30,6 @@
 #include "mpeg2.h"
 #include "attributes.h"
 #include "mpeg2_internal.h"
-#include "convert.h"
 
 static int mpeg2_accels = 0;
 
@@ -297,11 +296,9 @@ mpeg2_state_t mpeg2_parse_header (mpeg2dec_t * mpeg2dec)
     }
 }
 
-void mpeg2_convert (mpeg2dec_t * mpeg2dec,
-		    void convert (const mpeg2_sequence_t *, uint32_t, void *,
-				  struct convert_init_s *), void * arg)
+void mpeg2_convert (mpeg2dec_t * mpeg2dec, mpeg2_convert_t convert, void * arg)
 {
-    convert_init_t convert_init;
+    mpeg2_convert_init_t convert_init;
     int y_size, uv_size;
 
     convert_init.id = NULL;

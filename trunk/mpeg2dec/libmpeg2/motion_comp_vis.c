@@ -122,14 +122,16 @@ static void MC_put_o_16_vis (uint8_t * dest, const uint8_t * _ref,
 			     const int stride, int height)
 {
 	uint8_t *ref = (uint8_t *) _ref;
+	int offset;
 
 	ref = vis_alignaddr(ref);
+	offset = (ref != _ref) ? 16 : 0;
 	do {	/* 5 cycles */
 		vis_ld64(ref[0], TMP0);
 
 		vis_ld64_2(ref, 8, TMP2);
 
-		vis_ld64_2(ref, 16, TMP4);
+		vis_ld64_2(ref, offset, TMP4);
 		ref += stride;
 
 		vis_faligndata(TMP0, TMP2, REF_0);
@@ -145,12 +147,14 @@ static void MC_put_o_8_vis (uint8_t * dest, const uint8_t * _ref,
 			    const int stride, int height)
 {
 	uint8_t *ref = (uint8_t *) _ref;
+	int offset;
 
 	ref = vis_alignaddr(ref);
+	offset = (ref != _ref) ? 8 : 0;
 	do {	/* 4 cycles */
 		vis_ld64(ref[0], TMP0);
 
-		vis_ld64(ref[8], TMP2);
+		vis_ld64_2(ref, offset, TMP2);
 		ref += stride;
 
 		/* stall */
@@ -167,14 +171,16 @@ static void MC_avg_o_16_vis (uint8_t * dest, const uint8_t * _ref,
 {
 	uint8_t *ref = (uint8_t *) _ref;
 	int stride_8 = stride + 8;
+	int offset;
 
 	ref = vis_alignaddr(ref);
+	offset = (ref != _ref) ? 16 : 0;
 
 	vis_ld64(ref[0], TMP0);
 
 	vis_ld64(ref[8], TMP2);
 
-	vis_ld64(ref[16], TMP4);
+	vis_ld64_2(ref, offset, TMP4);
 
 	vis_ld64(dest[0], DST_0);
 
@@ -198,7 +204,7 @@ static void MC_avg_o_16_vis (uint8_t * dest, const uint8_t * _ref,
 		vis_ld64_2(ref, 8, TMP2);
 		vis_and(TMP6, MASK_fe, TMP6);
 
-		vis_ld64_2(ref, 16, TMP4);
+		vis_ld64_2(ref, offset, TMP4);
 		ref += stride;
 		vis_mul8x16(CONST_128, TMP6, TMP6);
 		vis_xor(DST_2, REF_2, TMP8);
@@ -227,7 +233,7 @@ static void MC_avg_o_16_vis (uint8_t * dest, const uint8_t * _ref,
 		vis_ld64_2(ref, 8, TMP16);
 		vis_faligndata(TMP0, TMP2, REF_0);
 
-		vis_ld64_2(ref, 16, TMP18);
+		vis_ld64_2(ref, offset, TMP18);
 		vis_faligndata(TMP2, TMP4, REF_2);
 		ref += stride;
 
@@ -269,7 +275,7 @@ static void MC_avg_o_16_vis (uint8_t * dest, const uint8_t * _ref,
 	vis_ld64_2(ref, 8, TMP2);
 	vis_and(TMP6, MASK_fe, TMP6);
 
-	vis_ld64_2(ref, 16, TMP4);
+	vis_ld64_2(ref, offset, TMP4);
 	vis_mul8x16(CONST_128, TMP6, TMP6);
 	vis_xor(DST_2, REF_2, TMP8);
 
@@ -327,12 +333,14 @@ static void MC_avg_o_8_vis (uint8_t * dest, const uint8_t * _ref,
 			    const int stride, int height)
 {
 	uint8_t *ref = (uint8_t *) _ref;
+	int offset;
 
 	ref = vis_alignaddr(ref);
+	offset = (ref != _ref) ? 8 : 0;
 
 	vis_ld64(ref[0], TMP0);
 
-	vis_ld64(ref[8], TMP2);
+	vis_ld64_2(ref, offset, TMP2);
 
 	vis_ld64(dest[0], DST_0);
 
@@ -350,7 +358,7 @@ static void MC_avg_o_8_vis (uint8_t * dest, const uint8_t * _ref,
 		vis_ld64(ref[0], TMP0);
 		vis_xor(DST_0, REF_0, TMP4);
 
-		vis_ld64(ref[8], TMP2);
+		vis_ld64_2(ref, offset, TMP2);
 		vis_and(TMP4, MASK_fe, TMP4);
 
 		vis_or(DST_0, REF_0, TMP6);
@@ -361,7 +369,7 @@ static void MC_avg_o_8_vis (uint8_t * dest, const uint8_t * _ref,
 		vis_ld64(ref[0], TMP12);
 		vis_faligndata(TMP0, TMP2, REF_0);
 
-		vis_ld64(ref[8], TMP2);
+		vis_ld64_2(ref, offset, TMP2);
 		vis_xor(DST_0, REF_0, TMP0);
 		ref += stride;
 
@@ -389,7 +397,7 @@ static void MC_avg_o_8_vis (uint8_t * dest, const uint8_t * _ref,
 	vis_ld64(ref[0], TMP0);
 	vis_xor(DST_0, REF_0, TMP4);
 
-	vis_ld64(ref[8], TMP2);
+	vis_ld64_2(ref, offset, TMP2);
 	vis_and(TMP4, MASK_fe, TMP4);
 
 	vis_or(DST_0, REF_0, TMP6);
@@ -995,13 +1003,16 @@ static void MC_put_y_16_vis (uint8_t * dest, const uint8_t * _ref,
 			     const int stride, int height)
 {
 	uint8_t *ref = (uint8_t *) _ref;
+	int offset;
 
 	ref = vis_alignaddr(ref);
+	offset = (ref != _ref) ? 16 : 0;
+
 	vis_ld64(ref[0], TMP0);
 
 	vis_ld64_2(ref, 8, TMP2);
 
-	vis_ld64_2(ref, 16, TMP4);
+	vis_ld64_2(ref, offset, TMP4);
 	ref += stride;
 
 	vis_ld64(ref[0], TMP6);
@@ -1010,7 +1021,7 @@ static void MC_put_y_16_vis (uint8_t * dest, const uint8_t * _ref,
 	vis_ld64_2(ref, 8, TMP8);
 	vis_faligndata(TMP2, TMP4, REF_4);
 
-	vis_ld64_2(ref, 16, TMP10);
+	vis_ld64_2(ref, offset, TMP10);
 	ref += stride;
 
 	vis_ld64(constants_fe[0], MASK_fe);
@@ -1028,7 +1039,7 @@ static void MC_put_y_16_vis (uint8_t * dest, const uint8_t * _ref,
 		vis_ld64_2(ref, 8, TMP2);
 		vis_xor(REF_4, REF_6, TMP16);
 
-		vis_ld64_2(ref, 16, TMP4);
+		vis_ld64_2(ref, offset, TMP4);
 		ref += stride;
 		vis_or(REF_0, REF_2, TMP14);
 
@@ -1038,7 +1049,7 @@ static void MC_put_y_16_vis (uint8_t * dest, const uint8_t * _ref,
 		vis_ld64_2(ref, 8, TMP8);
 		vis_faligndata(TMP0, TMP2, REF_0);
 
-		vis_ld64_2(ref, 16, TMP10);
+		vis_ld64_2(ref, offset, TMP10);
 		ref += stride;
 		vis_faligndata(TMP2, TMP4, REF_4);
 
@@ -1095,7 +1106,7 @@ static void MC_put_y_16_vis (uint8_t * dest, const uint8_t * _ref,
 	vis_ld64_2(ref, 8, TMP2);
 	vis_xor(REF_4, REF_6, TMP16);
 
-	vis_ld64_2(ref, 16, TMP4);
+	vis_ld64_2(ref, offset, TMP4);
 	vis_or(REF_0, REF_2, TMP14);
 
 	vis_or(REF_4, REF_6, TMP18);
@@ -1151,16 +1162,19 @@ static void MC_put_y_8_vis (uint8_t * dest, const uint8_t * _ref,
 			    const int stride, int height)
 {
 	uint8_t *ref = (uint8_t *) _ref;
+	int offset;
 
 	ref = vis_alignaddr(ref);
+	offset = (ref != _ref) ? 8 : 0;
+
 	vis_ld64(ref[0], TMP0);
 
-	vis_ld64_2(ref, 8, TMP2);
+	vis_ld64_2(ref, offset, TMP2);
 	ref += stride;
 
 	vis_ld64(ref[0], TMP4);
 
-	vis_ld64_2(ref, 8, TMP6);
+	vis_ld64_2(ref, offset, TMP6);
 	ref += stride;
 
 	vis_ld64(constants_fe[0], MASK_fe);
@@ -1175,7 +1189,7 @@ static void MC_put_y_8_vis (uint8_t * dest, const uint8_t * _ref,
 		vis_ld64(ref[0], TMP0);
 		vis_xor(REF_0, REF_2, TMP4);
 
-		vis_ld64_2(ref, 8, TMP2);
+		vis_ld64_2(ref, offset, TMP2);
 		ref += stride;
 		vis_and(TMP4, MASK_fe, TMP4);
 
@@ -1185,7 +1199,7 @@ static void MC_put_y_8_vis (uint8_t * dest, const uint8_t * _ref,
 		vis_faligndata(TMP0, TMP2, REF_0);
 		vis_ld64(ref[0], TMP0);
 
-		vis_ld64_2(ref, 8, TMP2);
+		vis_ld64_2(ref, offset, TMP2);
 		ref += stride;
 		vis_xor(REF_0, REF_2, TMP12);
 
@@ -1212,7 +1226,7 @@ static void MC_put_y_8_vis (uint8_t * dest, const uint8_t * _ref,
 	vis_ld64(ref[0], TMP0);
 	vis_xor(REF_0, REF_2, TMP4);
 
-	vis_ld64_2(ref, 8, TMP2);
+	vis_ld64_2(ref, offset, TMP2);
 	vis_and(TMP4, MASK_fe, TMP4);
 
 	vis_or(REF_0, REF_2, TMP6);
@@ -1244,18 +1258,21 @@ static void MC_avg_y_16_vis (uint8_t * dest, const uint8_t * _ref,
 {
 	uint8_t *ref = (uint8_t *) _ref;
 	int stride_8 = stride + 8;
-	int stride_16 = stride + 16;
+	int stride_16;
+	int offset;
 
 	vis_set_gsr(5 << VIS_GSR_SCALEFACT_SHIFT);
 
 	ref = vis_alignaddr(ref);
+	offset = (ref != _ref) ? 16 : 0;
 
 	vis_ld64(ref[ 0], TMP0);
 	vis_fzero(ZERO);
 
 	vis_ld64(ref[ 8], TMP2);
 
-	vis_ld64(ref[16], TMP4);
+	vis_ld64_2(ref, offset, TMP4);
+	stride_16 = stride + offset;
 
 	vis_ld64(constants3[0], CONST_3);
 	vis_faligndata(TMP0, TMP2, REF_2);
@@ -1372,16 +1389,19 @@ static void MC_avg_y_8_vis (uint8_t * dest, const uint8_t * _ref,
 			    const int stride, int height)
 {
 	uint8_t *ref = (uint8_t *) _ref;
-	int stride_8 = stride + 8;
+	int stride_8;
+	int offset;
 
 	vis_set_gsr(5 << VIS_GSR_SCALEFACT_SHIFT);
 
 	ref = vis_alignaddr(ref);
+	offset = (ref != _ref) ? 8 : 0;
 
 	vis_ld64(ref[ 0], TMP0);
 	vis_fzero(ZERO);
 
-	vis_ld64(ref[ 8], TMP2);
+	vis_ld64_2(ref, offset, TMP2);
+	stride_8 = stride + offset;
 
 	vis_ld64(constants3[0], CONST_3);
 	vis_faligndata(TMP0, TMP2, REF_2);
