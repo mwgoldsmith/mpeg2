@@ -26,24 +26,22 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <oms/oms.h>
-#include <oms/plugin/output_video.h>
+#include <inttypes.h>
 
 #include "mmx.h"
 #include "yuv2rgb.h"
 
-void yuv420_rgb16_mmx(unsigned char * image, const unsigned char * py,
-			     const unsigned char * pu, const unsigned char * pv,
-			     const unsigned int h_size, const unsigned int v_size,
-			     const unsigned int rgb_stride, const unsigned int y_stride,
-			     const unsigned int uv_stride);
+void yuv420_rgb16_mmx(uint8_t * image, const uint8_t * py,
+			     const uint8_t * pu, const uint8_t * pv,
+			     const uint32_t h_size, const uint32_t v_size,
+			     const uint32_t rgb_stride, const uint32_t y_stride,
+			     const uint32_t uv_stride);
 
-void yuv420_argb32_mmx(unsigned char * image, const unsigned char * py,
-			      const unsigned char * pu, const unsigned char * pv,
-			      const unsigned int h_size, const unsigned int v_size,
-			      const unsigned int rgb_stride, const unsigned int y_stride,
-			      const unsigned int uv_stride);
+void yuv420_argb32_mmx(uint8_t * image, const uint8_t * py,
+			      const uint8_t * pu, const uint8_t * pv,
+			      const uint32_t h_size, const uint32_t v_size,
+			      const uint32_t rgb_stride, const uint32_t y_stride,
+			      const uint32_t uv_stride);
 
 #define yuv420_bgr16_mmx  yuv420_rgb16_mmx
 #define yuv420_rgb24_mmx  yuv420_rgb16_mmx
@@ -51,31 +49,31 @@ void yuv420_argb32_mmx(unsigned char * image, const unsigned char * py,
 #define yuv420_bgra32_mmx yuv420_argb32_mmx
 
 /* hope these constant values are cache line aligned */
-unsigned long long mmx_80w     = 0x0080008000800080;
-unsigned long long mmx_10w     = 0x1010101010101010;
-unsigned long long mmx_00ffw   = 0x00ff00ff00ff00ff;
-unsigned long long mmx_Y_coeff = 0x253f253f253f253f;
+uint64_t mmx_80w     = 0x0080008000800080;
+uint64_t mmx_10w     = 0x1010101010101010;
+uint64_t mmx_00ffw   = 0x00ff00ff00ff00ff;
+uint64_t mmx_Y_coeff = 0x253f253f253f253f;
 
 /* hope these constant values are cache line aligned */
-unsigned long long mmx_U_green = 0xf37df37df37df37d;
-unsigned long long mmx_U_blue  = 0x4093409340934093;
-unsigned long long mmx_V_red   = 0x3312331233123312;
-unsigned long long mmx_V_green = 0xe5fce5fce5fce5fc;
+uint64_t mmx_U_green = 0xf37df37df37df37d;
+uint64_t mmx_U_blue  = 0x4093409340934093;
+uint64_t mmx_V_red   = 0x3312331233123312;
+uint64_t mmx_V_green = 0xe5fce5fce5fce5fc;
 
 /* hope these constant values are cache line aligned */
-unsigned long long mmx_redmask = 0xf8f8f8f8f8f8f8f8;
-unsigned long long mmx_grnmask = 0xfcfcfcfcfcfcfcfc;
-unsigned long long mmx_grnshift   = 0x03;
-unsigned long long mmx_blueshift  = 0x03;
+uint64_t mmx_redmask = 0xf8f8f8f8f8f8f8f8;
+uint64_t mmx_grnmask = 0xfcfcfcfcfcfcfcfc;
+uint64_t mmx_grnshift   = 0x03;
+uint64_t mmx_blueshift  = 0x03;
 
-void yuv420_rgb16_mmx(unsigned char * image, const unsigned char * py,
-			     const unsigned char * pu, const unsigned char * pv,
-			     const unsigned int h_size, const unsigned int v_size,
-			     const unsigned int rgb_stride, const unsigned int y_stride,
-			     const unsigned int uv_stride)
+void yuv420_rgb16_mmx(uint8_t * image, const uint8_t * py,
+			     const uint8_t * pu, const uint8_t * pv,
+			     const uint32_t h_size, const uint32_t v_size,
+			     const uint32_t rgb_stride, const uint32_t y_stride,
+			     const uint32_t uv_stride)
 {
-	unsigned int even = 1;
-	unsigned int x = 0, y = 0;
+	uint32_t even = 1;
+	uint32_t x = 0, y = 0;
 
 	py = pu; 
 
@@ -241,15 +239,14 @@ void yuv420_rgb16_mmx(unsigned char * image, const unsigned char * py,
 	//__asm__ ("emms\n\t");
 }
 
-void 
-yuv420_argb32_mmx(unsigned char * image, const unsigned char * py,
-		const unsigned char * pu, const unsigned char * pv,
-		const unsigned int h_size, const unsigned int v_size,
-		const unsigned int rgb_stride, const unsigned int y_stride,
-		const unsigned int uv_stride)
+void yuv420_argb32_mmx(uint8_t * image, const uint8_t * py,
+		const uint8_t * pu, const uint8_t * pv,
+		const uint32_t h_size, const uint32_t v_size,
+		const uint32_t rgb_stride, const uint32_t y_stride,
+		const uint32_t uv_stride)
 {
-	unsigned int even = 1;
-	unsigned int x = 0, y = 0;
+	uint32_t even = 1;
+	uint32_t x = 0, y = 0;
 
 	__asm__ (
 		".align 8 \n\t"
@@ -426,8 +423,7 @@ yuv420_argb32_mmx(unsigned char * image, const unsigned char * py,
 }
 
 
-yuv2rgb_fun 
-yuv2rgb_init_mmx(uint32_t bpp, uint32_t mode)
+yuv2rgb_fun yuv2rgb_init_mmx(uint32_t bpp, uint32_t mode)
 {
 
 	//FIXME remove when fixed

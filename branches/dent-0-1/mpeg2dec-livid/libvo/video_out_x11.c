@@ -632,7 +632,7 @@ free_image_buffer(vo_image_buffer_t* image)
  * Initialize Plugin.
  **/    
 
-void *plugin_init (char *whoami)
+int plugin_init (char *whoami)
 {               
         pluginRegister (whoami,
                 PLUGIN_ID_OUTPUT_VIDEO,
@@ -641,7 +641,7 @@ void *plugin_init (char *whoami)
 		NULL,
                 &video_x11);
 
-        return &video_x11;
+        return 0;
 }  
    
    

@@ -338,7 +338,7 @@ static int _mpeg2dec_read (plugin_codec_video_t *plugin, buf_t *buf, buf_entry_t
  **/
 
 
-void *plugin_init (char *whoami)
+int plugin_init (char *whoami)
 {
 	pluginRegister (whoami,
 		PLUGIN_ID_CODEC_VIDEO,
@@ -347,7 +347,7 @@ void *plugin_init (char *whoami)
 		NULL,
 		&codec_mpeg2dec);
 
-	return &codec_mpeg2dec;
+	return 0;
 }
 
 

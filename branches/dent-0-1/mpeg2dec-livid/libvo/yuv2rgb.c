@@ -68,8 +68,7 @@ static void yuv2rgb_c (void * dst, const uint8_t * py,
 {
 	v_size >>= 1;
 
-	while (v_size--)
-	{
+	while (v_size--) {
 		yuv2rgb_c_internal (py, py + y_stride, pu, pv, dst, dst + rgb_stride,
 						h_size);
 
@@ -164,8 +163,7 @@ static void yuv2rgb_c_32 (const uint8_t * py_1, const uint8_t * py_2,
 	dst_1 = _dst_1;
 	dst_2 = _dst_2;
 
-	while (h_size--)
-	{
+	while (h_size--) {
 		RGB(0);
 		DST1(0);
 		DST2(0);
@@ -204,8 +202,7 @@ static void yuv2rgb_c_24_rgb (const uint8_t * py_1, const uint8_t * py_2,
 	dst_1 = _dst_1;
 	dst_2 = _dst_2;
 
-	while (h_size--)
-	{
+	while (h_size--) {
 		RGB(0);
 		DST1RGB(0);
 		DST2RGB(0);
@@ -244,8 +241,7 @@ static void yuv2rgb_c_24_bgr (const uint8_t * py_1, const uint8_t * py_2,
 	dst_1 = _dst_1;
 	dst_2 = _dst_2;
 
-	while (h_size--)
-	{
+	while (h_size--) {
 		RGB(0);
 		DST1BGR(0);
 		DST2BGR(0);
@@ -285,8 +281,7 @@ static void yuv2rgb_c_16 (const uint8_t * py_1, const uint8_t * py_2,
 	dst_1 = _dst_1;
 	dst_2 = _dst_2;
 
-	while (h_size--)
-	{
+	while (h_size--) {
 		RGB(0);
 		DST1(0);
 		DST2(0);
@@ -335,8 +330,7 @@ static void yuv2rgb_c_init (uint32_t bpp, uint32_t mode)
 	int cgu = -Inverse_Table_6_9[matrix_coefficients][2];
 	int cgv = -Inverse_Table_6_9[matrix_coefficients][3];
 
-	for (i = 0; i < 1024; i++)
-	{
+	for (i = 0; i < 1024; i++) {
 		int j;
 
 		j = (76309 * (i - 384 - 16) + 32768) >> 16;
@@ -344,8 +338,7 @@ static void yuv2rgb_c_init (uint32_t bpp, uint32_t mode)
 		table_Y[i] = j;
 	}
 
-	switch (bpp)
-	{
+	switch (bpp) {
 		case 32:
 			yuv2rgb_c_internal = yuv2rgb_c_32;
 
@@ -387,8 +380,7 @@ static void yuv2rgb_c_init (uint32_t bpp, uint32_t mode)
 			table_b = table_16 + 197 + 685;
 			table_g = table_16 + 197 + 2*682;
 
-			for (i = -197; i < 256+197; i++)
-			{
+			for (i = -197; i < 256+197; i++) {
 				int j = table_Y[i+384] >> 3;
 
 				if (mode == MODE_RGB)
@@ -396,14 +388,12 @@ static void yuv2rgb_c_init (uint32_t bpp, uint32_t mode)
 
 				((uint16_t *)table_r)[i] = j;
 			}
-			for (i = -132; i < 256+132; i++)
-			{
+			for (i = -132; i < 256+132; i++) {
 				int j = table_Y[i+384] >> ((bpp==16) ? 2 : 3);
 
 				((uint16_t *)table_g)[i] = j << 5;
 			}
-			for (i = -232; i < 256+232; i++)
-			{
+			for (i = -232; i < 256+232; i++) {
 				int j = table_Y[i+384] >> 3;
 
 				if (mode == MODE_BGR)
@@ -418,8 +408,7 @@ static void yuv2rgb_c_init (uint32_t bpp, uint32_t mode)
 			exit (1);
 	}
 
-	for (i = 0; i < 256; i++)
-	{
+	for (i = 0; i < 256; i++) {
 		table_rV[i] = table_r + entry_size * div_round (crv * (i-128), 76309);
 		table_gU[i] = table_g + entry_size * div_round (cgu * (i-128), 76309);
 		table_gV[i] = entry_size * div_round (cgv * (i-128), 76309);

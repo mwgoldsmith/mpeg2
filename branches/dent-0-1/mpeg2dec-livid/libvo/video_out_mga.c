@@ -524,14 +524,14 @@ static void free_image_buffer(vo_image_buffer_t* image)
  * Initialize Plugin.
  **/
 
-void *plugin_init (char *whoami)
+int plugin_init (char *whoami)
 {
 	pluginRegister (whoami,
 		PLUGIN_ID_OUTPUT_VIDEO,
 		0,
 		&video_mga);
 
-	return &video_mga;
+	return 0;
 }
 
 
