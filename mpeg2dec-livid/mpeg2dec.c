@@ -41,10 +41,9 @@ static uint_8 buffer[BUFFER_SIZE];
 static FILE *in_file;
 static uint_32 frame_counter = 0;
 
-static struct timeval tv_beg;
-static struct timeval tv_end;
-static uint_32 elapsed = 0;
-static uint_32 total_elapsed = 0;
+static struct timeval tv_beg, tv_end, tv_start;
+static uint_32 elapsed;
+static uint_32 total_elapsed;
 static uint_32 last_count = 0;
 static uint_32 demux_dvd = 0;
 static vo_functions_t *video_out;
@@ -52,13 +51,18 @@ static vo_functions_t *video_out;
 static void print_fps(uint_32 final) 
 {
 	int fps, tfps, frames;
-	frame_counter++;
 	
 	gettimeofday(&tv_end, NULL);
-	elapsed = (tv_end.tv_sec - tv_beg.tv_sec) * 1000000 + 
-		  (tv_end.tv_usec - tv_beg.tv_usec);        
+	if (frame_counter++ == 0) {
+		tv_start = tv_beg = tv_end;
+	}
+	elapsed = (tv_end.tv_sec - tv_beg.tv_sec) * 100 +
+		  (tv_end.tv_usec - tv_beg.tv_usec) / 10000;
+
+	total_elapsed = (tv_end.tv_sec - tv_start.tv_sec) * 100 +
+		  (tv_end.tv_usec - tv_start.tv_usec) / 10000;
+
 	if (final) {
-		total_elapsed += elapsed / 10000;
 		tfps = frame_counter * 10000 / total_elapsed;
 		fprintf(stderr,"\n%d frames decoded in %d.%02d "
 			"seconds (%d.%02d fps)\n", frame_counter,
@@ -66,11 +70,11 @@ static void print_fps(uint_32 final)
 			tfps / 100, tfps % 100);
 		return;
 	}
-	if (elapsed < 1000000)	/* only display every second */
+
+	if (elapsed < 100)	/* only display every second */
 		return;
+
 	tv_beg = tv_end;
-	elapsed /= 10000;			/* convert to 1/100s */
-	total_elapsed += elapsed;
 	frames = frame_counter - last_count;
 
 	fps = frames * 10000 / elapsed;			/* 100x */
@@ -78,6 +82,7 @@ static void print_fps(uint_32 final)
 
 	fprintf(stderr, "%8d %8d.%02d %8d %8d.%02d\r", frame_counter,
 		fps / 100, fps %100, total_elapsed, tfps / 100, tfps % 100);
+
 	last_count = frame_counter;
 }
  
