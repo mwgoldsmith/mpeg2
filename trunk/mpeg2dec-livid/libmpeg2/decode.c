@@ -196,7 +196,10 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 
 		output->setup (&attr);
 #else
-		output->init (picture.coded_picture_width,picture.coded_picture_height,0,0,0x32315659);
+		if (output->init (picture.coded_picture_width,picture.coded_picture_height,0,0,0x32315659)) {
+		    printf ("display init failed\n");
+		    exit (1);
+		}
 #endif
 		decode_allocate_image_buffers (output, &picture);
 		is_display_initialized = 1;
