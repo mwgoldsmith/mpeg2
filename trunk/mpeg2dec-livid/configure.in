@@ -2,7 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.13)
 AC_INIT(src/mpeg2dec.c)
 AC_CONFIG_AUX_DIR(autotools)
-AM_INIT_AUTOMAKE(mpeg2dec,0.2.0)
+AM_INIT_AUTOMAKE(mpeg2dec,0.2.1-cvs)
 AM_CONFIG_HEADER(include/config.h)
 AM_MAINTAINER_MODE
 AC_CANONICAL_HOST
@@ -85,8 +85,8 @@ builtin([include],[libmpeg2/configure.incl])
 builtin([include],[libvo/configure.incl])
 
 AC_ARG_ENABLE([warnings],
-    [  --enable-warnings       treat warnings as errors])
-if test x"$enable_warnings" = x"yes" -a x"$GCC" = x"yes"; then
+    [  --disable-warnings      do not treat warnings as errors])
+if test x"$enable_warnings" != x"no" -a x"$GCC" = x"yes"; then
     dnl compiler warnings
     OPT_CFLAGS="$CFLAGS -Wall -Werror"
     AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS])
