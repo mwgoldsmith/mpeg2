@@ -143,10 +143,14 @@ static inline void get_quantizer_scale (mpeg2_decoder_t * const decoder)
     quantizer_scale_code = UBITS (bit_buf, 5);
     DUMPBITS (bit_buf, bits, 5);
 
-    decoder->intra_quantizer_matrix =
-	decoder->intra_quantizer_prescale [quantizer_scale_code];
-    decoder->non_intra_quantizer_matrix =
-	decoder->non_intra_quantizer_prescale [quantizer_scale_code];
+    decoder->quantizer_matrix[0] =
+	decoder->quantizer_prescale[0][quantizer_scale_code];
+    decoder->quantizer_matrix[1] =
+	decoder->quantizer_prescale[1][quantizer_scale_code];
+    decoder->quantizer_matrix[2] =
+	decoder->chroma_quantizer[0][quantizer_scale_code];
+    decoder->quantizer_matrix[3] =
+	decoder->chroma_quantizer[1][quantizer_scale_code];
 #undef bit_buf
 #undef bits
 #undef bit_ptr
@@ -336,13 +340,13 @@ do {						\
 	val = (SBITS (val, 1) ^ 2047) << 4;	\
 } while (0)
 
-static void get_intra_block_B14 (mpeg2_decoder_t * const decoder)
+static void get_intra_block_B14 (mpeg2_decoder_t * const decoder,
+				 const uint16_t * const quant_matrix)
 {
     int i;
     int j;
     int val;
     const uint8_t * const scan = decoder->scan;
-    const uint16_t * const quant_matrix = decoder->intra_quantizer_matrix;
     int mismatch;
     const DCTtab * tab;
     uint32_t bit_buf;
@@ -447,13 +451,13 @@ static void get_intra_block_B14 (mpeg2_decoder_t * const decoder)
     decoder->bitstream_ptr = bit_ptr;
 }
 
-static void get_intra_block_B15 (mpeg2_decoder_t * const decoder)
+static void get_intra_block_B15 (mpeg2_decoder_t * const decoder,
+				 const uint16_t * const quant_matrix)
 {
     int i;
     int j;
     int val;
     const uint8_t * const scan = decoder->scan;
-    const uint16_t * const quant_matrix = decoder->intra_quantizer_matrix;
     int mismatch;
     const DCTtab * tab;
     uint32_t bit_buf;
@@ -557,13 +561,13 @@ static void get_intra_block_B15 (mpeg2_decoder_t * const decoder)
     decoder->bitstream_ptr = bit_ptr;
 }
 
-static int get_non_intra_block (mpeg2_decoder_t * const decoder)
+static int get_non_intra_block (mpeg2_decoder_t * const decoder,
+				const uint16_t * const quant_matrix)
 {
     int i;
     int j;
     int val;
     const uint8_t * const scan = decoder->scan;
-    const uint16_t * const quant_matrix = decoder->non_intra_quantizer_matrix;
     int mismatch;
     const DCTtab * tab;
     uint32_t bit_buf;
@@ -685,7 +689,7 @@ static void get_mpeg1_intra_block (mpeg2_decoder_t * const decoder)
     int j;
     int val;
     const uint8_t * const scan = decoder->scan;
-    const uint16_t * const quant_matrix = decoder->intra_quantizer_matrix;
+    const uint16_t * const quant_matrix = decoder->quantizer_matrix[0];
     const DCTtab * tab;
     uint32_t bit_buf;
     int bits;
@@ -802,7 +806,7 @@ static int get_mpeg1_non_intra_block (mpeg2_decoder_t * const decoder)
     int j;
     int val;
     const uint8_t * const scan = decoder->scan;
-    const uint16_t * const quant_matrix = decoder->non_intra_quantizer_matrix;
+    const uint16_t * const quant_matrix = decoder->quantizer_matrix[1];
     const DCTtab * tab;
     uint32_t bit_buf;
     int bits;
@@ -944,9 +948,9 @@ static inline void slice_intra_DCT (mpeg2_decoder_t * const decoder,
 	if (decoder->coding_type != D_TYPE)
 	    get_mpeg1_intra_block (decoder);
     } else if (decoder->intra_vlc_format)
-	get_intra_block_B15 (decoder);
+	get_intra_block_B15 (decoder, decoder->quantizer_matrix[cc ? 2 : 0]);
     else
-	get_intra_block_B14 (decoder);
+	get_intra_block_B14 (decoder, decoder->quantizer_matrix[cc ? 2 : 0]);
     mpeg2_idct_copy (decoder->DCTblock, dest, stride);
 #undef bit_buf
 #undef bits
@@ -954,6 +958,7 @@ static inline void slice_intra_DCT (mpeg2_decoder_t * const decoder,
 }
 
 static inline void slice_non_intra_DCT (mpeg2_decoder_t * const decoder,
+					const int cc,
 					uint8_t * const dest, const int stride)
 {
     int last;
@@ -961,7 +966,8 @@ static inline void slice_non_intra_DCT (mpeg2_decoder_t * const decoder,
     if (decoder->mpeg1)
 	last = get_mpeg1_non_intra_block (decoder);
     else
-	last = get_non_intra_block (decoder);
+	last = get_non_intra_block (decoder,
+				    decoder->quantizer_matrix[cc ? 3 : 1]);
     mpeg2_idct_add (last, decoder->DCTblock, dest, stride);
 }
 
@@ -1780,21 +1786,23 @@ void mpeg2_slice (mpeg2_decoder_t * const decoder, const int code,
 		    offset = decoder->offset;
 		    dest_y = decoder->dest[0] + offset;
 		    if (coded_block_pattern & 1)
-			slice_non_intra_DCT (decoder, dest_y, DCT_stride);
+			slice_non_intra_DCT (decoder, 0, dest_y, DCT_stride);
 		    if (coded_block_pattern & 2)
-			slice_non_intra_DCT (decoder, dest_y + 8, DCT_stride);
+			slice_non_intra_DCT (decoder, 0, dest_y + 8,
+					     DCT_stride);
 		    if (coded_block_pattern & 4)
-			slice_non_intra_DCT (decoder, dest_y + DCT_offset,
+			slice_non_intra_DCT (decoder, 0, dest_y + DCT_offset,
 					     DCT_stride);
 		    if (coded_block_pattern & 8)
-			slice_non_intra_DCT (decoder, dest_y + DCT_offset + 8,
+			slice_non_intra_DCT (decoder, 0,
+					     dest_y + DCT_offset + 8,
 					     DCT_stride);
 		    if (coded_block_pattern & 16)
-			slice_non_intra_DCT (decoder,
+			slice_non_intra_DCT (decoder, 1,
 					     decoder->dest[1] + (offset >> 1),
 					     decoder->uv_stride);
 		    if (coded_block_pattern & 32)
-			slice_non_intra_DCT (decoder,
+			slice_non_intra_DCT (decoder, 2,
 					     decoder->dest[2] + (offset >> 1),
 					     decoder->uv_stride);
 		} else {
@@ -1804,32 +1812,34 @@ void mpeg2_slice (mpeg2_decoder_t * const decoder, const int code,
 		    offset = decoder->offset;
 		    dest_y = decoder->dest[0] + offset;
 		    if (coded_block_pattern & 1)
-			slice_non_intra_DCT (decoder, dest_y, DCT_stride);
+			slice_non_intra_DCT (decoder, 0, dest_y, DCT_stride);
 		    if (coded_block_pattern & 2)
-			slice_non_intra_DCT (decoder, dest_y + 8, DCT_stride);
+			slice_non_intra_DCT (decoder, 0, dest_y + 8,
+					     DCT_stride);
 		    if (coded_block_pattern & 4)
-			slice_non_intra_DCT (decoder, dest_y + DCT_offset,
+			slice_non_intra_DCT (decoder, 0, dest_y + DCT_offset,
 					     DCT_stride);
 		    if (coded_block_pattern & 8)
-			slice_non_intra_DCT (decoder, dest_y + DCT_offset + 8,
+			slice_non_intra_DCT (decoder, 0,
+					     dest_y + DCT_offset + 8,
 					     DCT_stride);
 
 		    DCT_stride >>= 1;
 		    DCT_offset = (DCT_offset + offset) >> 1;
 		    if (coded_block_pattern & 16)
-			slice_non_intra_DCT (decoder,
+			slice_non_intra_DCT (decoder, 1,
 					     decoder->dest[1] + (offset >> 1),
 					     DCT_stride);
 		    if (coded_block_pattern & 32)
-			slice_non_intra_DCT (decoder,
+			slice_non_intra_DCT (decoder, 2,
 					     decoder->dest[2] + (offset >> 1),
 					     DCT_stride);
 		    if (coded_block_pattern & (2 << 30))
-			slice_non_intra_DCT (decoder,
+			slice_non_intra_DCT (decoder, 1,
 					     decoder->dest[1] + DCT_offset,
 					     DCT_stride);
 		    if (coded_block_pattern & (1 << 30))
-			slice_non_intra_DCT (decoder,
+			slice_non_intra_DCT (decoder, 2,
 					     decoder->dest[2] + DCT_offset,
 					     DCT_stride);
 		}

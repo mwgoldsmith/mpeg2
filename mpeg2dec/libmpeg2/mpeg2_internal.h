@@ -104,10 +104,9 @@ struct mpeg2_decoder_s {
     /* now non-slice-specific information */
 
     /* sequence header stuff */
-    uint16_t * intra_quantizer_matrix;
-    uint16_t * non_intra_quantizer_matrix;
-    uint16_t intra_quantizer_prescale [32][64];
-    uint16_t non_intra_quantizer_prescale [32][64];
+    uint16_t * quantizer_matrix[4];
+    uint16_t (* chroma_quantizer[2])[64];
+    uint16_t quantizer_prescale[4][32][64];
 
     /* The width and height of the picture snapped to macroblock units */
     int width;
@@ -207,11 +206,9 @@ struct mpeg2dec_s {
     int16_t display_offset_x, display_offset_y;
 
     int copy_matrix;
-    int8_t q_scale_type, intra_scaled, non_intra_scaled;
-    uint8_t intra_quantizer_matrix [64];
-    uint8_t non_intra_quantizer_matrix [64];
-    uint8_t new_intra_quantizer_matrix [64];
-    uint8_t new_non_intra_quantizer_matrix [64];
+    int8_t q_scale_type, scaled[4];
+    uint8_t quantizer_matrix[4][64];
+    uint8_t new_quantizer_matrix[4][64];
 };
 
 typedef struct {
