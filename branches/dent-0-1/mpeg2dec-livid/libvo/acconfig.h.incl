@@ -4,6 +4,9 @@
 /* Have Xv extension */
 #undef HAVE_XV
 
+/* Have Xxf86dga extension */
+#undef HAVE_DGA
+
 /* Have SDL */
 #undef HAVE_SDL
 

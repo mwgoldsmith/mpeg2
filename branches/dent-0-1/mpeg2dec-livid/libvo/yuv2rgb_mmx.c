@@ -27,9 +27,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <oms/oms.h>
+#include <oms/plugin/output_video.h>
+
 #include "mmx.h"
-#include "libmpeg2/mpeg2.h"
-#include "libmpeg2/mpeg2_internal.h"
 #include "yuv2rgb.h"
 
 void yuv420_rgb16_mmx(unsigned char * image, const unsigned char * py,
@@ -440,7 +441,7 @@ yuv420_argb32_mmx(unsigned char * image, const unsigned char * py,
 
 
 yuv2rgb_fun 
-yuv2rgb_init_mmx(uint_32 bpp, uint_32 mode)
+yuv2rgb_init_mmx(uint32_t bpp, uint32_t mode)
 {
 
 	//FIXME remove when fixed

@@ -3,9 +3,11 @@ dnl AC_SUBST(HAVE_MGA)
 dnl AC_SUBST(HAVE_SDL)
 dnl AC_SUBST(HAVE_X11)
 dnl AC_SUBST(HAVE_XV)
-dnl AC_SUBST(LIBVO_CFLAGS)
-dnl AC_SUBST(LIBVO_CONFIG_LIBS)
-dnl AC_SUBST(LIBVO_CONFIG_OBJS)
+AC_SUBST(HAVE_DGA)
+AC_SUBST(X11_CFLAGS)
+AC_SUBST(X11_CONFIG_LIBS)
+AC_SUBST(X11_CONFIG_SOURCES)
+AC_SUBST(X11_CONFIG_OBJS)
 
 dnl 
 dnl Display driver probing...
@@ -24,7 +26,10 @@ if test x$enable_3dfx = xyes; then
 		AM_CONDITIONAL(HAVE_3DFX, true)
 	else
 		AC_MSG_RESULT(not found)
+		AM_CONDITIONAL(HAVE_3DFX,false)
 	fi
+else
+	AM_CONDITIONAL(HAVE_3DFX,false)
 fi
 
 
@@ -61,8 +66,9 @@ AC_ARG_ENABLE(mlib,
 if test x$enable_mlib = xyes; then
   AC_CHECK_LIB(mlib, main,
                [ LIBS="$LIBS -L/opt/SUNWmlib/lib -lmlib"
-                 LIBVO_CONFIG_OBJS="$LIBVO_CONFIG_OBJS yuv2rgb_mlib.lo"
-                 LIBVO_CFLAGS="$LIBVO_CFLAGS -I/opt/SUNWmlib/include"
+                 X11_CONFIG_SOURCES="$X11_CONFIG_SOURCES yuv2rgb_mlib.c"
+                 X11_CONFIG_OBJS="$X11_CONFIG_OBJS yuv2rgb_mlib.lo"
+                 X11_CFLAGS="$X11_CFLAGS -I/opt/SUNWmlib/include"
                  AC_DEFINE(HAVE_MLIB) ],
               , -L/opt/SUNWmlib/lib)
 else
@@ -83,8 +89,8 @@ if test "x$enable_sdl" = xyes; then
 	if test "x$SDLCONFIG" = xyes; then
 		AC_DEFINE(HAVE_SDL)
 		AM_CONDITIONAL(HAVE_SDL,true)
-		LIBVO_CFLAGS="$LIBVO_CFLAGS `sdl-config --cflags`"
-		LIBVO_CONFIG_LIBS="$LIBVO_CONFIG_LIBS `sdl-config --libs`"
+		X11_CFLAGS="$X11_CFLAGS `sdl-config --cflags`"
+		X11_CONFIG_LIBS="$X11_CONFIG_LIBS `sdl-config --libs`"
 	fi
 fi
 
@@ -93,14 +99,17 @@ dnl
 dnl Check for X11 lib
 dnl
 
-AC_CHECK_LIB(X11, main, have_x11_lib=yes,
+AC_CHECK_LIB(X11, XOpenDisplay, have_x11_lib=yes,
                have_x11_lib=no, -L$x_libraries)
 
 if test "$have_x11_lib" = "yes"; then
+	AC_DEFINE(HAVE_X11)
 	X_X11_LIB="-lX11"
 	AM_CONDITIONAL(HAVE_X11,true)
 else
+	AC_DEFINE(HAVE_X11)
 	X_X11_LIB=""
+	AM_CONDITIONAL(HAVE_X11,false)
 fi
 X_X11_INC=$x_includes
 
@@ -112,13 +121,32 @@ dnl
 dnl Checks for libraries. (Xv)
 dnl
 
+AC_ARG_ENABLE(xv,
+  [  --disable-xv		make a version not using Xv],
+  enable_xv=no, enable_xv=yes)
 AC_PATH_XTRA
+if test "$enable_xv" = "yes"; then
 AC_CHECK_LIB(Xv, XvShmCreateImage, 
 	X_LIBS="$X_LIBS -lXv"
 	AC_DEFINE(HAVE_XV),,
-	AM_CONDITIONAL(HAVE_XV,true)
-	$X_LIBS $X_PRE_LIBS -lXext -lX11 $X_EXTRA_LIBS)
+		-L$x_libraries -lXext -lX11)
+fi
 
+dnl
+dnl Checks for libraries. (Xxf86dga)
+dnl
+
+AC_ARG_ENABLE(dga,
+  [  --disable-dga		make a version not using DGA],
+  enable_dga=no, enable_dga=yes)
+AC_PATH_XTRA
+if test "$enable_dga" = "yes"; then
+	AC_PATH_XTRA
+	AC_CHECK_LIB(Xxf86dga, XF86DGAQueryExtension,
+		X_LIBS="$X_LIBS -lXxf86dga"
+		AC_DEFINE(HAVE_DGA),,
+		-L$x_libraries -lXext -lX11)
+fi
 
 dnl
 dnl There must be a better way to check for SMP....
@@ -140,7 +168,8 @@ dnl
 
 case "$host_alias" in
 i?86-* | k?-*) dnl catch i386,i486,i586,i686,k6,k7
-	LIBVO_CONFIG_OBJS="$LIBVO_CONFIG_OBJS yuv2rgb_mmx.lo" ;;
+	X11_CONFIG_SOURCES="$X11_CONFIG_SOURCES yuv2rgb_mmx.c"
+	X11_CONFIG_OBJS="$X11_CONFIG_OBJS yuv2rgb_mmx.lo" ;;
 alpha*-*) ;;
 sparc-*) ;;
 ppc-*) ;;

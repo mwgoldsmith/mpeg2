@@ -30,12 +30,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "video_out.h"
+#include <oms/oms.h>
+#include <oms/plugin/output_video.h>
+
 #include "yuv2rgb.h"
 
-uint_32 matrix_coefficients = 6;
+uint32_t matrix_coefficients = 6;
 
-const sint_32 Inverse_Table_6_9[8][4] =
+const int32_t Inverse_Table_6_9[8][4] =
 {
     {117504, 138453, 13954, 34903}, /* no sequence_display_extension */
     {117504, 138453, 13954, 34903}, /* ITU-R Rec. 709 (1990) */
@@ -47,16 +49,16 @@ const sint_32 Inverse_Table_6_9[8][4] =
     {117579, 136230, 16907, 35559}  /* SMPTE 240M (1987) */
 };
 
-static void yuv2rgb_c_init (uint_32 bpp, uint_32 mode);
+static void yuv2rgb_c_init (uint32_t bpp, uint32_t mode);
 
 yuv2rgb_fun yuv2rgb;
 
-static void (* yuv2rgb_c_internal) (const uint_8 *, const uint_8 *,
-				    const uint_8 *, const uint_8 *,
+static void (* yuv2rgb_c_internal) (const uint8_t *, const uint8_t *,
+				    const uint8_t *, const uint8_t *,
 				    void *, void *, int);
 
-static void yuv2rgb_c (void * dst, const uint_8 * py, 
-		const uint_8 * pu, const uint_8 * pv, 
+static void yuv2rgb_c (void * dst, const uint8_t * py, 
+		const uint8_t * pu, const uint8_t * pv, 
 		int h_size, int v_size, 
 		int rgb_stride, int y_stride, int uv_stride) 
 {
@@ -74,7 +76,7 @@ static void yuv2rgb_c (void * dst, const uint_8 * py,
 	}
 }
 
-void yuv2rgb_init (uint_32 bpp, uint_32 mode) 
+void yuv2rgb_init (uint32_t bpp, uint32_t mode) 
 {
 	yuv2rgb = NULL;
 
@@ -146,13 +148,13 @@ void * table_bU[256];
 	Y = py_2[2*i+1];						\
 	dst_2[6*i+3] = b[Y]; dst_2[6*i+4] = g[Y]; dst_2[6*i+5] = r[Y];
 
-static void yuv2rgb_c_32 (const uint_8 * py_1, const uint_8 * py_2,
-			  const uint_8 * pu, const uint_8 * pv,
+static void yuv2rgb_c_32 (const uint8_t * py_1, const uint8_t * py_2,
+			  const uint8_t * pu, const uint8_t * pv,
 			  void * _dst_1, void * _dst_2, int h_size)
 {
 	int U, V, Y;
-	uint_32 * r, * g, * b;
-	uint_32 * dst_1, * dst_2;
+	uint32_t * r, * g, * b;
+	uint32_t * dst_1, * dst_2;
 
 	h_size >>= 3;
 	dst_1 = _dst_1;
@@ -186,13 +188,13 @@ static void yuv2rgb_c_32 (const uint_8 * py_1, const uint_8 * py_2,
 }
 
 // This is very near from the yuv2rgb_c_32 code
-static void yuv2rgb_c_24_rgb (const uint_8 * py_1, const uint_8 * py_2,
-			      const uint_8 * pu, const uint_8 * pv,
+static void yuv2rgb_c_24_rgb (const uint8_t * py_1, const uint8_t * py_2,
+			      const uint8_t * pu, const uint8_t * pv,
 			      void * _dst_1, void * _dst_2, int h_size)
 {
 	int U, V, Y;
-	uint_8 * r, * g, * b;
-	uint_8 * dst_1, * dst_2;
+	uint8_t * r, * g, * b;
+	uint8_t * dst_1, * dst_2;
 
 	h_size >>= 3;
 	dst_1 = _dst_1;
@@ -226,13 +228,13 @@ static void yuv2rgb_c_24_rgb (const uint_8 * py_1, const uint_8 * py_2,
 }
 
 // only trivial mods from yuv2rgb_c_24_rgb
-static void yuv2rgb_c_24_bgr (const uint_8 * py_1, const uint_8 * py_2,
-			      const uint_8 * pu, const uint_8 * pv,
+static void yuv2rgb_c_24_bgr (const uint8_t * py_1, const uint8_t * py_2,
+			      const uint8_t * pu, const uint8_t * pv,
 			      void * _dst_1, void * _dst_2, int h_size)
 {
 	int U, V, Y;
-	uint_8 * r, * g, * b;
-	uint_8 * dst_1, * dst_2;
+	uint8_t * r, * g, * b;
+	uint8_t * dst_1, * dst_2;
 
 	h_size >>= 3;
 	dst_1 = _dst_1;
@@ -267,13 +269,13 @@ static void yuv2rgb_c_24_bgr (const uint_8 * py_1, const uint_8 * py_2,
 
 // This is exactly the same code as yuv2rgb_c_32 except for the types of
 // r, g, b, dst_1, dst_2
-static void yuv2rgb_c_16 (const uint_8 * py_1, const uint_8 * py_2,
-			  const uint_8 * pu, const uint_8 * pv,
+static void yuv2rgb_c_16 (const uint8_t * py_1, const uint8_t * py_2,
+			  const uint8_t * pu, const uint8_t * pv,
 			  void * _dst_1, void * _dst_2, int h_size)
 {
 	int U, V, Y;
-	uint_16 * r, * g, * b;
-	uint_16 * dst_1, * dst_2;
+	uint16_t * r, * g, * b;
+	uint16_t * dst_1, * dst_2;
 
 	h_size >>= 3;
 	dst_1 = _dst_1;
@@ -314,13 +316,13 @@ static int div_round (int dividend, int divisor)
 		return -((-dividend + (divisor>>1)) / divisor);
 }
 
-static void yuv2rgb_c_init (uint_32 bpp, uint_32 mode) 
+static void yuv2rgb_c_init (uint32_t bpp, uint32_t mode) 
 {  
 	int i;
-	uint_8 table_Y[1024];
-	uint_32 * table_32;
-	uint_16 * table_16;
-	uint_8 * table_8;
+	uint8_t table_Y[1024];
+	uint32_t * table_32;
+	uint16_t * table_16;
+	uint8_t * table_8;
 	int entry_size = 0;
 	void * table_r, * table_g, * table_b;
 
@@ -343,40 +345,40 @@ static void yuv2rgb_c_init (uint_32 bpp, uint_32 mode)
 		case 32:
 			yuv2rgb_c_internal = yuv2rgb_c_32;
 
-			table_32 = malloc ((197 + 2*682 + 256 + 132) * sizeof (uint_32));
+			table_32 = malloc ((197 + 2*682 + 256 + 132) * sizeof (uint32_t));
 
-			entry_size = sizeof (uint_32);
+			entry_size = sizeof (uint32_t);
 			table_r = table_32 + 197;
 			table_b = table_32 + 197 + 685;
 			table_g = table_32 + 197 + 2*682;
 
 			for (i = -197; i < 256+197; i++)
-				((uint_32 *)table_r)[i] = table_Y[i+384] << ((mode==MODE_RGB) ? 16 : 0);
+				((uint32_t *)table_r)[i] = table_Y[i+384] << ((mode==MODE_RGB) ? 16 : 0);
 			for (i = -132; i < 256+132; i++)
-				((uint_32 *)table_g)[i] = table_Y[i+384] << 8;
+				((uint32_t *)table_g)[i] = table_Y[i+384] << 8;
 			for (i = -232; i < 256+232; i++)
-				((uint_32 *)table_b)[i] = table_Y[i+384] << ((mode==MODE_RGB) ? 0 : 16);
+				((uint32_t *)table_b)[i] = table_Y[i+384] << ((mode==MODE_RGB) ? 0 : 16);
 		break;
 
 		case 24:
 			yuv2rgb_c_internal = (mode==MODE_RGB) ? yuv2rgb_c_24_rgb : yuv2rgb_c_24_bgr;
 
-			table_8 = malloc ((256 + 2*232) * sizeof (uint_8));
+			table_8 = malloc ((256 + 2*232) * sizeof (uint8_t));
 
-			entry_size = sizeof (uint_8);
+			entry_size = sizeof (uint8_t);
 			table_r = table_g = table_b = table_8 + 232;
 
 			for (i = -232; i < 256+232; i++)
-				((uint_8 * )table_b)[i] = table_Y[i+384];
+				((uint8_t * )table_b)[i] = table_Y[i+384];
 		break;
 
 		case 15:
 		case 16:
 			yuv2rgb_c_internal = yuv2rgb_c_16;
 
-			table_16 = malloc ((197 + 2*682 + 256 + 132) * sizeof (uint_16));
+			table_16 = malloc ((197 + 2*682 + 256 + 132) * sizeof (uint16_t));
 
-			entry_size = sizeof (uint_16);
+			entry_size = sizeof (uint16_t);
 			table_r = table_16 + 197;
 			table_b = table_16 + 197 + 685;
 			table_g = table_16 + 197 + 2*682;
@@ -388,13 +390,13 @@ static void yuv2rgb_c_init (uint_32 bpp, uint_32 mode)
 				if (mode == MODE_RGB)
 					j <<= ((bpp==16) ? 11 : 10);
 
-				((uint_16 *)table_r)[i] = j;
+				((uint16_t *)table_r)[i] = j;
 			}
 			for (i = -132; i < 256+132; i++)
 			{
 				int j = table_Y[i+384] >> ((bpp==16) ? 2 : 3);
 
-				((uint_16 *)table_g)[i] = j << 5;
+				((uint16_t *)table_g)[i] = j << 5;
 			}
 			for (i = -232; i < 256+232; i++)
 			{
@@ -403,7 +405,7 @@ static void yuv2rgb_c_init (uint_32 bpp, uint_32 mode)
 				if (mode == MODE_BGR)
 					j <<= ((bpp==16) ? 11 : 10);
 
-				((uint_16 *)table_b)[i] = j;
+				((uint16_t *)table_b)[i] = j;
 			}
 		break;
 
