@@ -282,10 +282,11 @@ parse_gop_header(picture_t *picture)
 static void 
 parse_picture_coding_extension(picture_t *picture)
 {
-  picture->f_code[0][0] = Get_Bits(4);
-  picture->f_code[0][1] = Get_Bits(4);
-  picture->f_code[1][0] = Get_Bits(4);
-  picture->f_code[1][1] = Get_Bits(4);
+	//pre subtract 1 for use later in compute_motion_vector
+  picture->f_code[0][0] = Get_Bits(4) - 1;
+  picture->f_code[0][1] = Get_Bits(4) - 1;
+  picture->f_code[1][0] = Get_Bits(4) - 1;
+  picture->f_code[1][1] = Get_Bits(4) - 1;
 
   picture->intra_dc_precision         = Get_Bits(2);
   picture->picture_structure          = Get_Bits(2);
@@ -576,6 +577,136 @@ parse_non_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint
 	}
 }
 
+//This should inline easily into parse_motion_vector
+static inline sint_16 compute_motion_vector(sint_16 vec,uint_16 r_size,sint_16 motion_code,
+		sint_16 motion_residual)
+{
+  sint_16 lim;
+
+  lim = 16<<r_size;
+
+  if (motion_code>0)
+  {
+    vec+= ((motion_code-1)<<r_size) + motion_residual + 1;
+    if (vec>=lim)
+      vec-= lim + lim;
+  }
+  else if (motion_code<0)
+  {
+    vec-= ((-motion_code-1)<<r_size) + motion_residual + 1;
+    if (vec<-lim)
+      vec+= lim + lim;
+  }
+	return vec;
+}
+
+static void parse_motion_vector(sint_16 *prev_mv, sint_16 *curr_mv,const uint_8 *f_code,
+		macroblock_t *mb)
+{
+  sint_16 motion_code, motion_residual;
+  sint_16 r_size;
+
+	//fprintf(stderr,"motion_vec: h_r_size %d v_r_size %d\n",f_code[0],f_code[1]);
+
+  // horizontal component
+	r_size = f_code[0];
+	motion_code = Get_motion_code();
+	motion_residual =  0;
+	if (r_size!=0 && motion_code!=0) 
+		motion_residual =  Get_Bits(r_size);
+
+  curr_mv[0] = compute_motion_vector(prev_mv[0],r_size,motion_code,motion_residual);
+	prev_mv[0] = curr_mv[0];
+
+	//XXX dmvectors are unsed right now...
+  if (mb->dmv)
+    mb->dmvector[0] = Get_dmvector();
+
+  // vertical component 
+	r_size = f_code[1];
+  motion_code     = Get_motion_code();
+	motion_residual =  0;
+	if (r_size!=0 && motion_code!=0) 
+		motion_residual =  Get_Bits(r_size);
+
+  if (mb->mvscale)
+    prev_mv[1] >>= 1; 
+
+  curr_mv[1] = compute_motion_vector(prev_mv[1],r_size,motion_code,motion_residual);
+	prev_mv[1] = curr_mv[1];
+
+  if (mb->mvscale)
+    prev_mv[1] <<= 1;
+
+	//XXX dmvectors are unsed right now...
+  if (mb->dmv)
+    mb->dmvector[1] = Get_dmvector();
+}
+
+//These next two functions are very similar except that they
+//don't have to switch between forward and backward data structures.
+//The jury is still out on whether is was worth it.
+static void parse_forward_motion_vectors(const picture_t *picture,slice_t *slice, 
+		macroblock_t *mb)
+{
+  if (mb->motion_vector_count==1)
+  {
+    if (mb->mv_format==MV_FIELD && !mb->dmv)
+    {
+      fprintf(stderr,"field based mv\n");
+      mb->f_motion_vertical_field_select[1] = 
+				mb->f_motion_vertical_field_select[0] = Get_Bits(1);
+    }
+
+    parse_motion_vector(slice->f_pmv[0],mb->f_motion_vectors[0],picture->f_code[0],mb);
+
+    /* update other motion vector predictors */
+    slice->f_pmv[1][0] = slice->f_pmv[0][0];
+    slice->f_pmv[1][1] = slice->f_pmv[0][1];
+  }
+  else
+  {
+    mb->f_motion_vertical_field_select[0] = Get_Bits(1);
+    parse_motion_vector(slice->f_pmv[0],mb->f_motion_vectors[0],picture->f_code[0],mb);
+
+    mb->f_motion_vertical_field_select[1] = Get_Bits(1);
+    parse_motion_vector(slice->f_pmv[1],mb->f_motion_vectors[1],picture->f_code[0],mb);
+  }
+}
+
+static void parse_backward_motion_vectors(const picture_t *picture,slice_t *slice, 
+		macroblock_t *mb)
+{
+  if (mb->motion_vector_count==1)
+  {
+    if (mb->mv_format==MV_FIELD && !mb->dmv)
+    {
+      fprintf(stderr,"field based mv\n");
+      mb->b_motion_vertical_field_select[1] = 
+				mb->b_motion_vertical_field_select[0] = Get_Bits(1);
+    }
+
+    parse_motion_vector(slice->b_pmv[0],mb->b_motion_vectors[0],picture->f_code[1],mb);
+
+    /* update other motion vector predictors */
+    slice->b_pmv[1][0] = slice->b_pmv[0][0];
+    slice->b_pmv[1][1] = slice->b_pmv[0][1];
+  }
+  else
+  {
+    mb->b_motion_vertical_field_select[0] = Get_Bits(1);
+    parse_motion_vector(slice->b_pmv[0],mb->b_motion_vectors[0],picture->f_code[1],mb);
+
+    mb->b_motion_vertical_field_select[1] = Get_Bits(1);
+    parse_motion_vector(slice->b_pmv[1],mb->b_motion_vectors[1],picture->f_code[1],mb);
+  }
+}
+
+inline void parse_reset_pmv(slice_t *slice)
+{
+	memset(slice->b_pmv,0,sizeof(sint_16) * 4);
+	memset(slice->f_pmv,0,sizeof(sint_16) * 4);
+}
 
 void
 parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
@@ -586,6 +717,9 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
 
 	//Clear the skipped flag
 	mb->skipped = 0;
+	
+	//XXX we ignore the spatial_temporal weight code for now
+	
 
   // get macroblock_type 
   mb->macroblock_type = Get_macroblock_type(picture->picture_coding_type);
@@ -593,9 +727,10 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
   // get frame/field motion type 
   if (mb->macroblock_type & (MACROBLOCK_MOTION_FORWARD|MACROBLOCK_MOTION_BACKWARD))
   {
-    if (picture_structure==FRAME_PICTURE) // frame_motion_type 
+    if (picture_structure == FRAME_PICTURE) // frame_motion_type 
     {
       mb->motion_type = picture->frame_pred_frame_dct ? MC_FRAME : Get_Bits(2);
+			//FIXME remove
 			if(!picture->frame_pred_frame_dct)
       {
         printf("frame_motion_type (");
@@ -606,9 +741,7 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
       
     }
     else // field_motion_type 
-    {
       mb->motion_type = Get_Bits(2);
-    }
   }
   else if ((mb->macroblock_type & MACROBLOCK_INTRA) && picture->concealment_motion_vectors)
   {
@@ -656,29 +789,19 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
 
   // 6.3.17.2 Motion vectors 
 
-  // decode forward motion vectors 
+  //decode forward motion vectors 
   if ((mb->macroblock_type & MACROBLOCK_MOTION_FORWARD) || 
 			((mb->macroblock_type & MACROBLOCK_INTRA) && picture->concealment_motion_vectors))
-  {
-		//Field pictures are definately broken here
-		//FIXME this could be faster too
-      motion_vectors(slice->pmv,(int*)mb->dmvector,mb->motion_vertical_field_select,
-        0,mb->motion_vector_count,mb->mv_format,0,0,mb->dmv,
-				mb->mvscale);
-  }
+      parse_forward_motion_vectors(picture,slice,mb);
 
-  // decode backward motion vectors 
+  //decode backward motion vectors 
   if (mb->macroblock_type & MACROBLOCK_MOTION_BACKWARD)
-  {
-      motion_vectors(slice->pmv,(int*)mb->dmvector,mb->motion_vertical_field_select,
-        1,mb->motion_vector_count,mb->mv_format,0,0,mb->dmv,
-        mb->mvscale);
-  }
+      parse_backward_motion_vectors(picture,slice,mb);
 
   if ((mb->macroblock_type & MACROBLOCK_INTRA) && picture->concealment_motion_vectors)
     Flush_Buffer(1); // remove marker_bit 
 
-  // 6.3.17.4 Coded block pattern 
+  //6.3.17.4 Coded block pattern 
   if (mb->macroblock_type & MACROBLOCK_PATTERN)
   {
     mb->coded_block_pattern = Get_coded_block_pattern();
@@ -705,34 +828,42 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
 	//coded_block_pattern is set only if there are blocks in bitstream
   if(mb->coded_block_pattern)
 	{
-		//XXX only 4:2:0 is supported here - fix later
-		
-		// Decode lum blocks 
-		for (i=0; i<4; i++)
+		if (mb->macroblock_type & MACROBLOCK_INTRA)
 		{
-			if (mb->coded_block_pattern & (1<<(5-i)))
-			{
-				if (mb->macroblock_type & MACROBLOCK_INTRA)
-					parse_intra_block(picture,slice,&mb->y_blocks[i*64],0);
-				else
-					parse_non_intra_block(picture,slice,&mb->y_blocks[i*64],0);
-			}
-		}
-		
-		// Decode chroma blocks 
-		if (mb->coded_block_pattern & 0x2)
-		{
-			if (mb->macroblock_type & MACROBLOCK_INTRA)
+			// Decode lum blocks 
+			if (mb->coded_block_pattern & 0x20)
+				parse_intra_block(picture,slice,&mb->y_blocks[0*64],0);
+			if (mb->coded_block_pattern & 0x10)
+				parse_intra_block(picture,slice,&mb->y_blocks[1*64],0);
+			if (mb->coded_block_pattern & 0x08)
+				parse_intra_block(picture,slice,&mb->y_blocks[2*64],0);
+			if (mb->coded_block_pattern & 0x04)
+				parse_intra_block(picture,slice,&mb->y_blocks[3*64],0);
+			
+			// Decode chroma blocks 
+			if (mb->coded_block_pattern & 0x2)
 				parse_intra_block(picture,slice,mb->cr_blocks,1);
-			else
-				parse_non_intra_block(picture,slice,mb->cr_blocks,1);
-		}
 
-		if (mb->coded_block_pattern & 0x1)
-		{
-			if (mb->macroblock_type & MACROBLOCK_INTRA)
+			if (mb->coded_block_pattern & 0x1)
 				parse_intra_block(picture,slice,mb->cb_blocks,2);
-			else
+		}
+		else
+		{
+			// Decode lum blocks 
+			if (mb->coded_block_pattern & 0x20)
+				parse_non_intra_block(picture,slice,&mb->y_blocks[0*64],0);
+			if (mb->coded_block_pattern & 0x10)
+				parse_non_intra_block(picture,slice,&mb->y_blocks[1*64],0);
+			if (mb->coded_block_pattern & 0x08)
+				parse_non_intra_block(picture,slice,&mb->y_blocks[2*64],0);
+			if (mb->coded_block_pattern & 0x04)
+				parse_non_intra_block(picture,slice,&mb->y_blocks[3*64],0);
+			
+			// Decode chroma blocks 
+			if (mb->coded_block_pattern & 0x2)
+				parse_non_intra_block(picture,slice,mb->cr_blocks,1);
+
+			if (mb->coded_block_pattern & 0x1)
 				parse_non_intra_block(picture,slice,mb->cb_blocks,2);
 		}
 	}
@@ -749,7 +880,7 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
 
   //7.6.3.4 Resetting motion vector predictors 
   if ((mb->macroblock_type & MACROBLOCK_INTRA) && !picture->concealment_motion_vectors)
-		memset(slice->pmv,0,sizeof(uint_16) * 8);
+		parse_reset_pmv(slice);
 
 
   // special "No_MC" macroblock_type case 
@@ -759,7 +890,7 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
   {
     // non-intra mb without forward mv in a P picture 
     // 7.6.3.4 Resetting motion vector predictors 
-		memset(slice->pmv,0,sizeof(uint_16) * 8);
+		parse_reset_pmv(slice);
 
     //6.3.17.1 Macroblock modes, frame_motion_type 
     //if (picture_structure==FRAME_PICTURE)
@@ -779,3 +910,4 @@ parse_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
 	//  slice_reset_pmv(slice);
   // }
 }
+
