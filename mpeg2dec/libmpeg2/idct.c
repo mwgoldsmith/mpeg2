@@ -117,8 +117,8 @@ static void inline idct_row (int16_t * const block)
     b3 = t1 + t3;
     t0 -= t2;
     t1 -= t3;
-    b1 = ((t0 + t1) * 181 + 128) >> 8;
-    b2 = ((t0 - t1) * 181 + 128) >> 8;
+    b1 = ((t0 + t1) * 181) >> 8;
+    b2 = ((t0 - t1) * 181) >> 8;
 
     block[0] = (a0 + b0) >> 8;
     block[1] = (a1 + b1) >> 8;
