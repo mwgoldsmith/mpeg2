@@ -52,5 +52,6 @@ extern yuv2rgb_fun yuv2rgb;
 
 void yuv2rgb_init(uint_32 bpp, uint_32 mode);
 yuv2rgb_fun yuv2rgb_init_mmx(uint_32 bpp, uint_32 mode);
+yuv2rgb_fun yuv2rgb_init_mlib(uint_32 bpp, uint_32 mode);
 
 
