@@ -139,7 +139,7 @@
 /* #undef TIME_WITH_SYS_TIME */
 
 /* Version number of package */
-#define VERSION "0.3.2-cvs"
+#define VERSION "0.4.0"
 
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
