@@ -25,7 +25,7 @@ elif test x"$GCC" = x"yes"; then
 
     dnl -O3
     changequote(<<,>>)
-    OPT_CFLAGS=`echo "$CFLAGS"|sed "s/-O[0-9]*//g;"`
+    OPT_CFLAGS=`echo "$CFLAGS"|sed "s/-O[0-9]*//g"`
     changequote([,])
     OPT_CFLAGS="$OPT_CFLAGS -O3"
     AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS])
@@ -89,7 +89,7 @@ dnl Checks for libraries.
 dnl Checks for header files.
 INCLUDES='-I$(top_srcdir)/include -I$(top_builddir)/include'
 AC_SUBST([INCLUDES])
-AC_CHECK_HEADERS([sys/time.h])
+AC_CHECK_HEADERS([sys/time.h io.h])
 AC_CHECK_GENERATE_INTTYPES([include])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
