@@ -29,7 +29,7 @@
 #include <errno.h>
 #include <inttypes.h>
 
-#include "../video/output_video.h"
+#include "output_video.h"
 #include "mpeg2.h"
 
 #define BUFFER_SIZE 262144
@@ -122,22 +122,21 @@ static void handle_args (int argc, char * argv[])
     int c;
     int i;
     vo_output_video_t* video_out=NULL;
-    const vo_info_t *info=NULL;
 
     while ((c = getopt (argc,argv,"so:")) != -1) {
 	switch (c) {
 	case 'o':
 	    for (i=0; video_out_drivers[i] != NULL; i++) {
+		const vo_info_t *info;
+
 	        info = video_out_drivers[i]->vo_info;
-		if (strcmp (info->short_name,optarg) == 0) {
+		if (strcmp (info->short_name,optarg) == 0)
 		    video_out = video_out_drivers[i];
-		}
 	    }
-	    if (video_out == NULL)
-		{
-		    fprintf (stderr,"Invalid video driver: %s\n", optarg);
-		    print_usage (argv);
-		}
+	    if (video_out == NULL) {
+		fprintf (stderr,"Invalid video driver: %s\n", optarg);
+		print_usage (argv);
+	    }
 	    break;
 
 	case 's':
@@ -165,8 +164,8 @@ static void handle_args (int argc, char * argv[])
     //
     // Now we have the output plugin, we need to initialize it
     // 
-    video_out->open(&video_out,"What Name?");
-    mpeg2_init_ng(&mpeg2dec,video_out,NULL);
+    video_out->open (&video_out, "What Name?");
+    mpeg2_init_ng (&mpeg2dec, video_out, NULL);
 }
 
 static void ps_loop (void)
@@ -286,7 +285,6 @@ int main (int argc,char *argv[])
     handle_args (argc,argv);
 
     signal (SIGINT, signal_handler);
-    
 
     gettimeofday (&tv_beg, NULL);
 
