@@ -170,12 +170,8 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 	    printf ("bad picture header\n");
 	    exit (1);
 	}
-	
-	if (drop_flag && (picture.picture_coding_type == B_TYPE))
-		drop_frame = 1;
-	else 
-		drop_frame = 0;
 
+	drop_frame = drop_flag && (picture.picture_coding_type == B_TYPE);
 	decode_reorder_frames ();
 	break;
 
@@ -211,7 +207,7 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 	break;
 
     default:
-	if ((code >= 0xb0) || (!code))
+	if (code >= 0xb0)
 	    break;
 
 	if (!drop_frame) {
@@ -248,8 +244,8 @@ static int parse_chunk (vo_functions_t * output, int code, uint8_t * buffer)
 #ifdef __i386__
 	    if (config.flags & MPEG2_MMX_ENABLE)
 		emms ();
-	}
 #endif
+	}
     }
 
     return is_frame_done;
