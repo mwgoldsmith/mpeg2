@@ -1,4 +1,4 @@
-mpeg2dec-0.1.7 
+mpeg2dec-0.1.7 Thu Nov  2 21:38:33 PST 2000
 -fix the solaris mlib code back bup
 -added Xv support
 -major cruft removal
@@ -12,6 +12,7 @@ mpeg2dec-0.1.7
 -lots of conformance fixes
 -rewrite of the parsing code
 -MMX/SSE runtime detection and support
+-new configuration code
 
 mpeg2dec-0.1.6 Wed Mar 22 09:45:44 PST 2000
 -enhanced g200 

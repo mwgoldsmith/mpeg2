@@ -1,18 +1,27 @@
 #define DISP
 
-/* 
- * video_out_x11.c, X11 interface
+/*
+ * video_out_x11.c
+ * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
+ * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
  *
- * Copyright (C) 1996, MPEG Software Simulation Group. All Rights Reserved. 
+ * mpeg2dec is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- * Hacked into mpeg2dec by
- * 
- * Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
+ * mpeg2dec is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * 15 & 16 bpp support added by Franck Sicard <Franck.Sicard@solsoft.fr>
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Xv image suuport by Gerd Knorr <kraxel@goldbach.in-berlin.de>
+ * Some of the code in this file is derived from MSSG code :
+ * Copyright (C) 1996, MPEG Software Simulation Group. All Rights Reserved.
  */
 
 #include "config.h"
@@ -77,7 +86,8 @@ static int xvimage_counter = 0;
 static int current_image = 0;
 static void allocate_xvimage(int);
 static unsigned int ver,rel,req,ev,err;
-static unsigned int formats, adaptors,i,xv_port,xv_format;
+static unsigned int formats, adaptors,i,xv_format;
+static XvPortID xv_port;
 static int win_width,win_height;
 static XvAdaptorInfo        *ai;
 static XvImageFormatValues  *fo;
@@ -278,7 +288,7 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
 
 		if (xv_port != 0) 
 		{
-			fprintf(stderr,"using Xvideo port %d for hw scaling\n",
+			fprintf(stderr,"using Xvideo port %ld for hw scaling\n",
 			xv_port);
 
 			allocate_xvimage(0);

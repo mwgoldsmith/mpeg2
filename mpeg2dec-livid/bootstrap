@@ -3,5 +3,5 @@ set -x
 aclocal -I autotools
 libtoolize --force --copy
 autoheader
-automake --add-missing --foreign --copy
+automake --add-missing --copy
 autoconf

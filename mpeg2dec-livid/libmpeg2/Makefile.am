@@ -15,4 +15,4 @@ libmpeg2_la_LIBADD = @LIBMPEG2_LIBS@
 
 EXTRA_DIST = configure.incl \
 	     header.h stats.h debug.h slice.h vlc.h motion_comp.h \
-	     idct.h idct_mlib.h idct_mmx.h mpeg2.h mpeg2_internal.h mpeg2dec.h
+	     idct.h idct_mlib.h idct_mmx.h mpeg2.h mpeg2_internal.h

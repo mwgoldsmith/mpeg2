@@ -1,26 +1,22 @@
 /*
  * stats.h
- *
- * Copyright (C) Aaron Holtzman <aholtzma@ess.engr.uvic.ca> - Nov 1999
- *
- * Decodes an MPEG-2 video stream.
+ * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
- *	
+ *
  * mpeg2dec is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2, or (at your option)
- * any later version.
- * 
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
  * mpeg2dec is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with GNU Make; see the file COPYING. If not, write to
- * the Free Software Foundation, 
  *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
- 
+
 void stats_header (uint8_t code, uint8_t * buffer);
