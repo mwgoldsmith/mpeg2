@@ -43,6 +43,8 @@ for compiler in cc gcc gcc272 gcc-2.95 gcc-3.0 gcc-3.1 gcc-3.2 c89 \
 	c89)		opts="";;
 	ccmalloc-gcc)	opts="--enable-warnings --enable-debug";;
 	tcc-*)		opts="--enable-warnings --disable-sdl";;
+	checkergcc)	opts="--disable-largefile";;
+	gcc272|*-2.95)	opts="";;
 	*)		opts="--enable-warnings";;
     esac
     error=1; CC=$compiler ./configure $opts && make && error=0

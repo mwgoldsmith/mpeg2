@@ -550,7 +550,7 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 
 static void ps_loop (void)
 {
-    uint8_t * buffer = malloc (buffer_size);
+    uint8_t * buffer = (uint8_t *) malloc (buffer_size);
     uint8_t * end;
 
     if (buffer == NULL)
@@ -650,7 +650,7 @@ static int pva_demux (uint8_t * buf, uint8_t * end)
 
 static void pva_loop (void)
 {
-    uint8_t * buffer = malloc (buffer_size);
+    uint8_t * buffer = (uint8_t *) malloc (buffer_size);
     uint8_t * end;
 
     if (buffer == NULL)
@@ -663,7 +663,7 @@ static void pva_loop (void)
 
 static void ts_loop (void)
 {
-    uint8_t * buffer = malloc (buffer_size);
+    uint8_t * buffer = (uint8_t *) malloc (buffer_size);
     uint8_t * buf;
     uint8_t * nextbuf;
     uint8_t * data;
@@ -704,7 +704,7 @@ static void ts_loop (void)
 
 static void es_loop (void)
 {
-    uint8_t * buffer = malloc (buffer_size);
+    uint8_t * buffer = (uint8_t *) malloc (buffer_size);
     uint8_t * end;
 
     if (buffer == NULL)
