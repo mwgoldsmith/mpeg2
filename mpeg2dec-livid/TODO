@@ -1,10 +1,11 @@
 * things we dont get quite right yet (though we dont see the difference)
 	* IDCT routine compliant with IEEE1180
+	* display last picture of a stream, etc
 
 * things we dont implement yet
 	* field pictures
 	* missing MC modes
-	* mpeg1 (aaron ?)
+	* mpeg1
 	* conformance testing
 	* dont crash on bad streams, make sure we can resync after a while
 	* make the decoder reentrant (if the speed impact is small enough)
@@ -24,7 +25,7 @@
 	* optimize DCT for very sparse input matrixes ?
 	* optimize startcode search loop ?
 
-* cleanups
+* clean up
 	* clean up header file usage
 
 * synchronization stuff 
