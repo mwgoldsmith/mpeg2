@@ -306,3 +306,8 @@ void mpeg2_drop (int flag)
 {
     drop_flag = flag;
 }
+
+void mpeg2_output_init (int flag)
+{
+	is_display_initialized = flag;
+}

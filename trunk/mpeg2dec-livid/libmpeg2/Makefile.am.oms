@@ -21,14 +21,12 @@ if HAVE_MLIB
 endif
 
 if HAVE_MMX
-	LIBMPEG2_OBJS="idct_mmx.lo idct_block_mmx.lo motion_comp_mmx.lo"
+	LIBMPEG2_OBJS="idct_mmx.lo motion_comp_mmx.lo"
 endif
 
-#dec_mpeg2_la_LIBADD = $(LIBMPEG2_OBJS)
-#dec_mpeg2_la_DEPENDENCIES = $(LIBMPEG2_OBJS)
-dec_mpeg2_la_LIBADD = idct_mmx.lo idct_block_mmx.lo motion_comp_mmx.lo
-dec_mpeg2_la_DEPENDENCIES = idct_mmx.lo idct_block_mmx.lo motion_comp_mmx.lo
-dec_mpeg2_la_CFLAGS = @MM_CFLAGS@
+dec_mpeg2_la_LIBADD = idct_mmx.lo motion_comp_mmx.lo
+dec_mpeg2_la_DEPENDENCIES = idct_mmx.lo motion_comp_mmx.lo
+#dec_mpeg2_la_CFLAGS = @MM_CFLAGS@
 dec_mpeg2_la_LDFLAGS = -avoid-version -module Wl,-soname,dec_mpeg2 @MM_LIBS@
 
 dec_mpeg2_la_SOURCES = slice.c header.c stats.c idct.c motion_comp.c\
