@@ -838,9 +838,6 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     mba = (code - 1) * (picture->coded_picture_width >> 4);
     offset = (code - 1) * width * 4;
 
-    dest[0] = picture->current_frame[0] + offset * 4;
-    dest[1] = picture->current_frame[1] + offset;
-    dest[2] = picture->current_frame[2] + offset;
     slice.f_motion.ref_frame[0] =
 	picture->forward_reference_frame[0] + offset * 4;
     slice.f_motion.ref_frame[1] = picture->forward_reference_frame[1] + offset;
@@ -859,6 +856,13 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     slice.b_motion.f_code[1] = picture->f_code[1][1];
     slice.b_motion.pmv[0][0] = slice.b_motion.pmv[0][1] = 0;
     slice.b_motion.pmv[1][0] = slice.b_motion.pmv[1][1] = 0;
+
+    if ((! HACK_MODE) && (picture->picture_coding_type == B_TYPE))
+	offset = 0;
+
+    dest[0] = picture->current_frame[0] + offset * 4;
+    dest[1] = picture->current_frame[1] + offset;
+    dest[2] = picture->current_frame[2] + offset;
 
     //reset intra dc predictor
     slice.dc_dct_pred[0]=slice.dc_dct_pred[1]=slice.dc_dct_pred[2]= 
