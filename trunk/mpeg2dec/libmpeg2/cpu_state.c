@@ -70,6 +70,7 @@ static void state_save_altivec (cpu_state_t * state)
 	"	li		%r9,  176		\n"
 	"	stvx		%v30, %r11, %r3		\n"
 	"	stvx		%v31, %r9,  %r3		\n"
+	 );
 }
 
 static void state_restore_altivec (cpu_state_t * state)
@@ -98,6 +99,7 @@ static void state_restore_altivec (cpu_state_t * state)
 	"	li		%r9,  176		\n"
 	"	lvx		%v30, %r11, %r3		\n"
 	"	lvx		%v31, %r9,  %r3		\n"
+	 );
 }
 #endif
 

@@ -1063,7 +1063,7 @@ static void MC_avg_xy_8_altivec (uint8_t * dest, uint8_t * ref,
 	 );
 }
 
-MOTION_COMP_EXTERN (altivec)
+MPEG2_MC_EXTERN (altivec)
 
 #endif	/* ARCH_PPC */
 
