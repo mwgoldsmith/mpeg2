@@ -1,3 +1,8 @@
+* before 0.2.0 :
+	* fix xshm completion events in libvo
+	* get rid of HACK_MODE
+		* libvo reordering
+
 * things we dont implement yet
 	* dont crash on bad streams, make sure we can resync after a while
 		* possible chunk buffer overflow (writing or reading back)
