@@ -96,7 +96,10 @@ static void signal_handler(int sig)
 static mpeg2_display_t my_display = 
 {
 	display_init,
-	display_frame
+	display_frame,
+	display_slice,
+	display_flip_page,
+	display_allocate_buffer
 };
 
 int main(int argc,char *argv[])

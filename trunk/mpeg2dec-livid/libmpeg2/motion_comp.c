@@ -99,33 +99,34 @@ motion_comp_init (void)
 		motion_comp_c_init();
 }
 
-void motion_block (void (** table) (uint_8 *, uint_8 *, sint_32, sint_32),
-		   int x_pred, int y_pred, int field_select,
-		   uint_8 * dst_y, uint_8 * dst_cr, uint_8 * dst_cb,
-		   uint_8 * refframe[3], int pitch, int height)
+void motion_block (void (** table) (uint_8 *, uint_8 *, sint_32, sint_32), 
+		int x_pred, int y_pred, int field_select,
+		uint_8 * dst_y, uint_8 * dst_cr, uint_8 * dst_cb,
+		uint_8 * refframe[3], int pitch, int height)
 {
-    int xy_half;
-    uint_8 *src1, *src2;
+	uint_32 xy_half;
+	uint_8 *src1, *src2;
 
-    xy_half = ((y_pred & 1) << 1) | (x_pred & 1);
-    x_pred >>= 1;
-    y_pred >>= 1;
-	
-    src1 = refframe[0] + x_pred + y_pred * pitch + field_select * (pitch >> 1);
+	xy_half = ((y_pred & 1) << 1) | (x_pred & 1);
+	x_pred >>= 1;
+	y_pred >>= 1;
 
-    table[xy_half] (dst_y, src1, pitch, height);
+	src1 = refframe[0] + x_pred + y_pred * pitch + field_select * (pitch >> 1);
 
-    xy_half = ((y_pred & 1) << 1) | (x_pred & 1);
-    x_pred >>= 1;
-    y_pred >>= 1;
-    pitch >>= 1;
-    height >>= 1;
+	table[xy_half] (dst_y, src1, pitch, height);
 
-    src1 = refframe[1] + x_pred + y_pred * pitch + field_select * (pitch >> 1);
-    src2 = refframe[2] + x_pred + y_pred * pitch + field_select * (pitch >> 1);
+	xy_half = ((y_pred & 1) << 1) | (x_pred & 1);
+	x_pred >>= 1;
+	y_pred >>= 1;
+	pitch >>= 1;
+	height >>= 1;
 
-    table[4+xy_half] (dst_cr, src1, pitch, height);
-    table[4+xy_half] (dst_cb, src2, pitch, height);
+	src1 = refframe[1] + x_pred + y_pred * pitch + field_select * (pitch >> 1);
+	src2 = refframe[2] + x_pred + y_pred * pitch + field_select * (pitch >> 1);
+
+
+	table[4+xy_half] (dst_cr, src1, pitch, height);
+	table[4+xy_half] (dst_cb, src2, pitch, height);
 }
 
 void
@@ -179,7 +180,7 @@ motion_comp (picture_t * picture, macroblock_t *mb)
 		motion_comp_idct_copy (dst_cb, mb->cb_blocks, width>>1);
 		
 		//clear the blocks for next time
-		memset(mb->y_blocks,0,sizeof(sint_16) * 6 * 64);
+		memset(mb->y_blocks,0,sizeof(sint_16) * 4 * 64);
 		memset(mb->cr_blocks,0,sizeof(sint_16) * 64);
 		memset(mb->cb_blocks,0,sizeof(sint_16) * 64);
 	} 
@@ -194,6 +195,7 @@ motion_comp (picture_t * picture, macroblock_t *mb)
 				motion_block (put_table, mb->f_motion_vectors[0][0] + x * 32, 
 						mb->f_motion_vectors[0][1] + y * 32, 0, dst_y, dst_cr, dst_cb, 
 						picture->forward_reference_frame, width, 16);
+
 			} 
 			else 
 			{
@@ -254,7 +256,7 @@ motion_comp (picture_t * picture, macroblock_t *mb)
 				motion_comp_idct_add (dst_cb, mb->cb_blocks, width >> 1);
 
 			//clear the blocks for next time
-			memset(mb->y_blocks,0,sizeof(sint_16) * 6 * 64);
+			memset(mb->y_blocks,0,sizeof(sint_16) * 4 * 64);
 			memset(mb->cr_blocks,0,sizeof(sint_16) * 64);
 			memset(mb->cb_blocks,0,sizeof(sint_16) * 64);
 		}

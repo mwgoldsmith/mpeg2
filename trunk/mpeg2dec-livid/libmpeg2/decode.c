@@ -45,56 +45,57 @@
 #endif
 
 //this is where we keep the state of the decoder
-static picture_t picture;
+picture_t picture;
 
 //global config struct
 mpeg2_config_t config;
 
 //pointers to the display interface functions
-static mpeg2_display_t mpeg2_display;
+mpeg2_display_t mpeg2_display;
 
+//
 //the current start code chunk we are working on
-uint_8 chunk_buffer[65536 + 4];
-uint_8 *chunk_end = chunk_buffer;
-uint_32 shift = 0;
-uint_32 has_sync = 0;
+//we max out at 65536 bytes as that is the largest
+//slice we will see in MP@ML streams.
+//(we make no pretenses ofdecoding anything more than that)
+static uint_8 chunk_buffer[65536 + 4];
+static uint_8 *chunk_end = chunk_buffer;
+static uint_32 shift = 0;
+static uint_32 has_sync = 0;
 
 static uint_32 is_display_initialized = 0;
 static uint_32 is_sequence_needed = 1;
 
-
 void
 mpeg2_init(mpeg2_display_t *foo)
 {
-	uint_32 frame_size;
+	uint_32 max_frame_size;
+	uint_32 max_slice_size;
 
+	//copy the display interface function pointers
+	mpeg2_display = *foo;
 
-	//FIXME this should go somewhere after we discover how big
-	//the frame is, or size it so that it will be big enough for
-	//all cases
+	max_frame_size = 720 * 576;
+	max_slice_size = 720 *  16;
 
-	// We also make sure the frames are 16 byte aligned
-	frame_size = 720 * 576;
+	picture.throwaway_frame[0] = mpeg2_display.allocate_buffer((max_slice_size * 3) / 2);
+	picture.throwaway_frame[1] = picture.throwaway_frame[0] + max_slice_size;
+	picture.throwaway_frame[2] = picture.throwaway_frame[1] + max_slice_size/4;
+	printf("throwaway_frame %p\n",picture.throwaway_frame[0]);
 
-	picture.throwaway_frame[0] = 
-		(uint_8*)(((uint_32)malloc(frame_size  + frame_size/2 + 16) + 15) & ~0xf);
-	picture.throwaway_frame[1] = picture.throwaway_frame[0] + frame_size;
-	picture.throwaway_frame[2] = picture.throwaway_frame[1] + frame_size/4;
+	picture.backward_reference_frame[0] = mpeg2_display.allocate_buffer((max_frame_size *3) / 2); 
+	picture.backward_reference_frame[1] = picture.backward_reference_frame[0] + max_frame_size;
+	picture.backward_reference_frame[2] = picture.backward_reference_frame[1] + max_frame_size/4;
+	printf("back ref_frame %p\n",picture.backward_reference_frame[0]);
 
-	picture.backward_reference_frame[0] = 
-		(uint_8*)(((uint_32)malloc(3 * frame_size + 16) + 15) & ~0xf);
-	picture.backward_reference_frame[1] = picture.backward_reference_frame[0] + frame_size;
-	picture.backward_reference_frame[2] = picture.backward_reference_frame[1] + frame_size/4;
-	picture.forward_reference_frame[0] = picture.backward_reference_frame[2] + frame_size/4;
-	picture.forward_reference_frame[1] = picture.forward_reference_frame[0] + frame_size;
-	picture.forward_reference_frame[2] = picture.forward_reference_frame[1] + frame_size/4;
+	picture.forward_reference_frame[0] = mpeg2_display.allocate_buffer((max_frame_size * 3) / 2); 
+	picture.forward_reference_frame[1] = picture.forward_reference_frame[0] + max_frame_size;
+	picture.forward_reference_frame[2] = picture.forward_reference_frame[1] + max_frame_size/4;
+	printf("forward ref_frame %p\n",picture.forward_reference_frame[0]);
 
 	//FIXME setup config properly
 	config.flags = MPEG2_MMX_ENABLE;
 	//config.flags = 0;
-
-	//copy the display interface function pointers
-	mpeg2_display = *foo;
 
 	//intialize the decoder state 
 	header_state_init(&picture);
@@ -202,7 +203,15 @@ mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end)
 		{
 			header_process_sequence_header(&picture); 
 			is_sequence_needed = 0;
+
+			if(!is_display_initialized)
+			{
+				mpeg2_display.init(picture.coded_picture_width,picture.coded_picture_height,0,0);
+				is_display_initialized = 1;
+			}
 		}
+		else if(code == SEQUENCE_END_CODE)
+			is_sequence_needed = 1;
 		else if (code == PICTURE_START_CODE)
 		{
 			header_process_picture_header(&picture);
@@ -215,7 +224,34 @@ mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end)
 		else if (code == USER_DATA_START_CODE)
 			header_process_user_data();
 		else if (code >= SLICE_START_CODE_MIN && code <= SLICE_START_CODE_MAX)
-			is_frame_done = slice_process(&picture,chunk_buffer);
+		{
+			is_frame_done = slice_process(&picture,chunk_buffer); 
+
+			if(picture.picture_coding_type == B_TYPE)
+			{
+				mpeg2_display.draw_slice(picture.throwaway_frame,chunk_buffer[0] - 1);
+
+				picture.current_frame[0] = picture.throwaway_frame[0] - 
+					(chunk_buffer[0]) * 16 * picture.coded_picture_width;
+				picture.current_frame[1] = picture.throwaway_frame[1] - 
+					(chunk_buffer[0]) * 8 * picture.coded_picture_width/2;
+				picture.current_frame[2] = picture.throwaway_frame[2] - 
+					(chunk_buffer[0]) * 8 * picture.coded_picture_width/2;
+			}
+			else
+			{
+				uint_8 *foo[3];
+
+				foo[0] = picture.forward_reference_frame[0] + (chunk_buffer[0]-1) * 16 *
+					picture.coded_picture_width;
+				foo[1] = picture.forward_reference_frame[1] + (chunk_buffer[0]-1) * 8 *
+					picture.coded_picture_width/2;
+				foo[2] = picture.forward_reference_frame[2] + (chunk_buffer[0]-1) * 8 *
+					picture.coded_picture_width/2;
+				mpeg2_display.draw_slice(foo,chunk_buffer[0]-1);
+				//mpeg2_display.draw_frame(picture.forward_reference_frame);
+			}
+		}
 
 		//FIXME blah
 #ifdef __i386__
@@ -224,23 +260,7 @@ mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end)
 
 		if(is_frame_done)
 		{
-			//FIXME
-			//we can't initialize the display until we know how big the picture is
-			if(!is_display_initialized)
-			{
-				mpeg2_display.init(picture.coded_picture_width,picture.coded_picture_height,0,0);
-				is_display_initialized = 1;
-			}
-
-			//decide which frame to send to the display
-			if(picture.picture_coding_type == B_TYPE)
-				mpeg2_display.draw_frame(picture.throwaway_frame);
-			else
-				mpeg2_display.draw_frame(picture.forward_reference_frame);
-
-
-			if(bitstream_show(32) == SEQUENCE_END_CODE)
-				is_sequence_needed = 1;
+			mpeg2_display.flip_page();
 
 			is_frame_done = 0;
 
@@ -250,5 +270,3 @@ mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end)
 
 	return ret;
 }
-
-

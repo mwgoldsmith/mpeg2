@@ -61,10 +61,10 @@ extern DCTtab DCTtab0a[],DCTtab1a[];
 
 uint_32 non_linear_quantizer_scale[32] =
 {
-   0, 1, 2, 3, 4, 5, 6, 7,
-   8,10,12,14,16,18,20,22,
-  24,28,32,36,40,44,48,52,
-  56,64,72,80,88,96,104,112
+	 0, 1, 2, 3, 4, 5, 6, 7,
+	 8,10,12,14,16,18,20,22,
+	24,28,32,36,40,44,48,52,
+	56,64,72,80,88,96,104,112
 };
 
 
@@ -74,20 +74,20 @@ slice_get_slice_header(const picture_t *picture, slice_t *slice)
 
 	uint_32 intra_slice_flag;
 
-  slice->quantizer_scale_code = bitstream_get(5);
+	slice->quantizer_scale_code = bitstream_get(5);
 
 	if (picture->q_scale_type)
-  	slice->quantizer_scale = non_linear_quantizer_scale[slice->quantizer_scale_code];
+	slice->quantizer_scale = non_linear_quantizer_scale[slice->quantizer_scale_code];
 	else
-  	slice->quantizer_scale = slice->quantizer_scale_code << 1 ;
+	slice->quantizer_scale = slice->quantizer_scale_code << 1 ;
 		
 
-  if ((intra_slice_flag = bitstream_get(1)))
-  {
+	if ((intra_slice_flag = bitstream_get(1)))
+	{
 		//Ignore the value of intra_slice
-    bitstream_get(1);
+		bitstream_get(1);
 
-    slice->slice_picture_id_enable = bitstream_get(1);
+		slice->slice_picture_id_enable = bitstream_get(1);
 		slice->slice_picture_id = bitstream_get(6);
 
 		//Ignore all the extra_data
@@ -107,8 +107,8 @@ slice_get_slice_header(const picture_t *picture, slice_t *slice)
 inline uint_32
 slice_get_block_coeff(uint_16 *run, sint_16 *val, uint_16 non_intra_dc,uint_16 intra_vlc_format)
 {
-  uint_32 code;
-  DCTtab *tab;
+	uint_32 code;
+	DCTtab *tab;
 
 	//this routines handles intra AC and non-intra AC/DC coefficients
 	code = bitstream_show(16);
@@ -191,10 +191,10 @@ slice_get_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint
 	sint_16 quantizer_scale = slice->quantizer_scale;
 
 	//Get the intra DC coefficient and inverse quantize it
-  if (cc == 0)
-    dest[0] = (slice->dc_dct_pred[0] += Get_Luma_DC_dct_diff()) << (3 - picture->intra_dc_precision);
-  else 
-    dest[0] = (slice->dc_dct_pred[cc]+= Get_Chroma_DC_dct_diff()) << (3 - picture->intra_dc_precision);
+	if (cc == 0)
+		dest[0] = (slice->dc_dct_pred[0] += Get_Luma_DC_dct_diff()) << (3 - picture->intra_dc_precision);
+	else 
+		dest[0] = (slice->dc_dct_pred[cc]+= Get_Chroma_DC_dct_diff()) << (3 - picture->intra_dc_precision);
 
 	dest[0] <<= 4;
 
@@ -202,12 +202,12 @@ slice_get_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint
 	while((slice_get_block_coeff(&run,&val,0,picture->intra_vlc_format)))
 	{
 		i += run;
-    j = scan[i++];
-    dest[j] = (val * quantizer_scale * quant_matrix[j]);
+		j = scan[i++];
+		dest[j] = (val * quantizer_scale * quant_matrix[j]);
 		//FIXME put mismatch control back in
 	}
 }
-	
+
 static void
 slice_get_non_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint_32 cc)
 {
@@ -222,8 +222,8 @@ slice_get_non_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,
 	while((slice_get_block_coeff(&run,&val,i==0,0)))
 	{
 		i += run;
-    j = scan[i++];
-    dest[j] = (((val<<1) + (val>>15))* quantizer_scale * quant_matrix[j]) >> 1;
+		j = scan[i++];
+		dest[j] = (((val<<1) + (val>>15))* quantizer_scale * quant_matrix[j]) >> 1;
 	}
 }
 
@@ -231,67 +231,67 @@ slice_get_non_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,
 static inline sint_16 compute_motion_vector(sint_16 vec,uint_16 r_size,sint_16 motion_code,
 		sint_16 motion_residual)
 {
-  sint_16 lim;
+	sint_16 lim;
 
-  lim = 16<<r_size;
+	lim = 16<<r_size;
 
-  if (motion_code>0)
-  {
-    vec+= ((motion_code-1)<<r_size) + motion_residual + 1;
-    if (vec>=lim)
-      vec-= lim + lim;
-  }
-  else if (motion_code<0)
-  {
-    vec-= ((-motion_code-1)<<r_size) + motion_residual + 1;
-    if (vec<-lim)
-      vec+= lim + lim;
-  }
+	if (motion_code>0)
+	{
+		vec+= ((motion_code-1)<<r_size) + motion_residual + 1;
+		if (vec>=lim)
+			vec-= lim + lim;
+	}
+	else if (motion_code<0) 
+	{
+		vec-= ((-motion_code-1)<<r_size) + motion_residual + 1;
+		if (vec<-lim)
+			vec+= lim + lim;
+	}
 	return vec;
 }
 
 static void slice_get_motion_vector(sint_16 *prev_mv, sint_16 *curr_mv,const uint_8 *f_code,
 		macroblock_t *mb)
 {
-  sint_16 motion_code, motion_residual;
-  sint_16 r_size;
+	sint_16 motion_code, motion_residual;
+	sint_16 r_size;
 
 	//fprintf(stderr,"motion_vec: h_r_size %d v_r_size %d\n",f_code[0],f_code[1]);
 
-  // horizontal component
+	// horizontal component
 	r_size = f_code[0];
 	motion_code = Get_motion_code();
 	motion_residual =  0;
 	if (r_size!=0 && motion_code!=0) 
 		motion_residual = bitstream_get(r_size);
 
-  curr_mv[0] = compute_motion_vector(prev_mv[0],r_size,motion_code,motion_residual);
+	curr_mv[0] = compute_motion_vector(prev_mv[0],r_size,motion_code,motion_residual);
 	prev_mv[0] = curr_mv[0];
 
 	//XXX dmvectors are unsed right now...
-  if (mb->dmv)
-    mb->dmvector[0] = Get_dmvector();
+	if (mb->dmv)
+		mb->dmvector[0] = Get_dmvector();
 
-  // vertical component 
+	// vertical component 
 	r_size = f_code[1];
-  motion_code     = Get_motion_code();
+	motion_code     = Get_motion_code();
 	motion_residual =  0;
 	if (r_size!=0 && motion_code!=0) 
 		motion_residual =  bitstream_get(r_size);
 
-  if (mb->mvscale)
-    prev_mv[1] >>= 1; 
+	if (mb->mvscale)
+		prev_mv[1] >>= 1; 
 
-  curr_mv[1] = compute_motion_vector(prev_mv[1],r_size,motion_code,motion_residual);
-  
-  if (mb->mvscale)
-    curr_mv[1] <<= 1;
+	curr_mv[1] = compute_motion_vector(prev_mv[1],r_size,motion_code,motion_residual);
 
-  prev_mv[1] = curr_mv[1];
+	if (mb->mvscale)
+		curr_mv[1] <<= 1;
+
+	prev_mv[1] = curr_mv[1];
 
 	//XXX dmvectors are unsed right now...
-  if (mb->dmv)
-    mb->dmvector[1] = Get_dmvector();
+	if (mb->dmv)
+		mb->dmvector[1] = Get_dmvector();
 }
 
 //These next two functions are very similar except that they
@@ -300,57 +300,57 @@ static void slice_get_motion_vector(sint_16 *prev_mv, sint_16 *curr_mv,const uin
 static void slice_get_forward_motion_vectors(const picture_t *picture,slice_t *slice, 
 		macroblock_t *mb)
 {
-  if (mb->motion_vector_count==1)
-  {
-    if (mb->mv_format==MV_FIELD && !mb->dmv)
-    {
-      fprintf(stderr,"field based mv\n");
-      mb->f_motion_vertical_field_select[1] = 
+	if (mb->motion_vector_count==1)
+	{
+		if (mb->mv_format==MV_FIELD && !mb->dmv)
+		{
+			fprintf(stderr,"field based mv\n");
+			mb->f_motion_vertical_field_select[1] = 
 				mb->f_motion_vertical_field_select[0] = bitstream_get(1);
-    }
+		}
 
-    slice_get_motion_vector(slice->f_pmv[0],mb->f_motion_vectors[0],picture->f_code[0],mb);
+		slice_get_motion_vector(slice->f_pmv[0],mb->f_motion_vectors[0],picture->f_code[0],mb);
 
-    /* update other motion vector predictors */
-    slice->f_pmv[1][0] = slice->f_pmv[0][0];
-    slice->f_pmv[1][1] = slice->f_pmv[0][1];
-  }
-  else
-  {
-    mb->f_motion_vertical_field_select[0] = bitstream_get(1);
-    slice_get_motion_vector(slice->f_pmv[0],mb->f_motion_vectors[0],picture->f_code[0],mb);
+		/* update other motion vector predictors */
+		slice->f_pmv[1][0] = slice->f_pmv[0][0];
+		slice->f_pmv[1][1] = slice->f_pmv[0][1];
+	}
+	else
+	{
+		mb->f_motion_vertical_field_select[0] = bitstream_get(1);
+		slice_get_motion_vector(slice->f_pmv[0],mb->f_motion_vectors[0],picture->f_code[0],mb);
 
-    mb->f_motion_vertical_field_select[1] = bitstream_get(1);
-    slice_get_motion_vector(slice->f_pmv[1],mb->f_motion_vectors[1],picture->f_code[0],mb);
-  }
+		mb->f_motion_vertical_field_select[1] = bitstream_get(1);
+		slice_get_motion_vector(slice->f_pmv[1],mb->f_motion_vectors[1],picture->f_code[0],mb);
+	}
 }
 
 static void slice_get_backward_motion_vectors(const picture_t *picture,slice_t *slice, 
 		macroblock_t *mb)
 {
-  if (mb->motion_vector_count==1)
-  {
-    if (mb->mv_format==MV_FIELD && !mb->dmv)
-    {
-      fprintf(stderr,"field based mv\n");
-      mb->b_motion_vertical_field_select[1] = 
+	if (mb->motion_vector_count==1)
+	{
+		if (mb->mv_format==MV_FIELD && !mb->dmv)
+		{
+			fprintf(stderr,"field based mv\n");
+			mb->b_motion_vertical_field_select[1] = 
 				mb->b_motion_vertical_field_select[0] = bitstream_get(1);
-    }
+		}
 
-    slice_get_motion_vector(slice->b_pmv[0],mb->b_motion_vectors[0],picture->f_code[1],mb);
+		slice_get_motion_vector(slice->b_pmv[0],mb->b_motion_vectors[0],picture->f_code[1],mb);
 
-    /* update other motion vector predictors */
-    slice->b_pmv[1][0] = slice->b_pmv[0][0];
-    slice->b_pmv[1][1] = slice->b_pmv[0][1];
-  }
-  else
-  {
-    mb->b_motion_vertical_field_select[0] = bitstream_get(1);
-    slice_get_motion_vector(slice->b_pmv[0],mb->b_motion_vectors[0],picture->f_code[1],mb);
+		/* update other motion vector predictors */
+		slice->b_pmv[1][0] = slice->b_pmv[0][0];
+		slice->b_pmv[1][1] = slice->b_pmv[0][1];
+	}
+	else
+	{
+		mb->b_motion_vertical_field_select[0] = bitstream_get(1);
+		slice_get_motion_vector(slice->b_pmv[0],mb->b_motion_vectors[0],picture->f_code[1],mb);
 
-    mb->b_motion_vertical_field_select[1] = bitstream_get(1);
-    slice_get_motion_vector(slice->b_pmv[1],mb->b_motion_vectors[1],picture->f_code[1],mb);
-  }
+		mb->b_motion_vertical_field_select[1] = bitstream_get(1);
+		slice_get_motion_vector(slice->b_pmv[1],mb->b_motion_vectors[1],picture->f_code[1],mb);
+	}
 }
 
 inline void slice_reset_pmv(slice_t *slice)
@@ -362,44 +362,44 @@ inline void slice_reset_pmv(slice_t *slice)
 void
 slice_get_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
 {
-  uint_32 quantizer_scale_code;
-  uint_32 picture_structure = picture->picture_structure;
+	uint_32 quantizer_scale_code;
+	uint_32 picture_structure = picture->picture_structure;
 
-  // get macroblock_type 
-  mb->macroblock_type = Get_macroblock_type(picture->picture_coding_type);
+	// get macroblock_type 
+	mb->macroblock_type = Get_macroblock_type(picture->picture_coding_type);
 
-  // get frame/field motion type 
-  if (mb->macroblock_type & (MACROBLOCK_MOTION_FORWARD|MACROBLOCK_MOTION_BACKWARD))
-  {
-    if (picture_structure == FRAME_PICTURE) // frame_motion_type 
-      mb->motion_type = picture->frame_pred_frame_dct ? MC_FRAME : bitstream_get(2);
-    else // field_motion_type 
-      mb->motion_type = bitstream_get(2);
-  }
-  else if ((mb->macroblock_type & MACROBLOCK_INTRA) && picture->concealment_motion_vectors)
-  {
-    // concealment motion vectors 
-    mb->motion_type = (picture_structure==FRAME_PICTURE) ? MC_FRAME : MC_FIELD;
-  }
+	// get frame/field motion type 
+	if (mb->macroblock_type & (MACROBLOCK_MOTION_FORWARD|MACROBLOCK_MOTION_BACKWARD))
+	{
+		if (picture_structure == FRAME_PICTURE) // frame_motion_type 
+			mb->motion_type = picture->frame_pred_frame_dct ? MC_FRAME : bitstream_get(2);
+		else // field_motion_type 
+			mb->motion_type = bitstream_get(2);
+	}
+	else if ((mb->macroblock_type & MACROBLOCK_INTRA) && picture->concealment_motion_vectors)
+	{
+		// concealment motion vectors 
+		mb->motion_type = (picture_structure==FRAME_PICTURE) ? MC_FRAME : MC_FIELD;
+	}
 
-  // derive motion_vector_count, mv_format and dmv, (table 6-17, 6-18)
-  if (picture_structure==FRAME_PICTURE)
-  {
-    mb->motion_vector_count = (mb->motion_type==MC_FIELD) ? 2 : 1;
-    mb->mv_format = (mb->motion_type==MC_FRAME) ? MV_FRAME : MV_FIELD;
-  }
-  else
-  {
-    mb->motion_vector_count = (mb->motion_type==MC_16X8) ? 2 : 1;
-    mb->mv_format = MV_FIELD;
-  }
+	// derive motion_vector_count, mv_format and dmv, (table 6-17, 6-18)
+	if (picture_structure==FRAME_PICTURE)
+	{
+		mb->motion_vector_count = (mb->motion_type==MC_FIELD) ? 2 : 1;
+		mb->mv_format = (mb->motion_type==MC_FRAME) ? MV_FRAME : MV_FIELD;
+	}
+	else
+	{
+		mb->motion_vector_count = (mb->motion_type==MC_16X8) ? 2 : 1;
+		mb->mv_format = MV_FIELD;
+	}
 
-  mb->dmv = (mb->motion_type==MC_DMV); // dual prime
+	mb->dmv = (mb->motion_type==MC_DMV); // dual prime
 
 	//Set if we need to scale motion vector prediction by 1/2
-  mb->mvscale = ((mb->mv_format==MV_FIELD) && (picture_structure==FRAME_PICTURE));
+	mb->mvscale = ((mb->mv_format==MV_FIELD) && (picture_structure==FRAME_PICTURE));
 
-  // get dct_type (frame DCT / field DCT) 
+	// get dct_type (frame DCT / field DCT) 
 	if( (picture_structure==FRAME_PICTURE) && (!picture->frame_pred_frame_dct) && 
 			(mb->macroblock_type & (MACROBLOCK_PATTERN|MACROBLOCK_INTRA)) )
 		mb->dct_type =  bitstream_get(1);
@@ -408,35 +408,35 @@ slice_get_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
 
 
 	if (mb->macroblock_type & MACROBLOCK_QUANT)
-  {
-    quantizer_scale_code = bitstream_get(5);
+	{
+		quantizer_scale_code = bitstream_get(5);
 
 		//The quantizer scale code propogates up to the slice level
 		if(picture->q_scale_type)
 			slice->quantizer_scale = non_linear_quantizer_scale[quantizer_scale_code];
 		else
-      slice->quantizer_scale = quantizer_scale_code << 1;
-  }
+			slice->quantizer_scale = quantizer_scale_code << 1;
+	}
 		
 
-  // 6.3.17.2 Motion vectors 
+	// 6.3.17.2 Motion vectors 
 
-  //decode forward motion vectors 
-  if ((mb->macroblock_type & MACROBLOCK_MOTION_FORWARD) || 
+	//decode forward motion vectors 
+	if ((mb->macroblock_type & MACROBLOCK_MOTION_FORWARD) || 
 			((mb->macroblock_type & MACROBLOCK_INTRA) && picture->concealment_motion_vectors))
-      slice_get_forward_motion_vectors(picture,slice,mb);
+			slice_get_forward_motion_vectors(picture,slice,mb);
 
-  //decode backward motion vectors 
-  if (mb->macroblock_type & MACROBLOCK_MOTION_BACKWARD)
-      slice_get_backward_motion_vectors(picture,slice,mb);
+	//decode backward motion vectors 
+	if (mb->macroblock_type & MACROBLOCK_MOTION_BACKWARD)
+			slice_get_backward_motion_vectors(picture,slice,mb);
 
-  if ((mb->macroblock_type & MACROBLOCK_INTRA) && picture->concealment_motion_vectors)
-    bitstream_flush(1); // remove marker_bit 
+	if ((mb->macroblock_type & MACROBLOCK_INTRA) && picture->concealment_motion_vectors)
+		bitstream_flush(1); // remove marker_bit 
 
-  //6.3.17.4 Coded block pattern 
+	//6.3.17.4 Coded block pattern 
 	mb->coded_block_pattern = 0;
-  if (mb->macroblock_type & MACROBLOCK_PATTERN)
-    mb->coded_block_pattern = Get_coded_block_pattern();
+	if (mb->macroblock_type & MACROBLOCK_PATTERN)
+		mb->coded_block_pattern = Get_coded_block_pattern();
 
 	if (mb->macroblock_type & MACROBLOCK_INTRA)
 	{
@@ -472,8 +472,8 @@ slice_get_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
 			slice_get_non_intra_block(picture,slice,mb->cb_blocks,2);
 	}
 
-  // 7.2.1 DC coefficients in intra blocks 
-  if (!(mb->macroblock_type & MACROBLOCK_INTRA))
+	// 7.2.1 DC coefficients in intra blocks 
+	if (!(mb->macroblock_type & MACROBLOCK_INTRA))
 	{
 		//FIXME this looks suspicious...should be reset to 2^(intra_dc_precision+7)
 		//
@@ -482,32 +482,32 @@ slice_get_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
 			1<<(picture->intra_dc_precision + 7) ;
 	}
 
-  //7.6.3.4 Resetting motion vector predictors 
-  if ((mb->macroblock_type & MACROBLOCK_INTRA) && !picture->concealment_motion_vectors)
+	//7.6.3.4 Resetting motion vector predictors 
+	if ((mb->macroblock_type & MACROBLOCK_INTRA) && !picture->concealment_motion_vectors)
 		slice_reset_pmv(slice);
 
 
-  // special "No_MC" macroblock_type case 
-  // 7.6.3.5 Prediction in P pictures 
-  if ((picture->picture_coding_type==P_TYPE) 
-    && !(mb->macroblock_type & (MACROBLOCK_MOTION_FORWARD|MACROBLOCK_INTRA)))
-  {
-    // non-intra mb without forward mv in a P picture 
-    // 7.6.3.4 Resetting motion vector predictors 
+	// special "No_MC" macroblock_type case 
+	// 7.6.3.5 Prediction in P pictures 
+	if ((picture->picture_coding_type==P_TYPE) 
+		&& !(mb->macroblock_type & (MACROBLOCK_MOTION_FORWARD|MACROBLOCK_INTRA)))
+	{
+		// non-intra mb without forward mv in a P picture 
+		// 7.6.3.4 Resetting motion vector predictors 
 		slice_reset_pmv(slice);
 		memset(mb->f_motion_vectors[0],0,8);
 		mb->macroblock_type |= MACROBLOCK_MOTION_FORWARD;
 
-    //6.3.17.1 Macroblock modes, frame_motion_type 
-    if (picture->picture_structure==FRAME_PICTURE)
-      mb->motion_type = MC_FRAME;
-    else
-    {
-      mb->motion_type = MC_FIELD;
-      // predict from field of same parity 
-      mb->f_motion_vertical_field_select[0]= (picture->picture_structure==BOTTOM_FIELD);
-    }
-  }
+		//6.3.17.1 Macroblock modes, frame_motion_type 
+		if (picture->picture_structure==FRAME_PICTURE)
+			mb->motion_type = MC_FRAME;
+		else
+		{
+			mb->motion_type = MC_FIELD;
+			// predict from field of same parity 
+			mb->f_motion_vertical_field_select[0]= (picture->picture_structure==BOTTOM_FIELD);
+		}
+	}
 }
 
 void
@@ -517,6 +517,7 @@ slice_init(void)
 	mb.cr_blocks = cr_blocks;
 	mb.cb_blocks = cb_blocks;
 }
+
 
 uint_32
 slice_process(picture_t *picture,uint_8 *slice_data)
