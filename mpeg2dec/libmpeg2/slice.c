@@ -1062,10 +1062,8 @@ static void motion_mp1 (picture_t * picture, motion_t * motion,
     motion_y = bound_motion_vector (motion_y, motion->f_code[0]);
     motion->pmv[0][1] = motion_y;
 
-    if (motion->f_code[1]) {
-	motion_x <<= 1;
-	motion_y <<= 1;
-    }
+    motion_x <<= motion->f_code[1];	/* full-pixel MC */
+    motion_y <<= motion->f_code[1];
 
     motion_block (table, offset, picture->v_offset, 0, 0, 0,
 		  motion_x, motion_y, dest, motion->ref[0], stride, 16);
@@ -1080,13 +1078,8 @@ static void motion_mp1_reuse (picture_t * picture, motion_t * motion,
 {
     int motion_x, motion_y;
 
-    motion_x = motion->pmv[0][0];
-    motion_y = motion->pmv[0][1];
-
-    if (motion->f_code[1]) {
-	motion_x <<= 1;
-	motion_y <<= 1;
-    }
+    motion_x = motion->pmv[0][0] << motion->f_code[1];	/* full-pixel MC */
+    motion_y = motion->pmv[0][1] << motion->f_code[1];
 
     motion_block (table, offset, picture->v_offset, 0, 0, 0,
 		  motion_x, motion_y, dest, motion->ref[0], stride, 16);
@@ -1189,17 +1182,13 @@ static void motion_fr_dmv (picture_t * picture, motion_t * motion,
 						     motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[1][0] = motion->pmv[0][0] = motion_x;
-
     NEEDBITS (bit_buf, bits, bit_ptr);
     dmv_x = get_dmv (picture);
 
-    NEEDBITS (bit_buf, bits, bit_ptr);
     motion_y = (motion->pmv[0][1] >> 1) + get_motion_delta (picture,
 							    motion->f_code[1]);
     /* motion_y = bound_motion_vector (motion_y, motion->f_code[1]); */
     motion->pmv[1][1] = motion->pmv[0][1] = motion_y << 1;
-
-    NEEDBITS (bit_buf, bits, bit_ptr);
     dmv_y = get_dmv (picture);
 
     motion_block (mpeg2_mc.put, offset, picture->v_offset >> 1, 0, 0, 0,
@@ -1373,17 +1362,13 @@ static void motion_fi_dmv (picture_t * picture, motion_t * motion,
 						     motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
     motion->pmv[1][0] = motion->pmv[0][0] = motion_x;
-
     NEEDBITS (bit_buf, bits, bit_ptr);
     dmv_x = get_dmv (picture);
 
-    NEEDBITS (bit_buf, bits, bit_ptr);
     motion_y = motion->pmv[0][1] + get_motion_delta (picture,
 						     motion->f_code[1]);
     motion_y = bound_motion_vector (motion_y, motion->f_code[1]);
     motion->pmv[1][1] = motion->pmv[0][1] = motion_y;
-
-    NEEDBITS (bit_buf, bits, bit_ptr);
     dmv_y = get_dmv (picture);
 
     motion_block (mpeg2_mc.put, offset, picture->v_offset, 0, 0, 0,
