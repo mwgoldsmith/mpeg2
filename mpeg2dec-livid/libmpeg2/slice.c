@@ -577,24 +577,76 @@ static inline void slice_non_intra_DCT (picture_t * picture, slice_t * slice,
     memset (DCTblock, 0, sizeof (int16_t) * 64);
 }
 
-static int get_motion_delta (int f_code)
+typedef struct {
+    uint8_t delta;
+    uint8_t len;
+} MVtab;
+
+static inline int get_motion_delta (int f_code)
 {
-    int motion_code, motion_residual;
+#define bit_buf bitstream_buffer
+#define bits bitstream_avail_bits
 
-    motion_code = Get_motion_code ();
-    if (motion_code == 0)
+    int delta;
+    int sign;
+    MVtab * tab;
+
+    static MVtab MV_6 [] = {
+				   { 3, 6}, { 2, 4}, { 2, 4}, { 2, 4}, { 2, 4},
+	{ 1, 3}, { 1, 3}, { 1, 3}, { 1, 3}, { 1, 3}, { 1, 3}, { 1, 3}, { 1, 3},
+	{ 0, 2}, { 0, 2}, { 0, 2}, { 0, 2}, { 0, 2}, { 0, 2}, { 0, 2}, { 0, 2},
+	{ 0, 2}, { 0, 2}, { 0, 2}, { 0, 2}, { 0, 2}, { 0, 2}, { 0, 2}, { 0, 2}
+    };
+
+    static MVtab MV_10 [] = {
+	{ 0,10}, { 0,10}, { 0,10}, { 0,10}, { 0,10}, { 0,10}, { 0,10}, { 0,10},
+	{ 0,10}, { 0,10}, { 0,10}, { 0,10}, {15,10}, {14,10}, {13,10}, {12,10},
+	{11,10}, {10,10}, { 9, 9}, { 9, 9}, { 8, 9}, { 8, 9}, { 7, 9}, { 7, 9},
+	{ 6, 7}, { 6, 7}, { 6, 7}, { 6, 7}, { 6, 7}, { 6, 7}, { 6, 7}, { 6, 7},
+	{ 5, 7}, { 5, 7}, { 5, 7}, { 5, 7}, { 5, 7}, { 5, 7}, { 5, 7}, { 5, 7},
+	{ 4, 7}, { 4, 7}, { 4, 7}, { 4, 7}, { 4, 7}, { 4, 7}, { 4, 7}, { 4, 7}
+    };
+
+    if (bit_buf & 0x80000000) {
+	DUMPBITS (bit_buf, bits, 1);
 	return 0;
+    } else if (bit_buf >= 0x0c000000) {
 
-    motion_residual = 0;
-    if (f_code != 0) {
-	needbits ();
-	motion_residual = bitstream_get (f_code);
+	tab = MV_6 - 3 + UBITS (bit_buf, 6);
+	delta = (tab->delta << f_code) + 1;
+	bits += tab->len + f_code + 1;
+	bit_buf <<= tab->len;
+
+	sign = SBITS (bit_buf, 1);
+	bit_buf <<= 1;
+
+	if (f_code)
+	    delta += UBITS (bit_buf, f_code);
+	bit_buf <<= f_code;
+
+	return (delta ^ sign) - sign;
+
+    } else {
+
+	tab = MV_10 + UBITS (bit_buf, 10);
+	delta = (tab->delta << f_code) + 1;
+	bits += tab->len + 1;
+	bit_buf <<= tab->len;
+
+	sign = SBITS (bit_buf, 1);
+	bit_buf <<= 1;
+
+	if (f_code) {
+	    NEEDBITS (bit_buf, bits);
+	    delta += UBITS (bit_buf, f_code);
+	    DUMPBITS (bit_buf, bits, f_code);
+	}
+
+	return (delta ^ sign) - sign;
+
     }
-
-    if (motion_code > 0)
-	return ((motion_code - 1) << f_code) + motion_residual + 1;
-    else
-	return ((motion_code + 1) << f_code) - motion_residual - 1;
+#undef bit_buf
+#undef bits
 }
 
 static inline int bound_motion_vector (int vector, int f_code)
@@ -721,29 +773,134 @@ do {								\
 		  mc_functions.avg : mc_functions.put));	\
 } while (0)
 
-static int get_macroblock_modes (int picture_coding_type,
-				 int frame_pred_frame_dct)
+typedef struct {
+    uint8_t modes;
+    uint8_t len;
+} MBtab;
+
+static inline int get_macroblock_modes (int picture_coding_type,
+					int frame_pred_frame_dct)
 {
+#define bit_buf bitstream_buffer
+#define bits bitstream_avail_bits
     int macroblock_modes;
+    MBtab * tab;
 
-    macroblock_modes = Get_macroblock_type (picture_coding_type);
+#define INTRA MACROBLOCK_INTRA
+#define QUANT MACROBLOCK_QUANT
 
-    if (frame_pred_frame_dct) {
-	if (macroblock_modes & (MACROBLOCK_MOTION_FORWARD |
-				MACROBLOCK_MOTION_BACKWARD))
-	    macroblock_modes |= MC_FRAME;
+    static MBtab MB_I [] = {
+	{INTRA|QUANT, 2}, {INTRA, 1}
+    };
+
+#define MC MACROBLOCK_MOTION_FORWARD
+#define CODED MACROBLOCK_PATTERN
+#define INTRA MACROBLOCK_INTRA
+#define QUANT MACROBLOCK_QUANT
+
+    static MBtab MB_P [] = {
+	{INTRA|QUANT, 6}, {CODED|QUANT, 5}, {MC|CODED|QUANT, 5}, {INTRA,    5},
+	{MC,          3}, {MC,          3}, {MC,             3}, {MC,       3},
+	{CODED,       2}, {CODED,       2}, {CODED,          2}, {CODED,    2},
+	{CODED,       2}, {CODED,       2}, {CODED,          2}, {CODED,    2},
+	{MC|CODED,    1}, {MC|CODED,    1}, {MC|CODED,       1}, {MC|CODED, 1},
+	{MC|CODED,    1}, {MC|CODED,    1}, {MC|CODED,       1}, {MC|CODED, 1},
+	{MC|CODED,    1}, {MC|CODED,    1}, {MC|CODED,       1}, {MC|CODED, 1},
+	{MC|CODED,    1}, {MC|CODED,    1}, {MC|CODED,       1}, {MC|CODED, 1}
+    };
+
+#define FWD MACROBLOCK_MOTION_FORWARD
+#define BWD MACROBLOCK_MOTION_BACKWARD
+#define INTER MACROBLOCK_MOTION_FORWARD|MACROBLOCK_MOTION_BACKWARD
+#define CODED MACROBLOCK_PATTERN
+#define INTRA MACROBLOCK_INTRA
+#define QUANT MACROBLOCK_QUANT
+
+    static MBtab MB_B [] = {
+	{0,                 0},	{INTRA|QUANT,       6},
+	{BWD|CODED|QUANT,   6}, {FWD|CODED|QUANT,   6},
+	{INTER|CODED|QUANT, 5}, {INTER|CODED|QUANT, 5},
+					    {INTRA,       5}, {INTRA,       5},
+	{FWD,         4}, {FWD,         4}, {FWD,         4}, {FWD,         4},
+	{FWD|CODED,   4}, {FWD|CODED,   4}, {FWD|CODED,   4}, {FWD|CODED,   4},
+	{BWD,         3}, {BWD,         3}, {BWD,         3}, {BWD,         3},
+	{BWD,         3}, {BWD,         3}, {BWD,         3}, {BWD,         3},
+	{BWD|CODED,   3}, {BWD|CODED,   3}, {BWD|CODED,   3}, {BWD|CODED,   3},
+	{BWD|CODED,   3}, {BWD|CODED,   3}, {BWD|CODED,   3}, {BWD|CODED,   3},
+	{INTER,       2}, {INTER,       2}, {INTER,       2}, {INTER,       2},
+	{INTER,       2}, {INTER,       2}, {INTER,       2}, {INTER,       2},
+	{INTER,       2}, {INTER,       2}, {INTER,       2}, {INTER,       2},
+	{INTER,       2}, {INTER,       2}, {INTER,       2}, {INTER,       2},
+	{INTER|CODED, 2}, {INTER|CODED, 2}, {INTER|CODED, 2}, {INTER|CODED, 2},
+	{INTER|CODED, 2}, {INTER|CODED, 2}, {INTER|CODED, 2}, {INTER|CODED, 2},
+	{INTER|CODED, 2}, {INTER|CODED, 2}, {INTER|CODED, 2}, {INTER|CODED, 2},
+	{INTER|CODED, 2}, {INTER|CODED, 2}, {INTER|CODED, 2}, {INTER|CODED, 2}
+    };
+
+    switch (picture_coding_type) {
+    case I_TYPE:
+
+	tab = MB_I + UBITS (bit_buf, 1);
+	DUMPBITS (bit_buf, bits, tab->len);
+	macroblock_modes = tab->modes;
+
+	if (! frame_pred_frame_dct) {
+	    macroblock_modes |= UBITS (bit_buf, 1) * DCT_TYPE_INTERLACED;
+	    DUMPBITS (bit_buf, bits, 1);
+	}
+
 	return macroblock_modes;
+
+    case P_TYPE:
+
+	tab = MB_P + UBITS (bit_buf, 5);
+	DUMPBITS (bit_buf, bits, tab->len);
+	macroblock_modes = tab->modes;
+
+	if (frame_pred_frame_dct) {
+	    if (macroblock_modes & MACROBLOCK_MOTION_FORWARD)
+		macroblock_modes |= MC_FRAME;
+	    return macroblock_modes;
+	} else {
+	    if (macroblock_modes & MACROBLOCK_MOTION_FORWARD) {
+		macroblock_modes |= UBITS (bit_buf, 2) * MOTION_TYPE_BASE;
+		DUMPBITS (bit_buf, bits, 2);
+	    }
+	    if (macroblock_modes & (MACROBLOCK_INTRA | MACROBLOCK_PATTERN)) {
+		macroblock_modes |= UBITS (bit_buf, 1) * DCT_TYPE_INTERLACED;
+		DUMPBITS (bit_buf, bits, 1);
+	    }
+	    return macroblock_modes;
+	}
+
+    case B_TYPE:
+
+	tab = MB_B + UBITS (bit_buf, 6);
+	DUMPBITS (bit_buf, bits, tab->len);
+	macroblock_modes = tab->modes;
+
+	if (frame_pred_frame_dct) {
+	    //if (! (macroblock_modes & MACROBLOCK_INTRA))
+	    macroblock_modes |= MC_FRAME;
+	    return macroblock_modes;
+	} else {
+	    if (macroblock_modes & MACROBLOCK_INTRA)
+		goto intra;
+	    macroblock_modes |= UBITS (bit_buf, 2) * MOTION_TYPE_BASE;
+	    DUMPBITS (bit_buf, bits, 2);
+	    if (macroblock_modes & (MACROBLOCK_INTRA | MACROBLOCK_PATTERN)) {
+	    intra:
+		macroblock_modes |= UBITS (bit_buf, 1) * DCT_TYPE_INTERLACED;
+		DUMPBITS (bit_buf, bits, 1);
+	    }
+	    return macroblock_modes;
+	}
+
+    default:
+	return 0;
     }
-
-    // get frame/field motion type 
-    if (macroblock_modes & (MACROBLOCK_MOTION_FORWARD |
-			    MACROBLOCK_MOTION_BACKWARD))
-	macroblock_modes |= bitstream_get (2) * MOTION_TYPE_BASE;
-
-    if (macroblock_modes & (MACROBLOCK_INTRA | MACROBLOCK_PATTERN))
-	macroblock_modes |= bitstream_get (1) * DCT_TYPE_INTERLACED;
-
-    return macroblock_modes;
+#undef bit_buf
+#undef bits
 }
 
 int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
@@ -797,7 +954,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 
     mba_inc = Get_macroblock_address_increment () - 1;
     mba += mba_inc;
-    offset = 16 * mba_inc;
+    offset = mba_inc << 4;
 
     while (1) {
 	needbits ();
@@ -806,6 +963,7 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	    get_macroblock_modes (picture->picture_coding_type,
 				  picture->frame_pred_frame_dct);
 
+	// maybe integrate MACROBLOCK_QUANT test into get_macroblock_modes ?
 	if (macroblock_modes & MACROBLOCK_QUANT)
 	    slice.quantizer_scale =
 		get_quantizer_scale (picture->q_scale_type);
