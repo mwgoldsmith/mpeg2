@@ -58,6 +58,8 @@ if test x$enable_mga = xyes; then
     AC_MSG_RESULT(not found)
 		AC_MSG_WARN("to create /dev/mga_vid - use mknod /dev/mga_vid c 178 0")
   fi
+else
+	AM_CONDITIONAL(HAVE_MGA,false)
 fi
 
 
