@@ -116,7 +116,7 @@ AC_TYPE_SIZE_T
 AC_C_BIGENDIAN
 
 dnl Checks for library functions.
-AC_CHECK_FUNCS([memalign gettimeofday ftime])
+AC_CHECK_FUNCS([gettimeofday ftime])
 AC_TYPE_SIGNAL
 
 builtin([include],[libmpeg2/configure.incl])
