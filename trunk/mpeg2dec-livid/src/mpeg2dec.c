@@ -294,7 +294,7 @@ int main (int argc,char *argv[])
     vo_instance_t * output;
 
     fprintf (stderr, PACKAGE"-"VERSION
-	     " (C) 2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>\n");
+	     " (C) 2000-2001 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>\n");
 
     handle_args (argc, argv);
 
