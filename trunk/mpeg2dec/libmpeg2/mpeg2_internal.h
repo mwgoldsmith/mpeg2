@@ -67,6 +67,7 @@ struct decoder_s {
     uint8_t * bitstream_ptr;	/* buffer with stream data */
 
     uint8_t * dest[3];
+    uint8_t * picture_dest[3];
     int offset;
     int stride;
     int uv_stride;
@@ -87,7 +88,6 @@ struct decoder_s {
     int quantizer_scale;	/* remove */
     int dmv_offset;		/* remove */
     unsigned int v_offset;	/* remove */
-
 
     /* now non-slice-specific information */
 

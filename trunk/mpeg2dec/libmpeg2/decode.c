@@ -148,24 +148,33 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 
 	switch (code) {
 	case 0x00:	/* picture_start_code */
+	    mpeg2dec->state = STATE_PICTURE;
 	    mpeg2_header_picture (mpeg2dec);
 	    break;
 	case 0xb2:	/* user_data_start_code */
 	    mpeg2_header_user_data (mpeg2dec);
 	    break;
 	case 0xb3:	/* sequence_header_code */
-	    mpeg2_header_sequence (mpeg2dec);
 	    mpeg2dec->state = STATE_SEQUENCE;
+	    mpeg2_header_sequence (mpeg2dec);
 	    break;
 	case 0xb5:	/* extension_start_code */
 	    mpeg2_header_extension (mpeg2dec);
 	    break;
 	case 0xb8:	/* group_start_code */
+	    mpeg2dec->state = STATE_GOP;
 	    mpeg2_header_gop (mpeg2dec);
 	    break;
 	default:
-	    if (code < 0xb0)
-		mpeg2_slice (decoder, code, mpeg2dec->chunk_buffer);
+	    if (code >= 0xb0)
+		break;
+	    if (mpeg2dec->state != STATE_SLICE) {
+		mpeg2dec->state = STATE_SLICE;
+		mpeg2_init_fbuf (decoder, decoder->current_frame,
+				 decoder->forward_reference_frame,
+				 decoder->backward_reference_frame);
+	    }
+	    mpeg2_slice (decoder, code, mpeg2dec->chunk_buffer);
 	}
 
 #define RECEIVED(code,state) (((state) << 8) + (code))
@@ -176,7 +185,6 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 	/* state transition after a sequence header */
 	case RECEIVED (0x00, STATE_SEQUENCE):
 	case RECEIVED (0xb8, STATE_SEQUENCE):
-	    mpeg2dec->state = mpeg2dec->code ? STATE_GOP : STATE_PICTURE;
 	    if (memcmp (&(mpeg2dec->last_sequence), &(mpeg2dec->sequence), 
 			sizeof (sequence_t))) {
 		memcpy (&(mpeg2dec->last_sequence), &(mpeg2dec->sequence),
@@ -196,9 +204,6 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 	case RECEIVED (0x00, STATE_SLICE):
 	case RECEIVED (0xb3, STATE_SLICE):
 	case RECEIVED (0xb8, STATE_SLICE):
-	    mpeg2dec->state = ((!mpeg2dec->code) ? STATE_PICTURE :
-			       ((mpeg2dec->code == 0xb3) ? STATE_SEQUENCE :
-				STATE_GOP));
 	    return state;
 
 	/* legal headers within a given state */
@@ -218,8 +223,7 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 	    } else if (state == STATE_SLICE)
 		break;		/* second slice and later */
 	    else if (state != STATE_PICTURE)
-		goto illegal;	/* slice at unexpected place */
-	    mpeg2dec->state = STATE_SLICE;
+		goto illegal;	/* slice at unexpected position */
 	    return STATE_PICTURE;
 	}
     }
