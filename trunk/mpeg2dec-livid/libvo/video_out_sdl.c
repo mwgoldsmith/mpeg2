@@ -235,7 +235,7 @@ draw_frame(uint8_t *src[])
         return(0);
     } // if
 
-    dst = overlay->pixels;
+    dst = (uint8_t *) *(overlay->pixels);
     memcpy(dst, src[0], framePlaneY);
     dst += framePlaneY;
     memcpy(dst, src[1], framePlaneUV);
@@ -265,9 +265,10 @@ draw_slice(uint8_t *src[], int slice_num)
         return(0);
     } // if
 
-    dst = overlay->pixels + (slicePlaneY * slice_num);
+    dst = (uint8_t *) *(overlay->pixels) + (slicePlaneY * slice_num);
     memcpy(dst, src[0], slicePlaneY);
-    dst = (overlay->pixels + framePlaneY) + (slicePlaneUV * slice_num);
+    dst = ((uint8_t *) *(overlay->pixels) + framePlaneY) +
+	(slicePlaneUV * slice_num);
     memcpy(dst, src[1], slicePlaneUV);
     dst += framePlaneUV;
     memcpy(dst, src[2], slicePlaneUV);
