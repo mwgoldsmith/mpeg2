@@ -15,142 +15,43 @@ AC_PROG_RANLIB
 
 
 dnl 
-dnl some --with/--without args
+dnl Display driver probing...
 dnl
 
-dnl for mga support
-AC_DEFUN(BUILD_MGA,[
-  AC_ARG_WITH(mga,
-    [  --with-mga              build with MGA support (default)],
-    [case "$withval" in
-      yes)
-         build_mga=yes
-         build_x11=no
-         build_gatos=no
-      ;;
-      *)
-         build_mga=no
-      ;;
-    esac],[
-    build_mga=yes
-    build_gatos=no
-    build_x11=no
-  ])
-])
-
-dnl for gatos support
-AC_DEFUN(BUILD_GATOS,[
-  AC_ARG_WITH(gatos,
-    [  --with-gatos            build with GATOS support],
-    [case "$withval" in
-      no)
-         build_gatos=no
-      ;;
-      *)
-         build_gatos=yes
-         build_mga=no
-         build_x11=no
-      ;;
-    esac],[
-    build_gatos=no
-  ])
-])
-
-dnl for x11 support
-AC_DEFUN(BUILD_X11,[
-  AC_ARG_WITH(x11,
-    [  --with-x11              build with X11 support],
-    [case "$withval" in
-      no)
-         build_x11=no
-      ;;
-      *)
-         build_x11=yes
-         build_mga=no
-         build_gatos=no
-      ;;
-    esac],[
-    build_x11=no
-  ])
-])
-
-
-dnl
-dnl Call previous functions
-dnl
-BUILD_MGA
-BUILD_GATOS
-BUILD_X11
-
-
-dnl
-dnl Final supports checks
-dnl
-if test "$build_mga" = "yes"; then
-   AC_MSG_CHECKING(for /dev/mga_vid)
-
-   if test -c "/dev/mga_vid"; then
-      AC_MSG_RESULT(found)
-      CONFIG_OBJS="$CONFIG_OBJS display_mga_vid.o";
-      DRIVERS=drivers
-      build_mga=yes
-      build_x11=no
-      build_gatos=no
-   else
-      AC_MSG_RESULT(not found - X11 fallback configured)
-      CONFIG_OBJS="$CONFIG_OBJS display_x11.o"
-      DRIVERS=
-      build_mga=no
-      build_x11=yes
-      build_gatos=no
-   fi
-
-elif test "$build_gatos" = "yes"; then
-   AC_CHECK_LIB(gatos, main, have_gatos_lib=yes, have_gatos_lib=no,
-                -L/usr/X11R6/lib -L/usr/lib -L/usr/local/lib)
-
-   AC_MSG_CHECKING(for libgatos)
-
-   if test "$have_gatos_lib" = "yes"; then
-      AC_MSG_RESULT(found)
-      CONFIG_OBJS="$CONFIG_OBJS display_gatos.o";
-      GATOS_LIB="-lgatos"
-      DRIVERS=
-      build_mga=no
-      build_x11=no
-      build_gatos=yes
-   else
-      AC_MSG_RESULT(not found - X11 fallback configured)
-      CONFIG_OBJS="$CONFIG_OBJS display_x11.o"
-      DRIVERS=
-      build_mga=no
-      build_x11=yes
-      build_gatos=no
-   fi
-
-elif test "$build_x11" = "yes"; then
-
-      CONFIG_OBJS="$CONFIG_OBJS display_x11.o"
-      DRIVERS=
-      build_mga=no
-      build_x11=yes
-      build_gatos=no
-
-else  dnl Forcing x11 support if mga/gatos/x11 disabled by user
-      AC_MSG_RESULT(!!!Oops!!! all supports disabled - X11 fallback configured)
-
-      CONFIG_OBJS="$CONFIG_OBJS display_x11.o"
-      DRIVERS=
-      build_mga=no
-      build_x11=yes
-      build_gatos=no
-
+AC_ARG_ENABLE(mga,
+  [  --disable-mga           make a version not using MGA],
+  enable_mga=no, enable_mga=yes)
+if test x$DISPLAY_DRIVER = x -a x$enable_mga = xyes; then
+  AC_MSG_CHECKING(for /dev/mga_vid)
+  if test -c "/dev/mga_vid"; then
+    AC_MSG_RESULT(found)
+    DISPLAY_DRIVER=display_mga_vid.o
+    DRIVERS=drivers
+  else
+    AC_MSG_RESULT(not found)
+  fi
 fi
+
+AC_ARG_ENABLE(gatos, 
+  [  --disable-gatos         make a version not using GATOS],
+  enable_gatos=no, enable_gatos=yes)
+if test x$DISPLAY_DRIVER = x -a x$enable_gatos = xyes; then
+   AC_CHECK_LIB(gatos, main, 
+     [ DISPLAY_DRIVER=display_gatos.o
+       LIBS="$LIBS -lgatos" ], , -L/usr/X11R6/lib -L/usr/lib -L/usr/local/lib)
+fi
+
+if test x$DISPLAY_DRIVER = x; then
+  AC_MSG_WARN(No accelerated display driver found, using X11)
+  DISPLAY_DRIVER=display_x11.o
+fi
+
+CONFIG_OBJS="$CONFIG_OBJS $DISPLAY_DRIVER"
 AC_SUBST(CONFIG_OBJS)
 AC_SUBST(DRIVERS)
-AC_SUBST(GATOS_LIB)
 
 
+dnl There must be a better way to check for SMP....
 AC_MSG_CHECKING(for SMP)
 AC_SUBST(MOD_CFLAGS)
 if uname -a | grep SMP >/dev/null; then
@@ -178,7 +79,7 @@ i?86-*)
 alpha*-*) AC_DEFINE(__alpha__);;
 sparc-*) AC_DEFINE(__sparc__);;
 ppc-*) AC_DEFINE(__ppc__);;
-*) echo "$host is not currently supported by ac3dec"; exit 1;;
+*) echo "$host is not currently supported by mpeg2dec"; exit 1;;
 esac
 
 AC_OUTPUT( tools/Makefile drivers/Makefile Makefile ) 
