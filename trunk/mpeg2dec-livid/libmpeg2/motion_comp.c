@@ -25,11 +25,7 @@
 #include <inttypes.h>
 
 #include "mpeg2_internal.h"
-#ifdef __OMS__
-#include <cpu_accel.h>
-#else
-#include "oms_accel.h"
-#endif
+#include <mm_accel.h>
 
 mc_functions_t mc_functions;
 
@@ -37,13 +33,13 @@ void motion_comp_init (void)
 {
 
 #ifdef ARCH_X86
-    if (config.flags & OMS_ACCEL_X86_MMX) {
+    if (config.flags & MM_ACCEL_X86_MMX) {
 	fprintf (stderr, "Using MMX for motion compensation\n");
 	mc_functions = mc_functions_mmx;
     } else
 #endif
 #ifdef LIBMPEG2_MLIB
-    if (config.flags & OMS_ACCEL_MLIB) {
+    if (config.flags & MM_ACCEL_MLIB) {
 	fprintf (stderr, "Using mlib for motion compensation\n");
 	mc_functions = mc_functions_mlib;
     } else

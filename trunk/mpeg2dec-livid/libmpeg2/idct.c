@@ -43,12 +43,7 @@
 #include <inttypes.h>
 
 #include "mpeg2_internal.h"
-
-#ifdef __OMS__
-#include <cpu_accel.h>
-#else
-#include "oms_accel.h"
-#endif
+#include <mm_accel.h>
 
 #define W1 2841 /* 2048*sqrt (2)*cos (1*pi/16) */
 #define W2 2676 /* 2048*sqrt (2)*cos (2*pi/16) */
@@ -71,12 +66,12 @@ static uint8_t clip_lut[1024];
 void idct_init (void)
 {
 #ifdef ARCH_X86
-    if (config.flags & OMS_ACCEL_X86_MMXEXT) {
+    if (config.flags & MM_ACCEL_X86_MMXEXT) {
 	fprintf (stderr, "Using SSE for IDCT transform\n");
 	idct_block_copy = idct_block_copy_sse;
 	idct_block_add = idct_block_add_sse;
 	idct_mmx_init ();
-    } else if (config.flags & OMS_ACCEL_X86_MMX) {
+    } else if (config.flags & MM_ACCEL_X86_MMX) {
 	fprintf (stderr, "Using MMX for IDCT transform\n");
 	idct_block_copy = idct_block_copy_mmx;
 	idct_block_add = idct_block_add_mmx;
@@ -84,7 +79,7 @@ void idct_init (void)
     } else
 #endif
 #ifdef LIBMPEG2_MLIB
-    if (config.flags & OMS_ACCEL_MLIB) {
+    if (config.flags & MM_ACCEL_MLIB) {
 	fprintf (stderr, "Using mlib for IDCT transform\n");
 	idct_block_copy = idct_block_copy_mlib;
 	idct_block_add = idct_block_add_mlib;

@@ -35,11 +35,7 @@
 #endif
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
-#ifdef __OMS__
-#include <cpu_accel.h>
-#else
-#include "oms_accel.h"
-#endif
+#include <mm_accel.h>
 
 #include "attributes.h"
 
@@ -81,13 +77,7 @@ static int in_slice = 0;
 
 void mpeg2_init (void)
 {
-    //FIXME setup config properly
-#ifdef __OMS__
-    config.flags = OMS_ACCEL_X86_MMX | OMS_ACCEL_MLIB;
-#else
-    config.flags = oms_cpu_accel () | OMS_ACCEL_MLIB;
-#endif
-    //config.flags = 0;
+    config.flags = mm_accel () | MM_ACCEL_MLIB;
 
     //intialize the decoder state 
     shift = 0;
@@ -188,7 +178,7 @@ static int parse_chunk (INITTYPE * output, int code, uint8_t * buffer)
     }
 
 #ifdef ARCH_X86
-    if (config.flags & OMS_ACCEL_X86_MMX)
+    if (config.flags & MM_ACCEL_X86_MMX)
 	emms ();
 #endif
 
@@ -276,7 +266,7 @@ static int parse_chunk (INITTYPE * output, int code, uint8_t * buffer)
 	    }
 
 #ifdef ARCH_X86
-	    if (config.flags & OMS_ACCEL_X86_MMX)
+	    if (config.flags & MM_ACCEL_X86_MMX)
 		emms ();
 #endif
 

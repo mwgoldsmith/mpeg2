@@ -23,7 +23,7 @@
 
 #include <inttypes.h>
 
-#include "oms_accel.h"
+#include "mm_accel.h"
 
 #ifdef ARCH_X86
 static uint32_t x86_accel (void)
@@ -87,7 +87,7 @@ static uint32_t x86_accel (void)
 }
 #endif
 
-uint32_t oms_cpu_accel (void)
+uint32_t mm_accel (void)
 {
 #ifdef ARCH_X86
     static int got_accel = 0;
