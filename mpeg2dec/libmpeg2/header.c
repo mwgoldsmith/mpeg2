@@ -37,7 +37,6 @@
 #define COPYRIGHT_EXT 0x10
 #define PIC_DISPLAY_EXT 0x80
 #define PIC_CODING_EXT 0x100
-#define USER_DATA 0x10000
 
 /* default intra quant matrix, in zig-zag order */
 static const uint8_t default_intra_quantizer_matrix[64] ATTR_ALIGN(16) = {
@@ -161,7 +160,7 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
     decoder->picture_structure = FRAME_PICTURE;
     decoder->second_field = 0;
 
-    mpeg2dec->ext_state = SEQ_EXT | USER_DATA;
+    mpeg2dec->ext_state = SEQ_EXT;
     mpeg2dec->state = STATE_SEQUENCE;
 
     mpeg2dec->info.sequence = sequence;
@@ -217,7 +216,7 @@ static int sequence_ext (mpeg2dec_t * mpeg2dec)
 
     decoder->mpeg1 = 0;
 
-    mpeg2dec->ext_state = SEQ_DISPLAY_EXT | USER_DATA;
+    mpeg2dec->ext_state = SEQ_DISPLAY_EXT;
 
     return 0;
 }
@@ -323,7 +322,6 @@ void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
 int mpeg2_header_gop (mpeg2dec_t * mpeg2dec)
 {
     mpeg2dec->state = STATE_GOP;
-    mpeg2dec->ext_state = USER_DATA;
     reset_info (&(mpeg2dec->info));
     return 0;
 }
@@ -425,7 +423,7 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 	if (low_delay || type == PIC_FLAG_CODING_TYPE_B)
 	    mpeg2dec->info.display_picture_2nd = picture;
     }
-    mpeg2dec->ext_state = PIC_CODING_EXT | USER_DATA;
+    mpeg2dec->ext_state = PIC_CODING_EXT;
     mpeg2dec->picture = picture;
 
     picture->temporal_reference = (buffer[0] << 2) | (buffer[1] >> 6);
@@ -495,8 +493,7 @@ static int picture_coding_ext (mpeg2dec_t * mpeg2dec)
 		  PIC_MASK_COMPOSITE_DISPLAY) | PIC_FLAG_COMPOSITE_DISPLAY;
     picture->flags = flags;
 
-    mpeg2dec->ext_state =
-	PIC_DISPLAY_EXT | COPYRIGHT_EXT | QUANT_MATRIX_EXT | USER_DATA;
+    mpeg2dec->ext_state = PIC_DISPLAY_EXT | COPYRIGHT_EXT | QUANT_MATRIX_EXT;
 
     return 0;
 }
@@ -551,11 +548,14 @@ int mpeg2_header_extension (mpeg2dec_t * mpeg2dec)
 
 int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec)
 {
-    if (!(mpeg2dec->ext_state & USER_DATA))
+    uint8_t * chunk_ptr;
+
+    if (mpeg2dec->info.user_data != NULL)
 	return 1;
-    mpeg2dec->ext_state &= ~USER_DATA;
+    chunk_ptr = mpeg2dec->chunk_ptr - 4;
     mpeg2dec->info.user_data = mpeg2dec->chunk_start;
-    mpeg2dec->info.user_data_len = mpeg2dec->chunk_ptr - mpeg2dec->chunk_start;
+    mpeg2dec->info.user_data_len = chunk_ptr - mpeg2dec->chunk_start;
+    mpeg2dec->chunk_start = chunk_ptr;
     
     return 0;
 }

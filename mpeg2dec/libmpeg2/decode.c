@@ -113,7 +113,7 @@ static inline int copy_chunk (mpeg2dec_t * mpeg2dec)
 
 startcode:
     mpeg2dec->bytes_since_pts += chunk_ptr + 1 - mpeg2dec->chunk_ptr;
-    mpeg2dec->chunk_ptr = chunk_ptr - 3;
+    mpeg2dec->chunk_ptr = chunk_ptr + 1;
     mpeg2dec->shift = 0xffffff00;
     mpeg2dec->code = byte;
     if (!byte) {
@@ -214,8 +214,6 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	    if (! (mpeg2dec->picture->flags & PIC_FLAG_SKIP))
 		mpeg2_slice (&(mpeg2dec->decoder), code,
 			     mpeg2dec->chunk_start);
-	    mpeg2dec->chunk_start = mpeg2dec->chunk_ptr =
-		mpeg2dec->chunk_buffer;
 	}
 
 #define RECEIVED(code,state) (((state) << 8) + (code))
@@ -239,6 +237,7 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	case RECEIVED (0xb7, STATE_SLICE):
 	    mpeg2dec->state = STATE_END;
 	    mpeg2dec->last_sequence.width = (unsigned int) -1;
+	    mpeg2dec->chunk_ptr = mpeg2dec->chunk_start;
 	    return STATE_SLICE;
 
 	/* other legal state transitions */
@@ -280,7 +279,7 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 		     mpeg2dec->state != STATE_SLICE_1ST)
 		goto illegal;	/* slice at unexpected position */
 	}
-	mpeg2dec->chunk_start = mpeg2dec->chunk_ptr;
+	mpeg2dec->chunk_ptr = mpeg2dec->chunk_start;
     }
 }
 
