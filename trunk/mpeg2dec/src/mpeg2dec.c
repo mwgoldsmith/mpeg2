@@ -227,7 +227,7 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
     while (1) {
 	state = mpeg2_parse (mpeg2dec);
 	switch (state) {
-	case -1:
+	case STATE_BUFFER:
 	    return;
 	case STATE_SEQUENCE:
 	    /* might set nb fbuf, convert format, stride */

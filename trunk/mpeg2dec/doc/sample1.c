@@ -67,7 +67,7 @@ static void sample1 (FILE * file)
     do {
 	state = mpeg2_parse (mpeg2dec);
 	switch (state) {
-	case -1:
+	case STATE_BUFFER:
 	    size = fread (buffer, 1, BUFFER_SIZE, file);
 	    mpeg2_buffer (mpeg2dec, buffer, buffer + size);
 	    break;
