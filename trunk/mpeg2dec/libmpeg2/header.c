@@ -368,11 +368,11 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 	}
 	if ((decoder->coding_type != PIC_FLAG_CODING_TYPE_B) ^
 	    (picture < mpeg2dec->pictures + 2)) {
-	    picture = mpeg2dec->pictures + 2;
-	    other = mpeg2dec->pictures;
-	} else {
 	    picture = mpeg2dec->pictures;
 	    other = mpeg2dec->pictures + 2;
+	} else {
+	    picture = mpeg2dec->pictures + 2;
+	    other = mpeg2dec->pictures;
 	}
 	mpeg2dec->fbuf[0] = NULL;
 	reset_info (&(mpeg2dec->info));
