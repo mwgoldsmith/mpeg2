@@ -6,7 +6,7 @@ AUTOMAKE_OPTIONS = no-dependencies foreign
 
 
 DEFS = $(CFLAGS) @DEFS@ @X_CFLAGS@ #How to make this the correct way?
-INCLUDES = -I$(top_builddir)/include/oms -I$(top_builddir)/include
+INCLUDES = -I$(top_srcdir)/include/oms -I$(top_srcdir)/include
 
 
 libdir = $(OMS_PLUGINDIR)
@@ -37,13 +37,3 @@ display_null_la_LDFLAGS = -avoid-version -module -Wl,-soname,display_null
 
 
 noinst_HEADERS = video_out_internal.h mmx.h
-
-
-mostlyclean-generic:
-	-rm -f *~ \#* .*~ .\#*
-
-
-maintainer-clean-generic:
-	-@echo "This command is intended for maintainers to use;"
-	-@echo "it deletes files that may require special tools to rebuild."
-	-rm -f Makefile.in

@@ -346,7 +346,7 @@ void *plugin_init (char *whoami)
 {
 	pluginRegister (whoami,
 		PLUGIN_ID_OUTPUT_VIDEO,
-		"hmm",
+		"sdl",
 		NULL,
 		NULL,
 		&video_sdl);

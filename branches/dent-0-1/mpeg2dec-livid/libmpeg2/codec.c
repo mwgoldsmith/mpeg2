@@ -342,7 +342,7 @@ void *plugin_init (char *whoami)
 {
 	pluginRegister (whoami,
 		PLUGIN_ID_CODEC_VIDEO,
-		"mpeg2",
+		"mpg2",
 		NULL,
 		NULL,
 		&codec_mpeg2dec);
