@@ -193,6 +193,9 @@ main(int argc, char *argv[])
 	printf("mga_vid_base = %8p\n",mga_vid_base);
 
 
+	//memset(y_image,80,256 * 128);
+	//memset(cr_image,80,256/2 * 20);
+	//memset(cb_image,80,256/2 * 20);
 	write_frame(y_image,cr_image,cb_image);
 	printf("(1) There should be a green square, offset by 10 pixels from\n"
 			   "    the upper left corner displayed\n");
