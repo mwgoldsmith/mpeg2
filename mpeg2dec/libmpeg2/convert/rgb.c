@@ -97,10 +97,10 @@ static const uint8_t dither_temporal[64] = {
     0x46, 0x66, 0x67, 0x47, 0x06, 0x26, 0x27, 0x07
 };
 
-void * table_rV[256];
-void * table_gU[256];
-int table_gV[256];
-void * table_bU[256];
+static void * table_rV[256];
+static void * table_gU[256];
+static int table_gV[256];
+static void * table_bU[256];
 
 #define RGB(type,i)						\
     U = pu[i];							\
