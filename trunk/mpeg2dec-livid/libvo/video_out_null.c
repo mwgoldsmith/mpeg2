@@ -26,33 +26,23 @@
 #include "video_out.h"
 #include "video_out_internal.h"
 
-static int null_close (void)
-{
-    return 0;
-}
-
-static int null_draw_slice (uint8_t * src[], int slice_num)
-{
-    return 0;
-}
-
-static int null_draw_frame (frame_t * frame)
-{
-    return 0;
-}
-
-static void null_flip_page (void)
-{
-}
-
 static int null_setup (int width, int height)
 {
+    libvo_common_alloc_frames (width, height);
     return 0;
+}
+
+static int null_close (void)
+{
+    libvo_common_free_frames ();
+    return 0;
+}
+
+static void null_draw_frame (frame_t * frame)
+{
 }
 
 vo_output_video_t video_out_null = {
     "null",
-    null_setup, null_close,
-    null_flip_page, null_draw_slice, null_draw_frame,
-    libvo_common_alloc, libvo_common_free
+    null_setup, null_close, libvo_common_get_frame, null_draw_frame
 };

@@ -63,28 +63,42 @@ vo_output_video_t* video_out_drivers[] =
 	NULL
 };
 
-frame_t * libvo_common_alloc (int width, int height)
+static void alloc_frame (frame_t * frame, int width, int height)
 {
-    frame_t * frame;
-
-    if (!(frame = malloc (sizeof (frame_t))))
-	return NULL;
-
     /* we only know how to do 4:2:0 planar yuv right now. */
-    if (!(frame->private = malloc (width * height * 3 / 2))) {
-	free (frame);
-	return NULL;
-    }
+    frame->private = malloc (width * height * 3 / 2);
+    if (!(frame->private))
+	exit (1);
 
     frame->base[0] = frame->private;
     frame->base[1] = frame->base[0] + width * height;
     frame->base[2] = frame->base[0] + width * height * 5 / 4;
-
-    return frame;
 }
 
-void libvo_common_free (frame_t * frame)
+static frame_t common_frame[3];
+
+void libvo_common_alloc_frames (int width, int height)
 {
-    free (frame->private);
-    free (frame);
+    alloc_frame (common_frame, width, height);
+    alloc_frame (common_frame + 1, width, height);
+    alloc_frame (common_frame + 2, width, height);
+}
+
+void libvo_common_free_frames (void)
+{
+    free (common_frame[0].private);
+    free (common_frame[1].private);
+    free (common_frame[2].private);
+}
+
+frame_t * libvo_common_get_frame (int prediction)
+{
+    static int prediction_index = 0;
+
+    if (!prediction)
+	return common_frame + 2;
+    else {
+	prediction_index ^= 1;
+	return common_frame + prediction_index;
+    }
 }

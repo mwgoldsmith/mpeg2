@@ -210,6 +210,9 @@ static int x11_common_setup (int width, int height,
     priv->height = height;
     priv->imagedata = (unsigned char *) priv->ximage->data;
     priv->stride = priv->ximage->bytes_per_line;
+
+    libvo_common_alloc_frames (width, height);
+
     return 0;
 }
 
@@ -223,6 +226,8 @@ static void common_close (void)
     }
     if (priv->display)
 	XCloseDisplay (priv->display);
+
+    libvo_common_free_frames ();
 }
 
 static int x11_setup (int width, int height)
@@ -248,15 +253,7 @@ static int x11_close (void)
     return 0;
 }
 
-static void x11_flip_page (void)
-{
-    struct x11_priv_s * priv = &x11_priv;
-
-    XPutImage (priv->display, priv->window, priv->gc, priv->ximage, 
-	       0, 0, 0, 0, priv->width, priv->height);
-    XFlush (priv->display);
-}
-
+#if 0
 static int x11_draw_slice (uint8_t *src[], int slice_num)
 {
     struct x11_priv_s * priv = &x11_priv;
@@ -267,23 +264,31 @@ static int x11_draw_slice (uint8_t *src[], int slice_num)
 
     return 0;
 }
+#endif
 
-static int x11_draw_frame (frame_t *frame)
+static void x11_common_draw_frame (frame_t * frame)
 {
     struct x11_priv_s * priv = &x11_priv;
 
     yuv2rgb (priv->imagedata, frame->base[0], frame->base[1], frame->base[2],
 	     priv->width, priv->height,
 	     priv->stride, priv->width, priv->width >> 1);
+}
 
-    return 0;
+static void x11_draw_frame (frame_t * frame)
+{
+    struct x11_priv_s * priv = &x11_priv;
+
+    x11_common_draw_frame (frame);
+
+    XPutImage (priv->display, priv->window, priv->gc, priv->ximage, 
+	       0, 0, 0, 0, priv->width, priv->height);
+    XFlush (priv->display);
 }
 
 vo_output_video_t video_out_x11 = {
     "x11",
-    x11_setup, x11_close,
-    x11_flip_page, x11_draw_slice, x11_draw_frame,
-    libvo_common_alloc, libvo_common_free
+    x11_setup, x11_close, libvo_common_get_frame, x11_draw_frame
 };
 
 #ifdef LIBVO_XSHM
@@ -420,9 +425,11 @@ static int xshm_close (void)
     return 0;
 }
 
-static void xshm_flip_page (void)
+static void xshm_draw_frame (frame_t * frame)
 {
     struct x11_priv_s * priv = &x11_priv;
+
+    x11_common_draw_frame (frame);
 
     XShmPutImage (priv->display, priv->window, priv->gc, priv->ximage, 
 		  0, 0, 0, 0, priv->width, priv->height, False);
@@ -431,9 +438,7 @@ static void xshm_flip_page (void)
 
 vo_output_video_t video_out_xshm = {
     "xshm",
-    xshm_setup, xshm_close,
-    xshm_flip_page, x11_draw_slice, x11_draw_frame,
-    libvo_common_alloc, libvo_common_free
+    xshm_setup, xshm_close, libvo_common_get_frame, xshm_draw_frame
 };
 #endif
 
@@ -548,6 +553,9 @@ static int xv_common_setup (int width, int height,
 
     priv->width = width;
     priv->height = height;
+
+    libvo_common_alloc_frames (width, height);
+
     return 0;
 }
 
@@ -575,16 +583,7 @@ static int xv_close (void)
     return 0;
 }
 
-static void xv_flip_page (void)
-{
-    struct x11_priv_s * priv = &x11_priv;
-
-    XvPutImage (priv->display, priv->port, priv->window, priv->gc,
-		priv->xvimage, 0, 0, priv->width, priv->height,
-		0, 0, priv->width, priv->height);
-    XFlush (priv->display);
-}
-
+#if 0
 static int xv_draw_slice (uint8_t *src[], int slice_num)
 {
     struct x11_priv_s * priv = &x11_priv;
@@ -599,8 +598,9 @@ static int xv_draw_slice (uint8_t *src[], int slice_num)
 
     return 0;
 }
+#endif
 
-static int xv_draw_frame (frame_t *frame)
+static void xv_common_draw_frame (frame_t * frame)
 {
     struct x11_priv_s * priv = &x11_priv;
 
@@ -609,15 +609,23 @@ static int xv_draw_frame (frame_t *frame)
 	    frame->base[2], priv->width * priv->height / 4);
     memcpy (priv->xvimage->data + priv->width * priv->height * 5 / 4,
 	    frame->base[1], priv->width * priv->height / 4);
+}
 
-    return 0;
+static void xv_draw_frame (frame_t * frame)
+{
+    struct x11_priv_s * priv = &x11_priv;
+
+    xv_common_draw_frame (frame);
+
+    XvPutImage (priv->display, priv->port, priv->window, priv->gc,
+		priv->xvimage, 0, 0, priv->width, priv->height,
+		0, 0, priv->width, priv->height);
+    XFlush (priv->display);
 }
 
 vo_output_video_t video_out_xv = {
     "xv",
-    xv_setup, xv_close,
-    xv_flip_page, xv_draw_slice, xv_draw_frame,
-    libvo_common_alloc, libvo_common_free
+    xv_setup, xv_close, libvo_common_get_frame, xv_draw_frame
 };
 #endif
 
@@ -675,9 +683,11 @@ static int xvshm_close (void)
     return 0;
 }
 
-static void xvshm_flip_page (void)
+static void xvshm_draw_frame (frame_t * frame)
 {
     struct x11_priv_s * priv = &x11_priv;
+
+    xv_common_draw_frame (frame);
 
     XvShmPutImage (priv->display, priv->port, priv->window, priv->gc,
 		   priv->xvimage, 0, 0, priv->width, priv->height,
@@ -687,9 +697,7 @@ static void xvshm_flip_page (void)
 
 vo_output_video_t video_out_xvshm = {
     "xvshm",
-    xvshm_setup, xvshm_close,
-    xvshm_flip_page, xv_draw_slice, xv_draw_frame,
-    libvo_common_alloc, libvo_common_free
+    xvshm_setup, xvshm_close, libvo_common_get_frame, xvshm_draw_frame
 };
 #endif
 

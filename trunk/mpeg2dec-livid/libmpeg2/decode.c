@@ -59,51 +59,6 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output)
     motion_comp_init ();
 }
 
-static void decode_allocate_image_buffers (mpeg2dec_t * mpeg2dec)
-{
-    int width;
-    int height;
-    frame_t * (* allocate) (int, int);
-
-    width = mpeg2dec->picture->coded_picture_width;
-    height = mpeg2dec->picture->coded_picture_height;
-    allocate = mpeg2dec->output->allocate_image_buffer;
-
-    // allocate images in YV12 format
-    mpeg2dec->throwaway_frame = allocate (width, height);
-    mpeg2dec->backward_reference_frame = allocate (width, height);
-    mpeg2dec->forward_reference_frame = allocate (width, height);
-}
-
-
-static void decode_reorder_frames (mpeg2dec_t * mpeg2dec)
-{
-    picture_t * picture;
-    frame_t * current_frame;
-    int i;
-
-    picture = mpeg2dec->picture;
-
-    if (picture->picture_coding_type != B_TYPE) {
-	//reuse the soon to be outdated forward reference frame
-	current_frame = mpeg2dec->forward_reference_frame;
-
-	//make the backward reference frame the new forward reference frame
-	mpeg2dec->forward_reference_frame = mpeg2dec->backward_reference_frame;
-	mpeg2dec->backward_reference_frame = current_frame;
-    } else
-	current_frame = mpeg2dec->throwaway_frame;
-
-    for (i = 0; i < 3; i++) {
-	picture->current_frame[i] = current_frame->base[i];
-	picture->forward_reference_frame[i] =
-	    mpeg2dec->forward_reference_frame->base[i];
-	picture->backward_reference_frame[i] =
-	    mpeg2dec->backward_reference_frame->base[i];
-    }
-}
-
-
 static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 {
     picture_t * picture;
@@ -121,16 +76,11 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
     if (is_frame_done) {
 	mpeg2dec->in_slice = 0;
 
-	if (!(mpeg2dec->drop_frame)) {
-	    if (((HACK_MODE == 2) || (picture->mpeg1)) &&
-		((picture->picture_structure == FRAME_PICTURE) ||
-		 (picture->second_field))) {
-		if (picture->picture_coding_type == B_TYPE)
-		    mpeg2dec->output->draw_frame (mpeg2dec->throwaway_frame);
-		else
-		    mpeg2dec->output->draw_frame (mpeg2dec->forward_reference_frame);
-	    }
-	    mpeg2dec->output->flip_page ();
+	if ((picture->picture_coding_type == B_TYPE) &&
+	    ((picture->picture_structure == FRAME_PICTURE) ||
+	     (picture->second_field)) &&
+	    (!(mpeg2dec->drop_frame))) {
+	    mpeg2dec->output->draw_frame (picture->current_frame);
 #ifdef ARCH_X86
 	    if (config.flags & MM_ACCEL_X86_MMX)
 		emms ();
@@ -179,37 +129,32 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 		    printf ("display init failed\n");
 		    exit (1);
 		}
-
-		decode_allocate_image_buffers (mpeg2dec);
-		decode_reorder_frames (mpeg2dec);
+		picture->forward_reference_frame =
+		    mpeg2dec->output->get_frame (1);
+		picture->backward_reference_frame = 
+		    mpeg2dec->output->get_frame (1);
 		mpeg2dec->is_display_initialized = 1;
-	    } else if (!(picture->second_field) )
-		decode_reorder_frames (mpeg2dec);
+	    }
+	    if (!(picture->second_field)) {
+		if (picture->picture_coding_type == B_TYPE)
+		    picture->current_frame = mpeg2dec->output->get_frame (0);
+		else {
+		    mpeg2dec->output->draw_frame
+			(picture->backward_reference_frame);
+		    picture->current_frame = mpeg2dec->output->get_frame (1);
+		    picture->forward_reference_frame =
+			picture->backward_reference_frame;
+		    picture->backward_reference_frame = picture->current_frame;
+#ifdef ARCH_X86
+		    if (config.flags & MM_ACCEL_X86_MMX)
+			emms ();
+#endif
+		}
+	    }
 	}
 
 	if (!(mpeg2dec->drop_frame)) {
 	    slice_process (picture, code, buffer);
-
-	    if ((HACK_MODE < 2) && (!(picture->mpeg1))) {
-		uint8_t * foo[3];
-		frame_t * bar;
-		int offset;
-
-		if (picture->picture_coding_type == B_TYPE)
-		    bar = mpeg2dec->throwaway_frame;
-		else
-		    bar = mpeg2dec->forward_reference_frame;
-
-		offset = (code-1) * 4 * picture->coded_picture_width;
-		if ((! HACK_MODE) && (picture->picture_coding_type == B_TYPE))
-		    offset = 0;
-
-		foo[0] = bar->base[0] + 4 * offset;
-		foo[1] = bar->base[1] + offset;
-		foo[2] = bar->base[2] + offset;
-
-		mpeg2dec->output->draw_slice (foo, code-1);
-	    }
 
 #ifdef ARCH_X86
 	    if (config.flags & MM_ACCEL_X86_MMX)
@@ -267,12 +212,9 @@ void mpeg2_close (mpeg2dec_t * mpeg2dec)
 
     mpeg2_decode_data (mpeg2dec, finalizer, finalizer+4);
 
-    if (mpeg2dec->is_display_initialized) {
-	mpeg2dec->output->draw_frame (mpeg2dec->backward_reference_frame);
-	mpeg2dec->output->free_image_buffer (mpeg2dec->backward_reference_frame);
-	mpeg2dec->output->free_image_buffer (mpeg2dec->forward_reference_frame);
-	mpeg2dec->output->free_image_buffer (mpeg2dec->throwaway_frame);
-    }
+    if (mpeg2dec->is_display_initialized)
+	mpeg2dec->output->draw_frame
+	    (mpeg2dec->picture->backward_reference_frame);
 }
 
 void mpeg2_drop (mpeg2dec_t * mpeg2dec, int flag)

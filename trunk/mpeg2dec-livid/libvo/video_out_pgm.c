@@ -32,29 +32,37 @@ static int image_width;
 static int image_height;
 static char header[1024];
 static int framenum = -2;
+static FILE * md5_file;
+
+static int pgm_setup (int width, int height)
+{
+    image_width = width;
+    image_height = height;
+
+    sprintf (header, "P5\n\n%d %d\n255\n", width, height * 3 / 2);
+    libvo_common_alloc_frames (width, height);
+
+    return 0;
+}
 
 static int pgm_close (void)
 {
+    libvo_common_free_frames ();
     return 0;
 }
 
-static int pgm_draw_slice (uint8_t * src[], int slice_num)
+static char * internal_draw_frame (frame_t * frame)
 {
-    return 0;
-}
-
-static int pgm_draw_frame (frame_t * frame)
-{
-    char filename[100];
+    static char filename[100];
     FILE *file;
     int i;
 
     if (++framenum < 0)
-	return 0;
+	return NULL;
 
     sprintf (filename, "%d.pgm", framenum);
     if (!(file = fopen (filename, "wb")))
-	return -1;
+	return NULL;
 
     fwrite (header, strlen (header), 1, file);
     fwrite (frame->base[0], image_width, image_height, file);
@@ -64,26 +72,47 @@ static int pgm_draw_frame (frame_t * frame)
     }
     fclose (file);
 
-    return 0;
+    return filename;
 }
 
-static void pgm_flip_page (void)
+static void pgm_draw_frame (frame_t * frame)
 {
-}
-
-static int pgm_setup (int width, int height)
-{
-    image_width = width;
-    image_height = height;
-
-    sprintf (header, "P5\n\n%d %d\n255\n", width, height * 3 / 2);
-
-    return 0;
+    internal_draw_frame (frame);
 }
 
 vo_output_video_t video_out_pgm = {
     "pgm",
-    pgm_setup, pgm_close,
-    pgm_flip_page, pgm_draw_slice, pgm_draw_frame,
-    libvo_common_alloc, libvo_common_free
+    pgm_setup, pgm_close, libvo_common_get_frame, pgm_draw_frame
+};
+
+static int md5_setup (int width, int height)
+{
+    if (!(md5_file = fopen ("md5", "w")))
+        return 1;
+
+    return pgm_setup (width, height);
+}
+
+static void md5_draw_frame (frame_t * frame)
+{
+    char * filename;
+    char buf[100];
+    FILE * pipe;
+    int i;
+
+    filename = internal_draw_frame (frame);
+    if (filename == NULL)
+	return;
+
+    sprintf (buf, "md5sum %s", filename);
+    pipe = popen (buf, "r");
+    i = fread (buf, 1, sizeof(buf), pipe);
+    pclose (pipe);
+    fwrite (buf, 1, i, md5_file);
+    remove (filename);
+}
+
+vo_output_video_t video_out_md5 = {
+    "md5",
+    md5_setup, pgm_close, libvo_common_get_frame, md5_draw_frame
 };

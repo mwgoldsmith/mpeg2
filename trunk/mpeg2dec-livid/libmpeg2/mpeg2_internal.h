@@ -96,12 +96,9 @@ typedef struct picture_s {
     //pointer to the zigzag scan we're supposed to be using
     uint8_t * scan;
 
-    //Pointer to the current planar frame buffer (Y,Cr,CB)
-    uint8_t * current_frame[3];    
-    //storage for reference frames plus a b-frame
-    uint8_t * forward_reference_frame[3];
-    uint8_t * backward_reference_frame[3];
-    //uint8_t * throwaway_frame;
+    struct frame_s * current_frame;
+    struct frame_s * forward_reference_frame;
+    struct frame_s * backward_reference_frame;
 
     int second_field;
 
