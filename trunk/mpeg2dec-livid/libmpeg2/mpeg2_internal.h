@@ -40,18 +40,6 @@
 
 #define VIDEO_ELEMENTARY_STREAM 0xe0
 
-//extension start code ids
-#define SEQUENCE_EXTENSION_ID                    1
-#define SEQUENCE_DISPLAY_EXTENSION_ID            2
-#define QUANT_MATRIX_EXTENSION_ID                3
-#define COPYRIGHT_EXTENSION_ID                   4
-#define SEQUENCE_SCALABLE_EXTENSION_ID           5
-#define PICTURE_DISPLAY_EXTENSION_ID             7
-#define PICTURE_CODING_EXTENSION_ID              8
-#define PICTURE_SPATIAL_SCALABLE_EXTENSION_ID    9
-#define PICTURE_TEMPORAL_SCALABLE_EXTENSION_ID  10
-
-
 // macroblock type 
 #define MACROBLOCK_INTRA                        1
 #define MACROBLOCK_PATTERN                      2
@@ -82,11 +70,6 @@
 #define MV_FIELD 0
 #define MV_FRAME 1
 
-// chroma_format 
-#define CHROMA_420 1
-#define CHROMA_422 2
-#define CHROMA_444 3
-
 //use gcc attribs to align critical data structures
 #define ALIGN_16_BYTE __attribute__ ((aligned (16)))
 
@@ -96,18 +79,9 @@
 typedef struct picture_s
 {
 	//-- sequence header stuff --
-	uint_32 horizontal_size;
-	uint_32 vertical_size;
-	uint_32 aspect_ratio_information;
-	uint_32 frame_rate_code;
-	uint_32 bit_rate_value;
-	uint_32 vbv_buffer_size;
-	uint_32 constrained_parameters_flag;
 	uint_8 *intra_quantizer_matrix;
 	uint_8 *non_intra_quantizer_matrix;
 
-	uint_32 use_custom_intra_quantizer_matrix;
-	uint_32 use_custom_non_intra_quantizer_matrix;
 	uint_8 custom_intra_quantization_matrix[64];
 	uint_8 custom_non_intra_quantization_matrix[64];
 
@@ -115,52 +89,10 @@ typedef struct picture_s
 	uint_32 coded_picture_width;
 	uint_32 coded_picture_height;
 
-	//--sequence extension stuff--
-	//a lot of the stuff in the sequence extension stuff we dont' care
-	//about, so it's not in here
-	
-	//color format of the sequence (4:2:0, 4:2:2, or 4:4:4)
-	uint_16 chroma_format;
-	//bool to indicate that only progressive frames are present in the
-	//bitstream
-	uint_16 progressive_sequence;
-
-	//-- sequence display extension stuff --
-	uint_16 video_format;
-	uint_16 display_horizontal_size;
-	uint_16 display_vertical_size;
-	uint_16 color_description;
-	uint_16 color_primaries;
-	uint_16 transfer_characteristics;
-	uint_16 matrix_coefficients;
-	
-	//-- group of pictures header stuff --
-	
-	//these are all part of the time code for this gop
-	uint_32 drop_flag;
-	uint_32 hour;
-	uint_32 minute;
-	uint_32 sec;
-	uint_32 frame;
-
-	//set if the B frames in this gop don't reference outside of the gop
-	uint_32 closed_gop;
-	//set if the previous I frame is missing (ie don't decode)
-	uint_32 broken_link;
-
 	//-- picture header stuff --
-	
+
 	//what type of picture this is (I,P,or B) D from MPEG-1 isn't supported
-	uint_32 picture_coding_type;	
-	uint_32 temporal_reference;	
-	uint_32 vbv_delay;	
-
-
-	//MPEG-1 stuff
-	uint_8 full_pel_forward_vector;
-	uint_8 forward_f_code;
-	uint_8 full_pel_backward_vector;
-	uint_8 backward_f_code;
+	uint_32 picture_coding_type;
 	
 	//-- picture coding extension stuff --
 	
@@ -168,10 +100,6 @@ typedef struct picture_s
 	uint_8 f_code[2][2];
 	//quantization factor for intra dc coefficients
 	uint_16 intra_dc_precision;
-	//what type of picture is this (field or frame)
-	uint_16 picture_structure;
-	//bool to indicate the top field is first
-	uint_16 top_field_first;
 	//bool to indicate all predictions are frame based
 	uint_16 frame_pred_frame_dct;
 	//bool to indicate whether intra blocks have motion vectors 
@@ -181,23 +109,14 @@ typedef struct picture_s
 	uint_16 q_scale_type;
 	//bool to use different vlc tables
 	uint_16 intra_vlc_format;
-	//bool to use different zig-zag pattern	
-	uint_16 alternate_scan;
-	//wacky field stuff
-	uint_16 repeat_first_field;
-	//wacky field stuff
-	uint_16 progressive_frame;
-	//wacky analog stuff (not used)
-	uint_16 composite_display_flag;
 
 	//last macroblock in the picture
 	uint_32 last_mba;
 	//width of picture in macroblocks
 	uint_32 mb_width;
-	
 
 	//stuff derived from bitstream
-	
+
 	//pointer to the zigzag scan we're supposed to be using
 	const uint_8 *scan;
 
@@ -209,27 +128,24 @@ typedef struct picture_s
 	uint_8 *throwaway_frame[3];
 } picture_t;
 
+// state that is carried from one macroblock to the next inside of a same slice
 typedef struct slice_s
 {
-	uint_32 slice_vertical_position_extension;
-	uint_32 quantizer_scale_code;
-	uint_32 slice_picture_id_enable;
-	uint_32 slice_picture_id;
-	uint_32 extra_information_slice;
-
 	//Motion vectors
 	//The f_ and b_ correspond to the forward and backward motion
 	//predictors
 	sint_16 f_pmv[2][2];
 	sint_16 b_pmv[2][2];
 
+	// predictor for DC coefficients in intra blocks
 	sint_16 dc_dct_pred[3];
+
 	uint_16 quantizer_scale;
 } slice_t;
 
 typedef struct macroblock_s
 {
-	sint_16 *blocks;
+	sint_16 blocks [6*64];
 
 	uint_16 mba;
 	uint_16 macroblock_type;

@@ -34,29 +34,18 @@
 #include "motion_comp.h"
 #include "bitstream.h"
 #include "idct.h"
-#include "stats.h"
-
-
-// storage for dct coded blocks
-// y at blocks, cr at blocks + 4 * 64, cb at blocks + 5 * 64 
-static sint_16 blocks[6 * 64 ] ALIGN_16_BYTE;
-
 
 //XXX put these on the stack in slice_process?
 static slice_t slice;
-static macroblock_t mb;
+static macroblock_t mb ALIGN_16_BYTE;
 
-
-//XXX move these data structures into slice.c
-typedef struct 
-{
-  char run, level, len;
+typedef struct {
+	char run, level, len;
 } DCTtab;
 
 extern DCTtab DCTtabfirst[],DCTtabnext[],DCTtab0[],DCTtab1[];
 extern DCTtab DCTtab2[],DCTtab3[],DCTtab4[],DCTtab5[],DCTtab6[];
 extern DCTtab DCTtab0a[],DCTtab1a[];
-
 
 uint_32 non_linear_quantizer_scale[32] =
 {
@@ -66,43 +55,28 @@ uint_32 non_linear_quantizer_scale[32] =
 	56,64,72,80,88,96,104,112
 };
 
-
 void
 slice_get_slice_header(const picture_t *picture, slice_t *slice)
 {
+	uint_32 quantizer_scale_code;
 
-	uint_32 intra_slice_flag;
-
-	slice->quantizer_scale_code = bitstream_get(5);
+	quantizer_scale_code = bitstream_get(5);
 
 	if (picture->q_scale_type)
-	slice->quantizer_scale = non_linear_quantizer_scale[slice->quantizer_scale_code];
+		slice->quantizer_scale = non_linear_quantizer_scale[quantizer_scale_code];
 	else
-	slice->quantizer_scale = slice->quantizer_scale_code << 1 ;
-		
+		slice->quantizer_scale = quantizer_scale_code << 1 ;
 
-	if ((intra_slice_flag = bitstream_get(1)))
-	{
-		//Ignore the value of intra_slice
-		bitstream_get(1);
-
-		slice->slice_picture_id_enable = bitstream_get(1);
-		slice->slice_picture_id = bitstream_get(6);
-
-		//Ignore all the extra_data
-		while(bitstream_get(1))
-			bitstream_flush(8);
-	}
+	//Ignore intra_slice and all the extra data
+	while(bitstream_get(1))
+		bitstream_flush(8);
 
 	//reset intra dc predictor
 	slice->dc_dct_pred[0]=slice->dc_dct_pred[1]=slice->dc_dct_pred[2]= 
 			1<<(picture->intra_dc_precision + 7) ;
-
-	stats_slice_header(slice);
 }
 
-
-//This goes into vlc.c when it gets written
+//This needs to be rewritten
 inline uint_32
 slice_get_block_coeff(uint_16 *run, sint_16 *val, uint_16 non_intra_dc,uint_16 intra_vlc_format)
 {
@@ -208,7 +182,7 @@ slice_get_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint
 }
 
 static void
-slice_get_non_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint_32 cc)
+slice_get_non_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest)
 {
 	uint_32 i = 0;
 	uint_32 j;
@@ -362,7 +336,7 @@ void
 slice_get_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
 {
 	uint_32 quantizer_scale_code;
-	uint_32 picture_structure = picture->picture_structure;
+	//uint_32 picture_structure = picture->picture_structure;
 
 	// get macroblock_type 
 	mb->macroblock_type = Get_macroblock_type(picture->picture_coding_type);
@@ -370,36 +344,39 @@ slice_get_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
 	// get frame/field motion type 
 	if (mb->macroblock_type & (MACROBLOCK_MOTION_FORWARD|MACROBLOCK_MOTION_BACKWARD))
 	{
-		if (picture_structure == FRAME_PICTURE) // frame_motion_type 
-			mb->motion_type = picture->frame_pred_frame_dct ? MC_FRAME : bitstream_get(2);
-		else // field_motion_type 
-			mb->motion_type = bitstream_get(2);
+		//if (picture_structure == FRAME_PICTURE) // frame_motion_type 
+		mb->motion_type = picture->frame_pred_frame_dct ? MC_FRAME : bitstream_get(2);
+		//else // field_motion_type 
+		//mb->motion_type = bitstream_get(2);
 	}
 	else if ((mb->macroblock_type & MACROBLOCK_INTRA) && picture->concealment_motion_vectors)
 	{
 		// concealment motion vectors 
-		mb->motion_type = (picture_structure==FRAME_PICTURE) ? MC_FRAME : MC_FIELD;
+		//mb->motion_type = (picture_structure==FRAME_PICTURE) ? MC_FRAME : MC_FIELD;
+		mb->motion_type = MC_FRAME;
 	}
 
 	// derive motion_vector_count, mv_format and dmv, (table 6-17, 6-18)
-	if (picture_structure==FRAME_PICTURE)
+	//if (picture_structure==FRAME_PICTURE)
 	{
 		mb->motion_vector_count = (mb->motion_type==MC_FIELD) ? 2 : 1;
 		mb->mv_format = (mb->motion_type==MC_FRAME) ? MV_FRAME : MV_FIELD;
 	}
+#if 0
 	else
 	{
 		mb->motion_vector_count = (mb->motion_type==MC_16X8) ? 2 : 1;
 		mb->mv_format = MV_FIELD;
 	}
+#endif
 
 	mb->dmv = (mb->motion_type==MC_DMV); // dual prime
 
 	//Set if we need to scale motion vector prediction by 1/2
-	mb->mvscale = ((mb->mv_format==MV_FIELD) && (picture_structure==FRAME_PICTURE));
+	mb->mvscale = ((mb->mv_format==MV_FIELD) /* && (picture_structure==FRAME_PICTURE) */ );
 
 	// get dct_type (frame DCT / field DCT) 
-	if( (picture_structure==FRAME_PICTURE) && (!picture->frame_pred_frame_dct) && 
+	if( /* (picture_structure==FRAME_PICTURE) && */ (!picture->frame_pred_frame_dct) && 
 			(mb->macroblock_type & (MACROBLOCK_PATTERN|MACROBLOCK_INTRA)) )
 		mb->dct_type =  bitstream_get(1);
 	else
@@ -441,12 +418,12 @@ slice_get_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
 	{
 		mb->coded_block_pattern = 0x3f;
 
-		// Decode lum blocks 
+		// Decode lum blocks
 		slice_get_intra_block(picture,slice,&mb->blocks[0*64],0);
 		slice_get_intra_block(picture,slice,&mb->blocks[1*64],0);
 		slice_get_intra_block(picture,slice,&mb->blocks[2*64],0);
 		slice_get_intra_block(picture,slice,&mb->blocks[3*64],0);
-		// Decode chroma blocks 
+		// Decode chroma blocks
 		slice_get_intra_block(picture,slice,&mb->blocks[4*64],1);
 		slice_get_intra_block(picture,slice,&mb->blocks[5*64],2);
 	}
@@ -455,20 +432,20 @@ slice_get_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
 	{
 		// Decode lum blocks 
 		if (mb->coded_block_pattern & 0x20)
-			slice_get_non_intra_block(picture,slice,&mb->blocks[0*64],0);
+			slice_get_non_intra_block(picture,slice,&mb->blocks[0*64]);
 		if (mb->coded_block_pattern & 0x10)
-			slice_get_non_intra_block(picture,slice,&mb->blocks[1*64],0);
+			slice_get_non_intra_block(picture,slice,&mb->blocks[1*64]);
 		if (mb->coded_block_pattern & 0x08)
-			slice_get_non_intra_block(picture,slice,&mb->blocks[2*64],0);
+			slice_get_non_intra_block(picture,slice,&mb->blocks[2*64]);
 		if (mb->coded_block_pattern & 0x04)
-			slice_get_non_intra_block(picture,slice,&mb->blocks[3*64],0);
+			slice_get_non_intra_block(picture,slice,&mb->blocks[3*64]);
 		
 		// Decode chroma blocks 
 		if (mb->coded_block_pattern & 0x2)
-			slice_get_non_intra_block(picture,slice,&mb->blocks[4*64],1);
+			slice_get_non_intra_block(picture,slice,&mb->blocks[4*64]);
 
 		if (mb->coded_block_pattern & 0x1)
-			slice_get_non_intra_block(picture,slice,&mb->blocks[5*64],2);
+			slice_get_non_intra_block(picture,slice,&mb->blocks[5*64]);
 	}
 
 	// 7.2.1 DC coefficients in intra blocks 
@@ -498,26 +475,27 @@ slice_get_macroblock(const picture_t *picture,slice_t* slice, macroblock_t *mb)
 		mb->macroblock_type |= MACROBLOCK_MOTION_FORWARD;
 
 		//6.3.17.1 Macroblock modes, frame_motion_type 
-		if (picture->picture_structure==FRAME_PICTURE)
+		// if (picture->picture_structure==FRAME_PICTURE)
 			mb->motion_type = MC_FRAME;
+#if 0
 		else
 		{
 			mb->motion_type = MC_FIELD;
 			// predict from field of same parity 
 			mb->f_motion_vertical_field_select[0]= (picture->picture_structure==BOTTOM_FIELD);
 		}
+#endif
 	}
 }
 
 void
 slice_init(void)
 {
-	mb.blocks = blocks;
 }
 
 
 uint_32
-slice_process(picture_t *picture,uint_8 *slice_data)
+slice_process (picture_t * picture, uint_8 code, uint_8 * buffer)
 {
 	uint_32 mba;      
 	uint_32 mba_inc;
@@ -525,7 +503,9 @@ slice_process(picture_t *picture,uint_8 *slice_data)
 	uint_32 mb_width = picture->coded_picture_width >> 4;
 	uint_32 i;
 
-	mba = ((slice_data[0] &0xff) - 1) * mb_width - 1;
+	mba = (code - 1) * mb_width - 1;
+
+	bitstream_init (buffer);
 
 	slice_reset_pmv(&slice);
 	slice_get_slice_header(picture,&slice);

@@ -23,14 +23,4 @@
  *
  */
  
-void stats_sequence_header(picture_t *picture);
-void stats_gop_header(picture_t *picture);
-void stats_picture_header(picture_t* picture);
-void stats_slice_header(slice_t* slice);
-void stats_macroblock(macroblock_t *mb);
-void stats_picture_coding_ext_header(picture_t *picture);
-void stats_sequence_ext(picture_t *picture);
-void stats_sequence_display_ext(picture_t *picture);
-
-//FIXME These still need fixins
-void stats_quant_matrix_ext_header(picture_t *picture);
+void stats_header (uint_8 code, uint_8 * buffer);

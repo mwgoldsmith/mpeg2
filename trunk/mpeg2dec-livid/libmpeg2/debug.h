@@ -21,15 +21,12 @@
  *
  */
 
-inline int debug_is_on(void);
+int debug_is_on(void);
 
 #ifdef __GNUC__
 #define dprintf(format,args...)\
 {\
-	if (debug_is_on())\
-	{\
-		fprintf(stderr,format,## args);\
-	}\
+	fprintf(stderr,format,## args);\
 }
 #else
 void dprintf(char fmt[],...);
