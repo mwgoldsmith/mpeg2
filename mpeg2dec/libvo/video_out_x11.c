@@ -434,7 +434,7 @@ static void xv_draw_frame (vo_instance_t * _instance,
 }
 
 static int xv_check_fourcc (x11_instance_t * instance, XvPortID port,
-			    uint32_t fourcc, const char * fourcc_str)
+			    int fourcc, const char * fourcc_str)
 {
     XvImageFormatValues * formatValues;
     int formats;
@@ -452,7 +452,7 @@ static int xv_check_fourcc (x11_instance_t * instance, XvPortID port,
 }
 
 static int xv_check_extension (x11_instance_t * instance,
-			       uint32_t fourcc, const char * fourcc_str)
+			       int fourcc, const char * fourcc_str)
 {
     unsigned int version;
     unsigned int release;
@@ -490,7 +490,7 @@ static int xv_check_extension (x11_instance_t * instance,
 }
 
 static int xv_alloc_frames (x11_instance_t * instance, int size,
-			    uint32_t fourcc)
+			    int fourcc)
 {
     char * alloc;
     int i;
