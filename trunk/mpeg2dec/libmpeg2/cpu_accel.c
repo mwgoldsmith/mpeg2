@@ -27,6 +27,7 @@
 
 #include "mpeg2.h"
 
+#ifdef ACCEL_DETECT
 #ifdef ARCH_X86
 static inline uint32_t arch_accel (void)
 {
@@ -142,17 +143,20 @@ static inline uint32_t arch_accel (void)
     return MPEG2_ACCEL_PPC_ALTIVEC;
 }
 #endif /* ARCH_PPC */
+#endif
 
 uint32_t mpeg2_detect_accel (void)
 {
     uint32_t accel;
 
     accel = 0;
+#ifdef ACCEL_DETECT
 #ifdef LIBMPEG2_MLIB
     accel = MPEG2_ACCEL_MLIB;
 #endif
 #if defined (ARCH_X86) || defined (ARCH_PPC)
     accel |= arch_accel ();
+#endif
 #endif
     return accel;
 }
