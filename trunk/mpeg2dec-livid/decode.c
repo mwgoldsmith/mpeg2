@@ -215,9 +215,9 @@ mpeg2_decode_frame(void)
 	decode_find_header(PICTURE_START_CODE,&picture);
 	parse_picture_header(&picture);
 
-	//XXX We only do I-frames now
-	if( picture.picture_coding_type != I_TYPE) 
-		return &mpeg2_frame;
+	//XXX We dont' handle B-frames yet
+	if( picture.picture_coding_type == B_TYPE) 
+		return NULL;
 
 	decode_reorder_frames();
 
@@ -238,6 +238,7 @@ mpeg2_decode_frame(void)
 
 		mba = ((code &0xff) - 1) * mb_width - 1;
 		
+		parse_reset_pmv(&slice);
 		parse_slice_header(&picture,&slice);
 		do
 		{
@@ -254,6 +255,8 @@ mpeg2_decode_frame(void)
 					for(i=0; i< mba_inc - 1; i++)
 					{
 						memset(mb->f_motion_vectors,0,8);
+						//FIXME i don't know why this doesn't work
+//						mb->macroblock_type = MACROBLOCK_MOTION_FORWARD;
 						mb->skipped = 1;
 						mb->mba = ++mba;
 						mb = mb_buffer_increment();
