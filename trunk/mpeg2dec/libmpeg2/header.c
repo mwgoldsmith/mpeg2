@@ -87,8 +87,8 @@ int header_process_sequence_header (picture_t * picture, uint8_t * buffer)
     width = ((height >> 12) + 15) & ~15;
     height = ((height & 0xfff) + 15) & ~15;
 
-    if ((width > 768) || (height > 576))
-	return 1;	/* size restrictions for MP@ML or MPEG1 */
+    if ((width > 1920) || (height > 1152))
+	return 1;	/* size restrictions for MP@HL */
 
     picture->coded_picture_width = width;
     picture->coded_picture_height = height;

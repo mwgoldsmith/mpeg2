@@ -43,7 +43,7 @@ void * memalign (size_t align, size_t size);
 #define memalign(align,size) malloc (size)
 #endif
 
-#define BUFFER_SIZE (224 * 1024)
+#define BUFFER_SIZE (1194 * 1024)
 
 mpeg2_config_t config;
 
