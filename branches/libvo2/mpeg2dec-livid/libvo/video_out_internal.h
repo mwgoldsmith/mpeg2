@@ -10,18 +10,27 @@
 
  */
 
+#define VIDEO_BUFFER_SIZE 5
 
 frame_t * libvo_common_alloc (int width, int height);
 void libvo_common_free (frame_t * frame);
 
-#define LIBVO_EXTERN(x,id)					\
-vo_output_video_t video_out_##x = {				\
-	name: id,						\
-	setup:			x ## _setup,			\
-	close:			x ## _close,			\
-	draw_frame:		x ## _draw_frame,		\
-	draw_slice:		x ## _draw_slice,		\
-	flip_page:		x ## _flip_page,		\
-	allocate_image_buffer:	x ## _allocate_image_buffer,	\
-	free_image_buffer:	x ## _free_image_buffer		\
+frame_t * request_frame (void);
+void release_frame(frame_t *frame);
+
+// static? isn't this evil?
+static frame_t *video_buffer[VIDEO_BUFFER_SIZE];
+
+#define LIBVO_EXTERN(x,id) \
+vo_output_video_t video_out_##x = {\
+	name: id,\
+        close:                  x ## _close,\
+	setup:                  x ## _setup,\
+	draw_frame:             x ## _draw_frame,\
+	draw_slice:             x ## _draw_slice,\
+	flip_page:              x ## _flip_page,\
+	allocate_image_buffer:  x ## _allocate_image_buffer,\
+	free_image_buffer:      x ## _free_image_buffer,\
+	request_frame:		request_frame,\
+	release_frame:          release_frame\
 };
