@@ -54,8 +54,6 @@ typedef struct {
     int f_code[2];
 } motion_t;
 
-struct vo_frame_s;
-
 struct decoder_s {
     /* first, state that carries information from one macroblock to the */
     /* next inside a slice, and is never used outside of mpeg2_slice() */
@@ -70,8 +68,8 @@ struct decoder_s {
 
     uint8_t * dest[3];
     uint8_t * picture_dest[3];
-    void (* convert) (struct vo_frame_s * frame, uint8_t ** src);
-    struct vo_frame_s * frame_id;
+    void (* convert) (vo_frame_t * frame, uint8_t ** src);
+    vo_frame_t * frame_id;
 
     int offset;
     int stride;
@@ -139,6 +137,41 @@ struct decoder_s {
     int progressive_sequence;	/* only for decoding picture coding ext */
 };
 
+struct mpeg2dec_s {
+    decoder_t decoder;
+
+    mpeg2_info_t info;
+
+    uint32_t shift;
+    int is_display_initialized;
+    int state;
+    uint32_t ext_state;
+
+    /* the maximum chunk size is determined by vbv_buffer_size */
+    /* which is 224K for MP@ML streams. */
+    /* (we make no pretenses of decoding anything more than that) */
+    /* allocated in init - gcc has problems allocating such big structures */
+    uint8_t * chunk_buffer;
+    /* pointer to current position in chunk_buffer */
+    uint8_t * chunk_ptr;
+    /* last start code ? */
+    uint8_t code;
+
+    /* PTS */
+    uint32_t pts, pts_current, pts_previous;
+    int num_pts;
+    int bytes_since_pts;
+
+    vo_frame_t * current_frame;
+    vo_frame_t * forward_reference_frame;
+    vo_frame_t * backward_reference_frame;
+
+    sequence_t last_sequence;
+    sequence_t sequence;
+    picture_t pictures[4];
+    picture_t * picture;
+};
+
 typedef struct {
 #ifdef ARCH_PPC
     uint8_t regv[12*16];
@@ -147,7 +180,7 @@ typedef struct {
 } cpu_state_t;
 
 /* alloc.c */
-#define ALLOC_DECODER 0
+#define ALLOC_MPEG2DEC 0
 #define ALLOC_CHUNK 1
 void * mpeg2_malloc (int size, int reason);
 void mpeg2_free (void * buf);

@@ -48,7 +48,7 @@ static FILE * in_file;
 static int demux_track = 0;
 static int demux_pid = 0;
 static int disable_accel = 0;
-static mpeg2dec_t mpeg2dec;
+static mpeg2dec_t * mpeg2dec;
 static vo_open_t * output_open = NULL;
 static vo_instance_t * output;
 
@@ -209,12 +209,13 @@ static void handle_args (int argc, char ** argv)
 
 static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 {
-    mpeg2_info_t * info = &(mpeg2dec.info);
+    mpeg2_info_t * info;
     picture_t * picture;
     int state, flags;
 
+    info = mpeg2_info (mpeg2dec);
     while (1) {
-	state = mpeg2_buffer (&mpeg2dec, &current, end);
+	state = mpeg2_buffer (mpeg2dec, &current, end);
 	switch (state) {
 	case -1:
 	    return;
@@ -225,8 +226,8 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 		exit (1);
 	    }
 	    flags = VO_PREDICTION_FLAG | VO_BOTH_FIELDS;
-	    mpeg2_set_buf (&mpeg2dec, vo_get_frame (output, flags));
-	    mpeg2_set_buf (&mpeg2dec, vo_get_frame (output, flags));
+	    mpeg2_set_buf (mpeg2dec, vo_get_frame (output, flags));
+	    mpeg2_set_buf (mpeg2dec, vo_get_frame (output, flags));
 	    break;
 	case STATE_PICTURE:
 	    picture = info->current_picture;
@@ -236,7 +237,7 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 	    if ((picture->flags & PIC_MASK_CODING_TYPE) !=
 		PIC_FLAG_CODING_TYPE_B)
 		flags |= VO_PREDICTION_FLAG;
-	    mpeg2_set_buf (&mpeg2dec, vo_get_frame (output, flags));
+	    mpeg2_set_buf (mpeg2dec, vo_get_frame (output, flags));
 	    break;
 	case STATE_PICTURE_2ND:
 	    picture = info->current_picture_2nd;
@@ -413,7 +414,7 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 			pts = (((buf[9] >> 1) << 30) |
 			       (buf[10] << 22) | ((buf[11] >> 1) << 15) |
 			       (buf[12] << 7) | (buf[13] >> 1));
-			mpeg2_pts (&mpeg2dec, pts);
+			mpeg2_pts (mpeg2dec, pts);
 		    }
 		} else {	/* mpeg1 */
 		    int len_skip;
@@ -443,7 +444,7 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 			pts = (((ptsbuf[-1] >> 1) << 30) |
 			       (ptsbuf[0] << 22) | ((ptsbuf[1] >> 1) << 15) |
 			       (ptsbuf[2] << 7) | (ptsbuf[3] >> 1));
-			mpeg2_pts (&mpeg2dec, pts);
+			mpeg2_pts (mpeg2dec, pts);
 		    }
 		}
 		DONEBYTES (len);
@@ -552,7 +553,9 @@ int main (int argc, char ** argv)
 	fprintf (stderr, "Can not open output\n");
 	return 1;
     }
-    mpeg2_init (&mpeg2dec, accel);
+    mpeg2dec = mpeg2_init (accel);
+    if (mpeg2dec == NULL)
+	exit (1);
 
     if (demux_pid)
 	ts_loop ();
@@ -561,7 +564,7 @@ int main (int argc, char ** argv)
     else
 	es_loop ();
 
-    mpeg2_close (&mpeg2dec);
+    mpeg2_close (mpeg2dec);
     vo_close (output);
     print_fps (1);
     return 0;

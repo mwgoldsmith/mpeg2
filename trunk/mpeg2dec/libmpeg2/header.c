@@ -76,7 +76,7 @@ uint8_t mpeg2_scan_alt[64] ATTR_ALIGN(16) = {
 
 void mpeg2_header_state_init (mpeg2dec_t * mpeg2dec)
 {
-    mpeg2dec->decoder->scan = mpeg2_scan_norm;
+    mpeg2dec->decoder.scan = mpeg2_scan_norm;
     mpeg2dec->picture = mpeg2dec->pictures;
 }
 
@@ -99,7 +99,7 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
 {
     uint8_t * buffer = mpeg2dec->chunk_buffer;
     sequence_t * sequence = &(mpeg2dec->sequence);
-    decoder_t * decoder = mpeg2dec->decoder;
+    decoder_t * decoder = &(mpeg2dec->decoder);
     static unsigned int frame_period[9] = {
 	0, 1126125, 1125000, 1080000, 900900, 900000, 540000, 450450, 450000
     };
@@ -201,7 +201,7 @@ static int sequence_ext (mpeg2dec_t * mpeg2dec)
 {
     uint8_t * buffer = mpeg2dec->chunk_buffer;
     sequence_t * sequence = &(mpeg2dec->sequence);
-    decoder_t * decoder = mpeg2dec->decoder;
+    decoder_t * decoder = &(mpeg2dec->decoder);
     int width, height;
     uint32_t flags;
 
@@ -331,7 +331,7 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 {
     uint8_t * buffer = mpeg2dec->chunk_buffer;
     picture_t * picture = mpeg2dec->picture;
-    decoder_t * decoder = mpeg2dec->decoder;
+    decoder_t * decoder = &(mpeg2dec->decoder);
     int type;
 
     type = (buffer [1] >> 3) & 7;
@@ -397,7 +397,7 @@ static int picture_coding_ext (mpeg2dec_t * mpeg2dec)
 {
     uint8_t * buffer = mpeg2dec->chunk_buffer;
     picture_t * picture = mpeg2dec->picture;
-    decoder_t * decoder = mpeg2dec->decoder;
+    decoder_t * decoder = &(mpeg2dec->decoder);
     uint32_t flags;
 
     if ((buffer[0] & 0xf0) != 0x80)
@@ -459,7 +459,7 @@ static int copyright_ext (mpeg2dec_t * mpeg2dec)
 static int quant_matrix_ext (mpeg2dec_t * mpeg2dec)
 {
     uint8_t * buffer = mpeg2dec->chunk_buffer;
-    decoder_t * decoder = mpeg2dec->decoder;
+    decoder_t * decoder = &(mpeg2dec->decoder);
     int i;
 
     if (buffer[0] & 8) {
@@ -508,7 +508,7 @@ void mpeg2_header_slice (mpeg2dec_t * mpeg2dec)
 			mpeg2dec->state == STATE_PICTURE_2ND) ?
 		       STATE_SLICE : STATE_SLICE_1ST);
     mpeg2dec->info.current_fbuf = mpeg2dec->current_frame;
-    if (mpeg2dec->decoder->coding_type == B_TYPE) {
+    if (mpeg2dec->decoder.coding_type == B_TYPE) {
 	mpeg2dec->info.display_fbuf = mpeg2dec->current_frame;
 	mpeg2dec->info.discard_fbuf = mpeg2dec->current_frame;
     }

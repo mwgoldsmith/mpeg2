@@ -30,6 +30,8 @@
 #include <mlib_video.h>
 #include <inttypes.h>
 
+#include "video_out.h"
+#include "mpeg2.h"
 #include "mpeg2_internal.h"
 
 static void MC_put_o_16_mlib (uint8_t * dest, uint8_t * ref,
