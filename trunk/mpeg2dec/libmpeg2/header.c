@@ -104,8 +104,10 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
     int width, height;
     int i;
 
-    if ((buffer[6] & 0x20) != 0x20)
-	return 1;	/* missing marker_bit */
+    if ((buffer[6] & 0x20) != 0x20) {	/* missing marker_bit */
+	mpeg2dec->action = mpeg2_seek_sequence;
+	return 1;
+    }
 
     i = (buffer[0] << 16) | (buffer[1] << 8) | buffer[2];
     sequence->display_width = sequence->picture_width = width = i >> 12;
@@ -165,6 +167,7 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
     mpeg2dec->state = STATE_SEQUENCE;
     mpeg2dec->display_offset_x = mpeg2dec->display_offset_y = 0;
 
+    reset_info (&(mpeg2dec->info));
     return 0;
 }
 
@@ -176,8 +179,10 @@ static int sequence_ext (mpeg2dec_t * mpeg2dec)
     int width, height;
     uint32_t flags;
 
-    if (((buffer[0] & 0xf0) != 0x10) || !(buffer[3] & 1))
+    if (((buffer[0] & 0xf0) != 0x10) || !(buffer[3] & 1)) {
+	mpeg2dec->action = mpeg2_seek_sequence;
 	return 1;
+    }
 
     sequence->profile_level_id = (buffer[0] << 4) | (buffer[1] >> 4);
 
@@ -198,6 +203,7 @@ static int sequence_ext (mpeg2dec_t * mpeg2dec)
     decoder->height = sequence->height = height = (height + 15) & ~15;
     switch (buffer[1] & 6) {
     case 0:	/* invalid */
+	mpeg2dec->action = mpeg2_seek_sequence;
 	return 1;
     case 2:	/* 4:2:0 */
 	height >>= 1;
@@ -227,8 +233,10 @@ static int sequence_display_ext (mpeg2dec_t * mpeg2dec)
     sequence_t * sequence = &(mpeg2dec->new_sequence);
     uint32_t flags;
 
-    if ((buffer[0] & 0xf0) != 0x20)
+    if ((buffer[0] & 0xf0) != 0x20) {
+	mpeg2dec->action = mpeg2_seek_sequence;
 	return 1;
+    }
 
     flags = ((sequence->flags & ~SEQ_MASK_VIDEO_FORMAT) |
 	     ((buffer[0]<<4) & SEQ_MASK_VIDEO_FORMAT));
@@ -240,8 +248,10 @@ static int sequence_display_ext (mpeg2dec_t * mpeg2dec)
 	buffer += 3;
     }
 
-    if (!(buffer[2] & 2))
-	return 1;	/* missing marker_bit */
+    if (!(buffer[2] & 2)) {	/* missing marker_bit */
+	mpeg2dec->action = mpeg2_seek_sequence;
+	return 1;
+    }
 
     sequence->display_width = (buffer[1] << 6) | (buffer[2] >> 2);
     sequence->display_height =
@@ -324,7 +334,6 @@ void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
     mpeg2dec->sequence = *sequence;
 
     mpeg2dec->info.sequence = &(mpeg2dec->sequence);
-    reset_info (&(mpeg2dec->info));
 }
 
 int mpeg2_header_gop (mpeg2dec_t * mpeg2dec)
@@ -489,8 +498,10 @@ static int picture_coding_ext (mpeg2dec_t * mpeg2dec)
     decoder_t * decoder = &(mpeg2dec->decoder);
     uint32_t flags;
 
-    if ((buffer[0] & 0xf0) != 0x80)
+    if ((buffer[0] & 0xf0) != 0x80) {
+	mpeg2dec->action = mpeg2_seek_sequence;
 	return 1;
+    }
 
     /* pre subtract 1 for use later in compute_motion_vector */
     decoder->f_motion.f_code[0] = (buffer[0] & 15) - 1;
@@ -515,6 +526,7 @@ static int picture_coding_ext (mpeg2dec_t * mpeg2dec)
 	    picture->nb_fields = (buffer[3]&2) ? ((buffer[3]&128) ? 6 : 4) : 2;
 	break;
     default:
+	mpeg2dec->action = mpeg2_seek_sequence;
 	return 1;
     }
     decoder->top_field_first = buffer[3] >> 7;
@@ -551,8 +563,10 @@ static int picture_display_ext (mpeg2dec_t * mpeg2dec)
 	     (buffer[4*i+2] << 8) | buffer[4*i+3]) >> (11-2*i);
 	y = ((buffer[4*i+2] << 24) | (buffer[4*i+3] << 16) |
 	     (buffer[4*i+4] << 8) | buffer[4*i+5]) >> (10-2*i);
-	if (! (x & y & 1))
+	if (! (x & y & 1)) {
+	    mpeg2dec->action = mpeg2_seek_sequence;
 	    return 1;
+	}
 	picture->display_offset[i].x = mpeg2dec->display_offset_x = x >> 1;
 	picture->display_offset[i].y = mpeg2dec->display_offset_y = y >> 1;
     }
@@ -610,8 +624,10 @@ int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec)
 {
     uint8_t * chunk_ptr;
 
-    if (mpeg2dec->info.user_data != NULL)
+    if (mpeg2dec->info.user_data != NULL) {
+	mpeg2dec->action = mpeg2_seek_sequence;
 	return 1;
+    }
     chunk_ptr = mpeg2dec->chunk_ptr - 4;
     mpeg2dec->info.user_data = mpeg2dec->chunk_start;
     mpeg2dec->info.user_data_len = chunk_ptr - mpeg2dec->chunk_start;
