@@ -147,7 +147,7 @@ uint32_t mm_accel (void)
 {
 #if defined (ARCH_X86) || defined (ARCH_PPC)
     static int got_accel = 0;
-    static uint32_t accel;
+    static uint32_t accel = 0;	/* initialized to work around a mingw32 bug */
 
     if (!got_accel) {
 	got_accel = 1;
