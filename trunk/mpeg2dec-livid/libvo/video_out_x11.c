@@ -543,7 +543,6 @@ draw_slice_xv(uint8_t *src[], uint32_t slice_num)
 {
 	uint8_t *dst;
 
-	exit(1);
 	dst = xvimage[0]->data + image_width * 16 * slice_num;
 
 	memcpy(dst,src[0],image_width*16);
@@ -627,8 +626,6 @@ draw_frame(uint8_t *src[])
 		return draw_frame_x11(src);
 }
 
-//FIXME this should allocate AGP memory via agpgart and then we
-//can use AGP transfers to the framebuffer
 static vo_image_buffer_t* 
 allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format)
 {
