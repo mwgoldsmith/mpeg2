@@ -25,7 +25,6 @@
 
 typedef struct mpeg2dec_s {
     vo_output_video_t * output;
-    void * user_data;
 
     // here we store the allocated images, which we get from
     // the output interface
@@ -62,8 +61,7 @@ typedef struct mpeg2dec_s {
 
 // initialize mpegdec with a opaque user pointer
 // if not needed in the output use NULL here
-void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output,
-		 void * user_data);
+void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output);
 
 // destroy everything which was allocated, shutdown the output
 void mpeg2_close (mpeg2dec_t * mpeg2dec);

@@ -33,33 +33,23 @@
 #include "attributes.h"
 #include "mmx.h"
 
-
 mpeg2_config_t config;
 
-
-void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output,
-		 void * user_data) 
+void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output)
 {
-    
-    //intialize the decoder state 
     mpeg2dec->shift = 0;
     mpeg2dec->is_display_initialized = 0;
-    mpeg2dec->is_sequence_needed=1;
-    mpeg2dec->drop_flag=0;
-    mpeg2dec->drop_frame=0;
-    mpeg2dec->in_slice=0;
-
+    mpeg2dec->is_sequence_needed = 1;
+    mpeg2dec->drop_flag = 0;
+    mpeg2dec->drop_frame = 0;
+    mpeg2dec->in_slice = 0;
     mpeg2dec->output = output;
-    
-    // opaque user pointer (is passed to the output)
-    mpeg2dec->user_data=user_data;
-    
-    mpeg2dec->chunk_buffer=(uint8_t *) malloc(224 * 1024 + 4);
-    mpeg2dec->chunk_ptr=mpeg2dec->chunk_buffer;
-    mpeg2dec->code=0xff;
+    mpeg2dec->chunk_buffer = (uint8_t *) malloc(224 * 1024 + 4);
+    mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
+    mpeg2dec->code = 0xff;
 
-    mpeg2dec->picture= (picture_t*) malloc(sizeof(picture_t));
-    memset(mpeg2dec->picture,0,sizeof(picture_t));
+    mpeg2dec->picture= (picture_t *) malloc (sizeof (picture_t));
+    memset (mpeg2dec->picture, 0, sizeof (picture_t));
 
     config.flags = mm_accel () | MM_ACCEL_MLIB;
 
