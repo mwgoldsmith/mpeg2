@@ -229,7 +229,7 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
     const mpeg2_sequence_t * seq = info->sequence;
     const mpeg2_gop_t * gop = info->gop;
     const mpeg2_picture_t * pic;
-    unsigned int i, nb_pos;
+    unsigned int i, nb_pos, pixel_width, pixel_height;
 
     if (state == STATE_BUFFER &&
 	sequence_match (seq) && gop_match (gop) &&
@@ -344,7 +344,7 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
 	    }
 	}
 	fprintf (f, " %dx%d chroma %dx%d fps %.*f maxBps %d vbv %d "
-		 "picture %dx%d display %dx%d pixel %dx%d\n",
+		 "picture %dx%d display %dx%d pixel %dx%d",
 		 seq->width, seq->height,
 		 seq->chroma_width, seq->chroma_height,
 		 27000000%seq->frame_period?2:0, 27000000.0/seq->frame_period,
@@ -352,6 +352,9 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
 		 seq->picture_width, seq->picture_height,
 		 seq->display_width, seq->display_height,
 		 seq->pixel_width, seq->pixel_height);
+	if (mpeg2_guess_aspect (seq, &pixel_width, &pixel_height))
+	    fprintf (f, " guessed %dx%d", pixel_width, pixel_height);
+	fprintf (f, "\n");
 	break;
     case STATE_GOP:
 	if (gop->flags & GOP_FLAG_DROP_FRAME)
