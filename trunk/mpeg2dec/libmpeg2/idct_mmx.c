@@ -698,11 +698,59 @@ void mpeg2_idct_copy_mmxext (int16_t * const block, uint8_t * const dest,
 }
 
 void mpeg2_idct_add_mmxext (const int last, int16_t * const block,
-			    uint8_t * const dest, const int stride)
+			    uint8_t * dest, const int stride)
 {
-    mmxext_idct (block);
-    block_add (block, dest, stride);
-    block_zero (block);
+    if (last != 129 || (block[0] & 5) == 4) {
+	mmxext_idct (block);
+	block_add (block, dest, stride);
+	block_zero (block);
+    } else {
+	movd_v2r ((block[0] + 4) >> 3, mm0);
+	pxor_r2r (mm1, mm1);
+	movq_m2r (*dest, mm2);
+	pshufw_r2r (mm0, mm0, 0x00);
+	psubsw_r2r (mm0, mm1);
+	packuswb_r2r (mm0, mm0);
+	paddusb_r2r (mm0, mm2);
+	packuswb_r2r (mm1, mm1);
+	movq_m2r (*(dest + stride), mm3);
+	psubusb_r2r (mm1, mm2);
+	block[0] = 0;
+	paddusb_r2r (mm0, mm3);
+	movq_r2m (mm2, *dest);
+	psubusb_r2r (mm1, mm3);
+	movq_m2r (*(dest + 2*stride), mm2);
+	dest += stride;
+	movq_r2m (mm3, *dest);
+	paddusb_r2r (mm0, mm2);
+	movq_m2r (*(dest + 2*stride), mm3);
+	psubusb_r2r (mm1, mm2);
+	dest += stride;
+	paddusb_r2r (mm0, mm3);
+	movq_r2m (mm2, *dest);
+	psubusb_r2r (mm1, mm3);
+	movq_m2r (*(dest + 2*stride), mm2);
+	dest += stride;
+	movq_r2m (mm3, *dest);
+	paddusb_r2r (mm0, mm2);
+	movq_m2r (*(dest + 2*stride), mm3);
+	psubusb_r2r (mm1, mm2);
+	dest += stride;
+	paddusb_r2r (mm0, mm3);
+	movq_r2m (mm2, *dest);
+	psubusb_r2r (mm1, mm3);
+	movq_m2r (*(dest + 2*stride), mm2);
+	dest += stride;
+	movq_r2m (mm3, *dest);
+	paddusb_r2r (mm0, mm2);
+	movq_m2r (*(dest + 2*stride), mm3);
+	psubusb_r2r (mm1, mm2);
+	block[63] = 0;
+	paddusb_r2r (mm0, mm3);
+	movq_r2m (mm2, *(dest + stride));
+	psubusb_r2r (mm1, mm3);
+	movq_r2m (mm3, *(dest + 2*stride));
+    }
 }
 
 
