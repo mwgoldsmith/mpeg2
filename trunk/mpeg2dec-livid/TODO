@@ -23,5 +23,6 @@
 
 * clean up
 	* clean up header file usage
+	* clean up picture_t structure (some variables should be local ?)
 	* clean up DMV and field MC code
 	* clean up yuv2rgb for interlaced pictures (handling of uv)
