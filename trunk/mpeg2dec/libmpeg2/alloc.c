@@ -21,24 +21,20 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "config.h"
-
 #include <stdlib.h>
 #include <inttypes.h>
 
 #include "mpeg2.h"
-#include "attributes.h"
-#include "mpeg2_internal.h"
 
-void * (* mpeg2_malloc_hook) (int size, int reason) = NULL;
-int (* mpeg2_free_hook) (void * buf) = NULL;
+static void * (* malloc_hook) (unsigned size, int reason) = NULL;
+static int (* free_hook) (void * buf) = NULL;
 
-void * mpeg2_malloc (int size, int reason)
+void * mpeg2_malloc (unsigned size, int reason)
 {
     char * buf;
 
-    if (mpeg2_malloc_hook) {
-	buf = (char *) mpeg2_malloc_hook (size, reason);
+    if (malloc_hook) {
+	buf = (char *) malloc_hook (size, reason);
 	if (buf)
 	    return buf;
     }
@@ -57,8 +53,15 @@ void * mpeg2_malloc (int size, int reason)
 
 void mpeg2_free (void * buf)
 {
-    if (mpeg2_free_hook && mpeg2_free_hook (buf))
+    if (free_hook && free_hook (buf))
 	return;
 
     free (*(((void **)buf) - 1));
+}
+
+void mpeg2_malloc_hooks (void * (* malloc) (unsigned, int), 
+                         int (* free) (void *))
+{
+    malloc_hook = malloc;
+    free_hook = free;
 }

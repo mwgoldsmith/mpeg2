@@ -485,14 +485,14 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 		if (mpeg2dec->convert_start) {    
 		    fbuf->buf[0] =
 			(uint8_t *) mpeg2_malloc (mpeg2dec->convert_size[0],
-						  ALLOC_CONVERTED);
+						  MPEG2_ALLOC_CONVERTED);
 		    fbuf->buf[1] = fbuf->buf[0] + mpeg2dec->convert_size[1];
 		    fbuf->buf[2] = fbuf->buf[0] + mpeg2dec->convert_size[2];
 		} else {
 		    int size;
 		    size = mpeg2dec->decoder.width * mpeg2dec->decoder.height;
 		    fbuf->buf[0] = (uint8_t *) mpeg2_malloc (6 * size >> 2,
-							     ALLOC_YUV);
+							     MPEG2_ALLOC_YUV);
 		    fbuf->buf[1] = fbuf->buf[0] + size;
 		    fbuf->buf[2] = fbuf->buf[1] + (size >> 2);
 		}

@@ -214,15 +214,6 @@ typedef struct {
     int dummy;
 } cpu_state_t;
 
-/* alloc.c */
-#define ALLOC_MPEG2DEC 0
-#define ALLOC_CHUNK 1
-#define ALLOC_YUV 2
-#define ALLOC_CONVERT_ID 3
-#define ALLOC_CONVERTED 4
-void * mpeg2_malloc (int size, int reason);
-void mpeg2_free (void * buf);
-
 /* cpu_accel.c */
 uint32_t mpeg2_detect_accel (void);
 
