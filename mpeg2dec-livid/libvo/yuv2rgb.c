@@ -79,7 +79,7 @@ void yuv2rgb_init (uint_32 bpp, uint_32 mode)
 {
 	yuv2rgb = NULL;
 #ifdef __i386__
-        if(yuv2rgb == NULL /*&& (config.flags & VO_MMX_ENABLE)*/)
+	if(yuv2rgb == NULL /*&& (config.flags & VO_MMX_ENABLE)*/)
 	{
 		yuv2rgb = yuv2rgb_init_mmx(bpp,mode);
 		if(yuv2rgb != NULL)
