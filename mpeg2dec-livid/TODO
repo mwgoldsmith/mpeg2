@@ -1,5 +1,4 @@
 * before 0.2.0 :
-	* libmpeg2 reentrancy
 	* check if mlib is working - DCTblock alignment problem
 	* generic slice yuv2rgb handling, plus nullrgb and sdl implementations
 	* clean up frame_t declaration and usage (libvo/libmpeg2) + video_out.h
@@ -30,6 +29,6 @@
 
 * clean up
 	* clean up header file usage
-	* clean up DMV code
+	* clean up DMV and field MC code
 
 * synchronization stuff 

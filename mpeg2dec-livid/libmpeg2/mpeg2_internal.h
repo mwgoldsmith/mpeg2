@@ -72,7 +72,8 @@ typedef struct picture_s {
     /* predictor for DC coefficients in intra blocks */
     int16_t dc_dct_pred[3];
 
-    uint16_t quantizer_scale;	/* remove */
+    int quantizer_scale;	/* remove */
+    int current_field;		/* remove */
 
 
     /* now non-slice-specific information */
