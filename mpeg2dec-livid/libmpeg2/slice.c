@@ -1480,24 +1480,24 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     width = picture->coded_picture_width;
     offset = (code - 1) * width * 4;
 
-    forward_ref[0] = picture->forward_reference_frame;
+    forward_ref[0] = picture->forward_reference_frame->base;
     if (picture->picture_structure != FRAME_PICTURE) {
 	offset <<= 1;
-	forward_ref[1] = picture->forward_reference_frame;
+	forward_ref[1] = picture->forward_reference_frame->base;
 	current_field = (picture->picture_structure == BOTTOM_FIELD);
 	if ((picture->second_field) &&
 	    (picture->picture_coding_type != B_TYPE))
 	    forward_ref[picture->picture_structure == TOP_FIELD] =
-		picture->current_frame;
+		picture->current_frame->base;
 	slice.f_motion.ref[1][0] = forward_ref[1][0] + offset * 4 + width;
 	slice.f_motion.ref[1][1] = forward_ref[1][1] + offset + (width >> 1);
 	slice.f_motion.ref[1][2] = forward_ref[1][2] + offset + (width >> 1);
 	slice.b_motion.ref[1][0] =
-	    picture->backward_reference_frame[0] + offset * 4 + width;
+	    picture->backward_reference_frame->base[0] + offset * 4 + width;
 	slice.b_motion.ref[1][1] =
-	    picture->backward_reference_frame[1] + offset + (width >> 1);
+	    picture->backward_reference_frame->base[1] + offset + (width >> 1);
 	slice.b_motion.ref[1][2] =
-	    picture->backward_reference_frame[2] + offset + (width >> 1);
+	    picture->backward_reference_frame->base[2] + offset + (width >> 1);
     }
 
     slice.f_motion.ref[0][0] = forward_ref[0][0] + offset * 4;
@@ -1508,11 +1508,11 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
     slice.f_motion.pmv[0][0] = slice.f_motion.pmv[0][1] = 0;
     slice.f_motion.pmv[1][0] = slice.f_motion.pmv[1][1] = 0;
     slice.b_motion.ref[0][0] =
-	picture->backward_reference_frame[0] + offset * 4;
+	picture->backward_reference_frame->base[0] + offset * 4;
     slice.b_motion.ref[0][1] =
-	picture->backward_reference_frame[1] + offset;
+	picture->backward_reference_frame->base[1] + offset;
     slice.b_motion.ref[0][2] =
-	picture->backward_reference_frame[2] + offset;
+	picture->backward_reference_frame->base[2] + offset;
     slice.b_motion.f_code[0] = picture->f_code[1][0];
     slice.b_motion.f_code[1] = picture->f_code[1][1];
     slice.b_motion.pmv[0][0] = slice.b_motion.pmv[0][1] = 0;
@@ -1522,9 +1522,9 @@ int slice_process (picture_t * picture, uint8_t code, uint8_t * buffer)
 	(picture->picture_coding_type == B_TYPE))
 	offset = 0;
 
-    dest[0] = picture->current_frame[0] + offset * 4;
-    dest[1] = picture->current_frame[1] + offset;
-    dest[2] = picture->current_frame[2] + offset;
+    dest[0] = picture->current_frame->base[0] + offset * 4;
+    dest[1] = picture->current_frame->base[1] + offset;
+    dest[2] = picture->current_frame->base[2] + offset;
 
     switch (picture->picture_structure) {
     case BOTTOM_FIELD:
