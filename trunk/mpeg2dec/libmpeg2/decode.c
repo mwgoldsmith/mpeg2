@@ -127,8 +127,8 @@ int mpeg2_seek_sequence (mpeg2dec_t * mpeg2dec)
 	}
 	mpeg2dec->bytes_since_pts += skipped;
 	mpeg2dec->code = mpeg2dec->buf_start[-1];
-	mpeg2dec->chunk_ptr = mpeg2dec->chunk_start;
     }
+    mpeg2dec->chunk_start = mpeg2dec->chunk_buffer;
     mpeg2dec->state = STATE_INVALID;
     return 0;
 }
@@ -335,8 +335,8 @@ mpeg2dec_t * mpeg2_init (uint32_t mm_accel)
 
     memset (mpeg2dec, 0, sizeof (mpeg2dec_t));
 
-    mpeg2dec->chunk_ptr = mpeg2dec->chunk_start = mpeg2dec->chunk_buffer =
-	(uint8_t *) mpeg2_malloc (BUFFER_SIZE + 4, ALLOC_CHUNK);
+    mpeg2dec->chunk_buffer = (uint8_t *) mpeg2_malloc (BUFFER_SIZE + 4,
+						       ALLOC_CHUNK);
 
     mpeg2dec->shift = 0xffffff00;
     mpeg2dec->action = mpeg2_seek_sequence;
