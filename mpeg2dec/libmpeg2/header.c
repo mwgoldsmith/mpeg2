@@ -399,14 +399,16 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 		uint8_t * buf[3];
 
 		if (mpeg2dec->convert_start) {    
-		    buf[0] = mpeg2_malloc (mpeg2dec->convert_size[0],
-					   ALLOC_CONVERTED);
+		    buf[0] =
+			(uint8_t *) mpeg2_malloc (mpeg2dec->convert_size[0],
+						  ALLOC_CONVERTED);
 		    buf[1] = buf[0] + mpeg2dec->convert_size[1];
 		    buf[2] = buf[0] + mpeg2dec->convert_size[2];
 		} else {
 		    int size;
 		    size = mpeg2dec->decoder.width * mpeg2dec->decoder.height;
-		    buf[0] = mpeg2_malloc (6 * size >> 2, ALLOC_YUV);
+		    buf[0] = (uint8_t *) mpeg2_malloc (6 * size >> 2,
+						       ALLOC_YUV);
 		    buf[1] = buf[0] + size;
 		    buf[2] = buf[1] + (size >> 2);
 		}

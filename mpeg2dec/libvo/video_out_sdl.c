@@ -51,7 +51,7 @@ static void sdl_setup_fbuf (vo_instance_t * _instance,
     sdl_instance_t * instance = (sdl_instance_t *) _instance;
     SDL_Overlay * overlay;
 
-    overlay = *id = SDL_CreateYUVOverlay (instance->width, instance->height,
+    *id = overlay = SDL_CreateYUVOverlay (instance->width, instance->height,
 					  SDL_YV12_OVERLAY, instance->surface);
     buf[0] = overlay->pixels[0];
     buf[1] = overlay->pixels[2];
@@ -124,7 +124,7 @@ vo_instance_t * vo_sdl_open (void)
     sdl_instance_t * instance;
     const SDL_VideoInfo * vidInfo;
 
-    instance = malloc (sizeof (sdl_instance_t));
+    instance = (sdl_instance_t *) malloc (sizeof (sdl_instance_t));
     if (instance == NULL)
 	return NULL;
 
@@ -134,7 +134,7 @@ vo_instance_t * vo_sdl_open (void)
     instance->vo.start_fbuf = sdl_start_fbuf;
     instance->vo.discard = sdl_discard;
     instance->vo.draw = sdl_draw_frame;
-    instance->vo.close = NULL; //sdl_close;
+    instance->vo.close = NULL; /* sdl_close; */
     instance->sdlflags = SDL_HWSURFACE | SDL_RESIZABLE;
 
     putenv("SDL_VIDEO_YUV_HWACCEL=1");

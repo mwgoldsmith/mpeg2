@@ -101,7 +101,11 @@ static int open_display (x11_instance_t * instance)
 	XShmGetEventBase (instance->display) + ShmCompletion;
 
     /* list truecolor visuals for the default screen */
+#ifdef __cplusplus
+    visualTemplate.c_class = TrueColor;
+#else
     visualTemplate.class = TrueColor;
+#endif
     visualTemplate.screen = DefaultScreen (instance->display);
     XvisualInfoTable = XGetVisualInfo (instance->display,
 				       VisualScreenMask | VisualClassMask,
@@ -158,7 +162,7 @@ static void * create_shm (x11_instance_t * instance, int size)
     if (instance->shminfo.shmid == -1)
 	goto error;
 
-    instance->shminfo.shmaddr = shmat (instance->shminfo.shmid, 0, 0);
+    instance->shminfo.shmaddr = (char *) shmat (instance->shminfo.shmid, 0, 0);
     if (instance->shminfo.shmaddr == (char *)-1)
 	goto error;
 
@@ -225,7 +229,7 @@ static void x11_setup_fbuf (vo_instance_t * _instance,
 {
     x11_instance_t * instance = (x11_instance_t *) _instance;
 
-    buf[0] = instance->frame[instance->index].data;
+    buf[0] = (uint8_t *) instance->frame[instance->index].data;
     buf[1] = buf[2] = NULL;
     *id = instance->frame + instance->index++;
 }
@@ -249,7 +253,7 @@ static void x11_draw_frame (vo_instance_t * _instance,
 static int x11_alloc_frames (x11_instance_t * instance)
 {
     int size;
-    uint8_t * alloc;
+    char * alloc;
     int i;
 
     size = 0;
@@ -267,7 +271,7 @@ static int x11_alloc_frames (x11_instance_t * instance)
 	} else if (i == 0) {
 	    size = (instance->frame[0].ximage->bytes_per_line *
 		    instance->frame[0].ximage->height);
-	    alloc = create_shm (instance, 3 * size);
+	    alloc = (char *) create_shm (instance, 3 * size);
 	    if (alloc == NULL)
 		return 1;
 	} else if (size != (instance->frame[0].ximage->bytes_per_line *
@@ -276,7 +280,7 @@ static int x11_alloc_frames (x11_instance_t * instance)
 	    return 1;
 	}
 
-	instance->frame[i].ximage->data = instance->frame[i].data = alloc;
+	instance->frame[i].data = instance->frame[i].ximage->data = alloc;
 	alloc += size;
     }
     instance->index = 0;
@@ -306,7 +310,7 @@ static void xv_setup_fbuf (vo_instance_t * _instance,
     x11_instance_t * instance = (x11_instance_t *) _instance;
     uint8_t * data;
 
-    data = instance->frame[instance->index].xvimage->data;
+    data = (uint8_t *) instance->frame[instance->index].xvimage->data;
     buf[0] = data + instance->frame[instance->index].xvimage->offsets[0];
     buf[1] = data + instance->frame[instance->index].xvimage->offsets[2];
     buf[2] = data + instance->frame[instance->index].xvimage->offsets[1];
@@ -349,8 +353,8 @@ static int xv_check_extension (x11_instance_t * instance)
     unsigned int version;
     unsigned int release;
     unsigned int dummy;
-    int adaptors;
-    int i;
+    unsigned int adaptors;
+    unsigned int i;
     unsigned long j;
     XvAdaptorInfo * adaptorInfo;
 
@@ -384,11 +388,11 @@ static int xv_check_extension (x11_instance_t * instance)
 static int xv_alloc_frames (x11_instance_t * instance)
 {
     int size;
-    uint8_t * alloc;
+    char * alloc;
     int i;
 
     size = instance->width * instance->height / 4;
-    alloc = create_shm (instance, 18 * size);
+    alloc = (char *) create_shm (instance, 18 * size);
     if (alloc == NULL)
 	return 1;
 
@@ -506,7 +510,7 @@ vo_instance_t * vo_x11_open (void)
 {
     x11_instance_t * instance;
 
-    instance = malloc (sizeof (x11_instance_t));
+    instance = (x11_instance_t *) malloc (sizeof (x11_instance_t));
     if (instance == NULL)
 	return NULL;
 
@@ -525,7 +529,7 @@ vo_instance_t * vo_xv_open (void)
 {
     x11_instance_t * instance;
 
-    instance = malloc (sizeof (x11_instance_t));
+    instance = (x11_instance_t *) malloc (sizeof (x11_instance_t));
     if (instance == NULL)
 	return NULL;
 

@@ -29,7 +29,7 @@
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 
-#ifdef HAVE_MEMALIGN
+#if defined(HAVE_MEMALIGN) && !defined(__cplusplus)
 /* some systems have memalign() but no declaration for it */
 void * memalign (size_t align, size_t size);
 #endif
@@ -42,15 +42,15 @@ void * mpeg2_malloc (int size, int reason)
     char * buf;
 
     if (mpeg2_malloc_hook) {
-	buf = mpeg2_malloc_hook (size, reason);
+	buf = (char *) mpeg2_malloc_hook (size, reason);
 	if (buf)
 	    return buf;
     }
 
-#ifdef HAVE_MEMALIGN
+#if defined(HAVE_MEMALIGN) && !defined(__cplusplus)
     return memalign (16, size);
 #else
-    buf = malloc (size + 15 + sizeof (void **));
+    buf = (char *) malloc (size + 15 + sizeof (void **));
     if (buf) {
 	char * align_buf;
 
