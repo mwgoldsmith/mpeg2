@@ -28,7 +28,6 @@ typedef struct mpeg2_frame_s
 {
 	uint_32 horizontal_size;
 	uint_32 vertical_size;
-	uint_8  *frame[3];
 } mpeg2_frame_t;
 
 //void mpeg2_init(mpeg2_config_t *config);

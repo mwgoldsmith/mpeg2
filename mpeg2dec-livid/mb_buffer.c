@@ -34,7 +34,7 @@
 
 
 //FIXME dynamically set this
-#define MACROBLOCK_BUFFER_SIZE 2000
+#define MACROBLOCK_BUFFER_SIZE 100
 
 macroblock_t *macroblocks;
 uint_32 num_blocks = 0;
