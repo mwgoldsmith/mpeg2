@@ -190,7 +190,7 @@ decode_reorder_frames(void)
 
 
 mpeg2_frame_t*
-mpeg2_decode_frame(void) 
+mpeg2_decode_frame (char *new_data, u_int new_data_len) 
 {
 	uint_32 mba;      //macroblock address
 	uint_32 last_mba; //last macroblock in frame
