@@ -47,6 +47,20 @@ typedef vector unsigned int vector_u32_t;
 #define VEC_S16(a,b,c,d,e,f,g,h) (vector_s16_t) (a, b, c, d, e, f, g, h)
 #endif
 
+#if 1	/* work around gcc vec_mergel bug */
+static inline vector_s16_t my_vec_mergel (vector_s16_t const A,
+					  vector_s16_t const B)
+{
+    static const vector_u8_t mergel = {
+	0x08, 0x09, 0x18, 0x19, 0x0a, 0x0b, 0x1a, 0x1b,
+	0x0c, 0x0d, 0x1c, 0x1d, 0x0e, 0x0f, 0x1e, 0x1f
+    };
+    return vec_perm (A, B, mergel);
+}
+#undef vec_mergel
+#define vec_mergel my_vec_mergel
+#endif
+
 static const vector_s16_t constants ATTR_ALIGN(16) =
     VEC_S16 (23170, 13573, 6518, 21895, -23170, -21895, 32, 31);
 static const vector_s16_t constants_1 ATTR_ALIGN(16) =
