@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -19,7 +20,7 @@
 static int _mpeg2dec_open	(void *plugin, void *foo);
 static int _mpeg2dec_close	(void *plugin);
 static int _mpeg2dec_read	(void *plugin, buf_t *buf, buf_entry_t *buf_entry);
-static int _mpeg2dec_ctrl	(void *plugin, uint flag, uint val);
+static int _mpeg2dec_ctrl	(void *plugin, uint flag, ...);
 
 static plugin_codec_t codec_mpeg2dec = {
         open:		_mpeg2dec_open,
@@ -54,20 +55,27 @@ static int _mpeg2dec_read (void *plugin, buf_t *buf, buf_entry_t *buf_entry)
 }
 
 
-static int _mpeg2dec_ctrl (void *plugin, uint flag, uint val)
+static int _mpeg2dec_ctrl (void *plugin, uint ctrl_id, ...)
 {
+	va_list arg_list;
+
 	switch (flag) {
-	case FLAG_VIDEO_INITIALIZED:
-		mpeg2_output_init (val);
-		break;
-	case FLAG_VIDEO_DROP_FRAME:
-//                fprintf (stderr, "%c", val ? '-':'+');
-                mpeg2_drop (val);
-		break;
-	default:
-		return -1;
+		case FLAG_VIDEO_INITIALIZED: {
+			int val = va_start (arg_list, ctrl_id);
+			mpeg2_output_init (val);
+			break;
+		}
+		case FLAG_VIDEO_DROP_FRAME: {
+			int val = va_start (arg_list, ctrl_id);
+//			fprintf (stderr, "%c", val ? '-':'+');
+                	mpeg2_drop (val);
+			break;
+		}
+		default:
+			return -1;
 	}
 
+	va_end (arg_list);
 	return 0;
 }
 
