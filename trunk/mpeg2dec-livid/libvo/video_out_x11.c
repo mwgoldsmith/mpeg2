@@ -113,7 +113,9 @@ static void x11_create_window (x11_instance_t * this, int width, int height)
 {
     XSetWindowAttributes attr;
 
+    attr.background_pixmap = None;
     attr.backing_store = NotUseful;
+    attr.border_pixel = 0;
     attr.event_mask = 0;
     /* fucking sun blows me - you have to create a colormap there... */
     attr.colormap = XCreateColormap (this->display,
@@ -125,7 +127,8 @@ static void x11_create_window (x11_instance_t * this, int width, int height)
 		       0 /* x */, 0 /* y */, width, height,
 		       0 /* border_width */, this->vinfo.depth,
 		       InputOutput, this->vinfo.visual,
-		       CWBackingStore | CWEventMask | CWColormap, &attr);
+		       (CWBackPixmap | CWBackingStore | CWBorderPixel |
+			CWEventMask | CWColormap), &attr);
 }
 
 static void x11_create_gc (x11_instance_t * this)
