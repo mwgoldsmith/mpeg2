@@ -4,6 +4,7 @@
 	* put back slice handling
 	* interlaced slices
 	* clean up frame_t declaration and usage (libvo/libmpeg2)
+	* libvo reentrancy
 
 * things we dont implement yet
 	* dont crash on bad streams, make sure we can resync after a while
