@@ -38,32 +38,17 @@ typedef struct vo_output_video_attr_s {
 	char *title;
 } vo_output_video_attr_t;
 
-typedef struct vo_output_video_s { 
-#ifdef __OMS__
-    //PLUGIN_GENERIC; 
-    void * priv; 
-    int (*open) (void *this, void *name); 
-#endif // close must stay here too because its part of PLUGIN_GENERIC... argh
-    int (*close) (void * this); 
- 
-    char * name; 
- 
+#include "output_video.h"
+
+typedef struct vo_output_video_s {
+    PLUGIN_GENERIC;
     int (*setup)                (vo_output_video_attr_t *attr); 
- 
-// put an overlay in the queue 
-// id ... requested id (if the same already exists, replace it.) 
-// if id==0 assign a new id 
-// return assigned id 
-// NEEDED FOR SPUDEC .... SO TAKE CARE IF CHANGING !!! 
     int (*overlay)              (overlay_buf_t *overlay_buf, int id); 
- 
-// <old> 
     int (*draw_frame)   (frame_t *frame); 
     int (*draw_slice)   (uint8_t *src[], int slice_num); 
     void        (*flip_page)    (void); 
     frame_t *(*allocate_image_buffer)(int width, int height, uint32_t format); 
     void    (*free_image_buffer)        (frame_t* image); 
-// </old> 
 } vo_output_video_t;
 
 // NULL terminated array of all drivers 
