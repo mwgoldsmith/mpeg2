@@ -493,25 +493,27 @@ static int xv_alloc_frames (x11_instance_t * instance, int size,
 			    int fourcc)
 {
     char * alloc;
-    int i;
+    int i = 0;
 
     alloc = (char *) create_shm (instance, 3 * size);
     if (alloc == NULL)
 	return 1;
 
-    for (i = 0; i < 3; i++) {
+    while (i < 3) {
 	instance->frame[i].wait_completion = 0;
 	instance->frame[i].xvimage =
 	    XvShmCreateImage (instance->display, instance->port, fourcc,
 			      alloc, instance->width, instance->height,
 			      &(instance->shminfo));
-	if ((instance->frame[i].xvimage == NULL) ||
-	    (instance->frame[i].xvimage->data_size != size)) {
-	    fprintf (stderr, "Cannot create xvimage\n");
-	    return 1;
-	}
 	instance->frame[i].data = alloc;
 	alloc += size;
+	if ((instance->frame[i].xvimage == NULL) ||
+	    (instance->frame[i++].xvimage->data_size != size)) {
+	    while (--i >= 0)
+		XFree (instance->frame[i].xvimage);
+	    destroy_shm (instance);
+	    return 1;
+	}
     }
 
     return 0;
@@ -564,26 +566,22 @@ static int common_setup (vo_instance_t * _instance, unsigned int width,
 #ifdef LIBVO_XV
     if (instance->xv == 1 &&
 	(chroma_width == width >> 1) && (chroma_height == height >> 1) &&
-	(!xv_check_extension (instance, FOURCC_YV12, "YV12"))) {
-	if (xv_alloc_frames (instance, 3 * width * height / 2, FOURCC_YV12))
-	    return 1;
+	!xv_check_extension (instance, FOURCC_YV12, "YV12") &&
+	!xv_alloc_frames (instance, 3 * width * height / 2, FOURCC_YV12)) {
 	instance->vo.setup_fbuf = xv_setup_fbuf;
 	instance->vo.draw = xv_draw_frame;
 	instance->teardown = xv_teardown;
 	result->convert = NULL;
     } else if (instance->xv && (chroma_width == width >> 1) &&
-	       (!xv_check_extension (instance, FOURCC_UYVY, "UYVY"))) {
-	if (xv_alloc_frames (instance, 2 * width * height, FOURCC_UYVY))
-	    return 1;
+	       !xv_check_extension (instance, FOURCC_UYVY, "UYVY") &&
+	       !xv_alloc_frames (instance, 2 * width * height, FOURCC_UYVY)) {
 	instance->vo.setup_fbuf = x11_setup_fbuf;
 	instance->vo.draw = xv_draw_frame;
 	instance->teardown = xv_teardown;
 	result->convert = convert_uyvy;
     } else
 #endif
-    {
-	if (x11_alloc_frames (instance))
-	    return 1;
+    if (!x11_alloc_frames (instance)) {
 	instance->vo.setup_fbuf = x11_setup_fbuf;
 	instance->vo.draw = x11_draw_frame;
 	instance->teardown = x11_teardown;
@@ -620,7 +618,8 @@ static int common_setup (vo_instance_t * _instance, unsigned int width,
 			 ((instance->vinfo.depth == 24) ?
 			  instance->frame[0].ximage->bits_per_pixel :
 			  instance->vinfo.depth));
-    }
+    } else
+	return 1;
 
     instance->vo.close = x11_close;
 
