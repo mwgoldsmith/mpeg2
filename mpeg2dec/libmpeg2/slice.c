@@ -1272,7 +1272,6 @@ static void motion_fi_field (picture_t * picture, motion_t * motion,
     field_select = UBITS (bit_buf, 1);
     DUMPBITS (bit_buf, bits, 1);
 
-    NEEDBITS (bit_buf, bits, bit_ptr);
     motion_x = motion->pmv[0][0] + get_motion_delta (picture,
 						     motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
@@ -1305,7 +1304,6 @@ static void motion_fi_16x8 (picture_t * picture, motion_t * motion,
     field_select = UBITS (bit_buf, 1);
     DUMPBITS (bit_buf, bits, 1);
 
-    NEEDBITS (bit_buf, bits, bit_ptr);
     motion_x = motion->pmv[0][0] + get_motion_delta (picture,
 						     motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
@@ -1325,7 +1323,6 @@ static void motion_fi_16x8 (picture_t * picture, motion_t * motion,
     field_select = UBITS (bit_buf, 1);
     DUMPBITS (bit_buf, bits, 1);
 
-    NEEDBITS (bit_buf, bits, bit_ptr);
     motion_x = motion->pmv[1][0] + get_motion_delta (picture,
 						     motion->f_code[0]);
     motion_x = bound_motion_vector (motion_x, motion->f_code[0]);
@@ -1409,7 +1406,6 @@ static void motion_fi_conceal (picture_t * picture)
     NEEDBITS (bit_buf, bits, bit_ptr);
     DUMPBITS (bit_buf, bits, 1); /* remove field_select */
 
-    NEEDBITS (bit_buf, bits, bit_ptr);
     tmp = (picture->f_motion.pmv[0][0] +
 	   get_motion_delta (picture, picture->f_motion.f_code[0]));
     tmp = bound_motion_vector (tmp, picture->f_motion.f_code[0]);
@@ -1529,6 +1525,7 @@ static inline int slice_init (picture_t * picture, int code)
 	stride <<= 1;
     }
     picture->stride = stride;
+    picture->uv_stride = stride >> 1;
 
     picture->dc_dct_pred[0] = picture->dc_dct_pred[1] =
 	picture->dc_dct_pred[2] = 1 << (picture->intra_dc_precision + 7);
@@ -1648,9 +1645,9 @@ void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer)
 	    slice_intra_DCT (picture, 0, dest_y + DCT_offset, DCT_stride);
 	    slice_intra_DCT (picture, 0, dest_y + DCT_offset + 8, DCT_stride);
 	    slice_intra_DCT (picture, 1, picture->dest[1] + (offset >> 1),
-			     picture->stride >> 1);
+			     picture->uv_stride);
 	    slice_intra_DCT (picture, 2, picture->dest[2] + (offset >> 1),
-			     picture->stride >> 1);
+			     picture->uv_stride);
 
 	    if (picture->picture_coding_type == D_TYPE) {
 		NEEDBITS (bit_buf, bits, bit_ptr);
@@ -1747,11 +1744,11 @@ void mpeg2_slice (picture_t * picture, int code, uint8_t * buffer)
 		if (coded_block_pattern & 0x2)
 		    slice_non_intra_DCT (picture,
 					 picture->dest[1] + (offset >> 1),
-					 picture->stride >> 1);
+					 picture->uv_stride);
 		if (coded_block_pattern & 0x1)
 		    slice_non_intra_DCT (picture,
 					 picture->dest[2] + (offset >> 1),
-					 picture->stride >> 1);
+					 picture->uv_stride);
 	    }
 
 	    picture->dc_dct_pred[0] = picture->dc_dct_pred[1] =
