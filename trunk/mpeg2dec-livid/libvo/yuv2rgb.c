@@ -76,9 +76,16 @@ static void yuv2rgb_c (void * dst, const uint_8 * py,
 
 void yuv2rgb_init (uint_32 bpp, uint_32 mode) 
 {
-	fprintf (stderr, "No accelerated colorspace conversion found\n");
-	yuv2rgb_c_init (bpp, mode);
-	yuv2rgb = (yuv2rgb_fun) yuv2rgb_c;
+#ifdef __i386__
+	yuv2rgb = yuv2rgb_init_mmx(bpp,mode);
+
+	if(yuv2rgb == NULL)
+#endif
+	{
+		fprintf (stderr, "No accelerated colorspace conversion found\n");
+		yuv2rgb_c_init (bpp, mode);
+		yuv2rgb = (yuv2rgb_fun)yuv2rgb_c;
+	}
 }
 
 void * table_rV[256];
