@@ -183,6 +183,9 @@ struct mpeg2dec_s {
     int convert_size[3];
     void (* convert_start) (void * id, uint8_t * const * dest, int flags);
     void (* convert_copy) (void * id, uint8_t * const * src);
+
+    uint8_t * buf_start;
+    uint8_t * buf_end;
 };
 
 typedef struct {

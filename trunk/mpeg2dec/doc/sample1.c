@@ -54,10 +54,8 @@ static void sample1 (FILE * file)
     uint8_t buffer[BUFFER_SIZE];
     mpeg2dec_t * mpeg2dec;
     const mpeg2_info_t * info;
-    uint8_t * current;
-    uint8_t * end;
     int state;
-    int done;
+    int size;
     int framenum = 0;
 
     accel = 0;
@@ -66,17 +64,13 @@ static void sample1 (FILE * file)
 	exit (1);
     info = mpeg2_info (mpeg2dec);
 
-    current = buffer;
-    end = buffer + fread (buffer, 1, BUFFER_SIZE, file);
-
-    done = 0;
+    size = BUFFER_SIZE;
     do {
-	state = mpeg2_buffer (mpeg2dec, &current, end);
+	state = mpeg2_parse (mpeg2dec);
 	switch (state) {
 	case -1:
-	    current = buffer;
-	    end = buffer + fread (buffer, 1, BUFFER_SIZE, file);
-	    done = (end <= buffer);
+	    size = fread (buffer, 1, BUFFER_SIZE, file);
+	    mpeg2_buffer (mpeg2dec, buffer, buffer + size);
 	    break;
 	case STATE_SEQUENCE:
 	    mpeg2_set_buf_alloc_XXX (mpeg2dec);
@@ -90,7 +84,7 @@ static void sample1 (FILE * file)
 			  info->display_fbuf->buf, framenum++);
 	    break;
 	}
-    } while (!done);
+    } while (size);
 
     mpeg2_close (mpeg2dec);
 }

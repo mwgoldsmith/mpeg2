@@ -71,22 +71,23 @@ const mpeg2_info_t * mpeg2_info (mpeg2dec_t * mpeg2dec)
     return &(mpeg2dec->info);
 }
 
-static inline uint8_t * copy_chunk (mpeg2dec_t * mpeg2dec,
-				    uint8_t * current, uint8_t * end)
+static inline int copy_chunk (mpeg2dec_t * mpeg2dec)
 {
+    uint8_t * current;
     uint32_t shift;
     uint8_t * chunk_ptr;
     uint8_t * limit;
     uint8_t byte;
 
-    if (current == end)
-	return NULL;
+    current = mpeg2dec->buf_start;
+    if (current == mpeg2dec->buf_end)
+	return 1;
 
     shift = mpeg2dec->shift;
     chunk_ptr = mpeg2dec->chunk_ptr;
     limit = current + (mpeg2dec->chunk_buffer + BUFFER_SIZE - chunk_ptr);
-    if (limit > end)
-	limit = end;
+    if (limit > mpeg2dec->buf_end)
+	limit = mpeg2dec->buf_end;
 
     do {
 	byte = *current++;
@@ -98,14 +99,15 @@ static inline uint8_t * copy_chunk (mpeg2dec_t * mpeg2dec,
 
     mpeg2dec->bytes_since_pts += chunk_ptr - mpeg2dec->chunk_ptr;
     mpeg2dec->shift = shift;
-    if (current == end) {
+    if (current == mpeg2dec->buf_end) {
 	mpeg2dec->chunk_ptr = chunk_ptr;
-	return NULL;
+	return 1;
     } else {
 	/* we filled the chunk buffer without finding a start code */
 	mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
 	mpeg2dec->code = 0xb4;	/* sequence_error_code */
-	return current;
+	mpeg2dec->buf_start = current;
+	return 0;
     }
 
 startcode:
@@ -125,10 +127,17 @@ startcode:
 	} else
 	    mpeg2dec->pts = 0;	/* none */
     }
-    return current;
+    mpeg2dec->buf_start = current;
+    return 0;
 }
 
-int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
+void mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t * start, uint8_t * end)
+{
+    mpeg2dec->buf_start = start;
+    mpeg2dec->buf_end = end;
+}
+
+int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 {
     uint8_t code;
 
@@ -139,8 +148,7 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 
     while (1) {
 	code = mpeg2dec->code;
-	*current = copy_chunk (mpeg2dec, *current, end);
-	if (*current == NULL)
+	if (copy_chunk (mpeg2dec))
 	    return -1;
 
 	/* wait for sequence_header_code */
