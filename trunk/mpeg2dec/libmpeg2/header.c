@@ -90,11 +90,12 @@ static void reset_info (mpeg2_info_t * info)
     info->current_picture = info->current_picture_2nd = NULL;
     info->display_picture = info->display_picture_2nd = NULL;
     info->current_fbuf = info->display_fbuf = info->discard_fbuf = NULL;
+    info->user_data = NULL;	info->user_data_len = 0;
 }
 
 int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
 {
-    uint8_t * buffer = mpeg2dec->chunk_buffer;
+    uint8_t * buffer = mpeg2dec->chunk_start;
     sequence_t * sequence = &(mpeg2dec->sequence);
     decoder_t * decoder = &(mpeg2dec->decoder);
     static unsigned int frame_period[9] = {
@@ -171,7 +172,7 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
 
 static int sequence_ext (mpeg2dec_t * mpeg2dec)
 {
-    uint8_t * buffer = mpeg2dec->chunk_buffer;
+    uint8_t * buffer = mpeg2dec->chunk_start;
     sequence_t * sequence = &(mpeg2dec->sequence);
     decoder_t * decoder = &(mpeg2dec->decoder);
     int width, height;
@@ -223,7 +224,7 @@ static int sequence_ext (mpeg2dec_t * mpeg2dec)
 
 static int sequence_display_ext (mpeg2dec_t * mpeg2dec)
 {
-    uint8_t * buffer = mpeg2dec->chunk_buffer;
+    uint8_t * buffer = mpeg2dec->chunk_start;
     sequence_t * sequence = &(mpeg2dec->sequence);
     uint32_t flags;
 
@@ -348,7 +349,7 @@ void mpeg2_set_fbuf (mpeg2dec_t * mpeg2dec, int coding_type)
 
 int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 {
-    uint8_t * buffer = mpeg2dec->chunk_buffer;
+    uint8_t * buffer = mpeg2dec->chunk_start;
     picture_t * picture = mpeg2dec->picture;
     decoder_t * decoder = &(mpeg2dec->decoder);
     int type;
@@ -449,7 +450,7 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 
 static int picture_coding_ext (mpeg2dec_t * mpeg2dec)
 {
-    uint8_t * buffer = mpeg2dec->chunk_buffer;
+    uint8_t * buffer = mpeg2dec->chunk_start;
     picture_t * picture = mpeg2dec->picture;
     decoder_t * decoder = &(mpeg2dec->decoder);
     uint32_t flags;
@@ -512,7 +513,7 @@ static int copyright_ext (mpeg2dec_t * mpeg2dec)
 
 static int quant_matrix_ext (mpeg2dec_t * mpeg2dec)
 {
-    uint8_t * buffer = mpeg2dec->chunk_buffer;
+    uint8_t * buffer = mpeg2dec->chunk_start;
     decoder_t * decoder = &(mpeg2dec->decoder);
     int i;
 
@@ -539,7 +540,7 @@ int mpeg2_header_extension (mpeg2dec_t * mpeg2dec)
     };
     int ext, ext_bit;
 
-    ext = mpeg2dec->chunk_buffer[0] >> 4;
+    ext = mpeg2dec->chunk_start[0] >> 4;
     ext_bit = 1 << ext;
 
     if (!(mpeg2dec->ext_state & ext_bit))
@@ -553,6 +554,9 @@ int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec)
     if (!(mpeg2dec->ext_state & USER_DATA))
 	return 1;
     mpeg2dec->ext_state &= ~USER_DATA;
+    mpeg2dec->info.user_data = mpeg2dec->chunk_start;
+    mpeg2dec->info.user_data_len = mpeg2dec->chunk_ptr - mpeg2dec->chunk_start;
+    
     return 0;
 }
 

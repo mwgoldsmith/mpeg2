@@ -88,6 +88,8 @@ typedef struct {
     const picture_t * display_picture_2nd;
     const fbuf_t * display_fbuf;
     const fbuf_t * discard_fbuf;
+    const uint8_t * user_data;
+    int user_data_len;
 } mpeg2_info_t;
 
 typedef struct mpeg2dec_s mpeg2dec_t;

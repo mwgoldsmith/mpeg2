@@ -23,7 +23,6 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <string.h>	/* memcmp/memset, try to remove */
 #include <stdlib.h>
 #include <inttypes.h>
@@ -53,13 +52,12 @@ mpeg2dec_t * mpeg2_init (uint32_t mm_accel)
 
     memset (mpeg2dec, 0, sizeof (mpeg2dec_t));
 
-    mpeg2dec->chunk_buffer = (uint8_t *) mpeg2_malloc (BUFFER_SIZE + 4,
-						       ALLOC_CHUNK);
+    mpeg2dec->chunk_ptr = mpeg2dec->chunk_start = mpeg2dec->chunk_buffer =
+	(uint8_t *) mpeg2_malloc (BUFFER_SIZE + 4, ALLOC_CHUNK);
 
     mpeg2dec->shift = 0xffffff00;
     mpeg2dec->last_sequence.width = (unsigned int) -1;
     mpeg2dec->state = STATE_INVALID;
-    mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
     mpeg2dec->code = 0xb4;
     mpeg2dec->skip = 0;
 
@@ -107,7 +105,7 @@ static inline int copy_chunk (mpeg2dec_t * mpeg2dec)
 	return 1;
     } else {
 	/* we filled the chunk buffer without finding a start code */
-	mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
+	mpeg2dec->chunk_start = mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
 	mpeg2dec->code = 0xb4;	/* sequence_error_code */
 	mpeg2dec->buf_start = current;
 	return 0;
@@ -115,7 +113,7 @@ static inline int copy_chunk (mpeg2dec_t * mpeg2dec)
 
 startcode:
     mpeg2dec->bytes_since_pts += chunk_ptr + 1 - mpeg2dec->chunk_ptr;
-    mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
+    mpeg2dec->chunk_ptr = chunk_ptr - 3;
     mpeg2dec->shift = 0xffffff00;
     mpeg2dec->code = byte;
     if (!byte) {
@@ -185,8 +183,11 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	    return -1;
 
 	/* wait for sequence_header_code */
-	if (mpeg2dec->state == STATE_INVALID && code != 0xb3)
+	if (mpeg2dec->state == STATE_INVALID && code != 0xb3) {
+	    mpeg2dec->chunk_start = mpeg2dec->chunk_ptr =
+		mpeg2dec->chunk_buffer;
 	    continue;
+	}
 
 	switch (code) {
 	case 0x00:	/* picture_start_code */
@@ -212,7 +213,9 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 		mpeg2_header_slice (mpeg2dec);
 	    if (! (mpeg2dec->picture->flags & PIC_FLAG_SKIP))
 		mpeg2_slice (&(mpeg2dec->decoder), code,
-			     mpeg2dec->chunk_buffer);
+			     mpeg2dec->chunk_start);
+	    mpeg2dec->chunk_start = mpeg2dec->chunk_ptr =
+		mpeg2dec->chunk_buffer;
 	}
 
 #define RECEIVED(code,state) (((state) << 8) + (code))
@@ -223,6 +226,8 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	case RECEIVED (0x00, STATE_SEQUENCE):
 	case RECEIVED (0xb8, STATE_SEQUENCE):
 	    mpeg2_header_sequence_finalize (mpeg2dec);
+	    mpeg2dec->chunk_start = mpeg2dec->chunk_ptr =
+		mpeg2dec->chunk_buffer;
 	    if (!repeated_sequence(&(mpeg2dec->last_sequence),
 				   &(mpeg2dec->sequence))) {
 		mpeg2dec->last_sequence = mpeg2dec->sequence;
@@ -242,6 +247,8 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	case RECEIVED (0x00, STATE_SLICE):
 	case RECEIVED (0xb3, STATE_SLICE):
 	case RECEIVED (0xb8, STATE_SLICE):
+	    mpeg2dec->chunk_start = mpeg2dec->chunk_ptr =
+		mpeg2dec->chunk_buffer;
 	    return mpeg2dec->state;
 
 	/* legal headers within a given state */
@@ -261,14 +268,19 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	illegal:
 		/* illegal codes (0x00 - 0xb8) or system codes (0xb9 - 0xff) */
 		mpeg2dec->state = STATE_INVALID;
+		mpeg2dec->chunk_start = mpeg2dec->chunk_ptr =
+		    mpeg2dec->chunk_buffer;
 		break;
 	    } else if (mpeg2dec->state == STATE_PICTURE ||
-		       mpeg2dec->state == STATE_PICTURE_2ND)
+		       mpeg2dec->state == STATE_PICTURE_2ND) {
+		mpeg2dec->chunk_start = mpeg2dec->chunk_ptr =
+		    mpeg2dec->chunk_buffer;
 		return mpeg2dec->state;
-	    else if (mpeg2dec->state != STATE_SLICE &&
+	    } else if (mpeg2dec->state != STATE_SLICE &&
 		     mpeg2dec->state != STATE_SLICE_1ST)
 		goto illegal;	/* slice at unexpected position */
 	}
+	mpeg2dec->chunk_start = mpeg2dec->chunk_ptr;
     }
 }
 

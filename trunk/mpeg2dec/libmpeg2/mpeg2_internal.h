@@ -152,6 +152,8 @@ struct mpeg2dec_s {
 
     /* allocated in init - gcc has problems allocating such big structures */
     uint8_t * chunk_buffer;
+    /* pointer to start of the current chunk */
+    uint8_t * chunk_start;
     /* pointer to current position in chunk_buffer */
     uint8_t * chunk_ptr;
     /* last start code ? */

@@ -7,6 +7,7 @@
 	* do not ignore parsing errors in headers
 	* error for "stream non demultiplexed"
 	* remove stats.c
+	* find ways to simplify code !
 
 * things we dont implement yet
 	* decoding of 4:2:2 streams
