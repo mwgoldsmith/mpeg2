@@ -315,8 +315,8 @@ void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
 	case 12:	/* 720*480 4:3 */
 	    sequence->pixel_width = 8;	sequence->pixel_height = 9;	break;
 	default:
-	    sequence->pixel_width = 2000;
 	    sequence->pixel_height = 88 * sequence->pixel_width + 1171;
+	    sequence->pixel_width = 2000;
 	}
     }
 
