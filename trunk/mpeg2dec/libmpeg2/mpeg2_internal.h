@@ -62,9 +62,9 @@ struct decoder_s {
     int16_t DCTblock[64];
 
     /* bit parsing stuff */
-    uint32_t bitstream_buf;	/* current 32 bit working set of buffer */
-    int bitstream_bits;		/* used bits in working set */
-    uint8_t * bitstream_ptr;	/* buffer with stream data */
+    uint32_t bitstream_buf;		/* current 32 bit working set */
+    int bitstream_bits;			/* used bits in working set */
+    const uint8_t * bitstream_ptr;	/* buffer with stream data */
 
     uint8_t * dest[3];
     uint8_t * picture_dest[3];
@@ -128,7 +128,7 @@ struct decoder_s {
     /* stuff derived from bitstream */
 
     /* pointer to the zigzag scan we're supposed to be using */
-    uint8_t * scan;
+    const uint8_t * scan;
 
     int second_field;
 
@@ -181,7 +181,7 @@ struct mpeg2dec_s {
     int yuv_index; 
     void * convert_id;
     int convert_size[3];
-    void (* convert_start) (void * id,  uint8_t * dest[3], int flags);
+    void (* convert_start) (void * id, uint8_t * dest[3], int flags);
     void (* convert_copy) (void * id, uint8_t * src[3]);
 };
 
@@ -239,9 +239,11 @@ void mpeg2_idct_altivec_init (void);
 /* motion_comp.c */
 void mpeg2_mc_init (uint32_t mm_accel);
 
+typedef void mpeg2_mc_fct (uint8_t *, const uint8_t *, int, int);
+
 typedef struct {
-    void (* put [8]) (uint8_t * dst, uint8_t *, int32_t, int32_t);
-    void (* avg [8]) (uint8_t * dst, uint8_t *, int32_t, int32_t);
+    mpeg2_mc_fct * put [8];
+    mpeg2_mc_fct * avg [8];
 } mpeg2_mc_t;
 
 #define MPEG2_MC_EXTERN(x) mpeg2_mc_t mpeg2_mc_##x = {			  \

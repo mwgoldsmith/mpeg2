@@ -44,13 +44,13 @@ static int non_linear_quantizer_scale [] = {
     56, 64, 72, 80, 88, 96, 104, 112
 };
 
-static inline int get_macroblock_modes (decoder_t * decoder)
+static inline int get_macroblock_modes (decoder_t * const decoder)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
 #define bit_ptr (decoder->bitstream_ptr)
     int macroblock_modes;
-    MBtab * tab;
+    const MBtab * tab;
 
     switch (decoder->coding_type) {
     case I_TYPE:
@@ -137,7 +137,7 @@ static inline int get_macroblock_modes (decoder_t * decoder)
 #undef bit_ptr
 }
 
-static inline int get_quantizer_scale (decoder_t * decoder)
+static inline int get_quantizer_scale (decoder_t * const decoder)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -157,7 +157,8 @@ static inline int get_quantizer_scale (decoder_t * decoder)
 #undef bit_ptr
 }
 
-static inline int get_motion_delta (decoder_t * decoder, int f_code)
+static inline int get_motion_delta (decoder_t * const decoder,
+				    const int f_code)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -165,7 +166,7 @@ static inline int get_motion_delta (decoder_t * decoder, int f_code)
 
     int delta;
     int sign;
-    MVtab * tab;
+    const MVtab * tab;
 
     if (bit_buf & 0x80000000) {
 	DUMPBITS (bit_buf, bits, 1);
@@ -210,7 +211,7 @@ static inline int get_motion_delta (decoder_t * decoder, int f_code)
 #undef bit_ptr
 }
 
-static inline int bound_motion_vector (int vector, int f_code)
+static inline int bound_motion_vector (const int vector, const int f_code)
 {
 #if 1
     unsigned int limit;
@@ -229,13 +230,13 @@ static inline int bound_motion_vector (int vector, int f_code)
 #endif
 }
 
-static inline int get_dmv (decoder_t * decoder)
+static inline int get_dmv (decoder_t * const decoder)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
 #define bit_ptr (decoder->bitstream_ptr)
 
-    DMVtab * tab;
+    const DMVtab * tab;
 
     tab = DMV_2 + UBITS (bit_buf, 2);
     DUMPBITS (bit_buf, bits, tab->len);
@@ -245,13 +246,13 @@ static inline int get_dmv (decoder_t * decoder)
 #undef bit_ptr
 }
 
-static inline int get_coded_block_pattern (decoder_t * decoder)
+static inline int get_coded_block_pattern (decoder_t * const decoder)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
 #define bit_ptr (decoder->bitstream_ptr)
 
-    CBPtab * tab;
+    const CBPtab * tab;
 
     NEEDBITS (bit_buf, bits, bit_ptr);
 
@@ -273,12 +274,12 @@ static inline int get_coded_block_pattern (decoder_t * decoder)
 #undef bit_ptr
 }
 
-static inline int get_luma_dc_dct_diff (decoder_t * decoder)
+static inline int get_luma_dc_dct_diff (decoder_t * const decoder)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
 #define bit_ptr (decoder->bitstream_ptr)
-    DCtab * tab;
+    const DCtab * tab;
     int size;
     int dc_diff;
 
@@ -310,12 +311,12 @@ static inline int get_luma_dc_dct_diff (decoder_t * decoder)
 #undef bit_ptr
 }
 
-static inline int get_chroma_dc_dct_diff (decoder_t * decoder)
+static inline int get_chroma_dc_dct_diff (decoder_t * const decoder)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
 #define bit_ptr (decoder->bitstream_ptr)
-    DCtab * tab;
+    const DCtab * tab;
     int size;
     int dc_diff;
 
@@ -353,19 +354,19 @@ do {					\
 	val = (val > 0) ? 2047 : -2048;	\
 } while (0)
 
-static void get_intra_block_B14 (decoder_t * decoder)
+static void get_intra_block_B14 (decoder_t * const decoder)
 {
     int i;
     int j;
     int val;
-    uint8_t * scan = decoder->scan;
-    uint8_t * quant_matrix = decoder->intra_quantizer_matrix;
+    const uint8_t * scan = decoder->scan;
+    const uint8_t * quant_matrix = decoder->intra_quantizer_matrix;
     int quantizer_scale = decoder->quantizer_scale;
     int mismatch;
-    DCTtab * tab;
+    const DCTtab * tab;
     uint32_t bit_buf;
     int bits;
-    uint8_t * bit_ptr;
+    const uint8_t * bit_ptr;
     int16_t * dest;
 
     dest = decoder->DCTblock;
@@ -467,19 +468,19 @@ static void get_intra_block_B14 (decoder_t * decoder)
     decoder->bitstream_ptr = bit_ptr;
 }
 
-static void get_intra_block_B15 (decoder_t * decoder)
+static void get_intra_block_B15 (decoder_t * const decoder)
 {
     int i;
     int j;
     int val;
-    uint8_t * scan = decoder->scan;
-    uint8_t * quant_matrix = decoder->intra_quantizer_matrix;
+    const uint8_t * scan = decoder->scan;
+    const uint8_t * quant_matrix = decoder->intra_quantizer_matrix;
     int quantizer_scale = decoder->quantizer_scale;
     int mismatch;
-    DCTtab * tab;
+    const DCTtab * tab;
     uint32_t bit_buf;
     int bits;
-    uint8_t * bit_ptr;
+    const uint8_t * bit_ptr;
     int16_t * dest;
 
     dest = decoder->DCTblock;
@@ -580,19 +581,19 @@ static void get_intra_block_B15 (decoder_t * decoder)
     decoder->bitstream_ptr = bit_ptr;
 }
 
-static void get_non_intra_block (decoder_t * decoder)
+static void get_non_intra_block (decoder_t * const decoder)
 {
     int i;
     int j;
     int val;
-    uint8_t * scan = decoder->scan;
-    uint8_t * quant_matrix = decoder->non_intra_quantizer_matrix;
+    const uint8_t * scan = decoder->scan;
+    const uint8_t * quant_matrix = decoder->non_intra_quantizer_matrix;
     int quantizer_scale = decoder->quantizer_scale;
     int mismatch;
-    DCTtab * tab;
+    const DCTtab * tab;
     uint32_t bit_buf;
     int bits;
-    uint8_t * bit_ptr;
+    const uint8_t * bit_ptr;
     int16_t * dest;
 
     i = -1;
@@ -703,18 +704,18 @@ static void get_non_intra_block (decoder_t * decoder)
     decoder->bitstream_ptr = bit_ptr;
 }
 
-static void get_mpeg1_intra_block (decoder_t * decoder)
+static void get_mpeg1_intra_block (decoder_t * const decoder)
 {
     int i;
     int j;
     int val;
-    uint8_t * scan = decoder->scan;
-    uint8_t * quant_matrix = decoder->intra_quantizer_matrix;
+    const uint8_t * scan = decoder->scan;
+    const uint8_t * quant_matrix = decoder->intra_quantizer_matrix;
     int quantizer_scale = decoder->quantizer_scale;
-    DCTtab * tab;
+    const DCTtab * tab;
     uint32_t bit_buf;
     int bits;
-    uint8_t * bit_ptr;
+    const uint8_t * bit_ptr;
     int16_t * dest;
 
     i = 0;
@@ -822,18 +823,18 @@ static void get_mpeg1_intra_block (decoder_t * decoder)
     decoder->bitstream_ptr = bit_ptr;
 }
 
-static void get_mpeg1_non_intra_block (decoder_t * decoder)
+static void get_mpeg1_non_intra_block (decoder_t * const decoder)
 {
     int i;
     int j;
     int val;
-    uint8_t * scan = decoder->scan;
-    uint8_t * quant_matrix = decoder->non_intra_quantizer_matrix;
+    const uint8_t * scan = decoder->scan;
+    const uint8_t * quant_matrix = decoder->non_intra_quantizer_matrix;
     int quantizer_scale = decoder->quantizer_scale;
-    DCTtab * tab;
+    const DCTtab * tab;
     uint32_t bit_buf;
     int bits;
-    uint8_t * bit_ptr;
+    const uint8_t * bit_ptr;
     int16_t * dest;
 
     i = -1;
@@ -951,8 +952,8 @@ static void get_mpeg1_non_intra_block (decoder_t * decoder)
     decoder->bitstream_ptr = bit_ptr;
 }
 
-static inline void slice_intra_DCT (decoder_t * decoder, int cc,
-				    uint8_t * dest, int stride)
+static inline void slice_intra_DCT (decoder_t * const decoder, const int cc,
+				    uint8_t * const dest, const int stride)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -979,8 +980,8 @@ static inline void slice_intra_DCT (decoder_t * decoder, int cc,
 #undef bit_ptr
 }
 
-static inline void slice_non_intra_DCT (decoder_t * decoder, uint8_t * dest,
-					int stride)
+static inline void slice_non_intra_DCT (decoder_t * const decoder,
+					uint8_t * const dest, const int stride)
 {
     if (decoder->mpeg1)
 	get_mpeg1_non_intra_block (decoder);
@@ -1033,8 +1034,8 @@ static inline void slice_non_intra_DCT (decoder_t * decoder, uint8_t * dest,
 		      (decoder->offset >> 1), ref[2] + offset,		      \
 		      2 * decoder->uv_stride, 4)
 
-static void motion_mp1 (decoder_t * decoder, motion_t * motion,
-			void (** table) (uint8_t *, uint8_t *, int, int))
+static void motion_mp1 (decoder_t * const decoder, motion_t * const motion,
+			mpeg2_mc_fct * const * const table)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -1064,8 +1065,9 @@ static void motion_mp1 (decoder_t * decoder, motion_t * motion,
 #undef bit_ptr
 }
 
-static void motion_fr_frame (decoder_t * decoder, motion_t * motion,
-			     void (** table) (uint8_t *, uint8_t *, int, int))
+static void motion_fr_frame (decoder_t * const decoder,
+			     motion_t * const motion,
+			     mpeg2_mc_fct * const * const table)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -1091,8 +1093,9 @@ static void motion_fr_frame (decoder_t * decoder, motion_t * motion,
 #undef bit_ptr
 }
 
-static void motion_fr_field (decoder_t * decoder, motion_t * motion,
-			     void (** table) (uint8_t *, uint8_t *, int, int))
+static void motion_fr_field (decoder_t * const decoder,
+			     motion_t * const motion,
+			     mpeg2_mc_fct * const * const table)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -1138,8 +1141,8 @@ static void motion_fr_field (decoder_t * decoder, motion_t * motion,
 #undef bit_ptr
 }
 
-static void motion_fr_dmv (decoder_t * decoder, motion_t * motion,
-			   void (** table) (uint8_t *, uint8_t *, int, int))
+static void motion_fr_dmv (decoder_t * const decoder, motion_t * const motion,
+			   mpeg2_mc_fct * const * const table)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -1204,9 +1207,9 @@ static void motion_fr_dmv (decoder_t * decoder, motion_t * motion,
 #undef bit_ptr
 }
 
-static inline void motion_reuse (decoder_t * decoder, motion_t * motion,
-				 void (** table) (uint8_t *, uint8_t *,
-						  int, int))
+static inline void motion_reuse (const decoder_t * const decoder,
+				 const motion_t * const motion,
+				 mpeg2_mc_fct * const * const table)
 {
     int motion_x, motion_y;
     unsigned int pos_x, pos_y, xy_half, offset;
@@ -1217,9 +1220,9 @@ static inline void motion_reuse (decoder_t * decoder, motion_t * motion,
     MOTION (table, motion->ref[0], motion_x, motion_y, 16, 0);
 }
 
-static inline void motion_zero (decoder_t * decoder, motion_t * motion,
-				void (** table) (uint8_t *, uint8_t *,
-						 int, int))
+static inline void motion_zero (const decoder_t * const decoder,
+				const motion_t * const motion,
+				mpeg2_mc_fct * const * const table)
 {
     unsigned int offset;
 
@@ -1237,7 +1240,7 @@ static inline void motion_zero (decoder_t * decoder, motion_t * motion,
 }
 
 /* like motion_frame, but parsing without actual motion compensation */
-static void motion_fr_conceal (decoder_t * decoder)
+static void motion_fr_conceal (decoder_t * const decoder)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -1262,8 +1265,9 @@ static void motion_fr_conceal (decoder_t * decoder)
 #undef bit_ptr
 }
 
-static void motion_fi_field (decoder_t * decoder, motion_t * motion,
-			     void (** table) (uint8_t *, uint8_t *, int, int))
+static void motion_fi_field (decoder_t * const decoder,
+			     motion_t * const motion,
+			     mpeg2_mc_fct * const * const table)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -1293,8 +1297,8 @@ static void motion_fi_field (decoder_t * decoder, motion_t * motion,
 #undef bit_ptr
 }
 
-static void motion_fi_16x8 (decoder_t * decoder, motion_t * motion,
-			    void (** table) (uint8_t *, uint8_t *, int, int))
+static void motion_fi_16x8 (decoder_t * const decoder, motion_t * const motion,
+			    mpeg2_mc_fct * const * const table)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -1341,8 +1345,8 @@ static void motion_fi_16x8 (decoder_t * decoder, motion_t * motion,
 #undef bit_ptr
 }
 
-static void motion_fi_dmv (decoder_t * decoder, motion_t * motion,
-			   void (** table) (uint8_t *, uint8_t *, int, int))
+static void motion_fi_dmv (decoder_t * const decoder, motion_t * const motion,
+			   mpeg2_mc_fct * const * const table)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -1372,7 +1376,7 @@ static void motion_fi_dmv (decoder_t * decoder, motion_t * motion,
 #undef bit_ptr
 }
 
-static void motion_fi_conceal (decoder_t * decoder)
+static void motion_fi_conceal (decoder_t * const decoder)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -1486,13 +1490,13 @@ void mpeg2_init_fbuf (decoder_t * decoder, uint8_t * current_fbuf[3],
     decoder->limit_y = height - 16;
 }
 
-static inline int slice_init (decoder_t * decoder, int code)
+static inline int slice_init (decoder_t * const decoder, const int code)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
 #define bit_ptr (decoder->bitstream_ptr)
     int offset;
-    MBAtab * mba;
+    const MBAtab * mba;
 
     decoder->dc_dct_pred[0] = decoder->dc_dct_pred[1] =
 	decoder->dc_dct_pred[2] = 128 << decoder->intra_dc_precision;
@@ -1564,7 +1568,8 @@ static inline int slice_init (decoder_t * decoder, int code)
 #undef bit_ptr
 }
 
-void mpeg2_slice (decoder_t * decoder, int code, uint8_t * buffer)
+void mpeg2_slice (decoder_t * const decoder, const int code,
+		  const uint8_t * const buffer)
 {
 #define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
@@ -1582,7 +1587,7 @@ void mpeg2_slice (decoder_t * decoder, int code, uint8_t * buffer)
     while (1) {
 	int macroblock_modes;
 	int mba_inc;
-	MBAtab * mba;
+	const MBAtab * mba;
 
 	NEEDBITS (bit_buf, bits, bit_ptr);
 

@@ -73,7 +73,7 @@ static uint8_t clip_lut[1024];
  * c[1..7] = 128*sqrt (2)
  */
 
-static void inline idct_row (int16_t * block)
+static void inline idct_row (int16_t * const block)
 {
     int x0, x1, x2, x3, x4, x5, x6, x7, x8;
 
@@ -142,7 +142,7 @@ static void inline idct_row (int16_t * block)
  * c[1..7] = (1/1024)*sqrt (2)
  */
 
-static void inline idct_col (int16_t *block)
+static void inline idct_col (int16_t * const block)
 {
     int x0, x1, x2, x3, x4, x5, x6, x7, x8;
 
@@ -203,7 +203,8 @@ static void inline idct_col (int16_t *block)
     block[8*7] = (x7 - x1) >> 14;
 }
 
-static void mpeg2_idct_copy_c (int16_t * block, uint8_t * dest, int stride)
+static void mpeg2_idct_copy_c (int16_t * block, uint8_t * dest,
+			       const int stride)
 {
     int i;
 
@@ -232,7 +233,8 @@ static void mpeg2_idct_copy_c (int16_t * block, uint8_t * dest, int stride)
     } while (--i);
 }
 
-static void mpeg2_idct_add_c (int16_t * block, uint8_t * dest, int stride)
+static void mpeg2_idct_add_c (int16_t * block, uint8_t * dest,
+			      const int stride)
 {
     int i;
 

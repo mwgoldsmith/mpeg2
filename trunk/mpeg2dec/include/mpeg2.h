@@ -115,7 +115,7 @@ void mpeg2_set_buf_alloc_XXX (mpeg2dec_t * mpeg2dec);
 void mpeg2_init_fbuf (decoder_t * decoder, uint8_t * current_fbuf[3],
 		      uint8_t * forward_fbuf[3], uint8_t * backward_fbuf[3]);
 
-void mpeg2_slice (decoder_t * decoder, int code, uint8_t * buffer);
+void mpeg2_slice (decoder_t * decoder, int code, const uint8_t * buffer);
 
 mpeg2dec_t * mpeg2_init (uint32_t mm_accel);
 mpeg2_info_t * mpeg2_info (mpeg2dec_t * mpeg2dec);

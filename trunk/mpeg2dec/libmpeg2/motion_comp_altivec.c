@@ -46,7 +46,7 @@
  * unexpand -a
  */
 
-static void MC_put_o_16_altivec (uint8_t * dest, uint8_t * ref,
+static void MC_put_o_16_altivec (uint8_t * dest, const uint8_t * ref,
 				 int stride, int height)
 {
     asm ("						\n"
@@ -82,7 +82,7 @@ static void MC_put_o_16_altivec (uint8_t * dest, uint8_t * ref,
 	 );
 }
 
-static void MC_put_o_8_altivec (uint8_t * dest, uint8_t * ref,
+static void MC_put_o_8_altivec (uint8_t * dest, const uint8_t * ref,
 				int stride, int height)
 {
     asm ("						\n"
@@ -133,7 +133,7 @@ static void MC_put_o_8_altivec (uint8_t * dest, uint8_t * ref,
 	 );
 }
 
-static void MC_put_x_16_altivec (uint8_t * dest, uint8_t * ref,
+static void MC_put_x_16_altivec (uint8_t * dest, const uint8_t * ref,
 				 int stride, int height)
 {
     asm ("						\n"
@@ -179,7 +179,7 @@ static void MC_put_x_16_altivec (uint8_t * dest, uint8_t * ref,
 	 );
 }
 
-static void MC_put_x_8_altivec (uint8_t * dest, uint8_t * ref,
+static void MC_put_x_8_altivec (uint8_t * dest, const uint8_t * ref,
 				int stride, int height)
 {
     asm ("						\n"
@@ -241,7 +241,7 @@ static void MC_put_x_8_altivec (uint8_t * dest, uint8_t * ref,
 	 );
 }
 
-static void MC_put_y_16_altivec (uint8_t * dest, uint8_t * ref,
+static void MC_put_y_16_altivec (uint8_t * dest, const uint8_t * ref,
 				 int stride, int height)
 {
     asm ("						\n"
@@ -285,7 +285,7 @@ static void MC_put_y_16_altivec (uint8_t * dest, uint8_t * ref,
 	 );
 }
 
-static void MC_put_y_8_altivec (uint8_t * dest, uint8_t * ref,
+static void MC_put_y_8_altivec (uint8_t * dest, const uint8_t * ref,
 				int stride, int height)
 {
     asm ("						\n"
@@ -344,7 +344,7 @@ static void MC_put_y_8_altivec (uint8_t * dest, uint8_t * ref,
 	 );
 }
 
-static void MC_put_xy_16_altivec (uint8_t * dest, uint8_t * ref,
+static void MC_put_xy_16_altivec (uint8_t * dest, const uint8_t * ref,
 				  int stride, int height)
 {
     asm ("						\n"
@@ -425,7 +425,7 @@ static void MC_put_xy_16_altivec (uint8_t * dest, uint8_t * ref,
 	 );
 }
 
-static void MC_put_xy_8_altivec (uint8_t * dest, uint8_t * ref,
+static void MC_put_xy_8_altivec (uint8_t * dest, const uint8_t * ref,
 				 int stride, int height)
 {
     asm ("						\n"
@@ -522,7 +522,7 @@ static void MC_put_xy_8_altivec (uint8_t * dest, uint8_t * ref,
 	 );
 }
 
-static void MC_avg_o_16_altivec (uint8_t * dest, uint8_t * ref,
+static void MC_avg_o_16_altivec (uint8_t * dest, const uint8_t * ref,
 				 int stride, int height)
 {
     asm ("						\n"
@@ -566,7 +566,7 @@ static void MC_avg_o_16_altivec (uint8_t * dest, uint8_t * ref,
 	 );
 }
 
-static void MC_avg_o_8_altivec (uint8_t * dest, uint8_t * ref,
+static void MC_avg_o_8_altivec (uint8_t * dest, const uint8_t * ref,
 				int stride, int height)
 {
     asm ("						\n"
@@ -625,7 +625,7 @@ static void MC_avg_o_8_altivec (uint8_t * dest, uint8_t * ref,
 	 );
 }
 
-static void MC_avg_x_16_altivec (uint8_t * dest, uint8_t * ref,
+static void MC_avg_x_16_altivec (uint8_t * dest, const uint8_t * ref,
 				 int stride, int height)
 {
     asm ("						\n"
@@ -679,7 +679,7 @@ static void MC_avg_x_16_altivec (uint8_t * dest, uint8_t * ref,
 	 );
 }
 
-static void MC_avg_x_8_altivec (uint8_t * dest, uint8_t * ref,
+static void MC_avg_x_8_altivec (uint8_t * dest, const uint8_t * ref,
 				int stride, int height)
 {
     asm ("						\n"
@@ -749,7 +749,7 @@ static void MC_avg_x_8_altivec (uint8_t * dest, uint8_t * ref,
 	 );
 }
 
-static void MC_avg_y_16_altivec (uint8_t * dest, uint8_t * ref,
+static void MC_avg_y_16_altivec (uint8_t * dest, const uint8_t * ref,
 				 int stride, int height)
 {
     asm ("						\n"
@@ -802,7 +802,7 @@ static void MC_avg_y_16_altivec (uint8_t * dest, uint8_t * ref,
 	 );
 }
 
-static void MC_avg_y_8_altivec (uint8_t * dest, uint8_t * ref,
+static void MC_avg_y_8_altivec (uint8_t * dest, const uint8_t * ref,
 				int stride, int height)
 {
     asm ("						\n"
@@ -869,7 +869,7 @@ static void MC_avg_y_8_altivec (uint8_t * dest, uint8_t * ref,
 	 );
 }
 
-static void MC_avg_xy_16_altivec (uint8_t * dest, uint8_t * ref,
+static void MC_avg_xy_16_altivec (uint8_t * dest, const uint8_t * ref,
 				  int stride, int height)
 {
     asm ("						\n"
@@ -959,7 +959,7 @@ static void MC_avg_xy_16_altivec (uint8_t * dest, uint8_t * ref,
 	 );
 }
 
-static void MC_avg_xy_8_altivec (uint8_t * dest, uint8_t * ref,
+static void MC_avg_xy_8_altivec (uint8_t * dest, const uint8_t * ref,
 				 int stride, int height)
 {
     asm ("						\n"
@@ -1077,8 +1077,8 @@ MPEG2_MC_EXTERN (altivec)
 #define vector_s32_t vector signed int
 #define vector_u32_t vector unsigned int
 
-void MC_put_o_16_altivec (unsigned char * dest, unsigned char * ref,
-			  int stride, int height)
+void MC_put_o_16_altivec (unsigned char * dest, const unsigned char * ref,
+			  const int stride, int height)
 {
     vector_u8_t perm, ref0, ref1, tmp;
 
@@ -1113,8 +1113,8 @@ void MC_put_o_16_altivec (unsigned char * dest, unsigned char * ref,
     vec_st (tmp, stride, dest);
 }
 
-void MC_put_o_8_altivec (unsigned char * dest, unsigned char * ref,
-			 int stride, int height)
+void MC_put_o_8_altivec (unsigned char * dest, const unsigned char * ref,
+			 const int stride, int height)
 {
     vector_u8_t perm0, perm1, tmp0, tmp1, ref0, ref1;
 
@@ -1160,8 +1160,8 @@ void MC_put_o_8_altivec (unsigned char * dest, unsigned char * ref,
     vec_ste ((vector_u32_t)tmp1, 4, (unsigned int *)dest);
 }
 
-void MC_put_x_16_altivec (unsigned char * dest, unsigned char * ref,
-			  int stride, int height)
+void MC_put_x_16_altivec (unsigned char * dest, const unsigned char * ref,
+			  const int stride, int height)
 {
     vector_u8_t permA, permB, ref0, ref1, tmp;
 
@@ -1201,8 +1201,8 @@ void MC_put_x_16_altivec (unsigned char * dest, unsigned char * ref,
     vec_st (tmp, stride, dest);
 }
 
-void MC_put_x_8_altivec (unsigned char * dest, unsigned char * ref,
-			 int stride, int height)
+void MC_put_x_8_altivec (unsigned char * dest, const unsigned char * ref,
+			 const int stride, int height)
 {
     vector_u8_t perm0A, perm0B, perm1A, perm1B, ones, tmp0, tmp1, ref0, ref1;
 
@@ -1255,8 +1255,8 @@ void MC_put_x_8_altivec (unsigned char * dest, unsigned char * ref,
     vec_ste ((vector_u32_t)tmp1, 4, (unsigned int *)dest);
 }
 
-void MC_put_y_16_altivec (unsigned char * dest, unsigned char * ref,
-			  int stride, int height)
+void MC_put_y_16_altivec (unsigned char * dest, const unsigned char * ref,
+			  const int stride, int height)
 {
     vector_u8_t perm, ref0, ref1, tmp0, tmp1, tmp;
 
@@ -1299,8 +1299,8 @@ void MC_put_y_16_altivec (unsigned char * dest, unsigned char * ref,
     vec_st (tmp, stride, dest);
 }
 
-void MC_put_y_8_altivec (unsigned char * dest, unsigned char * ref,
-			 int stride, int height)
+void MC_put_y_8_altivec (unsigned char * dest, const unsigned char * ref,
+			 const int stride, int height)
 {
     vector_u8_t perm0, perm1, tmp0, tmp1, tmp, ref0, ref1;
 
@@ -1354,8 +1354,8 @@ void MC_put_y_8_altivec (unsigned char * dest, unsigned char * ref,
     vec_ste ((vector_u32_t)tmp, 4, (unsigned int *)dest);
 }
 
-void MC_put_xy_16_altivec (unsigned char * dest, unsigned char * ref,
-			   int stride, int height)
+void MC_put_xy_16_altivec (unsigned char * dest, const unsigned char * ref,
+			   const int stride, int height)
 {
     vector_u8_t permA, permB, ref0, ref1, A, B, avg0, avg1, xor0, xor1, tmp;
     vector_u8_t ones;
@@ -1425,8 +1425,8 @@ void MC_put_xy_16_altivec (unsigned char * dest, unsigned char * ref,
     vec_st (tmp, stride, dest);
 }
 
-void MC_put_xy_8_altivec (unsigned char * dest, unsigned char * ref,
-			  int stride, int height)
+void MC_put_xy_8_altivec (unsigned char * dest, const unsigned char * ref,
+			  const int stride, int height)
 {
     vector_u8_t perm0A, perm0B, perm1A, perm1B, ref0, ref1, A, B;
     vector_u8_t avg0, avg1, xor0, xor1, tmp, ones;
@@ -1509,8 +1509,8 @@ void MC_put_xy_8_altivec (unsigned char * dest, unsigned char * ref,
 }
 
 #if 0
-void MC_put_xy_8_altivec (unsigned char * dest, unsigned char * ref,
-			  int stride, int height)
+void MC_put_xy_8_altivec (unsigned char * dest, const unsigned char * ref,
+			  const int stride, int height)
 {
     vector_u8_t permA, permB, ref0, ref1, A, B, C, D, tmp, zero, ones;
     vector_u16_t splat2, temp;
@@ -1548,8 +1548,8 @@ void MC_put_xy_8_altivec (unsigned char * dest, unsigned char * ref,
 }
 #endif
 
-void MC_avg_o_16_altivec (unsigned char * dest, unsigned char * ref,
-			  int stride, int height)
+void MC_avg_o_16_altivec (unsigned char * dest, const unsigned char * ref,
+			  const int stride, int height)
 {
     vector_u8_t perm, ref0, ref1, tmp, prev;
 
@@ -1588,8 +1588,8 @@ void MC_avg_o_16_altivec (unsigned char * dest, unsigned char * ref,
     vec_st (tmp, stride, dest);
 }
 
-void MC_avg_o_8_altivec (unsigned char * dest, unsigned char * ref,
-			 int stride, int height)
+void MC_avg_o_8_altivec (unsigned char * dest, const unsigned char * ref,
+			 const int stride, int height)
 {
     vector_u8_t perm0, perm1, tmp0, tmp1, ref0, ref1, prev;
 
@@ -1639,8 +1639,8 @@ void MC_avg_o_8_altivec (unsigned char * dest, unsigned char * ref,
     vec_ste ((vector_u32_t)tmp1, 4, (unsigned int *)dest);
 }
 
-void MC_avg_x_16_altivec (unsigned char * dest, unsigned char * ref,
-			  int stride, int height)
+void MC_avg_x_16_altivec (unsigned char * dest, const unsigned char * ref,
+			  const int stride, int height)
 {
     vector_u8_t permA, permB, ref0, ref1, tmp, prev;
 
@@ -1684,8 +1684,8 @@ void MC_avg_x_16_altivec (unsigned char * dest, unsigned char * ref,
     vec_st (tmp, stride, dest);
 }
 
-void MC_avg_x_8_altivec (unsigned char * dest, unsigned char * ref,
-			 int stride, int height)
+void MC_avg_x_8_altivec (unsigned char * dest, const unsigned char * ref,
+			 const int stride, int height)
 {
     vector_u8_t perm0A, perm0B, perm1A, perm1B, ones, tmp0, tmp1, ref0, ref1;
     vector_u8_t prev;
@@ -1743,8 +1743,8 @@ void MC_avg_x_8_altivec (unsigned char * dest, unsigned char * ref,
     vec_ste ((vector_u32_t)tmp1, 4, (unsigned int *)dest);
 }
 
-void MC_avg_y_16_altivec (unsigned char * dest, unsigned char * ref,
-			  int stride, int height)
+void MC_avg_y_16_altivec (unsigned char * dest, const unsigned char * ref,
+			  const int stride, int height)
 {
     vector_u8_t perm, ref0, ref1, tmp0, tmp1, tmp, prev;
 
@@ -1791,8 +1791,8 @@ void MC_avg_y_16_altivec (unsigned char * dest, unsigned char * ref,
     vec_st (tmp, stride, dest);
 }
 
-void MC_avg_y_8_altivec (unsigned char * dest, unsigned char * ref,
-			 int stride, int height)
+void MC_avg_y_8_altivec (unsigned char * dest, const unsigned char * ref,
+			 const int stride, int height)
 {
     vector_u8_t perm0, perm1, tmp0, tmp1, tmp, ref0, ref1, prev;
 
@@ -1850,8 +1850,8 @@ void MC_avg_y_8_altivec (unsigned char * dest, unsigned char * ref,
     vec_ste ((vector_u32_t)tmp, 4, (unsigned int *)dest);
 }
 
-void MC_avg_xy_16_altivec (unsigned char * dest, unsigned char * ref,
-			   int stride, int height)
+void MC_avg_xy_16_altivec (unsigned char * dest, const unsigned char * ref,
+			   const int stride, int height)
 {
     vector_u8_t permA, permB, ref0, ref1, A, B, avg0, avg1, xor0, xor1, tmp;
     vector_u8_t ones, prev;
@@ -1927,8 +1927,8 @@ void MC_avg_xy_16_altivec (unsigned char * dest, unsigned char * ref,
     vec_st (tmp, stride, dest);
 }
 
-void MC_avg_xy_8_altivec (unsigned char * dest, unsigned char * ref,
-			  int stride, int height)
+void MC_avg_xy_8_altivec (unsigned char * dest, const unsigned char * ref,
+			  const int stride, int height)
 {
     vector_u8_t perm0A, perm0B, perm1A, perm1B, ref0, ref1, A, B;
     vector_u8_t avg0, avg1, xor0, xor1, tmp, ones, prev;
