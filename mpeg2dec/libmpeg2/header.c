@@ -76,6 +76,20 @@ uint8_t mpeg2_scan_alt[64] ATTR_ALIGN(16) = {
 
 void mpeg2_header_state_init (mpeg2dec_t * mpeg2dec)
 {
+    if (mpeg2dec->sequence.width != (unsigned)-1) {
+	int i;
+
+	mpeg2dec->sequence.width = (unsigned)-1;
+	if (!mpeg2dec->custom_fbuf)
+	    for (i = mpeg2dec->alloc_index_user;
+		 i < mpeg2dec->alloc_index; i++)
+		mpeg2_free (mpeg2dec->fbuf_alloc[i].fbuf.buf[0]);
+	if (mpeg2dec->convert_start)
+	    for (i = 0; i < 3; i++)
+		mpeg2_free (mpeg2dec->yuv_buf[i][0]);
+	if (mpeg2dec->convert_id)
+	    mpeg2_free (mpeg2dec->convert_id);
+    }
     mpeg2dec->decoder.scan = mpeg2_scan_norm;
     mpeg2dec->picture = mpeg2dec->pictures;
     mpeg2dec->fbuf[0] = &mpeg2dec->fbuf_alloc[0].fbuf;
@@ -84,6 +98,9 @@ void mpeg2_header_state_init (mpeg2dec_t * mpeg2dec)
     mpeg2dec->first = 1;
     mpeg2dec->alloc_index = 0;
     mpeg2dec->alloc_index_user = 0;
+    mpeg2dec->first_decode_slice = 1;
+    mpeg2dec->nb_decode_slices = 0xb0 - 1;
+    mpeg2dec->convert_id = NULL;
 }
 
 static void reset_info (mpeg2_info_t * info)
@@ -331,6 +348,11 @@ void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
     mpeg2dec->sequence.byte_rate = sequence->byte_rate;
     if (!memcmp (&(mpeg2dec->sequence), sequence, sizeof (mpeg2_sequence_t)))
 	mpeg2dec->state = STATE_SEQUENCE_REPEATED;
+    else if (mpeg2dec->sequence.width != (unsigned)-1) {
+	mpeg2dec->action = mpeg2_seek_sequence;
+	mpeg2dec->state = STATE_INVALID;	// XXXX STATE_END ?
+	return;
+    }
     mpeg2dec->sequence = *sequence;
 
     mpeg2dec->info.sequence = &(mpeg2dec->sequence);
