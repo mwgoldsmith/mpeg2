@@ -289,9 +289,10 @@ static void es_loop (void)
 
 int main (int argc,char *argv[])
 {
-    printf (PACKAGE"-"VERSION" (C) 2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>\n");
+    fprintf (stderr, PACKAGE"-"VERSION
+	     " (C) 2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>\n");
 
-    handle_args (argc,argv);
+    handle_args (argc, argv);
 
     signal (SIGINT, signal_handler);
 
