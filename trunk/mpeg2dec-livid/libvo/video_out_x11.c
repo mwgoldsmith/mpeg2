@@ -46,6 +46,8 @@ int XShmGetEventBase (Display *);
 
 typedef struct x11_frame_s {
     vo_frame_t vo;
+    int slice_num;
+    XImage * ximage;
 
 #ifdef LIBVO_XV
     XvImage * xvimage;
@@ -59,17 +61,14 @@ typedef struct x11_instance_s {
     x11_frame_t frame[3];
 
     /* local data */
-    uint8_t * imagedata;
     int width;
     int height;
-    int stride;
 
     /* X11 related variables */
     Display * display;
     Window window;
     GC gc;
     XVisualInfo vinfo;
-    XImage * ximage;
 
 #ifdef LIBVO_XSHM
     XShmSegmentInfo shminfo;
@@ -134,20 +133,34 @@ static void x11_create_gc (x11_instance_t * this)
     this->gc = XCreateGC (this->display, this->window, 0, &gcValues);
 }
 
-static int x11_create_image (x11_instance_t * this, int width, int height)
+static int x11_create_images (x11_instance_t * this, int width, int height)
 {
-    this->ximage = XCreateImage (this->display,
-				 this->vinfo.visual, this->vinfo.depth,
-				 ZPixmap, 0, NULL /* data */,
-				 width, height, 16, 0);
-    if (this->ximage == NULL)
-	return 1;
+    int size;
+    uint8_t * alloc;
+    int i;
 
-    this->ximage->data =
-	malloc (this->ximage->bytes_per_line * this->ximage->height);
-    if (this->ximage->data == NULL)
-	return 1;
+    size = 0;
+    alloc = NULL;
+    for (i = 0; i < 3; i++) {
+	this->frame[i].ximage =
+	    XCreateImage (this->display, this->vinfo.visual, this->vinfo.depth,
+			  ZPixmap, 0, NULL /* data */, width, height, 16, 0);
+	if (this->frame[i].ximage == NULL)
+	    return 1;
+	else if (i == 0) {
+	    size = (this->frame[0].ximage->bytes_per_line * 
+		    this->frame[0].ximage->height);
+	    alloc = malloc (3 * size);
+	    if (alloc == NULL)
+		return 1;
+	}
+	else if (size != (this->frame[0].ximage->bytes_per_line *
+			  this->frame[0].ximage->height))
+	    return 1;
 
+	this->frame[i].ximage->data = alloc;
+	alloc += size;
+    }
     return 0;
 }
 
@@ -157,13 +170,13 @@ static int x11_yuv2rgb_init (x11_instance_t * this)
 
     /* If we have blue in the lowest bit then "obviously" RGB */
     /* (the guy who wrote this convention never heard of endianness ?) */
-    mode = ((this->ximage->blue_mask & 0x01)) ? MODE_RGB : MODE_BGR;
+    mode = ((this->frame[0].ximage->blue_mask & 0x01)) ? MODE_RGB : MODE_BGR;
 
 #ifdef WORDS_BIGENDIAN 
-    if (this->ximage->byte_order != MSBFirst)
+    if (this->frame[0].ximage->byte_order != MSBFirst)
 	return 1;
 #else
-    if (this->ximage->byte_order != LSBFirst)
+    if (this->frame[0].ximage->byte_order != LSBFirst)
 	return 1;
 #endif
 
@@ -180,13 +193,14 @@ static int x11_yuv2rgb_init (x11_instance_t * this)
      */
 
     yuv2rgb_init (((this->vinfo.depth == 24) ?
-		   this->ximage->bits_per_pixel : this->vinfo.depth), mode);
+		   this->frame[0].ximage->bits_per_pixel :
+		   this->vinfo.depth), mode);
 
     return 0;
 }
 
 static int x11_common_setup (x11_instance_t * this, int width, int height,
-			     int (* create_image) (x11_instance_t *, int, int),
+			     int (* create_images) (x11_instance_t *,int,int),
 			     void (* draw_image) (vo_frame_t * frame))
 {
     if (x11_get_visual_info (this)) {
@@ -197,7 +211,7 @@ static int x11_common_setup (x11_instance_t * this, int width, int height,
     x11_create_window (this, width, height);
     x11_create_gc (this);
 
-    if (create_image (this, width, height)) {
+    if (create_images (this, width, height)) {
 	fprintf (stderr, "Cannot create ximage\n");
 	return 1;
     }
@@ -219,8 +233,6 @@ static int x11_common_setup (x11_instance_t * this, int width, int height,
 
     this->width = width;
     this->height = height;
-    this->imagedata = (unsigned char *) this->ximage->data;
-    this->stride = this->ximage->bytes_per_line;
     return 0;
 }
 
@@ -234,45 +246,52 @@ static void common_close (x11_instance_t * this)
 	XCloseDisplay (this->display);
 }
 
-static void x11_common_draw_frame (x11_instance_t * this, vo_frame_t * frame)
+static void x11_draw_frame (vo_frame_t * _frame)
 {
-    yuv2rgb (this->imagedata, frame->base[0], frame->base[1], frame->base[2],
-	     this->width, this->height,
-	     this->stride, this->width, this->width >> 1);
-}
-
-static void x11_draw_frame (vo_frame_t * frame)
-{
+    x11_frame_t * frame;
     x11_instance_t * this;
 
-    this = (x11_instance_t *) frame->this;
+    frame = (x11_frame_t *)_frame;
+    this = (x11_instance_t *)frame->vo.this;
 
-    x11_common_draw_frame (this, frame);
-    XPutImage (this->display, this->window, this->gc, this->ximage, 
+    XPutImage (this->display, this->window, this->gc, frame->ximage, 
 	       0, 0, 0, 0, this->width, this->height);
     XFlush (this->display);
 }
 
-#if 0
-static int x11_draw_slice (uint8_t * src[], int slice_num)
+static void x11_copy_slice (vo_frame_t * _frame, uint8_t ** src)
 {
-    x11_instance_t * this = &x11_static_instance;
+    x11_frame_t * frame;
+    x11_instance_t * this;
 
-    yuv2rgb (this->imagedata + this->stride * 16 * slice_num,
+    frame = (x11_frame_t *)_frame;
+    this = (x11_instance_t *) frame->vo.this;
+
+    yuv2rgb (frame->ximage->data + frame->ximage->bytes_per_line * 16 * frame->slice_num,
 	     src[0], src[1], src[2], this->width, 16,
-	     this->stride, this->width, this->width >> 1);
+	     frame->ximage->bytes_per_line, this->width, this->width >> 1);
 
-    return 0;
+    frame->slice_num++;
 }
-#endif
+
+static vo_frame_t * x11_get_frame (vo_instance_t * this, int prediction)
+{
+    x11_frame_t * frame;
+
+    frame = (x11_frame_t *)libvo_common_get_frame (this, prediction);
+    frame->vo.copy = x11_copy_slice;
+    frame->slice_num = 0;
+    return (vo_frame_t *)frame;
+}
 
 static void x11_close (vo_instance_t * _this)
 {
     x11_instance_t * this = (x11_instance_t *)_this;
+    int i;
 
     libvo_common_free_frames ((vo_instance_t *)this);
-    if (this->ximage)
-	XDestroyImage (this->ximage);
+    for (i = 0; i < 3; i++)
+	XDestroyImage (this->frame[i].ximage);
     common_close (this);
 }
 
@@ -292,13 +311,13 @@ vo_instance_t * vo_x11_setup (vo_instance_t * _this, int width, int height)
 	return NULL;
     }
 
-    if (x11_common_setup (this, width, height, x11_create_image,
+    if (x11_common_setup (this, width, height, x11_create_images,
 			  x11_draw_frame))
 	return NULL;
 
     this->vo.reinit = vo_x11_setup;
     this->vo.close = x11_close;
-    this->vo.get_frame = libvo_common_get_frame;
+    this->vo.get_frame = x11_get_frame;
 
     return (vo_instance_t *)this;
 }
@@ -369,32 +388,47 @@ static void xshm_destroy_shm (x11_instance_t * this)
 	shmctl (this->shminfo.shmid, IPC_RMID, 0);
 }
 
-static int xshm_create_image (x11_instance_t * this, int width, int height)
+static int xshm_create_images (x11_instance_t * this, int width, int height)
 {
-    this->ximage = XShmCreateImage (this->display,
-				    this->vinfo.visual, this->vinfo.depth,
-				    ZPixmap, NULL /* data */,
-				    &(this->shminfo), width, height);
-    if (this->ximage == NULL)
-	return 1;
+    int size;
+    uint8_t * alloc;
+    int i;
 
-    this->ximage->data = xshm_create_shm (this, (this->ximage->bytes_per_line *
-						 this->ximage->height));
-    if (this->ximage->data == NULL)
-	return 1;
+    size = 0;
+    alloc = NULL;
+    for (i = 0; i < 3; i++) {
+	this->frame[i].ximage =
+	    XShmCreateImage (this->display, this->vinfo.visual,
+			     this->vinfo.depth, ZPixmap, NULL /* data */,
+			     &(this->shminfo), width, height);
+	if (this->frame[i].ximage == NULL)
+	    return 1;
+	else if (i == 0) {
+	    size = (this->frame[0].ximage->bytes_per_line * 
+		    this->frame[0].ximage->height);
+	    alloc = xshm_create_shm (this, 3 * size);
+	    if (alloc == NULL)
+		return 1;
+	}
+	else if (size != (this->frame[0].ximage->bytes_per_line *
+			  this->frame[0].ximage->height))
+	    return 1;
 
+	this->frame[i].ximage->data = alloc;
+	alloc += size;
+    }
     return 0;
 }
 
-static void xshm_draw_frame (vo_frame_t * frame)
+static void xshm_draw_frame (vo_frame_t * _frame)
 {
+    x11_frame_t * frame;
     x11_instance_t * this;
 
-    this = (x11_instance_t *) frame->this;
+    frame = (x11_frame_t *)_frame;
+    this = (x11_instance_t *)frame->vo.this;
 
-    x11_common_draw_frame (this, frame);
-
-    XShmPutImage (this->display, this->window, this->gc, this->ximage, 
+    XShmPutImage (this->display, this->window, this->gc, frame->ximage, 
 		  0, 0, 0, 0, this->width, this->height, False);
     XSync (this->display, False);
 }
@@ -402,12 +436,12 @@ static void xshm_draw_frame (vo_frame_t * frame)
 static void xshm_close (vo_instance_t * _this)
 {
     x11_instance_t * this = (x11_instance_t *)_this;
+    int i;
 
     libvo_common_free_frames ((vo_instance_t *)this);
-    if (this->ximage) {
-	xshm_destroy_shm (this);
-	XDestroyImage (this->ximage);
-    }
+    xshm_destroy_shm (this);
+    for (i = 0; i < 3; i++)
+	XDestroyImage (this->frame[i].ximage);
     common_close (this);
 }
 
@@ -432,13 +466,13 @@ vo_instance_t * vo_xshm_setup (vo_instance_t * _this, int width, int height)
 	return NULL;
     }
 
-    if (x11_common_setup (this, width, height, xshm_create_image,
+    if (x11_common_setup (this, width, height, xshm_create_images,
 			  xshm_draw_frame))
 	return NULL;
 
     this->vo.reinit = vo_xshm_setup;
     this->vo.close = xshm_close;
-    this->vo.get_frame = libvo_common_get_frame;
+    this->vo.get_frame = x11_get_frame;
 
     return (vo_instance_t *)this;
 }

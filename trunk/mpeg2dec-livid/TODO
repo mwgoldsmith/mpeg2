@@ -1,7 +1,7 @@
 * before 0.2.0 :
 	* write small libvo doc
 	* fix xshm completion events in libvo
-	* put back slice handling
+	* generic slice handling, plus sdl implementation
 	* interlaced slices
 	* clean up frame_t declaration and usage (libvo/libmpeg2)
 	* libmpeg2 reentrancy
