@@ -151,9 +151,9 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
 	    mpeg2dec->non_intra_quantizer_matrix[i] = 16;
 
     sequence->profile_level_id = 0x80;
-    sequence->colour_primaries = 1;
-    sequence->transfer_characteristics = 1;
-    sequence->matrix_coefficients = 1;
+    sequence->colour_primaries = 0;
+    sequence->transfer_characteristics = 0;
+    sequence->matrix_coefficients = 0;
 
     mpeg2dec->ext_state = SEQ_EXT;
     mpeg2dec->state = STATE_SEQUENCE;
