@@ -17,4 +17,4 @@ sample5_LDADD = $(libmpeg2)
 sample6_SOURCES = sample6.c
 sample6_LDADD = $(libmpeg2) $(libmpeg2convert)
 
-EXTRA_DIST = libmpeg2.txt libvo.txt
+EXTRA_DIST = libmpeg2.txt
