@@ -213,7 +213,7 @@ static inline int get_motion_delta (decoder_t * const decoder,
 
 static inline int bound_motion_vector (const int vector, const int f_code)
 {
-#if 1
+#if 0
     unsigned int limit;
     int sign;
 
@@ -348,10 +348,10 @@ static inline int get_chroma_dc_dct_diff (decoder_t * const decoder)
 #undef bit_ptr
 }
 
-#define SATURATE(val)			\
-do {					\
-    if ((uint32_t)(val + 2048) > 4095)	\
-	val = (val > 0) ? 2047 : -2048;	\
+#define SATURATE(val)					\
+do {							\
+    if (unlikely ((uint32_t)(val + 2048) > 4095))	\
+	val = SBITS (val, 1) ^ 2047;			\
 } while (0)
 
 static void get_intra_block_B14 (decoder_t * const decoder)
