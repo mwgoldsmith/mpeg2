@@ -13,7 +13,7 @@ streams=`find $MPEG2DEC_STREAMS -name stream|grep -v 422-profile`
 for s in $streams; do
 	d=`dirname $s`
 	echo $d
-	mpeg2decode -b $s -o6 %d.pgm >/dev/null 2>&1
+	mpeg2decode -b $s -o6 %d.pgm >/dev/null 2>&1 || echo IDCT OVERFLOW
 	ls *.pgm | sort -n | xargs md5sum -b >$d/$1.md5
 	rm *.pgm
 done
