@@ -5,38 +5,31 @@ I - choosing an output module
 
 typedef struct vo_driver_s {
     char * name;
-    vo_setup_t * setup;
+    vo_open_t * open;
 } vo_driver_t;
 
-extern vo_driver_t video_out_drivers[];
+vo_driver_t * vo_drivers (void);
 
-going thru video_out_drivers, we find the driver entry with the name
-we want, and use the associated setup field in the next steps. If we
-do not specify a given name, the first entry in the array is always
-the most reasonable default.
+going thru the driver array, we find the driver entry with the name we
+want, and use the associated setup field in the next steps. If we do
+not specify a given name, the first entry in the array is always the
+most reasonable default.
 
 
 II - initializing the output module
 
-vo_instance_t * vo_setup (vo_setup_t * setup, int width, int height);
+vo_instance_t * vo_open (vo_open_t * open);
 
-setup is the value we determined in step I, width and height describe
-the desired window size. The returned vo_instance_t will be used in
-subsequent operations. On error this function returns NULL.
+this function returns a libvo instance ; this instance can then be
+passed to libmpeg2
 
 
-III - manipulating the output instance
+III - setting up a video mode
 
-vo_instance_t * vo_reinit (vo_instance_t * this, int width, int height);
+int vo_setup (vo_instance_t * this, int width, int height);
 
-This function allows us to change the window size after the
-initialization. This functions returns either the same value as was
-passed in the instance parameter, or NULL if the output module does
-not support reinitialization.
-
-void vo_close (vo_instance_t * this);
-
-Close the output instance and free the associated memory
+This function initializes the libvo instance with the desired
+resolution. On success it returns 0.
 
 
 IV - displaying frames
@@ -85,3 +78,10 @@ void vo_draw (vo_frame_t * frame);
 
 This is called when we're done working on this frame and we want it
 actually displayed.
+
+
+V - closing the output instance
+
+void vo_close (vo_instance_t * this);
+
+Close the output instance and free the associated memory
