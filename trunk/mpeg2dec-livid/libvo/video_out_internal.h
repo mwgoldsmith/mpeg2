@@ -24,7 +24,6 @@ vo_output_video_t video_out_##x = {\
 	flip_page:              x ## _flip_page,\
 	allocate_image_buffer:  x ## _allocate_image_buffer,\
 	free_image_buffer:      x ## _free_image_buffer,\
-        overlay:                x ## _overlay\
 };
 
 #ifdef __OMS__

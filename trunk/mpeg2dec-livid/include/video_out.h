@@ -10,20 +10,6 @@
 
  */
 
-
-typedef struct overlay_buf_struct {
-        unsigned char *data;    // 7-4: mixer key, 3-0: color index
-        unsigned int x;         // x start of subpicture area
-        unsigned int y;         // y start of subpicture area
-        int width;              // width of subpicture area
-        int height;             // height of subpicture area
-
-        unsigned char clut[4];  // color lookup table
-        unsigned char trans[4]; // mixer key table
-
-        unsigned int time_execute;     // time in ms
-} overlay_buf_t;
-
 typedef struct frame_s {
 	uint8_t *base[3];	// pointer to 3 planes
 	void *private;
@@ -36,24 +22,11 @@ typedef struct vo_output_video_attr_s {
 	char *title;
 } vo_output_video_attr_t;
 
-typedef struct vo_output_video_s { 
-#ifdef __OMS__
-    //PLUGIN_GENERIC; 
-    void * priv; 
-    int (*open) (void *this, void *name); 
-#endif // close must stay here too because its part of PLUGIN_GENERIC... argh
-    int (*close) (void * this); 
- 
+typedef struct vo_output_video_s {
     char * name; 
  
     int (*setup)                (vo_output_video_attr_t *attr); 
- 
-// put an overlay in the queue 
-// id ... requested id (if the same already exists, replace it.) 
-// if id==0 assign a new id 
-// return assigned id 
-// NEEDED FOR SPUDEC .... SO TAKE CARE IF CHANGING !!! 
-    int (*overlay)              (overlay_buf_t *overlay_buf, int id); 
+    int (*close) (void * this); 
  
 // <old> 
     int (*draw_frame)   (frame_t *frame); 

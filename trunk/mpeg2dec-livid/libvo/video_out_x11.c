@@ -63,7 +63,6 @@ static void _xv_flip_page	(void);
 static int x11_draw_frame	(frame_t *frame);
 static int x11_draw_slice	(uint8_t *src[], int slice_num);
 static void x11_flip_page	(void);
-static int x11_overlay		(overlay_buf_t *overlay_buf, int id);
 static void x11_free_image_buffer	(frame_t* image);
 static frame_t * x11_allocate_image_buffer (int width, int height, uint32_t format);
 
@@ -106,9 +105,6 @@ static struct x11_priv_s {
 #endif
 
 	int win_width, win_height;
-
-// FIXME: just for now - overlay
-	overlay_buf_t overlay_buf;
 } x11_priv;
 
 
@@ -301,7 +297,6 @@ static int x11_open (void)
 		video_out_x11.draw_frame = x11_draw_frame;
 		video_out_x11.draw_slice = x11_draw_slice;
 		video_out_x11.flip_page = x11_flip_page;
-		video_out_x11.overlay = x11_overlay;
 	}
 
 #ifdef DENT_RESCALE
@@ -612,11 +607,6 @@ static void x11_flip_page (void)
 #endif
 	}
 
-#ifdef DENT_RESCALE
-	overlay_rgb (priv->ImageData, &priv->overlay_buf, priv->image_width, priv->image_height);
-	rescale (priv->ImageData);
-#endif
-
 #ifdef LIBVO_XSHM
 	if (priv->Shmem_Flag) {
 		XShmPutImage (priv->display, priv->window, priv->gc, priv->ximage, 
@@ -629,21 +619,6 @@ static void x11_flip_page (void)
 			0, 0, 0, 0, priv->ximage->width, priv->ximage->height);
 		XFlush (priv->display);
 	}
-}
-
-
-static int x11_overlay	(overlay_buf_t *overlay_buf, int id)
-{
-	struct x11_priv_s *priv = &x11_priv;
-
-	if (priv->overlay_buf.data)
-		free (priv->overlay_buf.data);
-
-fprintf (stderr, "width: %d height: %d", overlay_buf->width, overlay_buf->height);
-
-	memcpy (&priv->overlay_buf, overlay_buf, sizeof (overlay_buf_t));
-
-	return 0;
 }
 
 

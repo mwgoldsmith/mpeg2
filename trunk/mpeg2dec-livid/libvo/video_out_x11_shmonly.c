@@ -1,4 +1,4 @@
-// fix event handling first. wait for unmap before close display.
+// fix event handling. wait for unmap before close display.
 
 /* 
  * video_out_x11.c, X11 interface
@@ -49,7 +49,6 @@ static struct x11_priv_s {
     unsigned char *ImageData;
     int image_width;
     int image_height;
-    int oldtime;
 
 /* X11 related variables */
     Display *display;
@@ -62,14 +61,11 @@ static struct x11_priv_s {
 
     // XSHM
     XShmSegmentInfo Shminfo; // num_buffers
-
-    int win_width, win_height;
 } x11_priv;
 
 static int x11_open (void)
 {
     int screen;
-    XSizeHints hint;
     XGCValues xgcv;
     Colormap theCmap;
     XSetWindowAttributes xswa;
@@ -90,12 +86,6 @@ static int x11_open (void)
     priv->depth = attribs.depth;
 
     screen = DefaultScreen (priv->display);
-
-    hint.x = 0;
-    hint.y = 0;
-    hint.width = 320;
-    hint.height = 200;
-    hint.flags = PPosition | PSize;
 
     /*
      *
@@ -138,13 +128,9 @@ static int x11_open (void)
     priv->window =
 	XCreateWindow (priv->display,
 		       RootWindow (priv->display,screen),
-		       hint.x, hint.y, hint.width, hint.height,
+		       0, 0, 320, 200,
 		       4, priv->depth, CopyFromParent, priv->vinfo.visual,
 		       xswamask, &xswa);
-
-    // Tell other applications about this window
-    XSetStandardProperties(priv->display, priv->window,
-			   "Open Media System", "OMS", None, NULL, 0, &hint);
 
     // Map window
     XMapWindow (priv->display, priv->window);
@@ -162,9 +148,6 @@ static int x11_open (void)
     }
 
     priv->X_already_started++;
-
-    // catch window resizes
-    //XSelectInput (priv->display, priv->window, StructureNotifyMask);
 
     LOG (LOG_DEBUG, "Open Called\n");
     return 0;
@@ -212,7 +195,6 @@ static void _xshm_destroy (XShmSegmentInfo *Shminfo)
 
 static int x11_setup (vo_output_video_attr_t *attr)
 {
-    XSizeHints hint;
     int mode;
     struct x11_priv_s *priv = &x11_priv;
 
@@ -221,18 +203,7 @@ static int x11_setup (vo_output_video_attr_t *attr)
     priv->image_width = attr->width;
     priv->image_height = attr->height;
 
-    hint.x = 0;
-    hint.y = 0;
-    hint.width = priv->image_width;
-    hint.height = priv->image_height;
-    hint.flags = PPosition | PSize;
-
     XResizeWindow (priv->display, priv->window, priv->image_width, priv->image_height);
-
-    if (attr->title)
-	XSetStandardProperties (priv->display, priv->window,
-				attr->title, attr->title, None, NULL, 0,
-				&hint);
 
     priv->ximage = XShmCreateImage (priv->display, priv->vinfo.visual, priv->depth, ZPixmap, NULL, &priv->Shminfo, attr->width, priv->image_height);
 
@@ -299,11 +270,6 @@ static void x11_flip_page (void)
     XShmPutImage (priv->display, priv->window, priv->gc, priv->ximage, 
 		  0, 0, 0, 0, priv->ximage->width, priv->ximage->height, False); 
     XFlush (priv->display);
-}
-
-static int x11_overlay	(overlay_buf_t *overlay_buf, int id)
-{
-    return 0;
 }
 
 static int x11_draw_slice (uint8_t *src[], int slice_num)

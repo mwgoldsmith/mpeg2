@@ -50,17 +50,3 @@ if test x"$enable_mlib" != x"no"; then
 	LIBVO_LIBS="$LIBVO_LIBS -L/opt/SUNWmlib/lib -lmlib"],,
 	[-L/opt/SUNWmlib/lib])
 fi
-
-dnl the following hardware drivers are EXPERIMENTAL.
-dnl we do not attempt to make real checks for them.
-
-dnl check for MGA - EXPERIMENTAL
-AC_ARG_ENABLE([mga],[  --enable-mga            make a version using MGA],
-    [AC_DEFINE([LIBVO_MGA],,[libvo MGA support])
-    LIBVO_PLUGINS="${LIBVO_PLUGINS} display_mga.la"])
-
-dnl check for ggi - EXPERIMENTAL
-AC_ARG_ENABLE([ggi],[  --enable-ggi            make a version using ggi],
-    [AC_DEFINE([LIBVO_GGI],,[libvo ggi support])
-    LIBVO_LIBS="$LIBVO_LIBS -lggi"
-    LIBVO_PLUGINS="${LIBVO_PLUGINS} display_ggi.la"])

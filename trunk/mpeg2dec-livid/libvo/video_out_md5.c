@@ -83,10 +83,6 @@ static void md5_flip_page (void)
 {
 }
 
-static int md5_overlay (overlay_buf_t * overlay_buf, int id) {
-    return 0;
-}
-
 static int md5_setup (vo_output_video_attr_t * attr)
 {
     if (!(md5_file = fopen ("md5", "w")))

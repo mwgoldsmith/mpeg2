@@ -45,11 +45,6 @@ static void null_flip_page (void)
 {
 }
 
-static int null_overlay (overlay_buf_t * overlay_buf, int id)
-{
-    return 0;
-}
-
 static int null_setup (vo_output_video_attr_t *attr)
 {
     return 0;
