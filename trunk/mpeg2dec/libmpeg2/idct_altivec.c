@@ -67,46 +67,11 @@ static const vector_s16_t constants ATTR_ALIGN(16) =
 static const vector_s16_t constants_1 ATTR_ALIGN(16) =
     VEC_S16 (16384, 22725, 21407, 19266, 16384, 19266, 21407, 22725);
 static const vector_s16_t constants_2 ATTR_ALIGN(16) =
-    VEC_S16 (22725, 31521, 29692, 26722, 22725, 26722, 29692, 31521);
+    VEC_S16 (16069, 22289, 20995, 18895, 16069, 18895, 20995, 22289);
 static const vector_s16_t constants_3 ATTR_ALIGN(16) =
     VEC_S16 (21407, 29692, 27969, 25172, 21407, 25172, 27969, 29692);
 static const vector_s16_t constants_4 ATTR_ALIGN(16) =
-    VEC_S16 (19266, 26722, 25172, 22654, 19266, 22654, 25172, 26722);
-
-#define IDCT_HALF					\
-    /* 1st stage */					\
-    t1 = vec_mradds (a1, vx7, vx1);			\
-    t8 = vec_mradds (a1, vx1, vec_subs (zero, vx7));	\
-    t7 = vec_mradds (a2, vx5, vx3);			\
-    t3 = vec_mradds (ma2, vx3, vx5);			\
-							\
-    /* 2nd stage */					\
-    t5 = vec_adds (vx0, vx4);				\
-    t0 = vec_subs (vx0, vx4);				\
-    t2 = vec_mradds (a0, vx6, vx2);			\
-    t4 = vec_mradds (a0, vx2, vec_subs (zero, vx6));	\
-    t6 = vec_adds (t8, t3);				\
-    t3 = vec_subs (t8, t3);				\
-    t8 = vec_subs (t1, t7);				\
-    t1 = vec_adds (t1, t7);				\
-							\
-    /* 3rd stage */					\
-    t7 = vec_adds (t5, t2);				\
-    t2 = vec_subs (t5, t2);				\
-    t5 = vec_adds (t0, t4);				\
-    t0 = vec_subs (t0, t4);				\
-    t4 = vec_subs (t8, t3);				\
-    t3 = vec_adds (t8, t3);				\
-							\
-    /* 4th stage */					\
-    vy0 = vec_adds (t7, t1);				\
-    vy7 = vec_subs (t7, t1);				\
-    vy1 = vec_mradds (c4, t3, t5);			\
-    vy6 = vec_mradds (mc4, t3, t5);			\
-    vy2 = vec_mradds (c4, t4, t0);			\
-    vy5 = vec_mradds (mc4, t4, t0);			\
-    vy3 = vec_adds (t2, t6);				\
-    vy4 = vec_subs (t2, t6);
+    VEC_S16 (13623, 18895, 17799, 16019, 13623, 16019, 17799, 18895);
 
 #define IDCT								\
     vector_s16_t vx0, vx1, vx2, vx3, vx4, vx5, vx6, vx7;		\
@@ -125,16 +90,48 @@ static const vector_s16_t constants_4 ATTR_ALIGN(16) =
 									\
     zero = vec_splat_s16 (0);						\
 									\
-    vx0 = vec_mradds (block[0], constants_1, zero);			\
-    vx1 = vec_mradds (block[1], constants_2, zero);			\
-    vx2 = vec_mradds (block[2], constants_3, zero);			\
-    vx3 = vec_mradds (block[3], constants_4, zero);			\
-    vx4 = vec_mradds (block[4], constants_1, zero);			\
-    vx5 = vec_mradds (block[5], constants_4, zero);			\
-    vx6 = vec_mradds (block[6], constants_3, zero);			\
-    vx7 = vec_mradds (block[7], constants_2, zero);			\
+    vx0 = vec_adds (block[0], block[4]);				\
+    vx4 = vec_subs (block[0], block[4]);				\
+    t5 = vec_mradds (vx0, constants_1, zero);				\
+    t0 = vec_mradds (vx4, constants_1, zero);				\
 									\
-    IDCT_HALF								\
+    vx1 = vec_mradds (a1, block[7], block[1]);				\
+    vx7 = vec_mradds (a1, block[1], vec_subs (zero, block[7]));		\
+    t1 = vec_mradds (vx1, constants_2, zero);				\
+    t8 = vec_mradds (vx7, constants_2, zero);				\
+									\
+    vx2 = vec_mradds (a0, block[6], block[2]);				\
+    vx6 = vec_mradds (a0, block[2], vec_subs (zero, block[6]));		\
+    t2 = vec_mradds (vx2, constants_3, zero);				\
+    t4 = vec_mradds (vx6, constants_3, zero);				\
+									\
+    vx3 = vec_mradds (block[3], constants_4, zero);			\
+    vx5 = vec_mradds (block[5], constants_4, zero);			\
+    t7 = vec_mradds (a2, vx5, vx3);					\
+    t3 = vec_mradds (ma2, vx3, vx5);					\
+									\
+    t6 = vec_adds (t8, t3);						\
+    t3 = vec_subs (t8, t3);						\
+    t8 = vec_subs (t1, t7);						\
+    t1 = vec_adds (t1, t7);						\
+    t6 = vec_mradds (a0, t6, t6);	/* a0+1 == 2*c4 */		\
+    t1 = vec_mradds (a0, t1, t1);	/* a0+1 == 2*c4 */		\
+									\
+    t7 = vec_adds (t5, t2);						\
+    t2 = vec_subs (t5, t2);						\
+    t5 = vec_adds (t0, t4);						\
+    t0 = vec_subs (t0, t4);						\
+    t4 = vec_subs (t8, t3);						\
+    t3 = vec_adds (t8, t3);						\
+									\
+    vy0 = vec_adds (t7, t1);						\
+    vy7 = vec_subs (t7, t1);						\
+    vy1 = vec_adds (t5, t3);						\
+    vy6 = vec_subs (t5, t3);						\
+    vy2 = vec_adds (t0, t4);						\
+    vy5 = vec_subs (t0, t4);						\
+    vy3 = vec_adds (t2, t6);						\
+    vy4 = vec_subs (t2, t6);						\
 									\
     vx0 = vec_mergeh (vy0, vy4);					\
     vx1 = vec_mergel (vy0, vy4);					\
@@ -154,7 +151,7 @@ static const vector_s16_t constants_4 ATTR_ALIGN(16) =
     vy6 = vec_mergeh (vx3, vx7);					\
     vy7 = vec_mergel (vx3, vx7);					\
 									\
-    vx0 = vec_adds (vec_mergeh (vy0, vy4), bias);			\
+    vx0 = vec_mergeh (vy0, vy4);					\
     vx1 = vec_mergel (vy0, vy4);					\
     vx2 = vec_mergeh (vy1, vy5);					\
     vx3 = vec_mergel (vy1, vy5);					\
@@ -163,7 +160,39 @@ static const vector_s16_t constants_4 ATTR_ALIGN(16) =
     vx6 = vec_mergeh (vy3, vy7);					\
     vx7 = vec_mergel (vy3, vy7);					\
 									\
-    IDCT_HALF								\
+    vx0 = vec_adds (vx0, bias);						\
+    t5 = vec_adds (vx0, vx4);						\
+    t0 = vec_subs (vx0, vx4);						\
+									\
+    t1 = vec_mradds (a1, vx7, vx1);					\
+    t8 = vec_mradds (a1, vx1, vec_subs (zero, vx7));			\
+									\
+    t2 = vec_mradds (a0, vx6, vx2);					\
+    t4 = vec_mradds (a0, vx2, vec_subs (zero, vx6));			\
+									\
+    t7 = vec_mradds (a2, vx5, vx3);					\
+    t3 = vec_mradds (ma2, vx3, vx5);					\
+									\
+    t6 = vec_adds (t8, t3);						\
+    t3 = vec_subs (t8, t3);						\
+    t8 = vec_subs (t1, t7);						\
+    t1 = vec_adds (t1, t7);						\
+									\
+    t7 = vec_adds (t5, t2);						\
+    t2 = vec_subs (t5, t2);						\
+    t5 = vec_adds (t0, t4);						\
+    t0 = vec_subs (t0, t4);						\
+    t4 = vec_subs (t8, t3);						\
+    t3 = vec_adds (t8, t3);						\
+									\
+    vy0 = vec_adds (t7, t1);						\
+    vy7 = vec_subs (t7, t1);						\
+    vy1 = vec_mradds (c4, t3, t5);					\
+    vy6 = vec_mradds (mc4, t3, t5);					\
+    vy2 = vec_mradds (c4, t4, t0);					\
+    vy5 = vec_mradds (mc4, t4, t0);					\
+    vy3 = vec_adds (t2, t6);						\
+    vy4 = vec_subs (t2, t6);						\
 									\
     shift = vec_splat_u16 (6);						\
     vx0 = vec_sra (vy0, shift);						\
