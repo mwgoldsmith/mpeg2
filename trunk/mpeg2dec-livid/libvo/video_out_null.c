@@ -21,6 +21,8 @@
  *
  */
 
+#include "config.h"
+
 #include <stdlib.h>	/* only used for NULL */
 #include <inttypes.h>
 
