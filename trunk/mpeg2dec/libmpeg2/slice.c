@@ -341,16 +341,15 @@ static void get_intra_block_B14 (mpeg2_decoder_t * const decoder)
     int i;
     int j;
     int val;
-    const uint8_t * scan = decoder->scan;
-    const uint16_t * quant_matrix = decoder->intra_quantizer_matrix;
+    const uint8_t * const scan = decoder->scan;
+    const uint16_t * const quant_matrix = decoder->intra_quantizer_matrix;
     int mismatch;
     const DCTtab * tab;
     uint32_t bit_buf;
     int bits;
     const uint8_t * bit_ptr;
-    int16_t * dest;
+    int16_t * const dest = decoder->DCTblock;
 
-    dest = decoder->DCTblock;
     i = 0;
     mismatch = ~dest[0];
 
@@ -453,16 +452,15 @@ static void get_intra_block_B15 (mpeg2_decoder_t * const decoder)
     int i;
     int j;
     int val;
-    const uint8_t * scan = decoder->scan;
-    const uint16_t * quant_matrix = decoder->intra_quantizer_matrix;
+    const uint8_t * const scan = decoder->scan;
+    const uint16_t * const quant_matrix = decoder->intra_quantizer_matrix;
     int mismatch;
     const DCTtab * tab;
     uint32_t bit_buf;
     int bits;
     const uint8_t * bit_ptr;
-    int16_t * dest;
+    int16_t * const dest = decoder->DCTblock;
 
-    dest = decoder->DCTblock;
     i = 0;
     mismatch = ~dest[0];
 
@@ -564,18 +562,17 @@ static int get_non_intra_block (mpeg2_decoder_t * const decoder)
     int i;
     int j;
     int val;
-    const uint8_t * scan = decoder->scan;
-    const uint16_t * quant_matrix = decoder->non_intra_quantizer_matrix;
+    const uint8_t * const scan = decoder->scan;
+    const uint16_t * const quant_matrix = decoder->non_intra_quantizer_matrix;
     int mismatch;
     const DCTtab * tab;
     uint32_t bit_buf;
     int bits;
     const uint8_t * bit_ptr;
-    int16_t * dest;
+    int16_t * const dest = decoder->DCTblock;
 
     i = -1;
     mismatch = -1;
-    dest = decoder->DCTblock;
 
     bit_buf = decoder->bitstream_buf;
     bits = decoder->bitstream_bits;
@@ -687,16 +684,15 @@ static void get_mpeg1_intra_block (mpeg2_decoder_t * const decoder)
     int i;
     int j;
     int val;
-    const uint8_t * scan = decoder->scan;
-    const uint16_t * quant_matrix = decoder->intra_quantizer_matrix;
+    const uint8_t * const scan = decoder->scan;
+    const uint16_t * const quant_matrix = decoder->intra_quantizer_matrix;
     const DCTtab * tab;
     uint32_t bit_buf;
     int bits;
     const uint8_t * bit_ptr;
-    int16_t * dest;
+    int16_t * const dest = decoder->DCTblock;
 
     i = 0;
-    dest = decoder->DCTblock;
 
     bit_buf = decoder->bitstream_buf;
     bits = decoder->bitstream_bits;
@@ -805,16 +801,15 @@ static int get_mpeg1_non_intra_block (mpeg2_decoder_t * const decoder)
     int i;
     int j;
     int val;
-    const uint8_t * scan = decoder->scan;
-    const uint16_t * quant_matrix = decoder->non_intra_quantizer_matrix;
+    const uint8_t * const scan = decoder->scan;
+    const uint16_t * const quant_matrix = decoder->non_intra_quantizer_matrix;
     const DCTtab * tab;
     uint32_t bit_buf;
     int bits;
     const uint8_t * bit_ptr;
-    int16_t * dest;
+    int16_t * const dest = decoder->DCTblock;
 
     i = -1;
-    dest = decoder->DCTblock;
 
     bit_buf = decoder->bitstream_buf;
     bits = decoder->bitstream_bits;
