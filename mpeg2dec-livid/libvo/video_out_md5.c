@@ -93,7 +93,6 @@ static int md5_setup (vo_output_video_attr_t * attr)
     if (!(md5_file = fopen ("md5", "w")))
 	return -1;
 
-    return 0;
     image_width = attr->width;
     image_height = attr->height;
 
