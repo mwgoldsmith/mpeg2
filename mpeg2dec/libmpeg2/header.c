@@ -358,7 +358,7 @@ void mpeg2_header_picture_start (mpeg2dec_t * mpeg2dec)
 	mpeg2dec->state = STATE_PICTURE;
 	picture = mpeg2dec->pictures;
 	if ((decoder->coding_type != PIC_FLAG_CODING_TYPE_B) ^
-	    (picture >= mpeg2dec->pictures + 2))
+	    (mpeg2dec->picture >= mpeg2dec->pictures + 2))
 	    picture += 2;
     } else {
 	mpeg2dec->state = STATE_PICTURE_2ND;
