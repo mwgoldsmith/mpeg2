@@ -340,14 +340,12 @@ void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id)
     mpeg2_fbuf_t * fbuf;
 
     if (mpeg2dec->custom_fbuf) {
-	int b_type;
 	if (mpeg2dec->state == STATE_SEQUENCE) {
 	    mpeg2dec->fbuf[2] = mpeg2dec->fbuf[1];
 	    mpeg2dec->fbuf[1] = mpeg2dec->fbuf[0];
-	    b_type = 0;
-	} else
-	    b_type = (mpeg2dec->decoder.coding_type == PIC_FLAG_CODING_TYPE_B);
-	mpeg2_set_fbuf (mpeg2dec, b_type);
+	}
+	mpeg2_set_fbuf (mpeg2dec, (mpeg2dec->decoder.coding_type ==
+				   PIC_FLAG_CODING_TYPE_B));
 	fbuf = mpeg2dec->fbuf[0];
     } else {
 	fbuf = &(mpeg2dec->fbuf_alloc[mpeg2dec->alloc_index].fbuf);
