@@ -77,58 +77,6 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
     mpeg2_header_state_init (mpeg2dec->decoder);
 }
 
-static inline int crap1 (mpeg2dec_t * mpeg2dec)
-{
-    decoder_t * decoder = mpeg2dec->decoder;
-    int is_frame_done = 0;
-
-    if ((decoder->picture_structure == FRAME_PICTURE) ||
-	(decoder->second_field)) {
-	is_frame_done = 1;
-	vo_draw ((decoder->coding_type == B_TYPE) ?
-		 decoder->current_frame :
-		 decoder->forward_reference_frame);
-    }
-    return is_frame_done;
-}
-
-static inline void crap2 (mpeg2dec_t * mpeg2dec)
-{
-    decoder_t * decoder = mpeg2dec->decoder;
-
-    if (vo_setup (mpeg2dec->output, decoder->width, decoder->height)) {
-	fprintf (stderr, "display setup failed\n");
-	exit (1);
-    }
-    decoder->forward_reference_frame =
-	vo_get_frame (mpeg2dec->output,
-		      VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
-    decoder->backward_reference_frame =
-	vo_get_frame (mpeg2dec->output,
-		      VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
-}
-
-static inline void crap3 (mpeg2dec_t * mpeg2dec)
-{
-    decoder_t * decoder = mpeg2dec->decoder;
-
-    if (decoder->second_field)
-	vo_field (decoder->current_frame, decoder->picture_structure);
-    else if (decoder->coding_type == B_TYPE)
-	decoder->current_frame =
-	    vo_get_frame (mpeg2dec->output,
-			  decoder->picture_structure);
-    else {
-	decoder->current_frame =
-	    vo_get_frame (mpeg2dec->output,
-			  (VO_PREDICTION_FLAG |
-			   decoder->picture_structure));
-	decoder->forward_reference_frame =
-	    decoder->backward_reference_frame;
-	decoder->backward_reference_frame = decoder->current_frame;
-    }
-}
-
 static inline uint8_t * copy_chunk (mpeg2dec_t * mpeg2dec,
 				    uint8_t * current, uint8_t * end)
 {
@@ -188,18 +136,9 @@ startcode:
 
 int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 {
-    static int next_state[] = {
-	STATE_PICTURE, STATE_SEQUENCE, 0, STATE_END, STATE_GOP
-    };
     int state;
     uint8_t code;
     decoder_t * decoder;
-
-    if (mpeg2dec->state == STATE_END) {
-	mpeg2dec->state = STATE_INVALID;
-	mpeg2dec->last_sequence.width = (unsigned int) -1;
-	return STATE_END;
-    }
 
     while (1) {
 	code = mpeg2dec->code;
@@ -242,7 +181,7 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 	state = mpeg2dec->state;
 	switch (RECEIVED (mpeg2dec->code, state)) {
 
-	/* transistion from STATE_SEQUENCE to STATE_GOP or STATE_PICTURE */
+	/* state transition after a sequence header */
 	case RECEIVED (0x00, STATE_SEQUENCE):
 	case RECEIVED (0xb8, STATE_SEQUENCE):
 	    mpeg2dec->state = mpeg2dec->code ? STATE_GOP : STATE_PICTURE;
@@ -254,13 +193,20 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 	    }
 	    break;
 
+	/* end of sequence */
+	case RECEIVED (0xb7, STATE_SLICE):
+	    mpeg2dec->state = STATE_INVALID;
+	    mpeg2dec->last_sequence.width = (unsigned int) -1;
+	    return STATE_END;
+
 	/* other legal state transitions */
 	case RECEIVED (0x00, STATE_GOP):
 	case RECEIVED (0x00, STATE_SLICE):
 	case RECEIVED (0xb3, STATE_SLICE):
-	case RECEIVED (0xb7, STATE_SLICE):
 	case RECEIVED (0xb8, STATE_SLICE):
-	    mpeg2dec->state = next_state[(mpeg2dec->code >> 1) & 7];
+	    mpeg2dec->state = ((!mpeg2dec->code) ? STATE_PICTURE :
+			       ((mpeg2dec->code == 0xb3) ? STATE_SEQUENCE :
+				STATE_GOP));
 	    return state;
 
 	/* legal headers within a given state */
@@ -289,26 +235,61 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 
 int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
 {
-    int ret;
+    int state, ret;
 
     ret = 0;
-    while (1)
-	switch (mpeg2_buffer (mpeg2dec, &current, end)) {
+    while (1) {
+	decoder_t * decoder = mpeg2dec->decoder;
+
+	state = mpeg2_buffer (mpeg2dec, &current, end);
+	switch (state) {
 	case -1:
 	    return ret;
 	case STATE_SEQUENCE:
-	    crap2 (mpeg2dec);		/* alloc picture buffers */ 
+	    if (vo_setup (mpeg2dec->output, decoder->width, decoder->height)) {
+		fprintf (stderr, "display setup failed\n");
+		exit (1);
+	    }
+	    decoder->forward_reference_frame =
+		vo_get_frame (mpeg2dec->output,
+			      VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
+	    decoder->backward_reference_frame =
+		vo_get_frame (mpeg2dec->output,
+			      VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
 	    break; 
 	case STATE_PICTURE:
-	    crap3 (mpeg2dec);		/* done decoding picture */
+	    if (decoder->second_field)
+		vo_field (decoder->current_frame, decoder->picture_structure);
+	    else if (decoder->coding_type == B_TYPE)
+		decoder->current_frame =
+		    vo_get_frame (mpeg2dec->output,
+				  decoder->picture_structure);
+	    else {
+		decoder->current_frame =
+		    vo_get_frame (mpeg2dec->output,
+				  (VO_PREDICTION_FLAG |
+				   decoder->picture_structure));
+		decoder->forward_reference_frame =
+		    decoder->backward_reference_frame;
+		decoder->backward_reference_frame = decoder->current_frame;
+	    }
 	    break;
 	case STATE_SLICE:
-	    ret += crap1 (mpeg2dec);	/* display picture, swap buf */
-	    break;
 	case STATE_END:
-	    vo_draw (mpeg2dec->decoder->backward_reference_frame);
+	    if ((decoder->picture_structure == FRAME_PICTURE) ||
+		(decoder->second_field)) {
+		vo_draw ((decoder->coding_type == B_TYPE) ?
+			 decoder->current_frame :
+			 decoder->forward_reference_frame);
+		ret++;
+	    }
+	    if (state == STATE_END) {
+		vo_draw (mpeg2dec->decoder->backward_reference_frame);
+		ret++;
+	    }
 	    break;
 	}
+    }
 }
 
 void mpeg2_pts (mpeg2dec_t * mpeg2dec, uint32_t pts)
