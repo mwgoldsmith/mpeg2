@@ -62,7 +62,6 @@ motion_comp_init (void)
 	{
 		fprintf (stderr, "No accelerated motion compensation found\n");
 		mc_functions = mc_functions_c;
-		motion_comp_c_init();
 	}
 }
 
@@ -70,30 +69,30 @@ void motion_block (void (** table) (uint_8 *, uint_8 *, sint_32, sint_32),
 				   int x_pred, int y_pred,
 				   uint_8 * dest[3], int dest_offset,
 				   uint_8 * src[3], int src_offset,
-				   int pitch, int height)
+				   int stride, int height)
 {
 	uint_32 xy_half;
 	uint_8 *src1, *src2;
 
 	xy_half = ((y_pred & 1) << 1) | (x_pred & 1);
 
-	src1 = src[0] + src_offset + (x_pred >> 1) + (y_pred >> 1) * pitch;
+	src1 = src[0] + src_offset + (x_pred >> 1) + (y_pred >> 1) * stride;
 
-	table[xy_half] (dest[0] + dest_offset, src1, pitch, height);
+	table[xy_half] (dest[0] + dest_offset, src1, stride, height);
 
 	x_pred /= 2;
 	y_pred /= 2;
 
 	xy_half = ((y_pred & 1) << 1) | (x_pred & 1);
-	pitch >>= 1;
+	stride >>= 1;
 	height >>= 1;
 	src_offset >>= 1;
 	dest_offset >>= 1;
 
-	src1 = src[1] + src_offset + (x_pred >> 1) + (y_pred >> 1) * pitch;
-	src2 = src[2] + src_offset + (x_pred >> 1) + (y_pred >> 1) * pitch;
+	src1 = src[1] + src_offset + (x_pred >> 1) + (y_pred >> 1) * stride;
+	src2 = src[2] + src_offset + (x_pred >> 1) + (y_pred >> 1) * stride;
 
-	table[4+xy_half] (dest[1] + dest_offset, src1, pitch, height);
-	table[4+xy_half] (dest[2] + dest_offset, src2, pitch, height);
+	table[4+xy_half] (dest[1] + dest_offset, src1, stride, height);
+	table[4+xy_half] (dest[2] + dest_offset, src2, stride, height);
 }
 

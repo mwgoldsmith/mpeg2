@@ -36,7 +36,8 @@
 #include "idct.h"
 
 extern mc_functions_t mc_functions;
-extern void (*idct_block)(sint_16 *block);
+extern void (*idct_block_copy)(sint_16 * block, uint_8 * dest, int stride);
+extern void (*idct_block_add)(sint_16 * block, uint_8 * dest, int stride);
 
 //XXX put these on the stack in slice_process?
 static slice_t slice;
@@ -201,20 +202,18 @@ slice_get_non_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest)
 }
 
 static inline void slice_intra_DCT (picture_t * picture, slice_t * slice,
-									int cc, uint_8 * dest, int pitch)
+									int cc, uint_8 * dest, int stride)
 {
 	slice_get_intra_block (picture, slice, DCTblock, cc);
-	idct_block (DCTblock);
-	mc_functions.idct_copy (dest, DCTblock, pitch);
+	idct_block_copy (DCTblock, dest, stride);
 	memset (DCTblock, 0, sizeof(sint_16) * 64);
 }
 
 static inline void slice_non_intra_DCT (picture_t * picture, slice_t * slice,
-										uint_8 * dest, int pitch)
+										uint_8 * dest, int stride)
 {
 	slice_get_non_intra_block (picture, slice, DCTblock);
-	idct_block (DCTblock);
-	mc_functions.idct_add (dest, DCTblock, pitch);
+	idct_block_add (DCTblock, dest, stride);
 	memset (DCTblock, 0, sizeof(sint_16) * 64);
 }
 
@@ -343,13 +342,13 @@ void motion_conceal (motion_t * motion)
 }
 
 
-#define MOTION(routine,direction,slice,dest,offset,pitch)	\
+#define MOTION(routine,direction,slice,dest,offset,stride)	\
 do {														\
 	if ((direction) & MACROBLOCK_MOTION_FORWARD)			\
-		routine (&((slice).f_motion), dest, offset, pitch,	\
+		routine (&((slice).f_motion), dest, offset, stride,	\
 				 mc_functions.put);							\
 	if ((direction) & MACROBLOCK_MOTION_BACKWARD)			\
-		routine (&((slice).b_motion), dest, offset, pitch,	\
+		routine (&((slice).b_motion), dest, offset, stride,	\
 				 ((direction) & MACROBLOCK_MOTION_FORWARD ?	\
 				  mc_functions.avg : mc_functions.put));	\
 } while (0);
@@ -436,7 +435,7 @@ slice_process (picture_t * picture, uint_8 code, uint_8 * buffer)
 
 		if (macroblock_modes & MACROBLOCK_INTRA)
 		{
-			int DCT_offset, DCT_pitch;
+			int DCT_offset, DCT_stride;
 
 			if (picture->concealment_motion_vectors)
 				motion_conceal (&slice.f_motion);
@@ -451,19 +450,19 @@ slice_process (picture_t * picture, uint_8 code, uint_8 * buffer)
 			if (macroblock_modes & DCT_TYPE_INTERLACED)
 			{
 				DCT_offset = width;
-				DCT_pitch = width * 2;
+				DCT_stride = width * 2;
 			}
 			else
 			{
 				DCT_offset = width * 8;
-				DCT_pitch = width;
+				DCT_stride = width;
 			}
 
 			// Decode lum blocks
-			slice_intra_DCT (picture, &slice, 0, dest[0] + offset, DCT_pitch);
-			slice_intra_DCT (picture, &slice, 0, dest[0] + offset + 8, DCT_pitch);
-			slice_intra_DCT (picture, &slice, 0, dest[0] + offset + DCT_offset, DCT_pitch);
-			slice_intra_DCT (picture, &slice, 0, dest[0] + offset + DCT_offset + 8, DCT_pitch);
+			slice_intra_DCT (picture, &slice, 0, dest[0] + offset, DCT_stride);
+			slice_intra_DCT (picture, &slice, 0, dest[0] + offset + 8, DCT_stride);
+			slice_intra_DCT (picture, &slice, 0, dest[0] + offset + DCT_offset, DCT_stride);
+			slice_intra_DCT (picture, &slice, 0, dest[0] + offset + DCT_offset + 8, DCT_stride);
 
 			// Decode chroma blocks
 			slice_intra_DCT (picture, &slice, 1, dest[1] + (offset>>1), width>>1);
@@ -497,17 +496,17 @@ slice_process (picture_t * picture, uint_8 code, uint_8 * buffer)
 			if (macroblock_modes & MACROBLOCK_PATTERN)
 			{
 				int coded_block_pattern;
-				int DCT_offset, DCT_pitch;
+				int DCT_offset, DCT_stride;
 
 				if (macroblock_modes & DCT_TYPE_INTERLACED)
 				{
 					DCT_offset = width;
-					DCT_pitch = width * 2;
+					DCT_stride = width * 2;
 				}
 				else
 				{
 					DCT_offset = width * 8;
-					DCT_pitch = width;
+					DCT_stride = width;
 				}
 
 				coded_block_pattern = Get_coded_block_pattern();
@@ -515,13 +514,13 @@ slice_process (picture_t * picture, uint_8 code, uint_8 * buffer)
 				// Decode lum blocks
 
 				if (coded_block_pattern & 0x20)
-					slice_non_intra_DCT (picture, &slice, dest[0] + offset, DCT_pitch);
+					slice_non_intra_DCT (picture, &slice, dest[0] + offset, DCT_stride);
 				if (coded_block_pattern & 0x10)
-					slice_non_intra_DCT (picture, &slice, dest[0] + offset + 8, DCT_pitch);
+					slice_non_intra_DCT (picture, &slice, dest[0] + offset + 8, DCT_stride);
 				if (coded_block_pattern & 0x08)
-					slice_non_intra_DCT (picture, &slice, dest[0] + offset + DCT_offset, DCT_pitch);
+					slice_non_intra_DCT (picture, &slice, dest[0] + offset + DCT_offset, DCT_stride);
 				if (coded_block_pattern & 0x04)
-					slice_non_intra_DCT (picture, &slice, dest[0] + offset + DCT_offset + 8, DCT_pitch);
+					slice_non_intra_DCT (picture, &slice, dest[0] + offset + DCT_offset + 8, DCT_stride);
 
 				// Decode chroma blocks
 

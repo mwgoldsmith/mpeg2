@@ -23,5 +23,5 @@
  *
  */
 
-void idct_block_mmx(sint_16 *block);
-void idct_end_mmx();
+void idct_block_copy_mmx (sint_16 *block, uint_8 * dest, int stride);
+void idct_block_add_mmx (sint_16 *block, uint_8 * dest, int stride);

@@ -32,9 +32,47 @@
 
 #include "idct.h"
 
-void idct_block_mmx(sint_16* foo);
+void idct_block_mmx (sint_16 * block);
 
-void
-idct_end_mmx()
+void idct_block_copy_mmx (sint_16 * block, uint_8 * dest, int stride)
 {
+	int i;
+
+	idct_block_mmx (block);
+
+	i = 8;
+	do {
+		movq_m2r (*block, mm1);
+		movq_m2r (*(block+4), mm2);
+		packuswb_r2r (mm2, mm1);
+		movq_r2m (mm1, *dest);
+
+		block += 8;
+		dest += stride;
+	} while (--i);
+}
+
+void idct_block_add_mmx (sint_16 * block, uint_8 * dest, int stride)
+{
+	int i;
+
+	idct_block_mmx (block);
+
+	pxor_r2r (mm0, mm0);
+	i = 8;
+	do {
+		movq_m2r (*dest, mm1);
+		movq_r2r (mm1, mm2);
+		punpcklbw_r2r (mm0, mm1);
+		punpckhbw_r2r (mm0, mm2);
+		movq_m2r (*block, mm3);
+		paddsw_r2r (mm3, mm1);
+		movq_m2r (*(block+4), mm4);
+		paddsw_r2r (mm4, mm2);
+		packuswb_r2r (mm2, mm1);
+		movq_r2m (mm1, *dest);
+
+		block += 8;
+		dest += stride;
+	} while (--i);
 }
