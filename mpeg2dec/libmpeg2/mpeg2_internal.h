@@ -229,7 +229,6 @@ void mpeg2_cpu_state_init (uint32_t accel);
 
 /* decode.c */
 mpeg2_state_t mpeg2_seek_header (mpeg2dec_t * mpeg2dec);
-mpeg2_state_t mpeg2_seek_sequence (mpeg2dec_t * mpeg2dec);
 mpeg2_state_t mpeg2_parse_header (mpeg2dec_t * mpeg2dec);
 
 /* header.c */
