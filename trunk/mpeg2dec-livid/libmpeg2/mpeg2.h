@@ -19,34 +19,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+// FIXME try to get rid of that...
 #ifdef __OMS__
 #include <oms/plugin/output_video.h>
 #ifndef vo_functions_t
 #define vo_functions_t plugin_output_video_t
 #endif
-#else
-//FIXME normally I wouldn't nest includes, but we'll leave this here until I get
-//another chance to move things around
-#include "video_out.h"
 #endif
-
-#include <inttypes.h>
-#ifdef __OMS__
-#include <oms/accel.h>
-#else
-#include "oms_accel.h"
-#endif
-
-//config flags
-#define MPEG2_MLIB_ENABLE OMS_ACCEL_MLIB
-#define MPEG2_MMX_ENABLE OMS_ACCEL_X86_MMX
-#define MPEG2_3DNOW_ENABLE OMS_ACCEL_X86_3DNOW
-#define MPEG2_SSE_ENABLE OMS_ACCEL_X86_MMXEXT
-
-typedef struct mpeg2_config_s {
-    //Bit flags that enable various things
-    uint32_t flags;
-} mpeg2_config_t;
 
 void mpeg2_init (void);
 int mpeg2_decode_data (vo_functions_t *, uint8_t * data_start, uint8_t * data_end);

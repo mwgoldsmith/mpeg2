@@ -20,6 +20,9 @@
  */
 
 #include "config.h"
+
+#include <inttypes.h>
+
 #include "video_out.h"
 #include "video_out_internal.h"
 

@@ -19,15 +19,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include "config.h"
-#include "mpeg2.h"
-#include "mpeg2_internal.h"
-#include "debug.h"
 
-#include "motion_comp.h"
+#include <stdio.h>
+#include <inttypes.h>
+
+#include "mpeg2_internal.h"
+#include "oms_accel.h"
 
 mc_functions_t mc_functions;
 
@@ -35,13 +33,13 @@ void motion_comp_init (void)
 {
 
 #ifdef ARCH_X86
-    if (config.flags & MPEG2_MMX_ENABLE) {
+    if (config.flags & OMS_ACCEL_X86_MMX) {
 	fprintf (stderr, "Using MMX for motion compensation\n");
 	mc_functions = mc_functions_mmx;
     } else
 #endif
 #ifdef LIBMPEG2_MLIB
-    if (config.flags & MPEG2_MLIB_ENABLE) {
+    if (config.flags & OMS_ACCEL_MLIB) {
 	fprintf (stderr, "Using mlib for motion compensation\n");
 	mc_functions = mc_functions_mlib;
     } else

@@ -2,16 +2,19 @@
 //PLUGIN_INFO(INFO_AUTHOR, "Aaron Holtzman <aholtzma@ess.engr.uvic.ca>");
 //PLUGIN_INFO(INFO_AUTHOR, "Thomas Mirlacher <dent@linuxvideo.org>");
 
+#include "config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <inttypes.h>
 
 #include <oms/log.h>
 #include <oms/plugin/codec.h>
 
-#include "config.h"
+#include "video_out.h"
 #include "mpeg2.h"
 
 static int _mpeg2dec_open	(void *plugin, void *foo);

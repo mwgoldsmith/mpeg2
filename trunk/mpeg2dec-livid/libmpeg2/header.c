@@ -19,20 +19,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-
 #include "config.h"
-#include "mpeg2.h"
+
+#include <inttypes.h>
+
 #include "mpeg2_internal.h"
 
-#include "header.h"
-
 // default intra quant matrix, in zig-zag order
-static uint8_t default_intra_quantizer_matrix[64] ALIGN_16_BYTE = {
+static uint8_t default_intra_quantizer_matrix[64] ATTR_ALIGN(16) = {
     8,
     16, 16,
     19, 16, 19,
@@ -50,8 +44,8 @@ static uint8_t default_intra_quantizer_matrix[64] ALIGN_16_BYTE = {
     83
 };
 
-uint8_t scan_norm[64] ALIGN_16_BYTE =
-{ 
+uint8_t scan_norm[64] ATTR_ALIGN(16) =
+{
     // Zig-Zag scan pattern
      0, 1, 8,16, 9, 2, 3,10,
     17,24,32,25,18,11, 4, 5,
@@ -63,8 +57,8 @@ uint8_t scan_norm[64] ALIGN_16_BYTE =
     53,60,61,54,47,55,62,63
 };
 
-uint8_t scan_alt[64] ALIGN_16_BYTE =
-{ 
+uint8_t scan_alt[64] ATTR_ALIGN(16) =
+{
     // Alternate scan pattern
     0,8,16,24,1,9,2,10,17,25,32,40,48,56,57,49,
     41,33,26,18,3,11,4,12,19,27,34,42,50,58,35,43,

@@ -22,6 +22,7 @@
 #include "config.h"
 
 #include <inttypes.h>
+
 #include "oms_accel.h"
 
 #ifdef ARCH_X86

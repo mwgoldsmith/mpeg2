@@ -23,14 +23,10 @@
 
 #ifdef ARCH_X86
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <mmx.h>
-#include "debug.h"
-#include "mpeg2.h"
-#include "mpeg2_internal.h"
+#include <inttypes.h>
 
-#include "motion_comp.h"
+#include "mpeg2_internal.h"
+#include "mmx.h"
 
 // some rounding constants
 mmx_t round1 = {0x0001000100010001LL};

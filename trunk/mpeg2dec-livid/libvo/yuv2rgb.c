@@ -21,6 +21,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 #include "config.h"
 #include "video_out.h"
@@ -77,7 +78,7 @@ void yuv2rgb_init (int bpp, int mode)
     }
 #endif
 #ifdef LIBVO_MLIB
-    if (yuv2rgb == NULL /*&& (config.flags & VO_MLIB_ENABLE)*/) {
+    if (yuv2rgb == NULL /*&& (config.flags & OMS_ACCEL_MLIB)*/) {
 	yuv2rgb = yuv2rgb_init_mlib (bpp, mode);
 	if (yuv2rgb != NULL)
 	    fprintf (stderr, "Using mlib for colorspace transform\n");

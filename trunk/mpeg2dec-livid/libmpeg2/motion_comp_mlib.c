@@ -23,19 +23,13 @@
 
 #ifdef LIBMPEG2_MLIB
 
-#include <stdlib.h>
-#include <stdio.h>
-#include "config.h"
-#include "debug.h"
-#include "mpeg2.h"
-#include "mpeg2_internal.h"
-
-#include "motion_comp.h"
-
+#include <inttypes.h>
 #include <mlib_types.h>
 #include <mlib_status.h>
 #include <mlib_sys.h>
 #include <mlib_video.h>
+
+#include "mpeg2_internal.h"
 
 static void motion_comp_put_16x16_mlib (uint8_t * dest, uint8_t * ref,
 					int stride, int height)

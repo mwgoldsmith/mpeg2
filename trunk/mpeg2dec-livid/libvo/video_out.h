@@ -23,8 +23,6 @@
 extern "C" {
 #endif
 
-#include <inttypes.h>
-
 typedef struct vo_info_s
 {
 	/* driver name ("Matrox Millennium G200/G400" */

@@ -19,11 +19,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// these are actually declared static in slice.c
-extern uint32_t bitstream_buf;
-extern int bitstream_bits;
-extern uint8_t * bitstream_ptr;
-
 static inline uint32_t getword (void)
 {
     uint32_t value;
