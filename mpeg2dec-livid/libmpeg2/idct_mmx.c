@@ -288,7 +288,7 @@ static inline void idct_col (int16_t * in, int16_t * out)
 #define T3 43790
 #define C4 23170
 
-    mmx_t scratch0, scratch1;
+    static mmx_t scratch0, scratch1;
     static short _T1[] ALIGN_8_BYTE = {T1,T1,T1,T1};
     static short _T2[] ALIGN_8_BYTE = {T2,T2,T2,T2};
     static short _T3[] ALIGN_8_BYTE = {T3,T3,T3,T3};
