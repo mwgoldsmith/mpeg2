@@ -98,15 +98,15 @@ static inline uint32_t arch_accel (uint32_t accel)
 	    return accel;
 
 	accel |= MPEG2_ACCEL_X86_MMX;
-	if (edx & 0x02000000)	/* SSE - identical to AMD MMX extensions */
+	if (edx & 0x02000000)		/* SSE - identical to AMD MMX ext. */
 	    accel |= MPEG2_ACCEL_X86_MMXEXT;
 
-	if (edx & 0x04000000)	/* SSE2 */
+	if (edx & 0x04000000)		/* SSE2 */
 	    accel |= MPEG2_ACCEL_X86_SSE2;
-	    
-	if (ecx & 0x00000001)	/* SSE3 */
+
+	if (ecx & 0x00000001)		/* SSE3 */
 	    accel |= MPEG2_ACCEL_X86_SSE3;
-	    
+
 	cpuid (0x80000000, eax, ebx, ecx, edx);
 	if (eax < 0x80000001)		/* no extended capabilities */
 	    return accel;
@@ -148,7 +148,7 @@ static RETSIGTYPE sigill_handler (int sig)
 static inline uint32_t arch_accel (uint32_t accel)
 {
 #ifdef ACCEL_DETECT
-    if (accel & (MPEG2_ACCEL_PPC_ALTIVEC | MPEG2_ACCEL_DETECT) ==
+    if ((accel & (MPEG2_ACCEL_PPC_ALTIVEC | MPEG2_ACCEL_DETECT)) ==
 	MPEG2_ACCEL_DETECT) {
 	static RETSIGTYPE (* oldsig) (int);
 
