@@ -62,9 +62,6 @@ uint_32 has_sync = 0;
 static uint_32 is_display_initialized = 0;
 static uint_32 is_sequence_needed = 1;
 
-//FIXME obsolete need to clean up
-//frame structure to pass back to caller
-static mpeg2_frame_t mpeg2_frame;
 
 void
 mpeg2_init(mpeg2_display_t *foo)
@@ -232,36 +229,26 @@ mpeg2_decode_data(uint_8 *data_start,uint_8 *data_end)
 
 		if(is_frame_done)
 		{
-			//decide which frame to send to the display
-			if(picture.picture_coding_type == B_TYPE)
+			//FIXME
+			//we can't initialize the display until we know how big the picture is
+			if(!is_display_initialized)
 			{
-				mpeg2_frame.frame[0] = picture.throwaway_frame[0];
-				mpeg2_frame.frame[1] = picture.throwaway_frame[1];
-				mpeg2_frame.frame[2] = picture.throwaway_frame[2];
-			}
-			else
-			{
-				mpeg2_frame.frame[0] = picture.forward_reference_frame[0];
-				mpeg2_frame.frame[1] = picture.forward_reference_frame[1];
-				mpeg2_frame.frame[2] = picture.forward_reference_frame[2];
+				mpeg2_display.init(picture.coded_picture_width,picture.coded_picture_height,0,0);
+				is_display_initialized = 1;
 			}
 
-			mpeg2_frame.width = picture.coded_picture_width;
-			mpeg2_frame.height = picture.coded_picture_height;
+			//decide which frame to send to the display
+			if(picture.picture_coding_type == B_TYPE)
+				mpeg2_display.draw_frame(picture.throwaway_frame);
+			else
+				mpeg2_display.draw_frame(picture.forward_reference_frame);
+
 
 			if(bitstream_show(32) == SEQUENCE_END_CODE)
 				is_sequence_needed = 1;
 
 			is_frame_done = 0;
 
-			//FIXME
-			//we can't initialize the display until we know how big the picture is
-			if(!is_display_initialized)
-			{
-				mpeg2_display.init(mpeg2_frame.width,mpeg2_frame.height,0,0);
-				is_display_initialized = 1;
-			}
-			mpeg2_display.draw_frame(mpeg2_frame.frame);
 			ret++;
 		}
 	}
