@@ -1,5 +1,6 @@
 * before 0.2.0 :
 	* fix xshm completion events in libvo
+	* get rid of memcpy in xv/xvshm
 	* get rid of HACK_MODE
 		* libvo reordering
 		* interlaced slices
