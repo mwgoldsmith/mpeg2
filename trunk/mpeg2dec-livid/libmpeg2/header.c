@@ -116,23 +116,23 @@ void header_state_init (picture_t * picture)
 	picture->scan = scan_norm;
 }
 
-void header_process_sequence_header (picture_t * picture, uint8_t * buffer)
+int header_process_sequence_header (picture_t * picture, uint8_t * buffer)
 {
     unsigned int h_size;
     unsigned int v_size;
     int i;
     uint8_t * scan;
 
-    //if ((buffer[6] & 0x20) != 0x20)
-    //return 1;	// missing marker_bit
+    if ((buffer[6] & 0x20) != 0x20)
+	return 1;	// missing marker_bit
 
     v_size = (buffer[0] << 16) | (buffer[1] << 8) | buffer[2];
 
     h_size = ((v_size >> 12) + 15) & ~15;
     v_size = ((v_size & 0xfff) + 15) & ~15;
 
-    //if ((h_size > 720) || (v_size > 576))
-    //return 1;	// MP@ML size restrictions
+    if ((h_size > 720) || (v_size > 576))
+	return 1;	// MP@ML size restrictions
 
     //XXX this needs field fixups
     picture->coded_picture_width = h_size;
@@ -178,7 +178,7 @@ void header_process_sequence_header (picture_t * picture, uint8_t * buffer)
     picture->concealment_motion_vectors = 0;
     //picture->alternate_scan = 0;
  
-    //return 0;
+    return 0;
 }
 
 static int header_process_sequence_extension (picture_t * picture,
@@ -239,20 +239,20 @@ static int header_process_picture_coding_extension (picture_t * picture, uint8_t
     return 0;
 }
 
-void header_process_extension (picture_t * picture, uint8_t * buffer)
+int header_process_extension (picture_t * picture, uint8_t * buffer)
 {
     switch (buffer[0] & 0xf0) {
     case 0x10:	// sequence extension
-	header_process_sequence_extension (picture, buffer);
-	break;
+	return header_process_sequence_extension (picture, buffer);
 
     case 0x80:	// picture coding extension
-	header_process_picture_coding_extension (picture, buffer);
-	break;
+	return header_process_picture_coding_extension (picture, buffer);
     }
+
+    return 0;
 }
 
-void header_process_picture_header (picture_t *picture, uint8_t * buffer)
+int header_process_picture_header (picture_t *picture, uint8_t * buffer)
 {
     picture->picture_coding_type = (buffer [1] >> 3) & 7;
 
@@ -262,5 +262,5 @@ void header_process_picture_header (picture_t *picture, uint8_t * buffer)
     picture->f_code[1][0] = picture->f_code[1][1] =
 	((buffer[4] >> 3) & 7) - 1;
 
-    //return 0;
+    return 0;
 }
