@@ -1,4 +1,4 @@
-      b9 S- --- --- - SEQUENCE MPEG2 MP@ML 720x480 chroma 360x240 fps 30 maxBps 500000 vbv 229376 picture 720x480 display 120x120 pixel 4x3
+      b9 S- --- --- - SEQUENCE MPEG2 MP@ML COMPONENT 720x480 chroma 360x240 fps 30 maxBps 500000 vbv 229376 picture 720x480 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
       cf SG --- --- - GOP CLOSED  0: 0: 0: 0
@@ -44,7 +44,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
    21b47 SG gj- gj- g SLICE
-   21b74 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 720x480 chroma 360x240 fps 30 maxBps 500000 vbv 229376 picture 720x480 display 120x120 pixel 4x3
+   21b74 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT 720x480 chroma 360x240 fps 30 maxBps 500000 vbv 229376 picture 720x480 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
    21b8a SG --- --- - GOP CLOSED  0: 0: 0: 7
@@ -54,7 +54,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
    2845b SG hk- egh c SLICE
-   28508 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 720x480 chroma 360x240 fps 30 maxBps 500000 vbv 229376 picture 720x480 display 120x120 pixel 4x3
+   28508 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT 720x480 chroma 360x240 fps 30 maxBps 500000 vbv 229376 picture 720x480 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
    2851e SG --- --- - GOP CLOSED  0: 0: 0: 8
@@ -204,7 +204,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
    b8898 SG ju- gpq f SLICE
-   b88c5 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 720x480 chroma 360x240 fps 30 maxBps 500000 vbv 229376 picture 720x480 display 120x120 pixel 4x3
+   b88c5 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT 720x480 chroma 360x240 fps 30 maxBps 500000 vbv 229376 picture 720x480 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
    b88db SG --- --- - GOP CLOSED  0: 0: 1: 6
@@ -254,7 +254,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
    e0b0b SG ref ref r SLICE
-   e0bb8 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 720x480 chroma 360x240 fps 30 maxBps 500000 vbv 229376 picture 720x480 display 120x120 pixel 4x3
+   e0bb8 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT 720x480 chroma 360x240 fps 30 maxBps 500000 vbv 229376 picture 720x480 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
    e0bce SG --- --- - GOP CLOSED  0: 0: 1:14
@@ -264,7 +264,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
    e7824 SG sg- pc- l SLICE
-   e7851 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 720x480 chroma 360x240 fps 30 maxBps 500000 vbv 229376 picture 720x480 display 120x120 pixel 4x3
+   e7851 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT 720x480 chroma 360x240 fps 30 maxBps 500000 vbv 229376 picture 720x480 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
    e7867 SG --- --- - GOP CLOSED  0: 0: 1:15
@@ -274,7 +274,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
    ed084 SG th- sg- p SLICE
-   ed131 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 720x480 chroma 360x240 fps 30 maxBps 500000 vbv 229376 picture 720x480 display 120x120 pixel 4x3
+   ed131 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT 720x480 chroma 360x240 fps 30 maxBps 500000 vbv 229376 picture 720x480 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
    ed147 SG --- --- - GOP CLOSED  0: 0: 1:16

@@ -1,4 +1,4 @@
-      b9 S- --- --- - SEQUENCE MPEG2 422@ML LOWDELAY 720x512 chroma 360x512 fps 29.97 maxBps 6250000 vbv 1179648 picture 720x512 display 120x120 pixel 4x3
+      b9 S- --- --- - SEQUENCE MPEG2 422@ML LOWDELAY COMPONENT 720x512 chroma 360x512 fps 29.97 maxBps 6250000 vbv 1179648 picture 720x512 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
       cf SG --- --- - GOP DROP CLOSED  0: 0: 0: 0
@@ -64,7 +64,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
   2fb0a8 SG oo- oo- n SLICE
-  2fb0d5 S- --- --- - SEQUENCE_REPEATED MPEG2 422@ML LOWDELAY 720x512 chroma 360x512 fps 29.97 maxBps 6250000 vbv 1179648 picture 720x512 display 120x120 pixel 4x3
+  2fb0d5 S- --- --- - SEQUENCE_REPEATED MPEG2 422@ML LOWDELAY COMPONENT 720x512 chroma 360x512 fps 29.97 maxBps 6250000 vbv 1179648 picture 720x512 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
   2fb0eb SG --- --- - GOP DROP CLOSED  0: 0: 0:15
@@ -130,7 +130,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
   5f5c03 SG dd- dd- c SLICE
-  5f5cb0 S- --- --- - SEQUENCE_REPEATED MPEG2 422@ML LOWDELAY 720x512 chroma 360x512 fps 29.97 maxBps 6250000 vbv 1179648 picture 720x512 display 120x120 pixel 4x3
+  5f5cb0 S- --- --- - SEQUENCE_REPEATED MPEG2 422@ML LOWDELAY COMPONENT 720x512 chroma 360x512 fps 29.97 maxBps 6250000 vbv 1179648 picture 720x512 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
   5f5cc6 SG --- --- - GOP DROP CLOSED  0: 0: 1: 0
@@ -196,7 +196,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
   8f0e99 SG ss- ss- r SLICE
-  8f0ec6 S- --- --- - SEQUENCE_REPEATED MPEG2 422@ML LOWDELAY 720x512 chroma 360x512 fps 29.97 maxBps 6250000 vbv 1179648 picture 720x512 display 120x120 pixel 4x3
+  8f0ec6 S- --- --- - SEQUENCE_REPEATED MPEG2 422@ML LOWDELAY COMPONENT 720x512 chroma 360x512 fps 29.97 maxBps 6250000 vbv 1179648 picture 720x512 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
   8f0edc SG --- --- - GOP DROP CLOSED  0: 0: 1:15

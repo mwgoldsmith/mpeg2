@@ -1,4 +1,4 @@
-      f1 S- --- --- - SEQUENCE MPEG2 SP@ML PROG 720x480 chroma 360x240 fps 29.97 maxBps 625000 vbv 229376 picture 720x480 display 711x483 pixel 644x711
+      f1 S- --- --- - SEQUENCE MPEG2 SP@ML PROG COMPONENT COLORS (prim BT.470-2/B,G trans BT.470-2/B,G matrix BT.709) 720x480 chroma 360x240 fps 29.97 maxBps 625000 vbv 229376 picture 720x480 display 711x483 pixel 644x711
          USER_DATA 71 bytes
          e6 1d 37 2f 00 0e e6 1d 37 31 40 28 23 29 4d 50    7/    71@(#)MP
          45 47 20 45 6e 63 6f 64 65 72 20 76 32 2e 39 20  EG Encoder v2.9 

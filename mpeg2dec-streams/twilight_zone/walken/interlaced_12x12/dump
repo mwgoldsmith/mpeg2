@@ -1,4 +1,4 @@
-      26 S- --- --- - SEQUENCE MPEG2 MP@HL 16x32 chroma 8x16 fps 30 maxBps 37500 vbv 4096 picture 12x12 display 720x480 pixel 1x1
+      26 S- --- --- - SEQUENCE MPEG2 MP@HL PAL BT.470-2/B,G 16x32 chroma 8x16 fps 30 maxBps 37500 vbv 4096 picture 12x12 display 720x480 pixel 1x1
       2e SG --- --- - GOP  0: 0: 0: 0
       3f SG AA- --- ? PICTURE I fields 2 TFF time_ref 0 offset 0/0 0/0
       55 SG aa- --- ? SLICE

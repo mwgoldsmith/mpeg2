@@ -1,4 +1,4 @@
-      31 S- --- --- - SEQUENCE MPEG2 MP@ML 704x480 chroma 352x240 fps 30 maxBps 1875000 vbv 229376 picture 704x480 display 120x120 pixel 4x3
+      31 S- --- --- - SEQUENCE MPEG2 MP@ML COMPONENT 704x480 chroma 352x240 fps 30 maxBps 1875000 vbv 229376 picture 704x480 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
       47 SG --- --- - GOP CLOSED  0: 0: 0: 0
@@ -36,7 +36,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
    67428 SG fh- fh- f SLICE
-   67455 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 704x480 chroma 352x240 fps 30 maxBps 1875000 vbv 229376 picture 704x480 display 120x120 pixel 4x3
+   67455 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT 704x480 chroma 352x240 fps 30 maxBps 1875000 vbv 229376 picture 704x480 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
    67481 S- GI- df- a PICTURE I PROG fields 2 TFF time_ref 8 offset 20/-12 21/-11
@@ -63,7 +63,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
    d9b36 S- ln- ln- l SLICE
-   d9b63 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 704x480 chroma 352x240 fps 30 maxBps 1875000 vbv 229376 picture 704x480 display 120x120 pixel 4x3
+   d9b63 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT 704x480 chroma 352x240 fps 30 maxBps 1875000 vbv 229376 picture 704x480 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
    d9b79 SG --- --- - GOP  0: 0: 0:12
@@ -97,7 +97,7 @@
          USER_DATA 10 bytes
          15 16 17 18 19 1a 1b 1c 1d 1e                                    
   155f87 SG rtu rtu r SLICE
-  156034 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML 704x480 chroma 352x240 fps 30 maxBps 1875000 vbv 229376 picture 704x480 display 120x120 pixel 4x3
+  156034 S- --- --- - SEQUENCE_REPEATED MPEG2 MP@ML COMPONENT 704x480 chroma 352x240 fps 30 maxBps 1875000 vbv 229376 picture 704x480 display 120x120 pixel 4x3
          USER_DATA 10 bytes
          01 02 03 04 05 06 07 08 09 0a                                    
   15605c S- SV- pr- m PICTURE I fields 1 TFF time_ref 8 offset 50/-46

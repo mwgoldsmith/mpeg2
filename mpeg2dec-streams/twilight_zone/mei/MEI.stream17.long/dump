@@ -1,4 +1,4 @@
-      63 S- --- --- - SEQUENCE MPEG2 MP@ML 704x480 chroma 352x240 fps 30 maxBps 500000 vbv 229376 picture 704x480 display 711x483 pixel 644x711
+      63 S- --- --- - SEQUENCE MPEG2 MP@ML NTSC 704x480 chroma 352x240 fps 30 maxBps 500000 vbv 229376 picture 704x480 display 711x483 pixel 644x711
       6b SG --- --- - GOP  0: 0: 0: 0
       7c SG AA- --- ? PICTURE I fields 2 TFF time_ref 0 offset 0/0 0/0
     ae28 SG aa- --- ? SLICE
@@ -128,7 +128,7 @@
    ff195 SG II- II- I PICTURE B fields 2 TFF time_ref 1 offset 0/0 0/0
   100c75 SG ii- ii- i SLICE
   100c75 SG --- gg- d END
-  100cd8 S- --- --- - SEQUENCE MPEG2 MP@ML 256x256 chroma 128x128 fps 30 maxBps 250000 vbv 229376 picture 256x256 display 256x256 pixel 4x3
+  100cd8 S- --- --- - SEQUENCE MPEG2 MP@ML NTSC 256x256 chroma 128x128 fps 30 maxBps 250000 vbv 229376 picture 256x256 display 256x256 pixel 4x3
   100ce0 SG --- --- - GOP  0: 0: 0: 0
   100cf1 SG JJ- --- ? PICTURE I fields 2 TFF time_ref 0 offset 0/0 0/0
   1063fb SG jj- --- ? SLICE
