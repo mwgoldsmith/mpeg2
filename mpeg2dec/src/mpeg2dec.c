@@ -131,7 +131,7 @@ static void print_usage (char ** argv)
 
     fprintf (stderr, "usage: %s [-h] [-o <mode>] [-s [<track>]] [-t <pid>]"
 	     " [-p] [-c] <file>\n"
-	     "\t-h\tdisplay help and available video modes\n"
+	     "\t-h\tdisplay help and available video output modes\n"
 	     "\t-s\tuse program stream demultiplexer, "
 	     "track 0-15 or 0xe0-0xef\n"
 	     "\t-t\tuse transport stream demultiplexer, pid 0x10-0x1ffe\n"
