@@ -719,8 +719,8 @@ static frame_t* x11_allocate_image_buffer (int width, int height, uint32_t forma
 		frame->private = _xv_create ();
 
 		frame->base[0] = ((XvImage*) frame->private)->data;
-		frame->base[1] = frame->base[0] + width * height;
-		frame->base[2] = frame->base[0] + width * height * 5 / 4;
+		frame->base[2] = frame->base[0] + width * height;
+		frame->base[1] = frame->base[0] + width * height * 5 / 4;
 
 		return frame;
 	}
