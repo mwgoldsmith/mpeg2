@@ -46,7 +46,7 @@ typedef struct mpeg2dec_s {
     // the maximum chunk size is determined by vbv_buffer_size 
     // which is 224K for
     // MP@ML streams. 
-    // (we make no pretenses ofdecoding anything more than that)
+    // (we make no pretenses of decoding anything more than that)
     // allocated in init gcc has problems allocating
     // such big structures
     uint8_t * chunk_buffer;
