@@ -117,14 +117,12 @@ static void idct_row(sint_16 *blk)
 	x6 = blk[5]; 
 	x7 = blk[3];
 
-#if 0
   /* shortcut */
   if (!(x1 | x2 | x3 | x4 | x5 | x6 | x7 ))
   {
     blk[0]=blk[1]=blk[2]=blk[3]=blk[4]=blk[5]=blk[6]=blk[7]=blk[0]<<3;
     return;
   }
-#endif
 
   x0 = (blk[0]<<11) + 128; /* for proper rounding in the fourth stage */
 
@@ -177,9 +175,7 @@ static void idct_row(sint_16 *blk)
  *        c[1..7] = (1/1024)*sqrt(2)
  */
 
-/* FIXME something odd is going on with inlining this 
- * procedure. Things break if it isn't inlined */
-static void idct_col(sint_16 *blk)
+static void idct_col_s16(sint_16 *blk)
 {
   int x0, x1, x2, x3, x4, x5, x6, x7, x8;
 
@@ -192,14 +188,12 @@ static void idct_col(sint_16 *blk)
 	x6 = blk[8*5];
 	x7 = blk[8*3];
 
-#if 0
   if (!(x1  | x2 | x3 | x4 | x5 | x6 | x7 ))
   {
     blk[8*0]=blk[8*1]=blk[8*2]=blk[8*3]=blk[8*4]=blk[8*5]=blk[8*6]=blk[8*7]=
       clip[(blk[8*0]+32)>>6];
     return;
   }
-#endif
 
   x0 = (blk[8*0]<<8) + 8192;
 
@@ -256,7 +250,6 @@ idct_c(mb_buffer_t *mb_buffer)
 		if(mb[k].skipped)
 			continue;
 
-		//XXX only 4:2:0 supported here
 		for(i=0;i<4;i++)
 		{
 			blk = mb[k].y_blocks + 64*i; 
@@ -267,7 +260,7 @@ idct_c(mb_buffer_t *mb_buffer)
 					idct_row(blk + 8*j);
 
 				for (j=0; j<8; j++)
-					idct_col(blk + j);
+					idct_col_s16(blk + j);
 			}
 		}
 
@@ -279,7 +272,7 @@ idct_c(mb_buffer_t *mb_buffer)
 				idct_row(blk + 8*j);
 
 			for (j=0; j<8; j++)
-				idct_col(blk + j);
+				idct_col_s16(blk + j);
 		}
 
 		if(mb[k].coded_block_pattern & 0x1)
@@ -290,7 +283,7 @@ idct_c(mb_buffer_t *mb_buffer)
 				idct_row(blk + 8*j);
 
 			for (j=0; j<8; j++)
-				idct_col(blk + j);
+				idct_col_s16(blk + j);
 		}
 	}
 }

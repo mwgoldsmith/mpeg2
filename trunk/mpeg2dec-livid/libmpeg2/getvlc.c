@@ -29,7 +29,8 @@
 
 #include <stdio.h>
 
-#include "global.h"
+#include "mpeg2.h"
+#include "mpeg2_internal.h"
 #include "config.h"
 #include "bitstream.h"
 #include "getvlc.h"
@@ -39,10 +40,10 @@ int Quiet_Flag = 0;
 
 /* private prototypes */
 /* generic picture macroblock type processing functions */
-static int Get_I_macroblock_type _ANSI_ARGS_((void));
-static int Get_P_macroblock_type _ANSI_ARGS_((void));
-static int Get_B_macroblock_type _ANSI_ARGS_((void));
-static int Get_D_macroblock_type _ANSI_ARGS_((void));
+static int Get_I_macroblock_type (void);
+static int Get_P_macroblock_type (void);
+static int Get_B_macroblock_type (void);
+static int Get_D_macroblock_type (void);
 
 int Get_macroblock_type(int picture_coding_type)
 {

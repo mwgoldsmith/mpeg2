@@ -31,8 +31,6 @@
 #include "stats.h"
 #include "parse.h"
 
-//FIXME remove when new vlc stuff is in
-#include "old_crap.h"
 
 //FIXME remove when you put vlc_get_block_coeff into vlc.
 typedef struct {
@@ -54,6 +52,7 @@ uint_32 non_linear_quantizer_scale[32] =
   56,64,72,80,88,96,104,112
 };
 
+#ifdef __i386__
 static uint_8 scan_norm_mmx[64] =
 { 
 	// MMX Zig-Zag scan pattern (transposed)  
@@ -71,6 +70,7 @@ static uint_8 scan_alt_mmx[64] =
 	30,31,34,35,40,41,48,49,42,43,36,37,38,39,44,45,
 	46,47,50,51,56,57,58,59,52,53,54,55,60,61,62,63,
 };
+#endif
 
 static uint_8 scan_norm[64] =
 { 

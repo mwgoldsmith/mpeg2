@@ -30,7 +30,6 @@
 #include <errno.h>
 
 #include "config.h"
-#include "old_crap.h"
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 
@@ -40,7 +39,6 @@
 #include "idct.h"
 #include "parse.h"
 #include "display.h"
-#include "inv_quantize.h"
 
 //this is where we keep the state of the decoder
 static picture_t picture;
@@ -52,7 +50,6 @@ mpeg2_config_t config;
 //frame structure to pass back to caller
 mpeg2_frame_t mpeg2_frame;
 
-static uint_32 is_display_initialized = 0;
 static uint_32 is_sequence_needed = 1;
 
 static void find_next_start_code()
@@ -220,12 +217,6 @@ mpeg2_decode_frame (char *new_data, u_int new_data_len)
 	last_mba = ((picture.coded_picture_height * picture.coded_picture_width) >> 8) - 1;
 	mb_width = picture.coded_picture_width >> 4;
 
-	//we can't initialize the display until we know how big the picture is
-	if(!is_display_initialized)
-	{
-		display_init(picture.coded_picture_width,picture.coded_picture_height);
-		is_display_initialized = 1;
-	}
 
 	do
 	{
@@ -287,6 +278,7 @@ mpeg2_decode_frame (char *new_data, u_int new_data_len)
 			prev_macroblock_type = mb->macroblock_type & (MACROBLOCK_MOTION_FORWARD | MACROBLOCK_MOTION_BACKWARD);
 			mb = mb_buffer_increment();
 
+
 			if(!mb)
 				decode_flush_buffer();
 		}
@@ -309,6 +301,9 @@ mpeg2_decode_frame (char *new_data, u_int new_data_len)
 		mpeg2_frame.frame[1] = picture.forward_reference_frame[1];
 		mpeg2_frame.frame[2] = picture.forward_reference_frame[2];
 	}
+
+	mpeg2_frame.width = picture.coded_picture_width;
+	mpeg2_frame.height = picture.coded_picture_height;
 
 	if(bitstream_show(32) == SEQUENCE_END_CODE)
 		is_sequence_needed = 1;

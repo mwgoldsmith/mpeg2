@@ -10,6 +10,7 @@ Contributions by:
 	H}kan Hjort <d95hjort@dtek.chalmers.se> - Solaris fixes
 	Didier Gautheron <dgautheron@magic.fr> - bug fixes
   Gerd Knorr <kraxel@goldbach.in-berlin.de> - Xv support
+	Michel LESPINASSE <walken@windriver.com> - motion comp cleanup et al.
 	(let me know if I've forgotten anyone)
 
 First of all, this is very early code. If you're not interested
@@ -25,15 +26,16 @@ read and understand. I'd love to have some feedback on the design.
 
 Here's a hierarchy of how the code fits together:
 
-decode.c
-|--parse.c
-|-----bitstream.c
-|-----getvlc.c
-|-----stats.c
-|--mb_buffer.c
-|--idct.c
-|--motion_comp.c
-|--display_*.c
+libmpeg2/decode.c
+					|--parse.c
+					|-----bitstream.c
+					|-----getvlc.c
+					|-----stats.c
+					|--mb_buffer.c
+					|--idct.c
+					|--motion_comp.c
+display_*.c
+mpeg2dec.c
 
 For each frame, decode.c uses parse.c to stuff macroblocks into the
 macroblock buffer (mb_buffer.c). When this buffer is full or the frame
@@ -47,17 +49,11 @@ supported (like 3dnow or SSE). The philosophy is "one binary->one
 architecture".
 
 Stuff that works
-- I-type Frame pictures 
+-pretty much everything
 
-Stuff that is broken
-- field based pictures
-- P,B type pictures  (motion_comp.c needs some filling in)
 
 Stuff that needs to be done
-- fix the broken stuff (see above)
 - the MSSG getvlc.c needs to be sanitized and turned into vlc.c
-- motion.c need to be sanitized and pulled into parse.c 
-  (in cvs 'bp_frames_branch')
 - make it really fast :)
 
 Patches
@@ -90,7 +86,6 @@ as well as RAM size).  RAM size autodetect was only tested on a G200,
 8MB so far... Also it should draw some nice 256x256 images for you,
 if all is working well.
 
-
 Documentation
 
 If you need the mpeg-2 video spec, you can get it on www.wotsit.org
@@ -98,4 +93,6 @@ If you need the mpeg-2 video spec, you can get it on www.wotsit.org
 
 Aaron Holtzman,
 December 1999
+April 2000
+
 
