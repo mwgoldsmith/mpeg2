@@ -368,9 +368,10 @@ static void vis_abgr32(void *_id, uint8_t * const *src,
 			  id->rgb_stride, id->uv_stride << 1, id->uv_stride);
 }
 
-yuv2rgb_copy *yuv2rgb_init_vis(int order, int bpp)
+yuv2rgb_copy *yuv2rgb_init_vis(int order, int bpp,
+			       const mpeg2_sequence_t * seq)
 {
-	if (bpp == 32) {
+	if (bpp == 32 && seq->chroma_height < seq->height) {
 		if (order == CONVERT_RGB)
 			return vis_argb32;
 		if (order == CONVERT_BGR)

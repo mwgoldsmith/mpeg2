@@ -27,11 +27,15 @@ typedef struct {
     int uv_stride, uv_stride_frame;
     int rgb_stride, rgb_stride_frame;
     int dither_offset, dither_stride;
+    int chroma420;
 } convert_rgb_t;
 
 typedef void yuv2rgb_copy (void * id, uint8_t * const * src,
 			   unsigned int v_offset);
 
-yuv2rgb_copy * yuv2rgb_init_mmxext (int bpp, int mode);
-yuv2rgb_copy * yuv2rgb_init_mmx (int bpp, int mode);
-yuv2rgb_copy * yuv2rgb_init_vis (int bpp, int mode);
+yuv2rgb_copy * yuv2rgb_init_mmxext (int bpp, int mode,
+				    const mpeg2_sequence_t * seq);
+yuv2rgb_copy * yuv2rgb_init_mmx (int bpp, int mode,
+				 const mpeg2_sequence_t * seq);
+yuv2rgb_copy * yuv2rgb_init_vis (int bpp, int mode,
+				 const mpeg2_sequence_t * seq);
