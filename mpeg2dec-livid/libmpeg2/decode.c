@@ -76,7 +76,7 @@ static int in_slice = 0;
 
 void mpeg2_init (void)
 {
-    config.flags = mm_accel () | MM_ACCEL_MLIB;
+  config.flags = mm_accel () | MM_ACCEL_MLIB;
 	/*try this if you have problems: replace mm_accel () with one of
 	MM_ACCEL_MLIB
 	MM_ACCEL_X86_MMX
@@ -326,11 +326,12 @@ void mpeg2_close (INITTYPE * output)
 
     if (is_display_initialized)
 	output->draw_frame (picture.backward_reference_frame);
-
+#if 0 // Totaly broken, wrong type and not implemented in all outputs
 #ifdef __OMS__
     output->free_image_buffer (picture.backward_reference_frame);
     output->free_image_buffer (picture.forward_reference_frame);
     output->free_image_buffer (picture.throwaway_frame);
+#endif
 #endif
 }
 
