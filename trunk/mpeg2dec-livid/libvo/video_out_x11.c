@@ -314,7 +314,7 @@ static int x11_check_local (void)
     fd = ConnectionNumber (priv->display);
 
     len = sizeof (me);
-    if (getsockname (fd, &me, &len))
+    if (getsockname (fd, (struct sockaddr *) &me, &len))
 	return 1;	// should not happen, assume remote display
 
     if (me.sin_family == PF_UNIX)
@@ -324,7 +324,7 @@ static int x11_check_local (void)
 	return 1;	// unknown protocol, assume remote display
 
     len = sizeof (peer);
-    if (getpeername (fd, &peer, &len))
+    if (getpeername (fd, (struct sockaddr *) &peer, &len))
 	return 1;	// should not happen, assume remote display
 
     if (peer.sin_family != PF_INET)
