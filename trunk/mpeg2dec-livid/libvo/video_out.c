@@ -39,6 +39,7 @@ extern vo_setup_t vo_sdlsw_setup;
 extern vo_setup_t vo_sdlaa_setup;
 extern vo_setup_t vo_mga_setup;
 extern vo_setup_t vo_null_setup;
+extern vo_setup_t vo_nullslice_setup;
 extern vo_setup_t vo_pgm_setup;
 extern vo_setup_t vo_pgmpipe_setup;
 extern vo_setup_t vo_md5_setup;
@@ -64,6 +65,7 @@ vo_driver_t video_out_drivers[] =
     {"sdlaa", vo_sdlaa_setup},
 #endif
     {"null", vo_null_setup},
+    {"nullslice", vo_nullslice_setup},
     {"pgm", vo_pgm_setup},
     {"pgmpipe", vo_pgmpipe_setup},
     {"md5", vo_md5_setup},
