@@ -7,6 +7,7 @@
 	* mpeg1 (aaron ?)
 	* conformance testing
 	* dont crash on bad streams, make sure we can resync after a while
+	* make the decoder reentrant (if the speed impact is small enough)
 
 * structural optimizations
 	* integrate idct_add and idct_copy into the main idct routine
