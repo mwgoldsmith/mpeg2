@@ -599,6 +599,8 @@ static int common_setup (vo_instance_t * _instance, unsigned int width,
     } else
 #endif
     if (!x11_alloc_frames (instance)) {
+	int bpp;
+
 	instance->vo.setup_fbuf = x11_setup_fbuf;
 	instance->vo.start_fbuf = x11_start_fbuf;
 	instance->vo.draw = x11_draw_frame;
@@ -630,12 +632,16 @@ static int common_setup (vo_instance_t * _instance, unsigned int width,
 	 * (the guy who wrote this convention never heard of endianness ?)
 	 */
 
+	bpp = ((instance->vinfo.depth == 24) ?
+	       instance->frame[0].ximage->bits_per_pixel :
+	       instance->vinfo.depth);
 	result->convert =
 	    mpeg2convert_rgb (((instance->frame[0].ximage->blue_mask & 1) ?
-			       MPEG2CONVERT_RGB : MPEG2CONVERT_BGR),
-			      ((instance->vinfo.depth == 24) ?
-			       instance->frame[0].ximage->bits_per_pixel :
-			       instance->vinfo.depth));
+			       MPEG2CONVERT_RGB : MPEG2CONVERT_BGR), bpp);
+	if (result->convert == NULL) {
+	    fprintf (stderr, "%dbpp not supported\n", bpp);
+	    return 1;
+	}
     }
 
     return 0;

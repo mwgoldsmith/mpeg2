@@ -1,5 +1,5 @@
 /*
- * convert.h
+ * mpeg2convert.h
  * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
@@ -35,8 +35,12 @@ mpeg2_convert_t mpeg2convert_bgr16;
 mpeg2_convert_t mpeg2convert_bgr15;
 mpeg2_convert_t mpeg2convert_bgr8;
 
-#define MPEG2CONVERT_RGB 0
-#define MPEG2CONVERT_BGR 1
-mpeg2_convert_t * mpeg2convert_rgb (int order, int bpp);
+typedef enum {
+    MPEG2CONVERT_RGB = 0,
+    MPEG2CONVERT_BGR  = 1
+} mpeg2convert_rgb_order_t;
+
+mpeg2_convert_t * mpeg2convert_rgb (mpeg2convert_rgb_order_t order,
+				    unsigned int bpp);
 
 #endif /* MPEG2CONVERT_H */
