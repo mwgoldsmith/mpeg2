@@ -25,11 +25,11 @@
 #ifdef LIBVO_MLIB
 
 #include <stddef.h>
-#include <inttypes.h>
 #include <mlib_types.h>
 #include <mlib_status.h>
 #include <mlib_sys.h>
 #include <mlib_video.h>
+#include <inttypes.h>
 
 #include "yuv2rgb.h"
 
