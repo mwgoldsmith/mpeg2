@@ -26,8 +26,7 @@
 
 #ifdef ARCH_X86
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <stddef.h>
 #include <inttypes.h>
 
 #include "mmx.h"
