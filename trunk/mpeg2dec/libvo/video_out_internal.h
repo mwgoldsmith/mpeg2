@@ -30,6 +30,7 @@ int libvo_common_alloc_frames (vo_instance_t * instance, int width, int height,
 			       void (* draw) (vo_frame_t *));
 void libvo_common_free_frames (vo_instance_t * instance);
 vo_frame_t * libvo_common_get_frame (vo_instance_t * instance, int prediction);
+void libvo_common_set_frame (vo_instance_t * instance, int prediction);
 
 #define MODE_RGB  0x1
 #define MODE_BGR  0x2

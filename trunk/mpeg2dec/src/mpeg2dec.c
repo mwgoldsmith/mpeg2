@@ -207,12 +207,9 @@ static void handle_args (int argc, char ** argv)
 	in_file = stdin;
 }
 
-static void set_buf (int flags)
+void set_buf (uint8_t * buf[3], void * id)
 {
-    vo_frame_t * frame;
-
-    frame = vo_get_frame (output, flags);
-    mpeg2_set_buf (mpeg2dec, frame->base, frame);
+    mpeg2_set_buf (mpeg2dec, buf, id);
 }
 
 static void decode_mpeg2 (uint8_t * current, uint8_t * end)
@@ -233,8 +230,8 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 		fprintf (stderr, "display setup failed\n");
 		exit (1);
 	    }
-	    set_buf (VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
-	    set_buf (VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
+	    vo_set_frame (output, VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
+	    vo_set_frame (output, VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
 	    break;
 	case STATE_PICTURE:
 	    picture = info->current_picture;
@@ -244,7 +241,7 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 	    if ((picture->flags & PIC_MASK_CODING_TYPE) !=
 		PIC_FLAG_CODING_TYPE_B)
 		flags |= VO_PREDICTION_FLAG;
-	    set_buf (flags);
+	    vo_set_frame (output, flags);
 	    break;
 	case STATE_PICTURE_2ND:
 	    picture = info->current_picture_2nd;

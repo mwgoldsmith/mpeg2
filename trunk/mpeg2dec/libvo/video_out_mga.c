@@ -218,7 +218,7 @@ vo_instance_t * vo_mga_open (void)
 
     instance->vo.setup = mga_setup;
     instance->vo.close = mga_close;
-    instance->vo.get_frame = libvo_common_get_frame;
+    instance->vo.set_frame = libvo_common_set_frame;
 
     return (vo_instance_t *) instance;
 }

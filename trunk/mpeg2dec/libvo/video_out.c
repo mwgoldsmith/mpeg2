@@ -138,11 +138,19 @@ void libvo_common_free_frames (vo_instance_t * _instance)
 vo_frame_t * libvo_common_get_frame (vo_instance_t * _instance, int flags)
 {
     common_instance_t * instance;
+    vo_frame_t * frame;
 
     instance = (common_instance_t *)_instance;
     if (flags & VO_PREDICTION_FLAG) {
 	instance->prediction_index ^= 1;
-	return instance->frame_ptr[instance->prediction_index];
+	frame = instance->frame_ptr[instance->prediction_index];
     } else
-	return instance->frame_ptr[2];
+	frame = instance->frame_ptr[2];
+    set_buf (frame->base, frame);
+    return frame;
+}
+
+void libvo_common_set_frame (vo_instance_t * instance, int flags)
+{
+    libvo_common_get_frame (instance, flags);
 }

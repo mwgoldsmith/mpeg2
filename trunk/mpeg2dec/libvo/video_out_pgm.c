@@ -66,7 +66,7 @@ static int internal_setup (vo_instance_t * _instance, int width, int height,
     instance = (pgm_instance_t *) _instance;
 
     instance->vo.close = libvo_common_free_frames;
-    instance->vo.get_frame = libvo_common_get_frame;
+    instance->vo.set_frame = libvo_common_set_frame;
     instance->width = width;
     instance->height = height;
     sprintf (instance->header, "P5\n\n%d %d\n255\n", width, height * 3 / 2);

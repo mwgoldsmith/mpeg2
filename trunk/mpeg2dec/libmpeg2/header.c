@@ -507,6 +507,17 @@ void mpeg2_header_slice (mpeg2dec_t * mpeg2dec)
     fbuf_t * backward_fbuf;
     fbuf_t * forward_fbuf;
 
+    for (fbuf = mpeg2dec->fbufs; fbuf < mpeg2dec->fbufs + 3; fbuf++)
+	if (fbuf->buf[0] == NULL) {
+	    int size;
+
+	    size = mpeg2dec->decoder.width * mpeg2dec->decoder.height >> 2;
+	    fbuf->buf[0] = mpeg2_malloc (6 * size, ALLOC_YUV);
+	    fbuf->buf[1] = fbuf->buf[0] + 4 * size;
+	    fbuf->buf[2] = fbuf->buf[0] + 5 * size;
+	    fbuf->id = NULL;
+	}
+
     backward_fbuf = fbuf = mpeg2dec->fbuf;
     mpeg2dec->info.current_fbuf = fbuf;
     if (mpeg2dec->decoder.coding_type == B_TYPE) {

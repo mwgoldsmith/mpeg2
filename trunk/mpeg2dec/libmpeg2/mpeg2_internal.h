@@ -180,6 +180,7 @@ typedef struct {
 /* alloc.c */
 #define ALLOC_MPEG2DEC 0
 #define ALLOC_CHUNK 1
+#define ALLOC_YUV 2
 void * mpeg2_malloc (int size, int reason);
 void mpeg2_free (void * buf);
 

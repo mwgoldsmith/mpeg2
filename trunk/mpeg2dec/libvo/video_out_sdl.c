@@ -53,7 +53,7 @@ typedef struct {
     Uint8 bpp;
 } sdl_instance_t;
 
-static vo_frame_t * sdl_get_frame (vo_instance_t * _instance, int flags)
+static void sdl_set_frame (vo_instance_t * _instance, int flags)
 {
     sdl_instance_t * instance;
     sdl_frame_t * frame;
@@ -62,7 +62,6 @@ static vo_frame_t * sdl_get_frame (vo_instance_t * _instance, int flags)
     frame = (sdl_frame_t *) libvo_common_get_frame ((vo_instance_t *) instance,
 						    flags);
     SDL_LockYUVOverlay (frame->overlay);
-    return (vo_frame_t *) frame;
 }
 
 static void check_events (sdl_instance_t * instance)
@@ -156,7 +155,7 @@ vo_instance_t * vo_sdl_open (void)
 
     instance->vo.setup = sdl_setup;
     instance->vo.close = sdl_close;
-    instance->vo.get_frame = sdl_get_frame;
+    instance->vo.set_frame = sdl_set_frame;
 
     instance->surface = NULL;
     instance->sdlflags = SDL_HWSURFACE | SDL_RESIZABLE;

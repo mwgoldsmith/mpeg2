@@ -68,7 +68,7 @@ vo_instance_t * vo_null_open (void)
 
     instance->vo.setup = null_setup;
     instance->vo.close = libvo_common_free_frames;
-    instance->vo.get_frame = libvo_common_get_frame;
+    instance->vo.set_frame = libvo_common_set_frame;
 
     return (vo_instance_t *) instance;
 }
@@ -94,12 +94,12 @@ vo_instance_t * vo_nullslice_open (void)
 
     instance->vo.setup = nullslice_setup;
     instance->vo.close = libvo_common_free_frames;
-    instance->vo.get_frame = libvo_common_get_frame;
+    instance->vo.set_frame = libvo_common_set_frame;
 
     return (vo_instance_t *) instance;
 }
 
-static vo_frame_t * rgb_get_frame (vo_instance_t * _instance, int flags)
+static void rgb_set_frame (vo_instance_t * _instance, int flags)
 {
     null_instance_t * instance;
     null_frame_t * frame;
@@ -118,8 +118,6 @@ static vo_frame_t * rgb_get_frame (vo_instance_t * _instance, int flags)
         frame->rgb_stride <<= 1;
         frame->yuv_stride <<= 1;
     }
-
-    return (vo_frame_t *) frame;
 }
 
 static void rgb_copy_slice (vo_frame_t * _frame, uint8_t ** src)
@@ -176,7 +174,7 @@ vo_instance_t * vo_nullrgb16_open (void)
 
     instance->vo.setup = nullrgb_setup;
     instance->vo.close = libvo_common_free_frames;
-    instance->vo.get_frame = rgb_get_frame;
+    instance->vo.set_frame = rgb_set_frame;
     instance->bpp = 16;
 
     return (vo_instance_t *) instance;
@@ -192,7 +190,7 @@ vo_instance_t * vo_nullrgb32_open (void)
 
     instance->vo.setup = nullrgb_setup;
     instance->vo.close = libvo_common_free_frames;
-    instance->vo.get_frame = rgb_get_frame;
+    instance->vo.set_frame = rgb_set_frame;
     instance->bpp = 32;
 
     return (vo_instance_t *) instance;

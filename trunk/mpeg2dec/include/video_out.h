@@ -24,6 +24,8 @@
 #ifndef VIDEO_OUT_H
 #define VIDEO_OUT_H
 
+void set_buf (uint8_t * buf[3], void * id);
+
 typedef struct vo_frame_s vo_frame_t;
 typedef struct vo_instance_s vo_instance_t;
 
@@ -40,7 +42,7 @@ typedef vo_instance_t * vo_open_t (void);
 struct vo_instance_s {
     int (* setup) (vo_instance_t * instance, int width, int height);
     void (* close) (vo_instance_t * instance);
-    vo_frame_t * (* get_frame) (vo_instance_t * instance, int flags);
+    void (* set_frame) (vo_instance_t * instance, int flags);
 };
 
 typedef struct {
@@ -74,9 +76,10 @@ static inline void vo_close (vo_instance_t * instance)
 #define VO_BOTH_FIELDS (VO_TOP_FIELD | VO_BOTTOM_FIELD)
 #define VO_PREDICTION_FLAG 4
 
-static inline vo_frame_t * vo_get_frame (vo_instance_t * instance, int flags)
+static inline void vo_set_frame (vo_instance_t * instance, int flags)
 {
-    return instance->get_frame (instance, flags);
+    if (instance->set_frame)
+	instance->set_frame (instance, flags);
 }
 
 static inline void vo_field (vo_frame_t * frame, int flags)
