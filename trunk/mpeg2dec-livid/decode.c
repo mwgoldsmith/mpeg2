@@ -49,6 +49,9 @@ static macroblock_t *mb;
 
 //global config struct
 mpeg2_config_t config;
+//frame structure to pass back to caller
+mpeg2_frame_t mpeg2_frame;
+
 static uint_32 is_display_initialized = 0;
 static uint_32 is_sequence_needed = 1;
 
@@ -130,10 +133,16 @@ mpeg2_init(void)
 	//FIXME this should go somewhere after we discover how big
 	//the frame is, or size it so that it will be big enough for
 	//all cases
-	frame_size = 720 * 480;
-	picture.current_frame[0] = malloc(frame_size);
-	picture.current_frame[1] = malloc(frame_size / 4);
-	picture.current_frame[2] = malloc(frame_size / 4);
+	frame_size = 720 * 576;
+	picture.throwaway_frame[0] = malloc(frame_size);
+	picture.throwaway_frame[1] = malloc(frame_size / 4);
+	picture.throwaway_frame[2] = malloc(frame_size / 4);
+	picture.backward_reference_frame[0] = malloc(frame_size);
+	picture.backward_reference_frame[1] = malloc(frame_size / 4);
+	picture.backward_reference_frame[2] = malloc(frame_size / 4);
+	picture.forward_reference_frame[0] = malloc(frame_size);
+	picture.forward_reference_frame[1] = malloc(frame_size / 4);
+	picture.forward_reference_frame[2] = malloc(frame_size / 4);
 
 	//FIXME setup config properly
 	config.flags = MPEG2_MMX_ENABLE;
@@ -147,11 +156,46 @@ mpeg2_init(void)
 }
 
 uint_32 frame_counter = 0;
+
 void
-mpeg2_decode(void) 
+decode_reorder_frames(void)
+{
+	uint_8 *tmp[3];
+
+	if(picture.picture_coding_type != B_TYPE)
+	{
+		//reuse the soon to be outdated forward reference frame
+		picture.current_frame[0] = picture.forward_reference_frame[0];
+		picture.current_frame[1] = picture.forward_reference_frame[1];
+		picture.current_frame[2] = picture.forward_reference_frame[2];
+
+		//make the backward reference frame the new forward reference frame
+		tmp[0] = picture.forward_reference_frame[0];
+		tmp[1] = picture.forward_reference_frame[1];
+		tmp[2] = picture.forward_reference_frame[2];
+		picture.forward_reference_frame[0] = picture.backward_reference_frame[0];
+		picture.forward_reference_frame[1] = picture.backward_reference_frame[1];
+		picture.forward_reference_frame[2] = picture.backward_reference_frame[2];
+		picture.backward_reference_frame[0] = tmp[0];
+		picture.backward_reference_frame[1] = tmp[1];
+		picture.backward_reference_frame[2] = tmp[2];
+	}
+	else
+	{
+		picture.current_frame[0] = picture.throwaway_frame[0];
+		picture.current_frame[1] = picture.throwaway_frame[1];
+		picture.current_frame[2] = picture.throwaway_frame[2];
+	}
+}
+
+
+
+mpeg2_frame_t*
+mpeg2_decode_frame(void) 
 {
 	uint_32 mba;      //macroblock address
 	uint_32 last_mba; //last macroblock in frame
+	uint_32 prev_macroblock_type = 0; 
 	uint_32 mba_inc;
 	uint_32 mb_width;
 	uint_32 code;
@@ -171,10 +215,11 @@ mpeg2_decode(void)
 	
 	decode_find_header(PICTURE_START_CODE,&picture);
 	parse_picture_header(&picture);
+	decode_reorder_frames();
 
 	//XXX We only do I-frames now
-	if( picture.picture_coding_type != I_TYPE) 
-		return;
+	//if( picture.picture_coding_type != I_TYPE) 
+		//return;
 
 	last_mba = ((picture.coded_picture_height * picture.coded_picture_width) >> 8) - 1;
 	mb_width = picture.coded_picture_width >> 4;
@@ -200,17 +245,42 @@ mpeg2_decode(void)
 			mba_inc = Get_macroblock_address_increment();
 
 			if(mba_inc > 1)
-				for(i=0; i< mba_inc - 1; i++)
+			{
+				//handling of skipped mb's differs between P_TYPE and B_TYPE
+				//pictures
+				if(picture.picture_coding_type == P_TYPE)
 				{
-					mb->skipped = 1;
-					mb->mba = ++mba;
-					mb = mb_buffer_increment();
+					parse_reset_pmv(&slice);
+
+					for(i=0; i< mba_inc - 1; i++)
+					{
+						memset(mb->f_motion_vectors,0,8);
+						mb->skipped = 1;
+						mb->mba = ++mba;
+						mb = mb_buffer_increment();
+					}
 				}
+				else
+				{
+					for(i=0; i< mba_inc - 1; i++)
+					{
+						memcpy(mb->f_motion_vectors[0],slice.f_pmv,8);
+						memcpy(mb->f_motion_vectors[1],slice.f_pmv,8);
+						mb->macroblock_type = prev_macroblock_type;
+						mb->skipped = 1;
+						mb->mba = ++mba;
+						mb = mb_buffer_increment();
+					}
+				}
+			}
 			
 			mb->skipped = 0;
 			mb->mba = ++mba; 
 
 			parse_macroblock(&picture,&slice,mb);
+			//we store the last macroblock mv flags, as skipped b-frame blocks
+			//inherit them
+			prev_macroblock_type = mb->macroblock_type & (MACROBLOCK_MOTION_FORWARD | MACROBLOCK_MOTION_BACKWARD);
 			mb = mb_buffer_increment();
 
 			if(!mb)
@@ -221,12 +291,27 @@ mpeg2_decode(void)
 	while(mba < last_mba);
 	
 	decode_flush_buffer();
-	display_frame(picture.current_frame);
+
+	//decide which frame to send to the display
+	if(picture.picture_coding_type == B_TYPE)
+	{
+		mpeg2_frame.frame[0] = picture.throwaway_frame[0];
+		mpeg2_frame.frame[1] = picture.throwaway_frame[1];
+		mpeg2_frame.frame[2] = picture.throwaway_frame[2];
+	}
+	else
+	{
+		mpeg2_frame.frame[0] = picture.forward_reference_frame[0];
+		mpeg2_frame.frame[1] = picture.forward_reference_frame[1];
+		mpeg2_frame.frame[2] = picture.forward_reference_frame[2];
+	}
 
 	if(bitstream_show(32) == SEQUENCE_END_CODE)
 		is_sequence_needed = 1;
 
 	printf("frame_counter = %d\n",frame_counter++);
+	
+	return &mpeg2_frame;
 }
 
 uint_32 buf[2048/4];
@@ -247,6 +332,7 @@ void fill_buffer(uint_32 **start,uint_32 **end)
 
 int main(int argc,char *argv[])
 {
+	mpeg2_frame_t *my_frame;
 
 	if(argc < 2)
 	{
@@ -275,7 +361,10 @@ int main(int argc,char *argv[])
 	mpeg2_init();
 
 	while(1)
-		mpeg2_decode();
+	{
+		my_frame = mpeg2_decode_frame();
+		display_frame(my_frame->frame);
+	}
 
   return 0;
 }
