@@ -3,7 +3,7 @@
 
 * things we dont implement yet
 	* field pictures
-	* mpeg1 - full-pixel MC, D pictures, have to find test streams
+	* mpeg1 - full-pixel MC, have to find test streams
 	* dont crash on bad streams, make sure we can resync after a while
 		* possible chunk buffer overflow (writing or reading back)
 		* destination macroblock overflow
