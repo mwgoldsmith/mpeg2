@@ -37,9 +37,10 @@ static void save_pgm (int width, int height, uint8_t * const * buf, int num)
     pgmfile = fopen (filename, "wb");
     if (!pgmfile)
 	return;
-    fprintf (pgmfile, "P5\n\n%d %d\n255\n", width, height * 3 / 2);
+    fprintf (pgmfile, "P5\n%d %d\n255\n", width, height * 3 / 2);
     fwrite (buf[0], width, height, pgmfile);
-    width >>= 1;	height >>= 1;
+    width >>= 1;
+    height >>= 1;
     for (i = 0; i < height; i++) {
 	fwrite (buf[1] + i * width, width, 1, pgmfile);
 	fwrite (buf[2] + i * width, width, 1, pgmfile);
