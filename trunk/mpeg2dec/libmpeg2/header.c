@@ -81,7 +81,7 @@ void mpeg2_header_state_init (mpeg2dec_t * mpeg2dec)
     mpeg2dec->first = 1;
 }
 
-static void simplify (unsigned int * num, unsigned int * denum) 
+static void simplify (unsigned int * num, unsigned int * denum)
 {
     int a, b, tmp;
 
