@@ -7,7 +7,7 @@ AC_CONFIG_FILES([Makefile autotools/Makefile include/Makefile test/Makefile
     doc/Makefile src/Makefile libmpeg2/Makefile libmpeg2/convert/Makefile
     libvo/Makefile vc++/Makefile
     libmpeg2/libmpeg2.pc libmpeg2/convert/libmpeg2convert.pc])
-AM_INIT_AUTOMAKE([mpeg2dec],[0.4.0])
+AM_INIT_AUTOMAKE([mpeg2dec],[0.4.1-cvs])
 AC_CONFIG_HEADERS([include/config.h])
 AM_MAINTAINER_MODE
 AC_CANONICAL_HOST
