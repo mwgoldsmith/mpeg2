@@ -27,12 +27,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <inttypes.h>
 #include <getopt.h>
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #include <signal.h>
 #endif
+#include <inttypes.h>
 
 #include "video_out.h"
 #include "mpeg2.h"

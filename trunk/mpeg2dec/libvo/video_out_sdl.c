@@ -31,8 +31,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
 #include <SDL/SDL.h>
+#include <inttypes.h>
 
 #include "video_out.h"
 #include "video_out_internal.h"

@@ -27,8 +27,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <inttypes.h>
 #include <getopt.h>
+#include <inttypes.h>
 
 #define BUFFER_SIZE 4096
 static uint8_t buffer[BUFFER_SIZE];

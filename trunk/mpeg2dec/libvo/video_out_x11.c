@@ -29,11 +29,10 @@
 #include <stdlib.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include <inttypes.h>
-
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <X11/extensions/XShm.h>
+#include <inttypes.h>
 /* since it doesn't seem to be defined on some platforms */
 int XShmGetEventBase (Display *);
 
