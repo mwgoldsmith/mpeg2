@@ -21,30 +21,30 @@ struct vo_frame_s {
     vo_instance_t * instance;
 };
 
-typedef vo_instance_t * vo_setup_t (vo_instance_t *, int, int);
+typedef vo_instance_t * vo_open_t (void);
 
 struct vo_instance_s {
-    vo_setup_t * reinit;
+    int (* setup) (vo_instance_t * this, int width, int height);
     void (* close) (vo_instance_t * this);
-    vo_frame_t * (* get_frame) (vo_instance_t * this, int prediction);
+    vo_frame_t * (* get_frame) (vo_instance_t * this, int flags);
 };
 
 typedef struct vo_driver_s {
     char * name;
-    vo_setup_t * setup;
+    vo_open_t * open;
 } vo_driver_t;
 
 /* return NULL terminated array of all drivers */
 vo_driver_t * vo_drivers (void);
 
-static vo_instance_t * vo_setup (vo_setup_t * setup, int width, int height)
+static vo_instance_t * vo_open (vo_open_t * open)
 {
-    return setup (NULL, width, height);
+    return open ();
 }
 
-static vo_instance_t * vo_reinit (vo_instance_t * this, int width, int height)
+static int vo_setup (vo_instance_t * this, int width, int height)
 {
-    return this->reinit (this, width, height);
+    return this->setup (this, width, height);
 }
 
 static inline void vo_close (vo_instance_t * this)

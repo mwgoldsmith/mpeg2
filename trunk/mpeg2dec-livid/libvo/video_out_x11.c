@@ -364,15 +364,6 @@ static void x11_close (vo_instance_t * _instance)
     XCloseDisplay (instance->display);
 }
 
-x11_instance_t * common_setup (int width, int height, int xv);
-
-vo_instance_t * vo_x11_setup (vo_instance_t * instance, int width, int height)
-{
-    if (instance != NULL)
-	return NULL;
-    return (vo_instance_t *) common_setup (width, height, 0);
-}
-
 #ifdef LIBVO_XV
 static vo_frame_t * xv_get_frame (vo_instance_t * _instance, int flags)
 {
@@ -520,16 +511,43 @@ static void xv_close (vo_instance_t * _instance)
     XDestroyWindow (instance->display, instance->window);
     XCloseDisplay (instance->display);
 }
-
-vo_instance_t * vo_xv_setup (vo_instance_t * _instance, int width, int height)
-{
-    if (_instance != NULL)
-	return NULL;
-    return (vo_instance_t *) common_setup (width, height, 1);
-}
 #endif
 
-x11_instance_t * common_setup (int width, int height, int xv)
+static int common_setup (x11_instance_t * instance, int width, int height,
+			 int xv)
+{
+    instance->width = width;
+    instance->height = height;
+
+    if (open_display (instance))
+	return 1;
+
+#ifdef LIBVO_XV
+    if (xv && (! (xv_check_extension (instance)))) {
+	if (xv_alloc_frames (instance))
+	    return 1;
+	instance->vo.close = xv_close;
+	instance->vo.get_frame = xv_get_frame;
+    } else
+#endif
+    {
+	if (x11_alloc_frames (instance))
+	    return 1;
+	instance->vo.close = x11_close;
+	instance->vo.get_frame = x11_get_frame;
+    }
+
+    XMapWindow (instance->display, instance->window);
+
+    return 0;
+}
+
+static int x11_setup (vo_instance_t * instance, int width, int height)
+{
+    return common_setup ((x11_instance_t *) instance, width, height, 0);
+}
+
+vo_instance_t * vo_x11_open (void)
 {
     x11_instance_t * instance;
 
@@ -537,31 +555,26 @@ x11_instance_t * common_setup (int width, int height, int xv)
     if (instance == NULL)
 	return NULL;
 
-    instance->width = width;
-    instance->height = height;
-
-    if (open_display (instance))
-	return NULL;
+    instance->vo.setup = x11_setup;
+    return (vo_instance_t *) instance;
+}
 
 #ifdef LIBVO_XV
-    if (xv && (! (xv_check_extension (instance)))) {
-	if (xv_alloc_frames (instance))
-	    return NULL;
-	instance->vo.reinit = vo_xv_setup;
-	instance->vo.close = xv_close;
-	instance->vo.get_frame = xv_get_frame;
-    } else
-#endif
-    {
-	if (x11_alloc_frames (instance))
-	    return NULL;
-	instance->vo.reinit = vo_x11_setup;
-	instance->vo.close = x11_close;
-	instance->vo.get_frame = x11_get_frame;
-    }
-
-    XMapWindow (instance->display, instance->window);
-
-    return instance;
+static int xv_setup (vo_instance_t * instance, int width, int height)
+{
+    return common_setup ((x11_instance_t *) instance, width, height, 1);
 }
+
+vo_instance_t * vo_xv_open (void)
+{
+    x11_instance_t * instance;
+
+    instance = malloc (sizeof (x11_instance_t));
+    if (instance == NULL)
+	return NULL;
+
+    instance->vo.setup = xv_setup;
+    return (vo_instance_t *) instance;
+}
+#endif
 #endif

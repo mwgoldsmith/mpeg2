@@ -40,24 +40,22 @@ static void null_draw_frame (vo_frame_t * frame)
 {
 }
 
-vo_instance_t * vo_null_setup (vo_instance_t * _instance,
-			       int width, int height)
+static int null_setup (vo_instance_t * instance, int width, int height)
+{
+    return libvo_common_alloc_frames (instance, width, height,
+				      sizeof (vo_frame_t),
+				      NULL, NULL, null_draw_frame);
+}
+
+vo_instance_t * vo_null_open (void)
 {
     null_instance_t * instance;
 
-    instance = (null_instance_t *) _instance;
-    if (instance == NULL) {
-	instance = malloc (sizeof (null_instance_t));
-	if (instance == NULL)
-	    return NULL;
-    }
-
-    if (libvo_common_alloc_frames ((vo_instance_t *) instance, width, height,
-				   sizeof (vo_frame_t),
-				   NULL, NULL, null_draw_frame))
+    instance = malloc (sizeof (null_instance_t));
+    if (instance == NULL)
 	return NULL;
 
-    instance->vo.reinit = vo_null_setup;
+    instance->vo.setup = null_setup;
     instance->vo.close = libvo_common_free_frames;
     instance->vo.get_frame = libvo_common_get_frame;
 
@@ -68,19 +66,24 @@ static void null_copy_slice (vo_frame_t * frame, uint8_t ** src)
 {
 }
 
-vo_instance_t * vo_nullslice_setup (vo_instance_t * _instance,
-				    int width, int height)
+static int nullslice_setup (vo_instance_t * instance, int width, int height)
+{
+    return libvo_common_alloc_frames (instance, width, height,
+				      sizeof (vo_frame_t),
+				      null_copy_slice, NULL, null_draw_frame);
+}
+
+vo_instance_t * vo_nullslice_open (void)
 {
     null_instance_t * instance;
-    int i;
 
-    instance = (null_instance_t *) vo_null_setup (_instance, width, height);
+    instance = malloc (sizeof (null_instance_t));
     if (instance == NULL)
 	return NULL;
 
-    instance->vo.reinit = vo_nullslice_setup;
-    for (i = 0; i < 3; i++)
-	instance->frame[i].copy = null_copy_slice;
+    instance->vo.setup = nullslice_setup;
+    instance->vo.close = libvo_common_free_frames;
+    instance->vo.get_frame = libvo_common_get_frame;
 
     return (vo_instance_t *) instance;
 }

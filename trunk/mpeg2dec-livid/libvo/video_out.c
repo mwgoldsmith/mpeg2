@@ -30,35 +30,35 @@
 
 /* Externally visible list of all vo drivers */
 
-extern vo_setup_t vo_xv_setup;
-extern vo_setup_t vo_x11_setup;
-extern vo_setup_t vo_sdl_setup;
-extern vo_setup_t vo_mga_setup;
-extern vo_setup_t vo_null_setup;
-extern vo_setup_t vo_nullslice_setup;
-extern vo_setup_t vo_pgm_setup;
-extern vo_setup_t vo_pgmpipe_setup;
-extern vo_setup_t vo_md5_setup;
+extern vo_open_t vo_xv_open;
+extern vo_open_t vo_x11_open;
+extern vo_open_t vo_sdl_open;
+extern vo_open_t vo_mga_open;
+extern vo_open_t vo_null_open;
+extern vo_open_t vo_nullslice_open;
+extern vo_open_t vo_pgm_open;
+extern vo_open_t vo_pgmpipe_open;
+extern vo_open_t vo_md5_open;
 
 static vo_driver_t video_out_drivers[] =
 {
 #ifdef LIBVO_XV
-    {"xv", vo_xv_setup},
+    {"xv", vo_xv_open},
 #endif
 #ifdef LIBVO_X11
-    {"x11", vo_x11_setup},
+    {"x11", vo_x11_open},
 #endif
 #ifdef LIBVO_MGA
-    {"mga", vo_mga_setup},
+    {"mga", vo_mga_open},
 #endif
 #ifdef LIBVO_SDL
-    {"sdl", vo_sdl_setup},
+    {"sdl", vo_sdl_open},
 #endif
-    {"null", vo_null_setup},
-    {"nullslice", vo_nullslice_setup},
-    {"pgm", vo_pgm_setup},
-    {"pgmpipe", vo_pgmpipe_setup},
-    {"md5", vo_md5_setup},
+    {"null", vo_null_open},
+    {"nullslice", vo_nullslice_open},
+    {"pgm", vo_pgm_open},
+    {"pgmpipe", vo_pgmpipe_open},
+    {"md5", vo_md5_open},
     {NULL, NULL}
 };
 
