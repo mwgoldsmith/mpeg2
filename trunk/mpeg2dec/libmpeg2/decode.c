@@ -150,7 +150,8 @@ static mpeg2_state_t seek_header (mpeg2dec_t * mpeg2dec)
 
 mpeg2_state_t mpeg2_seek_sequence (mpeg2dec_t * mpeg2dec)
 {
-    mpeg2dec->sequence.width = (unsigned)-1;
+    mpeg2_header_state_init (mpeg2dec);
+    mpeg2dec->action = seek_header;
     return seek_header (mpeg2dec);
 }
 
@@ -413,33 +414,19 @@ mpeg2dec_t * mpeg2_init (void)
 						       ALLOC_CHUNK);
 
     mpeg2dec->shift = 0xffffff00;
-    mpeg2dec->action = mpeg2_seek_sequence;
     mpeg2dec->code = 0xb4;
-    mpeg2dec->first_decode_slice = 1;
-    mpeg2dec->nb_decode_slices = 0xb0 - 1;
-    mpeg2dec->convert_id = NULL;
-
-    /* initialize substructures */
-    mpeg2_header_state_init (mpeg2dec);
+    mpeg2dec->action = mpeg2_seek_sequence;
+    mpeg2dec->sequence.width = (unsigned)-1;
 
     return mpeg2dec;
 }
 
 void mpeg2_close (mpeg2dec_t * mpeg2dec)
 {
-    int i;
-
     /* static uint8_t finalizer[] = {0,0,1,0xb4}; */
     /* mpeg2_decode_data (mpeg2dec, finalizer, finalizer+4); */
 
+    mpeg2_header_state_init (mpeg2dec);
     mpeg2_free (mpeg2dec->chunk_buffer);
-    if (!mpeg2dec->custom_fbuf)
-	for (i = mpeg2dec->alloc_index_user; i < mpeg2dec->alloc_index; i++)
-	    mpeg2_free (mpeg2dec->fbuf_alloc[i].fbuf.buf[0]);
-    if (mpeg2dec->convert_start)
-	for (i = 0; i < 3; i++)
-	    mpeg2_free (mpeg2dec->yuv_buf[i][0]);
-    if (mpeg2dec->convert_id)
-	mpeg2_free (mpeg2dec->convert_id);
     mpeg2_free (mpeg2dec);
 }
