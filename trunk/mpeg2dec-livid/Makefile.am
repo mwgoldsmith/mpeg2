@@ -7,7 +7,7 @@ bin_PROGRAMS = mpeg2dec
 
 mpeg2dec_LIBS= 
 mpeg2dec_LDADD= @CONFIG_OBJS@ @X_PRE_LIBS@ @X_LIBS@ -lXext -lX11\
-	@X_EXTRA_LIBS@ @GATOS_LIB@ -lm
+	@X_EXTRA_LIBS@ -lm
 
 mpeg2dec_SOURCES = getvlc.c  mb_buffer.c motion.c parse.c stats.c\
 	idct.c motion_comp.c inv_quantize.c decode.c bitstream.c debug.c 
