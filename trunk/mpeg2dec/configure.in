@@ -71,7 +71,7 @@ elif test x"$GCC" = x"yes"; then
 	    [OPT_CFLAGS=$TRY_CFLAGS;
 	    AC_DEFINE([ARCH_ALPHA],,[alpha architecture])]);;
     esac
-elif test x"$CC" = x"tcc" -a x"`$CC -version 2>&1 | grep TenDRA`" != x""; then
+elif test x"$CC" = x"tendracc"; then
     dnl TenDRA portability checking compiler
     TENDRA=yes
     OPT_CFLAGS="-Xp -Yansi -f`pwd`/include/tendra.h -DELIDE_CODE"
