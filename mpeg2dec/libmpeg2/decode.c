@@ -197,20 +197,20 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	    mpeg2_slice (&(mpeg2dec->decoder), code, mpeg2dec->chunk_start);
 	if ((unsigned) (mpeg2dec->code - 1) < 0xb0 - 1)
 	    goto next_chunk;
-    } else switch (code) {
-    case 0x00:	/* picture_start_code */
+    } else switch (code & 0x0f) {
+    case 0x00 & 0x0f:	/* picture_start_code */
 	mpeg2_header_picture (mpeg2dec);
 	break;
-    case 0xb2:	/* user_data_start_code */
+    case 0xb2 & 0x0f:	/* user_data_start_code */
 	mpeg2_header_user_data (mpeg2dec);
 	break;
-    case 0xb3:	/* sequence_header_code */
+    case 0xb3 & 0x0f:	/* sequence_header_code */
 	mpeg2_header_sequence (mpeg2dec);
 	break;
-    case 0xb5:	/* extension_start_code */
+    case 0xb5 & 0x0f:	/* extension_start_code */
 	mpeg2_header_extension (mpeg2dec);
 	break;
-    case 0xb8:	/* group_start_code */
+    case 0xb8 & 0x0f:	/* group_start_code */
 	mpeg2_header_gop (mpeg2dec);
 	break;
     }
@@ -254,9 +254,8 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	goto next_chunk;
 
     default:
-	if (((unsigned) (mpeg2dec->code - 1) < 0xb0 - 1) &&
-	    (mpeg2dec->state == STATE_PICTURE ||
-	     mpeg2dec->state == STATE_PICTURE_2ND))
+	if (mpeg2dec->code == 1 && (mpeg2dec->state == STATE_PICTURE ||
+				    mpeg2dec->state == STATE_PICTURE_2ND))
 	    break;
 
 	mpeg2dec->state = STATE_INVALID;
