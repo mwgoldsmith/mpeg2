@@ -120,7 +120,7 @@ static int CompletionType = -1;
 static void InstallXErrorHandler()
 {
 	//XSetErrorHandler(HandleXError);
-	XFlush(mydisplay);
+        XFlush(mydisplay);
 }
 
 static void DeInstallXErrorHandler()
@@ -134,15 +134,19 @@ static void DeInstallXErrorHandler()
 static uint32_t image_width;
 static uint32_t image_height;
 
+#include "video_out_porting_old.h"
+
+
+
 /* connect to server, create and map window,
  * allocate colors and (shared) memory
  */
-static uint32_t 
-init(int width, int height, int fullscreen, char *title, uint32_t format)
+static uint32_t
+setup(vo_output_video_attr_t * attr, void* user_data)
 {
 	int screen;
 	unsigned int fg, bg;
-	char *hello = (title == NULL) ? "I hate X11" : title;
+	char *hello = (attr->title == NULL) ? "I hate X11" : attr->title;
 	char *name = ":0.0";
 	XSizeHints hint;
 	XVisualInfo vinfo;
@@ -153,8 +157,8 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
 	XSetWindowAttributes xswa;
 	unsigned long xswamask;
 
-	image_height = height;
-	image_width = width;
+	image_height = attr->height;
+	image_width = attr->width;
 
 	if (X_already_started)
 		return -1;
@@ -277,7 +281,7 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
 				fprintf(stderr, "Xvideo image format: 0x%x (%4.4s) %s\n", fo[i].id, 
 						(char*)&fo[i].id, (fo[i].format == XvPacked) ? "packed" : "planar");
 
-				if (fo[i].id == format) 
+				if (fo[i].id == attr->format) 
 				{
 					xv_format = fo[i].id;
 					break;
@@ -323,7 +327,7 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
 	if (Shmem_Flag) 
 	{
 		myximage = XShmCreateImage(mydisplay, vinfo.visual, 
-		depth, ZPixmap, NULL, &Shminfo[0], width, image_height);
+		depth, ZPixmap, NULL, &Shminfo[0], attr->width, image_height);
 
 		/* If no go, then revert to normal Xlib calls. */
 
@@ -396,7 +400,7 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
 		Shmem_Flag = 0;
 #endif
 		myximage = XGetImage(mydisplay, mywindow, 0, 0,
-		width, image_height, AllPlanes, ZPixmap);
+		attr->width, image_height, AllPlanes, ZPixmap);
 		ImageData = myximage->data;
 #ifdef SH_MEM
 	}
@@ -433,7 +437,7 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
 }
 
 static const vo_info_t*
-get_info(void)
+get_info2(void* user_data)
 {
 	return &vo_info;
 }
@@ -545,7 +549,7 @@ flip_page_x11(void)
 
 
 static void
-flip_page(void)
+flip_page2(void* user_data)
 {
 #ifdef LIBVO_XV
 	if (xv_port != 0)
@@ -587,7 +591,7 @@ draw_slice_x11(uint8_t *src[], int slice_num)
 }
 
 static uint32_t
-draw_slice(uint8_t *src[], int slice_num)
+draw_slice2(uint8_t *src[], int slice_num,void* user_data)
 {
 #ifdef LIBVO_XV
 	if (xv_port != 0)
@@ -634,7 +638,7 @@ draw_frame_x11(uint8_t *src[])
 }
 
 static uint32_t
-draw_frame(uint8_t *src[])
+draw_frame2(uint8_t *src[], void* user_data)
 {
 #ifdef LIBVO_XV
 	if (xv_port != 0)
@@ -645,7 +649,8 @@ draw_frame(uint8_t *src[])
 }
 
 static vo_image_buffer_t* 
-allocate_image_buffer()
+allocate_image_buffer2(uint32_t height, uint32_t width, 
+		       uint32_t format, void* user_data)
 {
 #ifdef LIBVO_XV
 	xvimage_counter++;
@@ -675,7 +680,7 @@ allocate_image_buffer()
 }
 
 static void	
-free_image_buffer(vo_image_buffer_t* image)
+free_image_buffer2(vo_image_buffer_t* image, void* user_data)
 {
 #ifdef LIBVO_XV
 	if (xv_port != 0)

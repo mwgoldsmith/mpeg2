@@ -68,6 +68,7 @@ static int conf_palette;
 
 static int f;
 
+#include "video_out_porting_old.h"
 
 
 /*
@@ -237,7 +238,7 @@ write_slice_YUV422(uint_8 *y,uint_8 *cr, uint_8 *cb,uint_32 slice_num)
 	}
 }
 
-static uint32_t draw_slice(uint8_t *src[], int slice_num)
+static uint32_t draw_slice2(uint8_t *src[], int slice_num,void* user_data)
 {
 	if ( vid_data == NULL ) return 0;
 
@@ -256,7 +257,7 @@ static uint32_t draw_slice(uint8_t *src[], int slice_num)
 
 
 static void
-flip_page(void)
+flip_page2(void* user_data)
 {
 
 //	memset(frame_mem + bufinfo.offset_p2, 0x80, config.src_width*config.src_height);
@@ -298,7 +299,7 @@ flip_page(void)
 
 }
 
-static uint32_t draw_frame(uint8_t *src[])
+static uint32_t draw_frame2(uint8_t *src[], void* user_data)
 {
 	printf("DRAW FRAME!!!\n");
 	if ( conf_palette == VIDEO_PALETTE_YUV422 ) {
@@ -313,7 +314,7 @@ static uint32_t draw_frame(uint8_t *src[])
 	return 0;
 }
 
-static uint32_t init(int width, int height, int fullscreen, char *title, uint32_t format)
+static uint32_t setup(vo_output_video_attr_t * attr, void* user_data)
 {
 	uint_32 frame_size;
 
@@ -363,11 +364,11 @@ static uint32_t init(int width, int height, int fullscreen, char *title, uint32_
 	}
 
 	config.fb_screen_size = (1280 * 1024 * 8) / 8;
-	config.src_width = width;
-	config.src_height= height;
+	config.src_width = attr->width;
+	config.src_height= attr->height;
 
-	config.image_width = width;
-	config.image_height= height; 
+	config.image_width = attr->width;
+	config.image_height= attr->height; 
 	//config.image_width = 1024;
 	//config.image_height= 576;
 
@@ -398,21 +399,24 @@ static uint32_t init(int width, int height, int fullscreen, char *title, uint32_
 }
 
 static const vo_info_t*
-get_info(void)
+get_info2(void* user_data)
 {
 	return &vo_info;
 }
 
 //FIXME this should allocate AGP memory via agpgart and then we
 //can use AGP transfers to the framebuffer
-static vo_image_buffer_t* allocate_image_buffer()
+static vo_image_buffer_t* allocate_image_buffer2(uint32_t height, 
+						 uint32_t width, 
+						 uint32_t format, 
+						 void* user_data)
 {
 	//use the generic fallback
 	return allocate_image_buffer_common(config.src_height,config.src_width,0x32315659);
 }
 
 static void	
-free_image_buffer(vo_image_buffer_t* image)
+free_image_buffer2(vo_image_buffer_t* image, void* user_data)
 {
 	//use the generic fallback
 	free_image_buffer_common(image);

@@ -50,6 +50,7 @@ static int framePlaneUV = -1;
 static int slicePlaneY = -1;
 static int slicePlaneUV = -1;
 
+#include "video_out_porting_old.h"
 
 static inline int 
 findArrayEnd(SDL_Rect **array)
@@ -65,8 +66,9 @@ findArrayEnd(SDL_Rect **array)
     return(i - 1);
 } // findArrayEnd
 
-static uint32_t 
-init(int width, int height, int fullscreen, char *title, uint32_t format)
+
+static uint32_t
+setup(vo_output_video_attr_t * attr, void* user_data)
 /*
  * Initialize an SDL surface and an SDL YUV overlay.
  *
@@ -86,7 +88,7 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
     Uint32 sdlflags = SDL_HWSURFACE;
     Uint8 bpp;
 
-    if (fullscreen)
+    if (attr->fullscreen)
         sdlflags |= SDL_FULLSCREEN;
 
     rc = SDL_Init(SDL_INIT_VIDEO);
@@ -119,8 +121,8 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
 
     if (modes == (SDL_Rect **) -1)   // anything is fine.
     {
-        desiredWidth = width;
-        desiredHeight = height;
+        desiredWidth = attr->width;
+        desiredHeight = attr->height;
     } // if
     else
     {
@@ -128,7 +130,7 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
             //  ...so start at the far end of the array.
         for (i = findArrayEnd(modes); ((i >= 0) && (desiredWidth == -1)); i--)
         {
-            if ((modes[i]->w >= width) && (modes[i]->h >= height))
+            if ((modes[i]->w >= attr->width) && (modes[i]->h >= attr->height))
             {
                 desiredWidth = modes[i]->w;
                 desiredHeight = modes[i]->h;
@@ -139,14 +141,14 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
     if ((desiredWidth < 0) || (desiredHeight < 0))
     {
         printf("SDL: Couldn't produce a mode with at least"
-               " a (%dx%d) resolution!\n", width, height);
+               " a (%dx%d) resolution!\n", attr->width, attr->height);
         return -1;
     } // if
 
-    dispSize.x = (desiredWidth - width) / 2;
-    dispSize.y = (desiredHeight - height) / 2;
-    dispSize.w = width;
-    dispSize.h = height;
+    dispSize.x = (desiredWidth - attr->width) / 2;
+    dispSize.y = (desiredHeight - attr->height) / 2;
+    dispSize.w = attr->width;
+    dispSize.h = attr->height;
 
         // hide cursor. The cursor is annoying in fullscreen, and when
         //  using the SDL AAlib target, it tries to draw the cursor,
@@ -177,12 +179,12 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
         return -1;
     } // if
 
-    if (title == NULL)
-        title = "Help! I'm trapped inside a Palm IIIc!";
+    if (attr->title == NULL)
+        attr->title = "Help! I'm trapped inside a Palm IIIc!";
 
-    SDL_WM_SetCaption(title, "MPEG2DEC");
+    SDL_WM_SetCaption(attr->title, "MPEG2DEC");
 
-    overlay = SDL_CreateYUVOverlay(width, height, SDL_IYUV_OVERLAY, surface);
+    overlay = SDL_CreateYUVOverlay(attr->width, attr->height, SDL_IYUV_OVERLAY, surface);
     if (overlay == NULL)
     {
         printf("ERROR: Couldn't create an SDL-based YUV overlay!\n");
@@ -203,7 +205,7 @@ setbuf(stdout, NULL);
 
 
 static const vo_info_t*
-get_info(void)
+get_info2(void* user_data)
 {
 	return &vo_info;
 }
@@ -211,7 +213,7 @@ get_info(void)
 
     // !!! do we still need this API function?
 static uint32_t 
-draw_frame(uint8_t *src[])
+draw_frame2(uint8_t *src[], void *user_data)
 /*
  * Draw a frame to the SDL YUV overlay.
  *
@@ -241,7 +243,7 @@ draw_frame(uint8_t *src[])
 
 
 static uint32_t 
-draw_slice(uint8_t *src[], int slice_num)
+draw_slice2(uint8_t *src[], int slice_num, void *user_data)
 /*
  * Draw a slice (16 rows of image) to the SDL YUV overlay.
  *
@@ -271,7 +273,7 @@ draw_slice(uint8_t *src[], int slice_num)
 
 
 static void 
-flip_page(void)
+flip_page2(void *user_data)
 {
     SDL_PumpEvents();  // get keyboard and win resize events.
     if ( (SDL_GetModState() & KMOD_ALT) &&
@@ -285,14 +287,15 @@ flip_page(void)
 } // display_flip_page
 
 static vo_image_buffer_t* 
-allocate_image_buffer()
+allocate_image_buffer2(uint32_t height, uint32_t width, 
+		       uint32_t format, void *user_data)
 {
 	//use the generic fallback
 	return allocate_image_buffer_common(dispSize.h,dispSize.w,0x32315659);
 }
 
 static void	
-free_image_buffer(vo_image_buffer_t* image)
+free_image_buffer2(vo_image_buffer_t* image, void *user_data)
 {
 	//use the generic fallback
 	free_image_buffer_common(image);

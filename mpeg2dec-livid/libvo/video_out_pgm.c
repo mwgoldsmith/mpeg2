@@ -37,33 +37,36 @@ static vo_info_t vo_info =
 	""
 };
 
+
 static int image_width;
 static int image_height;
 static char header[1024];
 static int framenum = -2;
 
-static uint32_t
-init(int width, int height, int fullscreen, char *title, uint32_t format)
-{
-    image_height = height;
-    image_width = width;
+#include "video_out_porting_old.h"
 
-    sprintf (header, "P5\n\n%d %d\n255\n", width, height*3/2);
+static uint32_t
+setup(vo_output_video_attr_t * attr, void* user_data)
+{
+    image_height = attr->height;
+    image_width = attr->width;
+
+    sprintf (header, "P5\n\n%d %d\n255\n", attr->width, attr->height*3/2);
 
     return 0;
 }
 
 static const vo_info_t*
-get_info(void)
+get_info2(void *user_data)
 {
     return &vo_info;
 }
 
-static void flip_page (void)
+static void flip_page2 (void *user_data)
 {
 }
 
-static uint32_t draw_slice(uint8_t * src[], int slice_num)
+static uint32_t draw_slice2(uint8_t * src[], int slice_num, void *user_data)
 {
     return 0;
 }
@@ -86,7 +89,7 @@ uint32_t output_pgm_frame (char * fname, uint8_t * src[])
     return 0;
 }
 
-static uint32_t draw_frame(uint8_t * src[])
+static uint32_t draw_frame2(uint8_t * src[], void *user_data)
 {
     char buf[100];
 
@@ -98,13 +101,14 @@ static uint32_t draw_frame(uint8_t * src[])
 }
 
 static vo_image_buffer_t* 
-allocate_image_buffer()
+allocate_image_buffer2(uint32_t height, uint32_t width, 
+		       uint32_t format, void *user_data)
 {
     return allocate_image_buffer_common(image_height,image_width,0x32315659);
 }
 
 static void	
-free_image_buffer(vo_image_buffer_t* image)
+free_image_buffer2(vo_image_buffer_t* image, void *user_data) 
 {
     free_image_buffer_common(image);
 }

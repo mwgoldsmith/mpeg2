@@ -50,6 +50,8 @@ static uint8_t *vid_data, *frame0, *frame1;
 static int next_frame = 0;
 static int f;
 
+#include "video_out_porting_old.h"
+
 static void
 write_frame_g200(uint8_t *y,uint8_t *cr, uint8_t *cb)
 {
@@ -176,7 +178,7 @@ write_slice_g400(uint8_t *y,uint8_t *cr, uint8_t *cb,uint32_t slice_num)
 }
 
 static uint32_t
-draw_slice(uint8_t *src[], int slice_num)
+draw_slice2(uint8_t *src[], int slice_num, void *user_data)
 {
 	if (mga_vid_config.card_type == MGA_G200)
 		write_slice_g200(src[0],src[2],src[1],slice_num);
@@ -187,7 +189,7 @@ draw_slice(uint8_t *src[], int slice_num)
 }
 
 static void
-flip_page(void)
+flip_page2(void *user_data)
 {
 	ioctl(f,MGA_VID_FSEL,&next_frame);
 
@@ -200,7 +202,7 @@ flip_page(void)
 }
 
 static uint32_t
-draw_frame(uint8_t *src[])
+draw_frame2(uint8_t *src[], void *user_data)
 {
 	if (mga_vid_config.card_type == MGA_G200)
 		write_frame_g200(src[0], src[2], src[1]);
@@ -211,8 +213,9 @@ draw_frame(uint8_t *src[])
 	return 0;
 }
 
+
 static uint32_t
-init(int width, int height, int fullscreen, char *title, uint32_t format)
+setup(vo_output_video_attr_t * attr, void* user_data)
 {
 	char *frame_mem;
 	uint32_t frame_size;
@@ -225,10 +228,10 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
 		return(-1);
 	}
 
-	mga_vid_config.src_width = width;
-	mga_vid_config.src_height= height;
-	mga_vid_config.dest_width = width;
-	mga_vid_config.dest_height= height;
+	mga_vid_config.src_width = attr->width;
+	mga_vid_config.src_height= attr->height;
+	mga_vid_config.dest_width = attr->width;
+	mga_vid_config.dest_height= attr->height;
 	//mga_vid_config.dest_width = 1280;
 	//mga_vid_config.dest_height= 1024;
 	mga_vid_config.x_org= 0;
@@ -254,7 +257,7 @@ init(int width, int height, int fullscreen, char *title, uint32_t format)
 }
 
 static const vo_info_t*
-get_info(void)
+get_info2(void *user_data)
 {
 	return &vo_info;
 }
@@ -262,14 +265,17 @@ get_info(void)
 //FIXME this should allocate AGP memory via agpgart and then we
 //can use AGP transfers to the framebuffer
 static vo_image_buffer_t* 
-allocate_image_buffer()
+allocate_image_buffer2(uint32_t height, uint32_t width, 
+		       uint32_t format, void* user_data)
 {
 	//use the generic fallback
-	return allocate_image_buffer_common(mga_vid_config.dest_height, mga_vid_config.dest_width, 0x32315659);
+	return allocate_image_buffer_common(mga_vid_config.dest_height, 
+					    mga_vid_config.dest_width, 
+					    0x32315659);
 }
 
 static void	
-free_image_buffer(vo_image_buffer_t* image)
+free_image_buffer2(vo_image_buffer_t* image, void* user_data)
 {
 	//use the generic fallback
 	free_image_buffer_common(image);
