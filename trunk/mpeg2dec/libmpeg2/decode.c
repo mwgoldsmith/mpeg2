@@ -32,14 +32,6 @@
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 
-#ifdef HAVE_MEMALIGN
-/* some systems have memalign() but no declaration for it */
-void * memalign (size_t align, size_t size);
-#else
-/* assume malloc alignment is sufficient */
-#define memalign(align,size) malloc (size)
-#endif
-
 #define BUFFER_SIZE (1194 * 1024)
 
 #define STATE_INVALID 0
@@ -61,8 +53,8 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
 	mpeg2_mc_init (mm_accel);
     }
 
-    mpeg2dec->chunk_buffer = memalign (16, BUFFER_SIZE + 4);
-    mpeg2dec->decoder = memalign (16, sizeof (decoder_t));
+    mpeg2dec->chunk_buffer = mpeg2_malloc (BUFFER_SIZE + 4, ALLOC_CHUNK);
+    mpeg2dec->decoder = mpeg2_malloc (sizeof (decoder_t), ALLOC_DECODER);
 
     mpeg2dec->shift = 0xffffff00;
     mpeg2dec->last_sequence.width = (unsigned int) -1;
@@ -306,6 +298,6 @@ void mpeg2_close (mpeg2dec_t * mpeg2dec)
 
     mpeg2_decode_data (mpeg2dec, finalizer, finalizer+4);
 
-    free (mpeg2dec->chunk_buffer);
-    free (mpeg2dec->decoder);
+    mpeg2_free (mpeg2dec->chunk_buffer);
+    mpeg2_free (mpeg2dec->decoder);
 }
