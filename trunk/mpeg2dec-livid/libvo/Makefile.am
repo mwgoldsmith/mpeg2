@@ -21,7 +21,8 @@ libvo_la_SOURCES =\
 	video_out_3dfx.c\
 	video_out_sdl.c\
 	video_out_syncfb.c\
-	video_out_pgm.c
+	video_out_pgm.c\
+	video_out_md5.c
 
 EXTRA_libvo_la_SOURCES = yuv2rgb_mmx.c yuv2rgb_mlib.c
 

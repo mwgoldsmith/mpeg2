@@ -36,6 +36,7 @@ extern vo_functions_t video_out_sdl;
 extern vo_functions_t video_out_3dfx;
 extern vo_functions_t video_out_null;
 extern vo_functions_t video_out_pgm;
+extern vo_functions_t video_out_md5;
 extern vo_functions_t video_out_syncfb;
 
 vo_functions_t* video_out_drivers[] = 
@@ -55,6 +56,7 @@ vo_functions_t* video_out_drivers[] =
 #endif
 	&video_out_null,
 	&video_out_pgm,
+	&video_out_md5,
 	NULL
 };
 
