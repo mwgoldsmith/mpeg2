@@ -84,7 +84,8 @@ void mpeg2_init (void)
 }
 
 
-static void decode_allocate_image_buffers (vo_functions_t *video_out, picture_t * picture)
+static void decode_allocate_image_buffers (vo_functions_t * video_out,
+					   picture_t * picture)
 {
     int frame_size;
     vo_image_buffer_t * tmp;
@@ -146,7 +147,7 @@ static void decode_reorder_frames (void)
 }
 
 
-static int parse_chunk (vo_functions_t *video_out, int code, uint8_t *buffer)
+static int parse_chunk (vo_functions_t * video_out, int code, uint8_t * buffer)
 {
     int is_frame_done = 0;
 

@@ -61,11 +61,8 @@
 //state)
 typedef struct picture_s {
     //-- sequence header stuff --
-    uint8_t * intra_quantizer_matrix;
-    uint8_t * non_intra_quantizer_matrix;
-
-    uint8_t custom_intra_quantization_matrix[64];
-    uint8_t custom_non_intra_quantization_matrix[64];
+    uint8_t intra_quantizer_matrix [64];
+    uint8_t non_intra_quantizer_matrix [64];
 
     //The width and height of the picture snapped to macroblock units
     int coded_picture_width;
@@ -100,7 +97,7 @@ typedef struct picture_s {
     //stuff derived from bitstream
 
     //pointer to the zigzag scan we're supposed to be using
-    const uint8_t * scan;
+    uint8_t * scan;
 
     //Pointer to the current planar frame buffer (Y,Cr,CB)
     uint8_t * current_frame[3];
