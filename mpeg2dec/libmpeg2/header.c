@@ -26,7 +26,6 @@
 #include <inttypes.h>
 #include <stdlib.h>	/* defines NULL */
 
-#include "video_out.h"
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 #include "attributes.h"
@@ -372,6 +371,25 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 		mpeg2dec->info.discard_fbuf =
 		    mpeg2dec->fbuf + !low_delay + !mpeg2dec->convert_start;
 	}
+	if (!mpeg2dec->custom_fbuf) {
+	    int i;
+
+	    for (i = 0; i < 3; i++)
+		if (mpeg2dec->fbuf_alloc[i].free) {
+		    mpeg2dec->fbuf_alloc[i].free = 0;
+		    decoder->coding_type = type;	/* XXXXXXXXX */
+		    mpeg2_set_buf (mpeg2dec, mpeg2dec->fbuf_alloc[i].fbuf.buf,
+				   mpeg2dec->fbuf_alloc[i].fbuf.id);
+		    break;
+		}
+	    if (mpeg2dec->info.discard_fbuf)
+		for (i = 0; i < 3; i++)
+		    if (mpeg2dec->fbuf_alloc[i].fbuf.buf[0] ==
+			mpeg2dec->info.discard_fbuf->buf[0]) {
+			mpeg2dec->fbuf_alloc[i].free = 1;
+			break;
+		    }
+	}
     } else {
 	mpeg2dec->state = STATE_PICTURE_2ND;
 	decoder->second_field = 1;
@@ -515,25 +533,6 @@ int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec)
 
 void mpeg2_header_slice (mpeg2dec_t * mpeg2dec)
 {
-    if (mpeg2dec->fbuf[0].buf[0] == NULL) {
-	int i;
-
-	for (i = 0; i < 3; i++)
-	    if (mpeg2dec->fbuf_alloc[i].free) {
-		mpeg2dec->fbuf_alloc[i].free = 0;
-		mpeg2_set_buf (mpeg2dec, mpeg2dec->fbuf_alloc[i].fbuf.buf,
-			       mpeg2dec->fbuf_alloc[i].fbuf.id);
-		break;
-	    }
-	if (mpeg2dec->info.discard_fbuf)
-	    for (i = 0; i < 3; i++)
-		if (mpeg2dec->fbuf_alloc[i].fbuf.buf[0] ==
-		    mpeg2dec->info.discard_fbuf->buf[0]) {
-		    mpeg2dec->fbuf_alloc[i].free = 1;
-		    break;
-		}
-    }
-
     mpeg2dec->state = ((mpeg2dec->picture->nb_fields > 1 ||
 			mpeg2dec->state == STATE_PICTURE_2ND) ?
 		       STATE_SLICE : STATE_SLICE_1ST);
@@ -542,8 +541,7 @@ void mpeg2_header_slice (mpeg2dec_t * mpeg2dec)
 	mpeg2dec->decoder.convert = mpeg2dec->convert_copy;
 	mpeg2dec->decoder.fbuf_id = mpeg2dec->convert_id;
 
-	mpeg2dec->convert_start (mpeg2dec->convert_id, mpeg2dec->decoder.width,
-				 mpeg2dec->fbuf->buf, 0);
+	mpeg2dec->convert_start (mpeg2dec->convert_id, mpeg2dec->fbuf->buf, 0);
 
 	if (mpeg2dec->decoder.coding_type == B_TYPE)
 	    mpeg2_init_fbuf (&(mpeg2dec->decoder), mpeg2dec->yuv_buf[2],
@@ -561,9 +559,7 @@ void mpeg2_header_slice (mpeg2dec_t * mpeg2dec)
 	fbuf_t * backward_fbuf;
 	fbuf_t * forward_fbuf;
 
-	mpeg2dec->decoder.convert =
-	    (void *)(((vo_frame_t *)(mpeg2dec->fbuf->id))->copy);
-	mpeg2dec->decoder.fbuf_id = mpeg2dec->fbuf->id;
+	mpeg2dec->decoder.convert = NULL;
 
 	backward_fbuf =
 	    mpeg2dec->fbuf + (mpeg2dec->decoder.coding_type == B_TYPE);

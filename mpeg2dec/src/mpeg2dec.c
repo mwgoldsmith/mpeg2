@@ -38,8 +38,9 @@
 #endif
 #include <inttypes.h>
 
-#include "video_out.h"
 #include "mpeg2.h"
+#include "video_out.h"
+#include "convert.h"
 #include "mm_accel.h"
 
 #define BUFFER_SIZE 4096
@@ -207,54 +208,83 @@ static void handle_args (int argc, char ** argv)
 	in_file = stdin;
 }
 
-void set_buf (uint8_t * buf[3], void * id)
-{
-    mpeg2_set_buf (mpeg2dec, buf, id);
-}
-
 static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 {
     mpeg2_info_t * info;
-    picture_t * picture;
-    int state, flags;
+    int state;
+    vo_setup_result_t setup_result;
 
     info = mpeg2_info (mpeg2dec);
     while (1) {
 	state = mpeg2_buffer (mpeg2dec, &current, end);
+	//printf ("AAAA %d\n", state);
 	switch (state) {
 	case -1:
 	    return;
 	case STATE_SEQUENCE:
-	    if (vo_setup (output, info->sequence->width,
-			  info->sequence->height)) {
+	    /* might set nb fbuf, convert format, stride */
+	    /* might set fbufs */
+	    if (output->setup (output, info->sequence->width,
+			       info->sequence->height, &setup_result)) {
 		fprintf (stderr, "display setup failed\n");
 		exit (1);
 	    }
-	    vo_set_frame (output, VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
-	    vo_set_frame (output, VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
+	    if (setup_result.convert)
+		mpeg2_convert (mpeg2dec, setup_result.convert, NULL);
+	    if (output->set_fbuf) {
+		uint8_t * buf[3];
+		void * id;
+
+		mpeg2_custom_fbuf (mpeg2dec, 1);
+		output->set_fbuf (output, buf, &id);
+		mpeg2_set_buf (mpeg2dec, buf, id);
+		output->set_fbuf (output, buf, &id);
+		mpeg2_set_buf (mpeg2dec, buf, id);
+	    } else if (output->setup_fbuf) {
+		uint8_t * buf[3];
+		void * id;
+
+		output->setup_fbuf (output, buf, &id);
+		mpeg2_set_buf_alloc (mpeg2dec, buf, id);
+		output->setup_fbuf (output, buf, &id);
+		mpeg2_set_buf_alloc (mpeg2dec, buf, id);
+		output->setup_fbuf (output, buf, &id);
+		mpeg2_set_buf_alloc (mpeg2dec, buf, id);
+	    } else {
+		mpeg2_set_buf_alloc_XXX (mpeg2dec);
+		mpeg2_set_buf_alloc_XXX (mpeg2dec);
+		mpeg2_set_buf_alloc_XXX (mpeg2dec);
+	    }
 	    break;
 	case STATE_PICTURE:
-	    picture = info->current_picture;
-	    flags = ((picture->nb_fields > 1) ? VO_BOTH_FIELDS :
-		     ((picture->flags & PIC_FLAG_TOP_FIELD_FIRST) ?
-		      VO_TOP_FIELD : VO_BOTTOM_FIELD));
-	    if ((picture->flags & PIC_MASK_CODING_TYPE) !=
-		PIC_FLAG_CODING_TYPE_B)
-		flags |= VO_PREDICTION_FLAG;
-	    vo_set_frame (output, flags);
+	    /* might skip */
+	    /* might set fbuf */
+	    if (output->set_fbuf) {
+		uint8_t * buf[3];
+		void * id;
+
+		output->set_fbuf (output, buf, &id);
+		mpeg2_set_buf (mpeg2dec, buf, id);
+	    }
+	    if (output->start_fbuf)
+		output->start_fbuf (output, info->current_fbuf->buf,
+				    info->current_fbuf->id);
 	    break;
 	case STATE_PICTURE_2ND:
-	    picture = info->current_picture_2nd;
-	    flags = ((picture->flags & PIC_FLAG_TOP_FIELD_FIRST) ?
-		     VO_TOP_FIELD : VO_BOTTOM_FIELD);
-	    vo_field (info->current_fbuf->id, flags);
+	    /* should not do anything */
 	    break;
 	case STATE_SLICE:
 	case STATE_END:
+	    /* draw current picture */
+	    /* might free frame buffer */
 	    if (info->display_fbuf) {
-		vo_draw (info->display_fbuf->id);
+		output->draw (output, info->display_fbuf->buf,
+			      info->display_fbuf->id);
 		print_fps (0);
 	    }
+	    if (output->discard && info->discard_fbuf)
+		output->discard (output, info->discard_fbuf->buf,
+				 info->discard_fbuf->id);
 	    break;
 	}
     }
@@ -553,8 +583,8 @@ int main (int argc, char ** argv)
 
     accel = disable_accel ? 0 : (mm_accel () | MM_ACCEL_MLIB);
 
-    vo_accel (accel);
-    output = vo_open (output_open);
+    convert_accel (accel);
+    output = output_open ();
     if (output == NULL) {
 	fprintf (stderr, "Can not open output\n");
 	return 1;
@@ -571,7 +601,8 @@ int main (int argc, char ** argv)
 	es_loop ();
 
     mpeg2_close (mpeg2dec);
-    vo_close (output);
+    if (output->close)
+	output->close (output);
     print_fps (1);
     return 0;
 }

@@ -24,26 +24,27 @@
 #ifndef VIDEO_OUT_H
 #define VIDEO_OUT_H
 
-void set_buf (uint8_t * buf[3], void * id);
+struct convert_init_s;
+typedef struct {
+    void (* convert) (int, int, void *, struct convert_init_s *);
+} vo_setup_result_t;
 
-typedef struct vo_frame_s vo_frame_t;
 typedef struct vo_instance_s vo_instance_t;
-
-struct vo_frame_s {
-    uint8_t * base[3];	/* pointer to 3 planes */
-    void (* copy) (vo_frame_t * frame, uint8_t ** src);
-    void (* field) (vo_frame_t * frame, int flags);
-    vo_instance_t * instance;
+struct vo_instance_s {
+    int (* setup) (vo_instance_t * instance, int width, int height,
+		   vo_setup_result_t * result);
+    void (* setup_fbuf) (vo_instance_t * instance, uint8_t * buf[3],
+			 void ** id);
+    void (* set_fbuf) (vo_instance_t * instance, uint8_t * buf[3],
+		       void ** id);
+    void (* start_fbuf) (vo_instance_t * instance, uint8_t * buf[3],
+			 void * id);
+    void (* draw) (vo_instance_t * instance, uint8_t * buf[3], void * id);
+    void (* discard) (vo_instance_t * instance, uint8_t * buf[3], void * id);
+    void (* close) (vo_instance_t * instance);
 };
 
 typedef vo_instance_t * vo_open_t (void);
-
-struct vo_instance_s {
-    int (* setup) (vo_instance_t * instance, int width, int height);
-    void (* close) (vo_instance_t * instance);
-    void (* set_frame) (vo_instance_t * instance, int flags);
-    void (* draw) (vo_frame_t * frame);
-};
 
 typedef struct {
     char * name;
@@ -54,43 +55,5 @@ void vo_accel (uint32_t accel);
 
 /* return NULL terminated array of all drivers */
 vo_driver_t * vo_drivers (void);
-
-static inline vo_instance_t * vo_open (vo_open_t * open)
-{
-    return open ();
-}
-
-static inline int vo_setup (vo_instance_t * instance, int width, int height)
-{
-    return instance->setup (instance, width, height);
-}
-
-static inline void vo_close (vo_instance_t * instance)
-{
-    if (instance->close)
-	instance->close (instance);
-}
-
-#define VO_TOP_FIELD 1
-#define VO_BOTTOM_FIELD 2
-#define VO_BOTH_FIELDS (VO_TOP_FIELD | VO_BOTTOM_FIELD)
-#define VO_PREDICTION_FLAG 4
-
-static inline void vo_set_frame (vo_instance_t * instance, int flags)
-{
-    if (instance->set_frame)
-	instance->set_frame (instance, flags);
-}
-
-static inline void vo_field (vo_frame_t * frame, int flags)
-{
-    if (frame->field)
-	frame->field (frame, flags);
-}
-
-static inline void vo_draw (vo_frame_t * frame)
-{
-    frame->instance->draw (frame);
-}
 
 #endif /* VIDEO_OUT_H */

@@ -31,10 +31,10 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
+#include "convert.h"
+#include "convert_internal.h"
 #include "attributes.h"
 #include "mmx.h"
-#include "video_out.h"
-#include "video_out_internal.h"
 
 #define CPU_MMXEXT 0
 #define CPU_MMX 1
@@ -263,63 +263,59 @@ static inline void yuv420_argb32 (uint8_t * image, uint8_t * py,
     } while (--height);
 }
 
-static void mmxext_rgb16 (uint8_t * image,
-			  uint8_t * py, uint8_t * pu, uint8_t * pv,
-			  int width, int height,
-			  int rgb_stride, int y_stride, int uv_stride)
+static void mmxext_rgb16 (void * _id, uint8_t * src[3])
 {
-    yuv420_rgb16 (image, py, pu, pv, width, height,
-		  rgb_stride, y_stride, uv_stride, CPU_MMXEXT);
+    convert_rgb_t * id = (convert_rgb_t *) _id;
+
+    yuv420_rgb16 (id->rgb_ptr, src[0], src[1], src[2], id->width, 16,
+		  id->rgb_stride, id->uv_stride << 1, id->uv_stride,
+		  CPU_MMXEXT);
+    id->rgb_ptr += id->rgb_stride << 4;
 }
 
-static void mmxext_argb32 (uint8_t * image,
-			   uint8_t * py, uint8_t * pu, uint8_t * pv,
-			   int width, int height,
-			   int rgb_stride, int y_stride, int uv_stride)
+static void mmxext_argb32 (void * _id, uint8_t * src[3])
 {
-    yuv420_argb32 (image, py, pu, pv, width, height,
-		   rgb_stride, y_stride, uv_stride, CPU_MMXEXT);
+    convert_rgb_t * id = (convert_rgb_t *) _id;
+
+    yuv420_argb32 (id->rgb_ptr, src[0], src[1], src[2], id->width, 16,
+		  id->rgb_stride, id->uv_stride << 1, id->uv_stride,
+		  CPU_MMXEXT);
+    id->rgb_ptr += id->rgb_stride << 4;
 }
 
-static void mmx_rgb16 (uint8_t * image,
-		       uint8_t * py, uint8_t * pu, uint8_t * pv,
-		       int width, int height,
-		       int rgb_stride, int y_stride, int uv_stride)
+static void mmx_rgb16 (void * _id, uint8_t * src[3])
 {
-    yuv420_rgb16 (image, py, pu, pv, width, height,
-		  rgb_stride, y_stride, uv_stride, CPU_MMX);
+    convert_rgb_t * id = (convert_rgb_t *) _id;
+
+    yuv420_rgb16 (id->rgb_ptr, src[0], src[1], src[2], id->width, 16,
+		  id->rgb_stride, id->uv_stride << 1, id->uv_stride, CPU_MMX);
+    id->rgb_ptr += id->rgb_stride << 4;
 }
 
-static void mmx_argb32 (uint8_t * image,
-			uint8_t * py, uint8_t * pu, uint8_t * pv,
-			int width, int height,
-			int rgb_stride, int y_stride, int uv_stride)
+static void mmx_argb32 (void * _id, uint8_t * src[3])
 {
-    yuv420_argb32 (image, py, pu, pv, width, height,
-		   rgb_stride, y_stride, uv_stride, CPU_MMX);
+    convert_rgb_t * id = (convert_rgb_t *) _id;
+
+    yuv420_argb32 (id->rgb_ptr, src[0], src[1], src[2], id->width, 16,
+		  id->rgb_stride, id->uv_stride << 1, id->uv_stride, CPU_MMX);
+    id->rgb_ptr += id->rgb_stride << 4;
 }
 
-int yuv2rgb_init_mmxext (int bpp, int mode)
+yuv2rgb_copy * yuv2rgb_init_mmxext (int order, int bpp)
 {
-    if ((bpp == 16) && (mode == MODE_RGB)) {
-	yuv2rgb = mmxext_rgb16;
-	return 0;
-    } else if ((bpp == 32) && (mode == MODE_RGB)) {
-	yuv2rgb = mmxext_argb32;
-	return 0;
-    } else
-	return 1;	/* Fallback to C */
+    if ((order == CONVERT_RGB) && (bpp == 16))
+	return mmxext_rgb16;
+    else if ((order == CONVERT_RGB) && (bpp == 32))
+	return mmxext_argb32;
+    return NULL;	/* Fallback to C */
 }
 
-int yuv2rgb_init_mmx (int bpp, int mode)
+yuv2rgb_copy * yuv2rgb_init_mmx (int order, int bpp)
 {
-    if ((bpp == 16) && (mode == MODE_RGB)) {
-	yuv2rgb = mmx_rgb16;
-	return 0;
-    } else if ((bpp == 32) && (mode == MODE_RGB)) {
-	yuv2rgb = mmx_argb32;
-	return 0;
-    } else
-	return 1;	/* Fallback to C */
+    if ((order == CONVERT_RGB) && (bpp == 16))
+	return mmx_rgb16;
+    else if ((order == CONVERT_RGB) && (bpp == 32))
+	return mmx_argb32;
+    return NULL;	/* Fallback to C */
 }
 #endif
