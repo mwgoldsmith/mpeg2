@@ -15,6 +15,9 @@
 /* maximum supported data alignment */
 /* #undef ATTRIBUTE_ALIGNED_MAX */
 
+/* debug mode configuration */
+/* #undef DEBUG */
+
 /* Define if you have the `__builtin_expect' function. */
 /* #undef HAVE_BUILTIN_EXPECT */
 

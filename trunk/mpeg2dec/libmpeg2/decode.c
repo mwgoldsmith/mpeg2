@@ -423,4 +423,5 @@ void mpeg2_close (mpeg2dec_t * mpeg2dec)
     /* mpeg2_decode_data (mpeg2dec, finalizer, finalizer+4); */
 
     mpeg2_free (mpeg2dec->chunk_buffer);
+    mpeg2_free (mpeg2dec);
 }
