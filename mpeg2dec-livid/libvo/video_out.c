@@ -27,6 +27,14 @@
 #include "video_out.h"
 #include "video_out_internal.h"
 
+#ifdef HAVE_MEMALIGN
+/* some systems have memalign() but no declaration for it */
+void * memalign (size_t align, size_t size);
+#else
+/* assume malloc alignment is sufficient */
+#define memalign(align,size) malloc (size)
+#endif
+
 uint32_t vo_mm_accel = 0;
 
 /* Externally visible list of all vo drivers */
@@ -97,7 +105,7 @@ int libvo_common_alloc_frames (vo_instance_t * _instance,
     instance = (common_instance_t *) _instance;
     instance->prediction_index = 1;
     size = width * height / 4;
-    alloc = malloc (18 * size);
+    alloc = memalign (16, 18 * size);
     if (alloc == NULL)
 	return 1;
 

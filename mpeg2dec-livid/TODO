@@ -1,5 +1,4 @@
 * before 0.2.0 :
-	* check if mlib is working - DCTblock alignment problem
 	* generic slice yuv2rgb handling, plus nullrgb and sdl implementations
 	* clean up frame_t declaration and usage (libvo/libmpeg2) + video_out.h
 	* clean up yuv2rgb for interlaced pictures (handling of uv)
