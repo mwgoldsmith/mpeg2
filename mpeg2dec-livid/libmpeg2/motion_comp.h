@@ -44,9 +44,3 @@ typedef struct mc_functions_s
 extern mc_functions_t mc_functions_c;
 extern mc_functions_t mc_functions_mmx;
 extern mc_functions_t mc_functions_mlib;
-
-void motion_block (void (** table) (uint8_t *, uint8_t *, int, int),
-		   int x_pred, int y_pred,
-		   uint8_t * dest[3], int dest_offset,
-		   uint8_t * src[3], int src_offset,
-		   int pitch, int height);
