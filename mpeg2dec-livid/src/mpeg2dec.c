@@ -109,8 +109,8 @@ static void print_usage (char * argv[])
     int i;
 
     fprintf (stderr, "usage: %s [-o mode] [-s] file\n"
-	     "\t-s\tsystem stream (.vob file)\n"
-	     "\t-o\tvideo_output mode\n", argv[0]);
+	     "\t-s\tuse program stream demultiplexer\n"
+	     "\t-o\tvideo output mode\n", argv[0]);
 
     for (i = 0; video_out_drivers[i].name; i++)
 	fprintf (stderr, "\t\t\t%s\n", video_out_drivers[i].name);
