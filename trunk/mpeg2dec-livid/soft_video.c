@@ -48,12 +48,13 @@ soft_VideoAddBlock_U8_S16 (uint_8 *curr_block,
 static inline void
 soft_VideoCopyRefAve_U8_U8_16x16 (uint_8 *curr_block,
 				  uint_8 *ref_block,
-				  sint_32 stride)
+				  sint_32 stride,
+				  sint_32 height)
 {
   int x,y;
   int jump = stride - 16;
   
-  for (y = 0; y < 16; y++) {
+  for (y = 0; y < height; y++) {
     for (x = 0; x < 16; x++)
       *curr_block++ = clip_to_u8((*curr_block + *ref_block++)/2);
     ref_block += jump;
@@ -64,12 +65,13 @@ soft_VideoCopyRefAve_U8_U8_16x16 (uint_8 *curr_block,
 static inline void
 soft_VideoCopyRefAve_U8_U8_8x8 (uint_8 *curr_block,
 				uint_8 *ref_block,
-				sint_32 stride)
+				sint_32 stride,
+				sint_32 height)
 {
   int x,y;
   int jump = stride - 8;
 
-  for (y = 0; y < 8; y++) {
+  for (y = 0; y < height; y++) {
     for (x = 0; x < 8; x++)
       *curr_block++ = clip_to_u8((*curr_block + *ref_block++)/2);
     ref_block += jump;
@@ -98,12 +100,13 @@ soft_VideoCopyRef_U8_U8 (uint_8 *curr_block,
 static inline void
 soft_VideoCopyRef_U8_U8_16x16 (uint_8 *curr_block,
 			       uint_8 *ref_block,
-			       sint_32 stride)
+			       sint_32 stride,
+			       sint_32 height)
 {
   int x,y;
   int jump = stride - 16;
 
-  for (y = 0; y < 16; y++) {
+  for (y = 0; y < height; y++) {
     for (x = 0; x < 16; x++)
       *curr_block++ = *ref_block++;
     ref_block += jump;
@@ -114,12 +117,13 @@ soft_VideoCopyRef_U8_U8_16x16 (uint_8 *curr_block,
 static inline void
 soft_VideoCopyRef_U8_U8_8x8 (uint_8 *curr_block,
 			     uint_8 *ref_block,
-			     sint_32 stride)
+			     sint_32 stride,
+			     sint_32 height)
 {
   int x,y;
   int jump = stride - 8;
 
-  for (y = 0; y < 8; y++) {
+  for (y = 0; y < height; y++) {
     for (x = 0; x < 8; x++)
       *curr_block++ = *ref_block++;
     ref_block += jump;
@@ -132,13 +136,13 @@ soft_VideoCopyRef_U8_U8_8x8 (uint_8 *curr_block,
 static inline void 
 soft_VideoInterpAveX_U8_U8_16x16(uint_8 *curr_block, 
 				 uint_8 *ref_block, 
-				 sint_32 frame_stride,   
-				 sint_32 field_stride) 
+				 sint_32 stride,   
+				 sint_32 height) 
 {
   int x, y;
-  int jump = frame_stride - 16;
+  int jump = stride - 16;
 
-  for (y = 0; y < 16; y++) {
+  for (y = 0; y < height; y++) {
     for (x = 0; x < 16; x++)
       *curr_block++ = clip_to_u8((*curr_block + (*ref_block++ + *(ref_block + 1))/2)/2);
     ref_block += jump;
@@ -149,13 +153,13 @@ soft_VideoInterpAveX_U8_U8_16x16(uint_8 *curr_block,
 static inline void 
 soft_VideoInterpAveX_U8_U8_8x8(uint_8 *curr_block, 
 			       uint_8 *ref_block, 
-			       sint_32 frame_stride,   
-			       sint_32 field_stride) 
+			       sint_32 stride,   
+			       sint_32 height) 
 {
   int x, y;
-  int jump = frame_stride - 8;
+  int jump = stride - 8;
 
-  for (y = 0; y < 8; y++) {
+  for (y = 0; y < height; y++) {
     for (x = 0; x < 8; x++)
       *curr_block++ = clip_to_u8((*curr_block + (*ref_block++ + *(ref_block + 1))/2)/2);
     ref_block += jump;
@@ -166,13 +170,13 @@ soft_VideoInterpAveX_U8_U8_8x8(uint_8 *curr_block,
 static inline void
 soft_VideoInterpX_U8_U8_16x16(uint_8 *curr_block, 
 			      uint_8 *ref_block, 
-			      sint_32 frame_stride,   
-			      sint_32 field_stride) 
+			      sint_32 stride,   
+			      sint_32 height) 
 {
   int x, y;
-  int jump = frame_stride - 16;
+  int jump = stride - 16;
 
-  for (y = 0; y < 16; y++) {
+  for (y = 0; y < height; y++) {
     for (x = 0; x < 16; x++)
       *curr_block++ = clip_to_u8((*ref_block++ + *(ref_block + 1))/2);
     ref_block += jump;
@@ -183,13 +187,13 @@ soft_VideoInterpX_U8_U8_16x16(uint_8 *curr_block,
 static inline void
 soft_VideoInterpX_U8_U8_8x8(uint_8 *curr_block, 
 			    uint_8 *ref_block, 
-			    sint_32 frame_stride,   
-			    sint_32 field_stride) 
+			    sint_32 stride,   
+			    sint_32 height) 
 {
   int x, y;
-  int jump = frame_stride - 8;
+  int jump = stride - 8;
 
-  for (y = 0; y < 8; y++) {
+  for (y = 0; y < height; y++) {
     for (x = 0; x < 8; x++)
       *curr_block++ = clip_to_u8((*ref_block++ + *(ref_block + 1))/2);
     ref_block += jump;
@@ -202,14 +206,14 @@ soft_VideoInterpX_U8_U8_8x8(uint_8 *curr_block,
 static inline void 
 soft_VideoInterpAveXY_U8_U8_16x16(uint_8 *curr_block, 
 				  uint_8 *ref_block, 
-				  sint_32 frame_stride,   
-				  sint_32 field_stride) 
+				  sint_32 stride,   
+				  sint_32 height) 
 {
   int x,y;
-  int jump = frame_stride - 16;
-  uint_8 *ref_block_next = ref_block+field_stride;
+  int jump = stride - 16;
+  uint_8 *ref_block_next = ref_block+stride;
 
-  for (y = 0; y < 16; y++) {
+  for (y = 0; y < height; y++) {
     for (x = 0; x < 16; x++)
       *curr_block++ = clip_to_u8((*curr_block + (*ref_block++ + *(ref_block + 1) + *ref_block_next++ + *(ref_block_next + 1))/4)/2);
     curr_block += jump;
@@ -221,14 +225,14 @@ soft_VideoInterpAveXY_U8_U8_16x16(uint_8 *curr_block,
 static inline void 
 soft_VideoInterpAveXY_U8_U8_8x8(uint_8 *curr_block, 
 				uint_8 *ref_block, 
-				sint_32 frame_stride,   
-				sint_32 field_stride) 
+				sint_32 stride,   
+				sint_32 height) 
 {
   int x,y;
-  int jump = frame_stride - 8;
-  uint_8 *ref_block_next = ref_block+field_stride;
+  int jump = stride - 8;
+  uint_8 *ref_block_next = ref_block+stride;
 
-  for (y = 0; y < 8; y++) {
+  for (y = 0; y < height; y++) {
     for (x = 0; x < 8; x++)
       *curr_block++ = clip_to_u8((*curr_block + (*ref_block++ + *(ref_block + 1) + *ref_block_next++ + *(ref_block_next + 1))/4)/2);
     curr_block += jump;
@@ -240,14 +244,14 @@ soft_VideoInterpAveXY_U8_U8_8x8(uint_8 *curr_block,
 static inline void 
 soft_VideoInterpXY_U8_U8_16x16(uint_8 *curr_block, 
 			       uint_8 *ref_block, 
-			       sint_32 frame_stride,   
-			       sint_32 field_stride) 
+			       sint_32 stride,   
+			       sint_32 height) 
 {
   int x,y;
-  int jump = frame_stride - 16;
-  uint_8 *ref_block_next = ref_block+field_stride;
+  int jump = stride - 16;
+  uint_8 *ref_block_next = ref_block+stride;
 
-  for (y = 0; y < 16; y++) {
+  for (y = 0; y < height; y++) {
     for (x = 0; x < 16; x++)
       *curr_block++ = clip_to_u8((*ref_block++ + *(ref_block + 1) + *ref_block_next++ + *(ref_block_next + 1))/4);
     curr_block += jump;
@@ -259,14 +263,14 @@ soft_VideoInterpXY_U8_U8_16x16(uint_8 *curr_block,
 static inline void 
 soft_VideoInterpXY_U8_U8_8x8(uint_8 *curr_block, 
 			     uint_8 *ref_block, 
-			     sint_32 frame_stride,   
-			     sint_32 field_stride) 
+			     sint_32 stride,   
+			     sint_32 height) 
 {
   int x,y;
-  int jump = frame_stride - 8;
-  uint_8 *ref_block_next = ref_block+field_stride;
+  int jump = stride - 8;
+  uint_8 *ref_block_next = ref_block+stride;
 
-  for (y = 0; y < 8; y++) {
+  for (y = 0; y < height; y++) {
     for (x = 0; x < 8; x++)
       *curr_block++ = clip_to_u8((*ref_block++ + *(ref_block + 1) + *ref_block_next++ + *(ref_block_next + 1))/4);
     curr_block += jump;
@@ -280,14 +284,14 @@ soft_VideoInterpXY_U8_U8_8x8(uint_8 *curr_block,
 static inline void 
 soft_VideoInterpAveY_U8_U8_16x16(uint_8 *curr_block, 
 				 uint_8 *ref_block, 
-				 sint_32 frame_stride,   
-				 sint_32 field_stride) 
+				 sint_32 stride,   
+				 sint_32 height) 
 {
   int x,y;
-  int jump = frame_stride - 16;
-  uint_8 *ref_block_next = ref_block+field_stride;
+  int jump = stride - 16;
+  uint_8 *ref_block_next = ref_block+stride;
   
-  for (y = 0; y < 16; y++) {
+  for (y = 0; y < height; y++) {
     for (x = 0; x < 16; x++)
       *curr_block++ = clip_to_u8((*curr_block + (*ref_block++ + *ref_block_next++)/2)/2);
     curr_block     += jump;
@@ -299,14 +303,14 @@ soft_VideoInterpAveY_U8_U8_16x16(uint_8 *curr_block,
 static inline void 
 soft_VideoInterpAveY_U8_U8_8x8(uint_8 *curr_block, 
 			       uint_8 *ref_block, 
-			       sint_32 frame_stride,   
-			       sint_32 field_stride) 
+			       sint_32 stride,   
+			       sint_32 height) 
 {
   int x,y;
-  int jump = frame_stride - 8;
-  uint_8 *ref_block_next = ref_block+field_stride;
+  int jump = stride - 8;
+  uint_8 *ref_block_next = ref_block+stride;
   
-  for (y = 0; y < 8; y++) {
+  for (y = 0; y < height; y++) {
     for (x = 0; x < 8; x++)
       *curr_block++ = clip_to_u8((*curr_block + (*ref_block++ + *ref_block_next++)/2)/2);
     curr_block     += jump;
@@ -318,14 +322,14 @@ soft_VideoInterpAveY_U8_U8_8x8(uint_8 *curr_block,
 static inline void 
 soft_VideoInterpY_U8_U8_16x16(uint_8 *curr_block, 
 			      uint_8 *ref_block, 
-			      sint_32 frame_stride,   
-			      sint_32 field_stride) 
+			      sint_32 stride,   
+			      sint_32 height) 
 {
   int x,y;
-  int jump = frame_stride - 16;
-  uint_8 *ref_block_next = ref_block+field_stride;
+  int jump = stride - 16;
+  uint_8 *ref_block_next = ref_block+stride;
   
-  for (y = 0; y < 16; y++) {
+  for (y = 0; y < height; y++) {
     for (x = 0; x < 16; x++)
       *curr_block++ = clip_to_u8((*ref_block++ + *ref_block_next++)/2);
     curr_block     += jump;
@@ -338,14 +342,14 @@ soft_VideoInterpY_U8_U8_16x16(uint_8 *curr_block,
 static inline void 
 soft_VideoInterpY_U8_U8_8x8(uint_8 *curr_block, 
 			    uint_8 *ref_block, 
-			    sint_32 frame_stride,   
-			    sint_32 field_stride) 
+			    sint_32 stride,   
+			    sint_32 height) 
 {
   int x,y;
-  int jump = frame_stride - 8;
-  uint_8 *ref_block_next = ref_block+field_stride;
+  int jump = stride - 8;
+  uint_8 *ref_block_next = ref_block+stride;
   
-  for (y = 0; y < 8; y++) {
+  for (y = 0; y < height; y++) {
     for (x = 0; x < 8; x++)
       *curr_block++ = clip_to_u8((*ref_block++ + *ref_block_next++)/2);
     curr_block     += jump;
