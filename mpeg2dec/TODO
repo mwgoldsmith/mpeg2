@@ -1,12 +1,10 @@
 * things we dont implement yet
 	* more verbose error reporting
-	* decoding of 4:2:2 streams
 	* export MC information (for XvMC or for error resilience)
 	* export quantizer information (for postprocessing filters)
 	* dont crash on bad streams, make sure we can resync after a while
 		* possible chunk buffer overflow while reading bits
-		* dont just fprintf and exit
-	* synchronization stuff
+	* synchronization stuff (play at correct speed)
 	* IDCT precision with sparse matrixes
 	* sparc IDCT optimizations
 	* support for still pictures (decode before receiving next startcode !)
