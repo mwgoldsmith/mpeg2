@@ -21,8 +21,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>	// strerror
-#include <errno.h>	// errno
+#include <string.h>	// memcmp, strcmp
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <inttypes.h>
@@ -31,20 +30,19 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <X11/extensions/XShm.h>
-#include <string.h>	// memcmp
 #include <sys/socket.h>	// getsockname, getpeername
 #include <netinet/in.h>	// struct sockaddr_in
+/* since it doesn't seem to be defined on some platforms */
+int XShmGetEventBase (Display *);
+#endif
+
+#ifdef LIBVO_XV
+#include <X11/extensions/Xvlib.h>
 #endif
 
 #include "video_out.h"
 #include "video_out_internal.h"
 #include "yuv2rgb.h"
-
-
-#ifdef LIBVO_XSHM
-/* since it doesn't seem to be defined on some platforms */
-int XShmGetEventBase (Display *);
-#endif
 
 
 static struct x11_priv_s {
@@ -63,6 +61,11 @@ static struct x11_priv_s {
 
 #ifdef LIBVO_XSHM
     XShmSegmentInfo shminfo; // num_buffers
+#endif
+
+#ifdef LIBVO_XV
+    XvPortID port;
+    XvImage * xvimage;
 #endif
 } x11_priv;
 
@@ -196,7 +199,6 @@ static int common_setup (int width, int height,
 
     // FIXME set WM_DELETE_WINDOW protocol ? to avoid shm leaks
 
-    // should move this after everything than could potentially fail
     XMapWindow (priv->display, priv->window);
 
     priv->width = width;
@@ -291,9 +293,9 @@ vo_output_video_t video_out_x11 = {
     name: "x11",
     setup: x11_setup,
     close: x11_close,
-    draw_frame: x11_draw_frame,
-    draw_slice: x11_draw_slice,
     flip_page: x11_flip_page,
+    draw_slice: x11_draw_slice,
+    draw_frame: x11_draw_frame,
     allocate_image_buffer: x11_allocate_image_buffer,
     free_image_buffer: x11_free_image_buffer
 };
@@ -440,9 +442,187 @@ vo_output_video_t video_out_xshm = {
     name: "xshm",
     setup: xshm_setup,
     close: xshm_close,
-    draw_frame: x11_draw_frame,
-    draw_slice: x11_draw_slice,
     flip_page: xshm_flip_page,
+    draw_slice: x11_draw_slice,
+    draw_frame: x11_draw_frame,
+    allocate_image_buffer: x11_allocate_image_buffer,
+    free_image_buffer: x11_free_image_buffer
+};
+#endif
+
+#ifdef LIBVO_XV
+static int xv_check_extension (void)
+{
+    struct x11_priv_s * priv = &x11_priv;
+    unsigned int version;
+    unsigned int release;
+    unsigned int dummy;
+
+    if (XvQueryExtension (priv->display, &version, &release,
+			  &dummy, &dummy, &dummy) != Success)
+	return 1;
+
+    if ((version < 2) || ((version == 2) && (release < 2)))
+	return 1;
+
+    return 0;
+}
+
+static int xv_check_yv12 (XvPortID port)
+{
+    struct x11_priv_s * priv = &x11_priv;
+    XvImageFormatValues * formatValues;
+    int formats;
+    int i;
+
+    formatValues = XvListImageFormats (priv->display, port, &formats);
+    for (i = 0; i < formats; i++)
+	if ((formatValues[i].id == 0x32315659) &&
+	    (! (strcmp (formatValues[i].guid, "YV12")))) {
+	    XFree (formatValues);
+	    return 0;
+	}
+    XFree (formatValues);
+    return 1;
+}
+
+static int xv_get_port (void)
+{
+    struct x11_priv_s * priv = &x11_priv;
+    int adaptors;
+    int i;
+    unsigned long j;
+    XvAdaptorInfo * adaptorInfo;
+
+    XvQueryAdaptors (priv->display, priv->window, &adaptors, &adaptorInfo);
+
+    for (i = 0; i < adaptors; i++)
+	if (adaptorInfo[i].type & XvImageMask)
+	    for (j = 0; j < adaptorInfo[i].num_ports; j++)
+		if (! (xv_check_yv12 (adaptorInfo[i].base_id + j))) {
+		    priv->port = adaptorInfo[i].base_id + j;
+		    XvFreeAdaptorInfo (adaptorInfo);
+		    return 0;
+		}
+
+    XvFreeAdaptorInfo (adaptorInfo);
+    return 1;
+}
+
+static int xv_create_image (int width, int height)
+{
+    struct x11_priv_s * priv = &x11_priv;
+
+    priv->xvimage = XvCreateImage (priv->display, priv->port, 0x32315659,
+				   NULL /* data */, width, height);
+    if (priv->xvimage == NULL)
+	return 1;
+
+    priv->xvimage->data =
+	malloc (priv->xvimage->data_size);
+    return 0;
+}
+
+static int xv_setup (vo_output_video_attr_t * vo_attr)
+{
+    struct x11_priv_s * priv = &x11_priv;
+    int width, height;
+
+    width = vo_attr->width;
+    height = vo_attr->height;
+
+    priv->display = XOpenDisplay (NULL);
+    if (! (priv->display)) {
+	fprintf (stderr, "Can not open display\n");
+	return 1;
+    }
+
+    if (xv_check_extension ()) {
+	fprintf (stderr, "No xv extension\n");
+	return 1;
+    }
+
+    if (x11_get_visual_info ()) {
+	fprintf (stderr, "No truecolor visual\n");
+	return 1;
+    }
+
+    x11_create_window (width, height);
+    x11_create_gc ();
+
+    if (xv_get_port ()) {
+	fprintf (stderr, "Cannot find xv port\n");
+	return 1;
+    }
+
+    if (xv_create_image (width, height)) {
+	fprintf (stderr, "Cannot create xvimage\n");
+	return 1;
+    }
+
+    // FIXME set WM_DELETE_WINDOW protocol ? to avoid shm leaks
+
+    XMapWindow (priv->display, priv->window);
+
+    priv->width = width;
+    priv->height = height;
+
+    return 0;
+}
+
+static int xv_close (void * dummy)
+{
+    struct x11_priv_s * priv = &x11_priv;
+
+    XFree (priv->xvimage);
+    common_close ();
+    return 0;
+}
+
+static void xv_flip_page (void)
+{
+    struct x11_priv_s * priv = &x11_priv;
+
+    XvPutImage (priv->display, priv->port, priv->window, priv->gc,
+		priv->xvimage, 0, 0, priv->width, priv->height,
+		0, 0, priv->width, priv->height);
+    XFlush (priv->display);
+}
+
+static int xv_draw_slice (uint8_t *src[], int slice_num)
+{
+    struct x11_priv_s * priv = &x11_priv;
+
+    memcpy (priv->xvimage->data + priv->width * 16 * slice_num,
+	    src[0], priv->width * 16);
+    memcpy (priv->xvimage->data + priv->width * (priv->height + 4 * slice_num),
+	    src[2], priv->width * 4);
+    memcpy (priv->xvimage->data + priv->width * (priv->height * 5 / 4 + 4 * slice_num),
+	    src[1], priv->width * 4);
+
+    return 0;
+}
+
+static int xv_draw_frame (frame_t *frame)
+{
+    struct x11_priv_s * priv = &x11_priv;
+
+    memcpy (priv->xvimage->data, frame->base[0], priv->width * priv->height);
+    memcpy (priv->xvimage->data + priv->width * priv->height,
+	    frame->base[2], priv->width * priv->height / 4);
+    memcpy (priv->xvimage->data + priv->width * priv->height * 5 / 4,
+	    frame->base[1], priv->width * priv->height / 4);
+
+    return 0;
+}
+
+vo_output_video_t video_out_xv = {
+    name: "xv",
+    setup: xv_setup,
+    close: xv_close,
+    flip_page: xv_flip_page,
+    draw_slice: xv_draw_slice,
+    draw_frame: xv_draw_frame,
     allocate_image_buffer: x11_allocate_image_buffer,
     free_image_buffer: x11_free_image_buffer
 };
