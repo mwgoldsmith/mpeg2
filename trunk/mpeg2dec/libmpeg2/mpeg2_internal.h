@@ -167,18 +167,16 @@ void idct_mmx_init (void);
 /* motion_comp.c */
 void motion_comp_init (void);
 
-typedef struct mc_functions_s
-{
+typedef struct mc_functions_s {
     void (* put [8]) (uint8_t * dst, uint8_t *, int32_t, int32_t);
     void (* avg [8]) (uint8_t * dst, uint8_t *, int32_t, int32_t);
 } mc_functions_t;
 
-#define MOTION_COMP_EXTERN(x) mc_functions_t mc_functions_##x =		\
-{									\
-    {MC_put_16_##x, MC_put_x16_##x, MC_put_y16_##x, MC_put_xy16_##x,	\
-     MC_put_8_##x,  MC_put_x8_##x,  MC_put_y8_##x,  MC_put_xy8_##x},	\
-    {MC_avg_16_##x, MC_avg_x16_##x, MC_avg_y16_##x, MC_avg_xy16_##x,	\
-     MC_avg_8_##x,  MC_avg_x8_##x,  MC_avg_y8_##x,  MC_avg_xy8_##x}	\
+#define MOTION_COMP_EXTERN(x) mc_functions_t mc_functions_##x = {	  \
+    {MC_put_o_16_##x, MC_put_x_16_##x, MC_put_y_16_##x, MC_put_xy_16_##x, \
+     MC_put_o_8_##x,  MC_put_x_8_##x,  MC_put_y_8_##x,  MC_put_xy_8_##x}, \
+    {MC_avg_o_16_##x, MC_avg_x_16_##x, MC_avg_y_16_##x, MC_avg_xy_16_##x, \
+     MC_avg_o_8_##x,  MC_avg_x_8_##x,  MC_avg_y_8_##x,  MC_avg_xy_8_##x}  \
 };
 
 extern mc_functions_t mc_functions_c;
