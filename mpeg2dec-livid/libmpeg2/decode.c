@@ -38,53 +38,8 @@
 mpeg2_config_t config;
 
 
-//
-// Implementation of old interface [START]
-//
-
-static mpeg2dec_t mpeg2dec;
-
-void mpeg2_init (void) {
-  mpeg2_init_ng(&mpeg2dec,NULL,NULL);
-}
-
-
-int mpeg2_decode_data (vo_output_video_t *output, 
-		       uint8_t * data_start, uint8_t * data_end) {
-  // we need to do the copy here
-  mpeg2dec.output=output;
-  return mpeg2_decode_data_ng(&mpeg2dec,data_start,data_end);
-}
-  
-void mpeg2_close (vo_output_video_t *output) {
-  mpeg2dec.output=output;
-  mpeg2_close_ng(&mpeg2dec);
-}
-
-void mpeg2_drop (int flag) {
-  mpeg2_drop_ng(&mpeg2dec,flag);
-}
-
-
-void mpeg2_output_init (int flag) {
-  mpeg2_output_init_ng(&mpeg2dec,flag);
-}
-
-
-
-
-//
-// Implementation of old interface [END]
-//
-
-
-//
-// Implementation of new Interface [START]
-//
-
-
-void mpeg2_init_ng (mpeg2dec_t* mpeg2dec,vo_output_video_t* output,
-		    void* user_data) 
+void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output,
+		 void * user_data) 
 {
     
     //intialize the decoder state 
@@ -327,7 +282,7 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 #undef is_display_initialized
 }
 
-int mpeg2_decode_data_ng (mpeg2dec_t* mpeg2dec, uint8_t *current, uint8_t *end)
+int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
 {
 #define shift (mpeg2dec->shift)
 #define chunk_buffer (mpeg2dec->chunk_buffer)
@@ -374,7 +329,7 @@ void mpeg2_close_ng (mpeg2dec_t * mpeg2dec)
 
     static uint8_t finalizer[] = {0,0,1,0};
 
-    mpeg2_decode_data_ng (mpeg2dec, finalizer, finalizer+4);
+    mpeg2_decode_data (mpeg2dec, finalizer, finalizer+4);
 
     if (is_display_initialized)
 	output->draw_frame (picture->backward_reference_frame);
@@ -388,12 +343,12 @@ void mpeg2_close_ng (mpeg2dec_t * mpeg2dec)
 #undef frame
 }
 
-void mpeg2_drop_ng (mpeg2dec_t * mpeg2dec, int flag)
+void mpeg2_drop (mpeg2dec_t * mpeg2dec, int flag)
 {
     mpeg2dec->drop_flag = flag;
 }
 
-void mpeg2_output_init_ng (mpeg2dec_t * mpeg2dec,int flag)
+void mpeg2_output_init (mpeg2dec_t * mpeg2dec,int flag)
 {
     mpeg2dec->is_display_initialized = flag;
 }

@@ -1,6 +1,3 @@
-//PLUGIN_INFO(INFO_NAME, "MPEG2 video decoder");
-//PLUGIN_INFO(INFO_AUTHOR, "Aaron Holtzman <aholtzma@ess.engr.uvic.ca>");
-
 #include "config.h"
 
 #include <stdio.h>
@@ -11,11 +8,10 @@
 #include <errno.h>
 #include <inttypes.h>
 
-#ifdef __OMS__
-
 #include <oms/log.h>
 #include <oms/plugin/codec.h>
 
+#include "output_video.h"
 #include "mpeg2.h"
 
 static int _mpeg2dec_open	(void *plugin, void *foo);
@@ -33,25 +29,27 @@ static plugin_codec_t codec_mpeg2dec = {
 
 /************************************************/
 
+static mpeg2dec_t mpeg2dec;
+
 static int _mpeg2dec_open (void *plugin, void *foo)
 {
-	mpeg2_init ();
+	mpeg2_init (&mpeg2dec, NULL, NULL);
 	return 0;
 }
 
 
 static int _mpeg2dec_close (void *plugin)
 {
-	mpeg2_close(((plugin_codec_t *) plugin)->output);
-
+	mpeg2dec.output = ((plugin_codec_t *) plugin)->output;
+	mpeg2_close (&mpeg2dec);
 	return 0;
 }
 
 
 static int _mpeg2dec_read (void *plugin, buf_t *buf, buf_entry_t *buf_entry)
-{       
-	mpeg2_decode_data (((plugin_codec_t *) plugin)->output, buf_entry->data, buf_entry->data+buf_entry->data_len);
-
+{
+	mpeg2dec.output = ((plugin_codec_t *) plugin)->output;
+	mpeg2_decode_data (&mpeg2dec, buf_entry->data, buf_entry->data+buf_entry->data_len);
         return 0;
 }
 
@@ -64,13 +62,13 @@ static int _mpeg2dec_ctrl (void *plugin, uint ctrl_id, ...)
 	switch (ctrl_id) {
 		case CTRL_VIDEO_INITIALIZED: {
 			int val = va_arg (arg_list, int);
-			mpeg2_output_init (val);
+			mpeg2_output_init (&mpeg2dec, val);
 			break;
 		}
 		case CTRL_VIDEO_DROP_FRAME: {
 			int val = va_arg (arg_list, int);
 //			fprintf (stderr, "%c", val ? '-':'+');
-                	mpeg2_drop (val);
+                	mpeg2_drop (&mpeg2dec, val);
 			break;
 		}
 		default:
@@ -102,7 +100,3 @@ int plugin_init (char *whoami)
 void plugin_exit (void)
 {
 }
-
-
-#endif
-

@@ -21,27 +21,6 @@
 
 //
 // Structure for the mpeg2dec decoder.
-// 
-
-//
-// Backward compatible old interface [START]
-//
-
-void mpeg2_init (void);
-int mpeg2_decode_data (vo_output_video_t *, 
-		       uint8_t * data_start, uint8_t * data_end);
-void mpeg2_close (vo_output_video_t *);
-void mpeg2_drop (int flag);
-void mpeg2_output_init (int flag);
-
-
-//
-// Backward compatible old interface [END]
-//
-
-
-//
-// Proposed new interface [START]
 //
 
 typedef struct mpeg2dec_s {
@@ -82,20 +61,15 @@ typedef struct mpeg2dec_s {
 
 // initialize mpegdec with a opaque user pointer
 // if not needed in the output use NULL here
-void mpeg2_init_ng (mpeg2dec_t* mpeg2dec,
-		    vo_output_video_t* output,void* user_data);
+void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_output_video_t * output,
+		 void * user_data);
 
 // destroy everything which was allocated, shutdown the output
-void mpeg2_close_ng (mpeg2dec_t* mpeg2dec);
+void mpeg2_close (mpeg2dec_t * mpeg2dec);
 
 
-int mpeg2_decode_data_ng (mpeg2dec_t* mpeg2dec,
-			  uint8_t * data_start, uint8_t * data_end);
+int mpeg2_decode_data (mpeg2dec_t * mpeg2dec,
+		       uint8_t * data_start, uint8_t * data_end);
 
-void mpeg2_drop_ng (mpeg2dec_t* mpeg2dec, int flag);
-void mpeg2_output_init_ng (mpeg2dec_t* mpeg2dec, int flag);
-
-
-//
-// Proposed new interface [END]
-//
+void mpeg2_drop (mpeg2dec_t * mpeg2dec, int flag);
+void mpeg2_output_init (mpeg2dec_t * mpeg2dec, int flag);
