@@ -23,7 +23,6 @@
 
 #include "config.h"
 
-#include <string.h>
 #include <inttypes.h>
 
 #include "video_out.h"
@@ -967,7 +966,6 @@ static inline void slice_intra_DCT (decoder_t * decoder, int cc,
 	decoder->dc_dct_pred[cc] += get_chroma_dc_dct_diff (decoder);
     decoder->DCTblock[0] =
 	decoder->dc_dct_pred[cc] << (3 - decoder->intra_dc_precision);
-    memset (decoder->DCTblock + 1, 0, 63 * sizeof (int16_t));
 
     if (decoder->mpeg1) {
 	if (decoder->coding_type != D_TYPE)
@@ -985,7 +983,6 @@ static inline void slice_intra_DCT (decoder_t * decoder, int cc,
 static inline void slice_non_intra_DCT (decoder_t * decoder, uint8_t * dest,
 					int stride)
 {
-    memset (decoder->DCTblock, 0, 64 * sizeof (int16_t));
     if (decoder->mpeg1)
 	get_mpeg1_non_intra_block (decoder);
     else
@@ -1508,7 +1505,7 @@ static inline int slice_init (decoder_t * decoder, int code)
 
     decoder->v_offset = (code - 1) * 16;
     offset = 0;
-    if (decoder->convert == NULL || decoder->coding_type != B_TYPE)
+    if (!(decoder->convert) || decoder->coding_type != B_TYPE)
 	offset = (code - 1) * decoder->stride * 4;
 
     decoder->dest[0] = decoder->picture_dest[0] + offset * 4;
@@ -1552,7 +1549,7 @@ static inline int slice_init (decoder_t * decoder, int code)
 
     while (decoder->offset - decoder->width >= 0) {
 	decoder->offset -= decoder->width;
-	if (decoder->convert == NULL || decoder->coding_type != B_TYPE) {
+	if (!(decoder->convert) || decoder->coding_type != B_TYPE) {
 	    decoder->dest[0] += 16 * decoder->stride;
 	    decoder->dest[1] += 4 * decoder->stride;
 	    decoder->dest[2] += 4 * decoder->stride;

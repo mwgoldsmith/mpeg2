@@ -617,6 +617,15 @@ void mpeg2_idct_copy_altivec (vector_s16_t * block, unsigned char * dest,
     vec_ste ((vector_u32_t)tmp, 0, (unsigned int *)dest);	\
     vec_ste ((vector_u32_t)tmp, 4, (unsigned int *)dest);
 
+    block[0] = zero;
+    block[1] = zero;
+    block[2] = zero;
+    block[3] = zero;
+    block[4] = zero;
+    block[5] = zero;
+    block[6] = zero;
+    block[7] = zero;
+
     COPY (dest, vx0)	dest += stride;
     COPY (dest, vx1)	dest += stride;
     COPY (dest, vx2)	dest += stride;
@@ -652,6 +661,15 @@ void mpeg2_idct_add_altivec (vector_s16_t * block, unsigned char * dest,
     tmp = vec_packsu (tmp3, tmp3);					\
     vec_ste ((vector_u32_t)tmp, 0, (unsigned int *)dest);		\
     vec_ste ((vector_u32_t)tmp, 4, (unsigned int *)dest);
+
+    block[0] = zero;
+    block[1] = zero;
+    block[2] = zero;
+    block[3] = zero;
+    block[4] = zero;
+    block[5] = zero;
+    block[6] = zero;
+    block[7] = zero;
 
     ADD (dest, vx0, perm0)	dest += stride;
     ADD (dest, vx1, perm1)	dest += stride;
