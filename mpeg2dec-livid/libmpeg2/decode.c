@@ -155,10 +155,6 @@ static int parse_chunk (mpeg2dec_t * mpeg2dec, int code, uint8_t * buffer)
 		    picture->forward_reference_frame =
 			picture->backward_reference_frame;
 		    picture->backward_reference_frame = picture->current_frame;
-#ifdef ARCH_X86
-		    if (config.flags & MM_ACCEL_X86_MMX)
-			emms ();	/* FIXME not needed ? */
-#endif
 		}
 	    }
 	}
