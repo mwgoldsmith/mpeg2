@@ -9,3 +9,4 @@ Makefile.in
 .deps
 .libs
 sample1
+sample2
