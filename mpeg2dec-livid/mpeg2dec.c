@@ -55,16 +55,17 @@ static void print_fps(uint_32 final)
 	frame_counter++;
 	
 	gettimeofday(&tv_end, NULL);
-	elapsed = (tv_end.tv_sec - tv_beg.tv_sec) * 1000000+ 
+	elapsed = (tv_end.tv_sec - tv_beg.tv_sec) * 1000000 + 
 		  (tv_end.tv_usec - tv_beg.tv_usec);        
 	if (elapsed < 1000000)	/* only display every second */
 		return;
 	tv_beg = tv_end;
-	total_elapsed += elapsed / 10000;	/* store 1/100ts */
+	elapsed /= 10000;			/* convert to 1/100s */
+	total_elapsed += elapsed;
 	frames = frame_counter - last_count;
 
-	fps = frames * 100000000 / (elapsed + 1);	 /* 100x */
-	tfps = frame_counter * 10000 / (total_elapsed + 1);	/* 100x */
+	fps = frames * 10000 / elapsed;			/* 100x */
+	tfps = frame_counter * 10000 / total_elapsed;	/* 100x */
 
 	fprintf(stderr, "%8d %8d.%02d %8d %8d.%02d\r", frame_counter,
 		fps / 100, fps %100, total_elapsed, tfps / 100, tfps % 100);
