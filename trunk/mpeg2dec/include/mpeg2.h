@@ -100,7 +100,6 @@ typedef struct {
 typedef struct mpeg2dec_s mpeg2dec_t;
 typedef struct decoder_s decoder_t;
 
-#define STATE_INVALID 0
 #define STATE_SEQUENCE 1
 #define STATE_SEQUENCE_REPEATED 2
 #define STATE_GOP 3
@@ -109,6 +108,7 @@ typedef struct decoder_s decoder_t;
 #define STATE_PICTURE_2ND 6
 #define STATE_SLICE 7
 #define STATE_END 8
+#define STATE_INVALID 9
 
 struct convert_init_s;
 void mpeg2_convert (mpeg2dec_t * mpeg2dec,
