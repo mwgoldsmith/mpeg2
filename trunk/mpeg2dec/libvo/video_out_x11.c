@@ -451,7 +451,7 @@ static int xv_alloc_frames (x11_instance_t * instance, int size,
 	(char *) create_shm (instance, 3 * size) : NULL;
     if (alloc == NULL) {
 	instance->xshm = 0;
-	alloc = malloc (3 * size);
+	alloc = (char *) malloc (3 * size);
 	if (alloc == NULL)
 	    return 1;
     }
