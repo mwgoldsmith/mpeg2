@@ -134,7 +134,7 @@ static uint32_t arch_accel (void)
     canjump = 1;
 
     asm volatile ("mtspr 256, %0\n\t"
-		  "vand %v0, %v0, %v0"
+		  "vand %%v0, %%v0, %%v0"
 		  :
 		  : "r" (-1));
 
