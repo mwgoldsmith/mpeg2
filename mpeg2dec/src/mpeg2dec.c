@@ -251,7 +251,8 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 	    break;
 	case STATE_SLICE:
 	case STATE_END:
-	    vo_draw (info->display_fbuf->id);
+	    if (info->display_fbuf)
+		vo_draw (info->display_fbuf->id);
 	    print_fps (0);
 	    break;
 	}
