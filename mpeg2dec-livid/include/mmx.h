@@ -1,6 +1,6 @@
 /*
  * mmx.h
- * Copyright (C) 1997-1999 H. Dietz and R. Fisher
+ * Copyright (C) 1997-2001 H. Dietz and R. Fisher
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
  *

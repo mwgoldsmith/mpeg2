@@ -1,32 +1,26 @@
 /*
- *  video_out_sdl.c
+ * video_out_sdl.c
  *
- *  Copyright (C) Dominik Schnitzer <aeneas@linuxvideo.org> - Janurary 13, 2001.
- *  Copyright (C) Ryan C. Gordon <icculus@lokigames.com> - April 22, 2000.
+ * Copyright (C) 2000-2001 Ryan C. Gordon <icculus@lokigames.com> and
+ *                         Dominik Schnitzer <aeneas@linuxvideo.org>
  *
- *  A mpeg2dec display driver that does output through the
- *  Simple DirectMedia Layer (SDL) library. This effectively gives us all
- *  sorts of output options: X11, SVGAlib, fbcon, AAlib, GGI. Win32, MacOS
- *  and BeOS support, too. Yay. SDL info, source, and binaries can be found
- *  at http://www.libsdl.org/
+ * SDL info, source, and binaries can be found at http://www.libsdl.org/
  *
- *  This file is part of oms, free DVD and Video player.
- *  It is derived from the mpeg2dec SDL video output plugin.
- *  Adopted for mpeg2dec from Dominik Schnitzer, Jan. 24. 2001
- *	
- *  oms is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *   
- *  this oms output plugin is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *   
- *  You should have received a copy of the GNU General Public License
- *  along with GNU Make; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 
+ * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
+ *
+ * mpeg2dec is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * mpeg2dec is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "config.h"

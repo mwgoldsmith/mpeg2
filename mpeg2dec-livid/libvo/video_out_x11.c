@@ -1,16 +1,22 @@
-/* 
- * video_out_x11.c, X11 interface
+/*
+ * video_out_x11.c
+ * Copyright (C) 1999-2001 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
+ * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
  *
- * Copyright (C) 1996, MPEG Software Simulation Group. All Rights Reserved. 
+ * mpeg2dec is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- * Hacked into mpeg2dec by
- * 
- * Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
+ * mpeg2dec is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * 15 & 16 bpp support added by Franck Sicard <Franck.Sicard@solsoft.fr>
- *
- * Xv image suuport by Gerd Knorr <kraxel@goldbach.in-berlin.de>
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "config.h"

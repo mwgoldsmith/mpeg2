@@ -1,6 +1,6 @@
 /*
  * idct.c
- * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
+ * Copyright (C) 1999-2001 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * Portions of this code are from the MPEG software simulation group
  * idct implementation. This code will be replaced with a new
@@ -51,7 +51,6 @@
 #define W5 1609 /* 2048*sqrt (2)*cos (5*pi/16) */
 #define W6 1108 /* 2048*sqrt (2)*cos (6*pi/16) */
 #define W7 565  /* 2048*sqrt (2)*cos (7*pi/16) */
-
 
 /* idct main entry point  */
 void (*idct_block_copy) (int16_t * block, uint8_t * dest, int stride);
