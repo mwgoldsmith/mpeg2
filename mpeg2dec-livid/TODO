@@ -2,8 +2,9 @@
 	* fix xshm completion events in libvo
 	* get rid of memcpy in xv/xvshm
 	* get rid of HACK_MODE
-		* libvo reordering
+		* put back slice handling
 		* interlaced slices
+	* clean up frame_t declaration and usage (libvo/libmpeg2)
 
 * things we dont implement yet
 	* dont crash on bad streams, make sure we can resync after a while
