@@ -60,6 +60,7 @@ static void print_fps(uint_32 final)
 			"seconds (%d.%02d fps)\n", frame_counter,
 			total_elapsed / 100, total_elapsed % 100,
 			tfps / 100, tfps % 100);
+		return;
 	}
 	gettimeofday(&tv_end, NULL);
 	elapsed = (tv_end.tv_sec - tv_beg.tv_sec) * 1000000 + 
