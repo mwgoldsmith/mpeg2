@@ -2,54 +2,18 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.13)
 AC_INIT(src/mpeg2dec.c)
 AC_CONFIG_AUX_DIR(autotools)
-
-dnl Detect the canonical host and target build environment
-dnl (madmac: moved because of autoconf warnings)
-AC_CANONICAL_HOST
-AC_CANONICAL_TARGET
-
 AM_INIT_AUTOMAKE(mpeg2dec,0.1.8-cvs)
 AM_CONFIG_HEADER(include/config.h)
 AM_MAINTAINER_MODE
+AC_CANONICAL_HOST
 
-dnl Checks for programs.
+dnl Checks for compiler
 AC_PROG_CC
 AC_PROG_GCC_TRADITIONAL
 
-dnl 64-bit compilation handling for IRIX 6.x (needs to come before libtool init)
-case "$target" in
-    mips-sgi-irix6.*)
-	echo Turning on 64 bit compilation for IRIX 6.x.
-	dnl GCC-specific flags
-	if test x"$GCC" = x"yes"; then
-          dnl Turn on 64bit compilation.
-          CFLAGS="$CFLAGS -mabi=64";
-	else
-          CFLAGS="$CFLAGS -64";
-	fi
-;;
-esac
-
-AM_DISABLE_SHARED
-AM_PROG_LIBTOOL
-
-dnl Checks for libraries.
-
-dnl Checks for header files.
-INCLUDES='-I$(top_srcdir)/include -I$(top_builddir)/include'
-AC_SUBST(INCLUDES)
-AC_CHECK_GENERATE_INTTYPES(include)
-AC_CHECK_HEADERS(getopt.h)
-
-dnl Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
-AC_C_INLINE
-AC_C_BIGENDIAN
-
-dnl Checks for library functions.
-
 dnl GCC-specific flags
 if test x"$GCC" = x"yes"; then
+
     dnl compiler warnings
     OPT_CFLAGS="$CFLAGS -Wall -Werror"
     AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS])
@@ -80,12 +44,38 @@ if test x"$GCC" = x"yes"; then
     sparc-*)
 	OPT_CFLAGS="$CFLAGS -mcpu=ultrasparc -mvis"
 	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
+    mips-sgi-irix6.*)	dnl do we need to be that specific ?
+	OPT_CFLAGS="$CFLAGS -mabi=64"
+	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
+    esac
+else
+    dnl non-gcc flags - we probably need exact configuration triplets here.
+    case "$host_alias" in
+    mips-sgi-irix6.*)
+	OPT_CFLAGS="$CFLAGS -64"
+	AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS]);;
     esac
 fi
 
+dnl Checks for libtool - this must be done after we set cflags
+AM_DISABLE_SHARED
+AM_PROG_LIBTOOL
 
-dnl gcc __attribute__ ((aligned ()))
+dnl Checks for libraries.
+
+dnl Checks for header files.
+INCLUDES='-I$(top_srcdir)/include -I$(top_builddir)/include'
+AC_SUBST(INCLUDES)
+AC_CHECK_GENERATE_INTTYPES(include)
+AC_CHECK_HEADERS(getopt.h)
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_C_INLINE
+AC_C_BIGENDIAN
 AC_C_ATTRIBUTE_ALIGNED
+
+dnl Checks for library functions.
 
 builtin([include],[libmpeg2/configure.incl])
 builtin([include],[libvo/configure.incl])
