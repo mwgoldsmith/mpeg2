@@ -354,7 +354,11 @@ uint_32 get_macroblock_modes (int picture_coding_type,
 	macroblock_modes = Get_macroblock_type (picture_coding_type);
 
 	if (frame_pred_frame_dct)
-		return macroblock_modes | MC_FRAME;
+	{
+		if (macroblock_modes & (MACROBLOCK_MOTION_FORWARD | MACROBLOCK_MOTION_BACKWARD))
+			macroblock_modes |= MC_FRAME;
+		return macroblock_modes;
+	}
 
 	// get frame/field motion type 
 	if (macroblock_modes & (MACROBLOCK_MOTION_FORWARD | MACROBLOCK_MOTION_BACKWARD))
