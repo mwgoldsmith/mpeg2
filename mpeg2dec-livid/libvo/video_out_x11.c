@@ -327,6 +327,7 @@ static int xshm_create_shm (XShmSegmentInfo * shminfo, int size)
 
     /* XShmAttach fails on remote displays, so we have to catch this event */
 
+    XSync (priv->display, False);
     priv->error = 0;
     XSetErrorHandler (x11_handle_error);
 
