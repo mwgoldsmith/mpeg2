@@ -34,9 +34,14 @@
 
 #define BUFFER_SIZE (1194 * 1024)
 
-void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel)
+mpeg2dec_t * mpeg2_init (uint32_t mm_accel)
 {
     static int do_init = 1;
+    mpeg2dec_t * mpeg2dec;
+
+    mpeg2dec = mpeg2_malloc (sizeof (mpeg2dec_t), ALLOC_MPEG2DEC);
+    if (mpeg2dec == NULL)
+	return NULL;
 
     if (do_init) {
 	do_init = 0;
@@ -45,8 +50,9 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel)
 	mpeg2_mc_init (mm_accel);
     }
 
+    memset (mpeg2dec, 0, sizeof (mpeg2dec_t));
+
     mpeg2dec->chunk_buffer = mpeg2_malloc (BUFFER_SIZE + 4, ALLOC_CHUNK);
-    mpeg2dec->decoder = mpeg2_malloc (sizeof (decoder_t), ALLOC_DECODER);
 
     mpeg2dec->shift = 0xffffff00;
     mpeg2dec->last_sequence.width = (unsigned int) -1;
@@ -54,10 +60,15 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel)
     mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
     mpeg2dec->code = 0xb4;
 
-    memset (mpeg2dec->decoder, 0, sizeof (decoder_t));
-
     /* initialize substructures */
     mpeg2_header_state_init (mpeg2dec);
+
+    return mpeg2dec;
+}
+
+mpeg2_info_t * mpeg2_info (mpeg2dec_t * mpeg2dec)
+{
+    return &(mpeg2dec->info);
 }
 
 static inline uint8_t * copy_chunk (mpeg2dec_t * mpeg2dec,
@@ -160,14 +171,14 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 	    if (mpeg2dec->state != STATE_SLICE &&
 		mpeg2dec->state != STATE_SLICE_1ST) {
 		mpeg2_header_slice (mpeg2dec);
-		mpeg2_init_fbuf (mpeg2dec->decoder,
+		mpeg2_init_fbuf (&(mpeg2dec->decoder),
 				 mpeg2dec->current_frame->base,
 				 mpeg2dec->forward_reference_frame->base,
 				 mpeg2dec->backward_reference_frame->base);
-		mpeg2dec->decoder->convert = mpeg2dec->current_frame->copy;
-		mpeg2dec->decoder->frame_id = mpeg2dec->current_frame;
+		mpeg2dec->decoder.convert = mpeg2dec->current_frame->copy;
+		mpeg2dec->decoder.frame_id = mpeg2dec->current_frame;
 	    }
-	    mpeg2_slice (mpeg2dec->decoder, code, mpeg2dec->chunk_buffer);
+	    mpeg2_slice (&(mpeg2dec->decoder), code, mpeg2dec->chunk_buffer);
 	}
 
 #define RECEIVED(code,state) (((state) << 8) + (code))
@@ -236,7 +247,7 @@ int mpeg2_set_buf (mpeg2dec_t * mpeg2dec, vo_frame_t * buf)
 	    mpeg2dec->backward_reference_frame = buf;
 	} else
 	    return 1;
-    } else if (mpeg2dec->decoder->coding_type == B_TYPE) {
+    } else if (mpeg2dec->decoder.coding_type == B_TYPE) {
 	mpeg2dec->current_frame = buf;
     } else {
 	mpeg2dec->forward_reference_frame = mpeg2dec->backward_reference_frame;
@@ -260,5 +271,4 @@ void mpeg2_close (mpeg2dec_t * mpeg2dec)
     /* mpeg2_decode_data (mpeg2dec, finalizer, finalizer+4); */
 
     mpeg2_free (mpeg2dec->chunk_buffer);
-    mpeg2_free (mpeg2dec->decoder);
 }

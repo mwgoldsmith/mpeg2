@@ -87,42 +87,7 @@ typedef struct {
     vo_frame_t * discard_fbuf;
 } mpeg2_info_t;
 
-typedef struct {
-    mpeg2_info_t info;
-
-    /* this is where we keep the state of the decoder */
-    struct decoder_s * decoder;
-
-    uint32_t shift;
-    int is_display_initialized;
-    int state;
-    uint32_t ext_state;
-
-    /* the maximum chunk size is determined by vbv_buffer_size */
-    /* which is 224K for MP@ML streams. */
-    /* (we make no pretenses of decoding anything more than that) */
-    /* allocated in init - gcc has problems allocating such big structures */
-    uint8_t * chunk_buffer;
-    /* pointer to current position in chunk_buffer */
-    uint8_t * chunk_ptr;
-    /* last start code ? */
-    uint8_t code;
-
-    /* PTS */
-    uint32_t pts, pts_current, pts_previous;
-    int num_pts;
-    int bytes_since_pts;
-
-    vo_frame_t * current_frame;
-    vo_frame_t * forward_reference_frame;
-    vo_frame_t * backward_reference_frame;
-
-    sequence_t last_sequence;
-    sequence_t sequence;
-    picture_t pictures[4];
-    picture_t * picture;
-} mpeg2dec_t ;
-
+typedef struct mpeg2dec_s mpeg2dec_t;
 typedef struct decoder_s decoder_t;
 
 #define STATE_INVALID 0 
@@ -149,8 +114,8 @@ void mpeg2_init_fbuf (decoder_t * decoder, uint8_t * current_fbuf[3],
 
 void mpeg2_slice (decoder_t * decoder, int code, uint8_t * buffer);
 
-void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel);
-
+mpeg2dec_t * mpeg2_init (uint32_t mm_accel);
+mpeg2_info_t * mpeg2_info (mpeg2dec_t * mpeg2dec);
 void mpeg2_close (mpeg2dec_t * mpeg2dec);
 
 int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end);

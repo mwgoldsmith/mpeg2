@@ -29,6 +29,8 @@
 
 #include <inttypes.h>
 
+#include "video_out.h"
+#include "mpeg2.h"
 #include "mpeg2_internal.h"
 #include "attributes.h"
 

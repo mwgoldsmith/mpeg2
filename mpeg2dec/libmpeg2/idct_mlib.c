@@ -31,6 +31,8 @@
 #include <string.h>
 #include <inttypes.h>
 
+#include "video_out.h"
+#include "mpeg2.h"
 #include "mpeg2_internal.h"
 
 void mpeg2_idct_add_mlib (int16_t * block, uint8_t * dest, int stride)
