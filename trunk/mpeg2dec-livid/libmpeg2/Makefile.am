@@ -2,7 +2,7 @@ CFLAGS = -g -O3 -Wall  -Werror @LIBMPEG2_CFLAGS@ @GLOBAL_CFLAGS@
 
 lib_LTLIBRARIES = libmpeg2.la
 
-include_HEADER = mpeg2.h 
+include_HEADERS = mpeg2.h 
 
 libmpeg2_la_LIBADD = @LIBMPEG2_CONFIG_OBJS@ 
 libmpeg2_la_DEPENDENCIES = @LIBMPEG2_CONFIG_OBJS@
