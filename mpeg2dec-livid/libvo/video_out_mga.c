@@ -165,25 +165,17 @@ static void mga_close (vo_instance_t * _instance)
     libvo_common_free_frames ((vo_instance_t *) instance);
 }
 
-vo_instance_t * vo_mga_setup (vo_instance_t * _instance, int width, int height)
+static int mga_setup (vo_instance_t * _instance, int width, int height)
 {
     mga_instance_t * instance;
     char * frame_mem;
     int frame_size;
 
-    if (_instance != NULL)
-	return NULL;
-    instance = malloc (sizeof (mga_instance_t));
-    if (instance == NULL)
-	return NULL;
-
-    instance->fd = open ("/dev/mga_vid", O_RDWR);
-    if (instance->fd < 0)
-	return NULL;
+    instance = (mga_instance_t *) _instance;
 
     if (ioctl (instance->fd, MGA_VID_ON, 0)) {
 	close (instance->fd);
-	return NULL;
+	return 1;
     }
 
     instance->mga_vid_config.src_width = width;
@@ -206,12 +198,26 @@ vo_instance_t * vo_mga_setup (vo_instance_t * _instance, int width, int height)
     instance->vid_data = frame_mem;
     instance->next_frame = 0;
 
-    if (libvo_common_alloc_frames ((vo_instance_t *) instance, width, height,
-				   sizeof (vo_frame_t), NULL, NULL,
-				   mga_draw_frame))
+    return libvo_common_alloc_frames ((vo_instance_t *) instance,
+				      width, height, sizeof (vo_frame_t),
+				      NULL, NULL, mga_draw_frame);
+}
+
+vo_instance_t * vo_mga_open (void)
+{
+    mga_instance_t * instance;
+
+    instance = malloc (sizeof (mga_instance_t));
+    if (instance == NULL)
 	return NULL;
 
-    instance->vo.reinit = vo_mga_setup;
+    instance->fd = open ("/dev/mga_vid", O_RDWR);
+    if (instance->fd < 0) {
+	free (instance);
+	return NULL;
+    }
+
+    instance->vo.setup = mga_setup;
     instance->vo.close = mga_close;
     instance->vo.get_frame = libvo_common_get_frame;
 
