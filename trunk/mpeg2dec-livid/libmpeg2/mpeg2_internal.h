@@ -129,10 +129,10 @@ typedef struct picture_s
 	uint_16 video_format;
 	uint_16 display_horizontal_size;
 	uint_16 display_vertical_size;
-  uint_16 color_description;
-  uint_16 color_primaries;
-  uint_16 transfer_characteristics;
-  uint_16 matrix_coefficients;
+	uint_16 color_description;
+	uint_16 color_primaries;
+	uint_16 transfer_characteristics;
+	uint_16 matrix_coefficients;
 	
 	//-- group of pictures header stuff --
 	
@@ -211,11 +211,11 @@ typedef struct picture_s
 
 typedef struct slice_s
 {
-  uint_32 slice_vertical_position_extension;
-  uint_32 quantizer_scale_code;
-  uint_32 slice_picture_id_enable;
-  uint_32 slice_picture_id;
-  uint_32 extra_information_slice;
+	uint_32 slice_vertical_position_extension;
+	uint_32 quantizer_scale_code;
+	uint_32 slice_picture_id_enable;
+	uint_32 slice_picture_id;
+	uint_32 extra_information_slice;
 
 	//Motion vectors
 	//The f_ and b_ correspond to the forward and backward motion

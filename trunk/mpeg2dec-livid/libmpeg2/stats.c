@@ -126,9 +126,9 @@ void stats_slice_header(slice_t *slice)
 
 void stats_macroblock(macroblock_t *mb)
 {
-		dprintf("(macroblock) ");
-		dprintf("cbp = %d ",mb->coded_block_pattern);
-		dprintf("\n");
+	dprintf("(macroblock) ");
+	dprintf("cbp = %d ",mb->coded_block_pattern);
+	dprintf("\n");
 }
 
 
@@ -168,18 +168,18 @@ void stats_sequence_display_ext(picture_t *picture)
 void stats_quant_matrix_ext_header(picture_t *picture)
 {
 #if 0
-  if (Verbose_Flag>NO_LAYER)
-  {
-   dprintf("quant matrix extension (byte %d)\n",(pos>>3)-4);
-   dprintf("  load_intra_quantizer_matrix=%d\n",
-      ld->load_intra_quantizer_matrix);
-   dprintf("  load_non_intra_quantizer_matrix=%d\n",
-      ld->load_non_intra_quantizer_matrix);
-   dprintf("  load_chroma_intra_quantizer_matrix=%d\n",
-      ld->load_chroma_intra_quantizer_matrix);
-   dprintf("  load_chroma_non_intra_quantizer_matrix=%d\n",
-      ld->load_chroma_non_intra_quantizer_matrix);
-  }
+	if (Verbose_Flag>NO_LAYER)
+	{
+		dprintf("quant matrix extension (byte %d)\n",(pos>>3)-4);
+		dprintf("  load_intra_quantizer_matrix=%d\n",
+				ld->load_intra_quantizer_matrix);
+		dprintf("  load_non_intra_quantizer_matrix=%d\n",
+				ld->load_non_intra_quantizer_matrix);
+		dprintf("  load_chroma_intra_quantizer_matrix=%d\n",
+				ld->load_chroma_intra_quantizer_matrix);
+		dprintf("  load_chroma_non_intra_quantizer_matrix=%d\n",
+				ld->load_chroma_non_intra_quantizer_matrix);
+	}
 #endif
 }
 
