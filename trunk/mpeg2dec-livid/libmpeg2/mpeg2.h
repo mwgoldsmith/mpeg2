@@ -42,5 +42,5 @@ typedef struct mpeg2_config_s {
     void (*fill_buffer_callback) (uint8_t **, uint8_t **);
 } mpeg2_config_t;
 
-void mpeg2_init (vo_functions_t *);
-int mpeg2_decode_data (uint8_t * data_start, uint8_t * data_end);
+void mpeg2_init (void);
+int mpeg2_decode_data (vo_functions_t *, uint8_t * data_start, uint8_t * data_end);

@@ -223,7 +223,7 @@ int main (int argc,char *argv[])
 
     signal (SIGINT, signal_handler);
 
-    mpeg2_init (video_out);
+    mpeg2_init ();
 
     gettimeofday (&tv_beg, NULL);
 
@@ -237,7 +237,7 @@ int main (int argc,char *argv[])
 	else
 	    fill_buffer (BUFFER_SIZE);
 		
-	num_frames = mpeg2_decode_data (buf_start, buf_end);
+	num_frames = mpeg2_decode_data (video_out, buf_start, buf_end);
 
 	while (num_frames--)
 	    print_fps (0);
