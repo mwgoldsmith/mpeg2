@@ -77,6 +77,19 @@ typedef struct {
 } picture_t;
 
 typedef struct {
+    sequence_t * sequence;
+    picture_t * current_picture;
+    picture_t * current_picture_2nd;
+    vo_frame_t * current_fbuf;
+    picture_t * display_picture;
+    picture_t * display_picture_2nd;
+    vo_frame_t * display_fbuf;
+    vo_frame_t * discard_fbuf;
+} mpeg2_info_t;
+
+typedef struct {
+    mpeg2_info_t info;
+
     /* this is where we keep the state of the decoder */
     struct decoder_s * decoder;
 
@@ -106,7 +119,8 @@ typedef struct {
 
     sequence_t last_sequence;
     sequence_t sequence;
-    picture_t picture;
+    picture_t pictures[4];
+    picture_t * picture;
 } mpeg2dec_t ;
 
 typedef struct decoder_s decoder_t;
@@ -120,12 +134,14 @@ typedef struct decoder_s decoder_t;
 #define STATE_SLICE 6 
 #define STATE_END 7
 
-void mpeg2_header_state_init (decoder_t * decoder);
+void mpeg2_header_state_init (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_gop (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_picture (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_extension (mpeg2dec_t * mpeg2dec);
 int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec);
+void mpeg2_header_slice (mpeg2dec_t * mpeg2dec);
+void mpeg2_header_end (mpeg2dec_t * mpeg2dec);
 
 int mpeg2_set_buf (mpeg2dec_t * mpeg2dec, vo_frame_t * buf);
 void mpeg2_init_fbuf (decoder_t * decoder, uint8_t * current_fbuf[3],

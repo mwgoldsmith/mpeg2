@@ -57,7 +57,7 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel)
     memset (mpeg2dec->decoder, 0, sizeof (decoder_t));
 
     /* initialize substructures */
-    mpeg2_header_state_init (mpeg2dec->decoder);
+    mpeg2_header_state_init (mpeg2dec);
 }
 
 static inline uint8_t * copy_chunk (mpeg2dec_t * mpeg2dec,
@@ -121,6 +121,11 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 {
     uint8_t code;
 
+    if (mpeg2dec->state == STATE_END) {
+	mpeg2_header_end (mpeg2dec);
+	return STATE_END;
+    }
+
     while (1) {
 	code = mpeg2dec->code;
 	*current = copy_chunk (mpeg2dec, *current, end);
@@ -136,31 +141,25 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 	switch (code) {
 	case 0x00:	/* picture_start_code */
 	    mpeg2_header_picture (mpeg2dec);
-	    mpeg2dec->state = (mpeg2dec->state == STATE_SLICE_1ST ?
-			       STATE_PICTURE_2ND : STATE_PICTURE);
 	    break;
 	case 0xb2:	/* user_data_start_code */
 	    mpeg2_header_user_data (mpeg2dec);
 	    break;
 	case 0xb3:	/* sequence_header_code */
 	    mpeg2_header_sequence (mpeg2dec);
-	    mpeg2dec->state = STATE_SEQUENCE;
 	    break;
 	case 0xb5:	/* extension_start_code */
 	    mpeg2_header_extension (mpeg2dec);
 	    break;
 	case 0xb8:	/* group_start_code */
 	    mpeg2_header_gop (mpeg2dec);
-	    mpeg2dec->state = STATE_GOP;
 	    break;
 	default:
 	    if (code >= 0xb0)
 		break;
 	    if (mpeg2dec->state != STATE_SLICE &&
 		mpeg2dec->state != STATE_SLICE_1ST) {
-		mpeg2dec->state = ((mpeg2dec->picture.nb_fields > 1 ||
-				    mpeg2dec->state == STATE_PICTURE_2ND) ?
-				   STATE_SLICE : STATE_SLICE_1ST);
+		mpeg2_header_slice (mpeg2dec);
 		mpeg2_init_fbuf (mpeg2dec->decoder,
 				 mpeg2dec->current_frame->base,
 				 mpeg2dec->forward_reference_frame->base,
@@ -188,9 +187,9 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 
 	/* end of sequence */
 	case RECEIVED (0xb7, STATE_SLICE):
-	    mpeg2dec->state = STATE_INVALID;
+	    mpeg2dec->state = STATE_END;
 	    mpeg2dec->last_sequence.width = (unsigned int) -1;
-	    return STATE_END;
+	    return STATE_SLICE;
 
 	/* other legal state transitions */
 	case RECEIVED (0x00, STATE_GOP):

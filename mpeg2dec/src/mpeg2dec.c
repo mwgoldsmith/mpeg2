@@ -212,6 +212,8 @@ static void handle_args (int argc, char ** argv)
 
 static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 {
+    mpeg2_info_t * info = &(mpeg2dec.info);
+    picture_t * picture;
     int state, flags;
 
     while (1) {
@@ -220,8 +222,8 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 	case -1:
 	    return;
 	case STATE_SEQUENCE:
-	    if (vo_setup (output, mpeg2dec.sequence.width,
-			  mpeg2dec.sequence.height)) {
+	    if (vo_setup (output, info->sequence->width,
+			  info->sequence->height)) {
 		fprintf (stderr, "display setup failed\n");
 		exit (1);
 	    }
@@ -230,30 +232,25 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 	    mpeg2_set_buf (&mpeg2dec, vo_get_frame (output, flags));
 	    break;
 	case STATE_PICTURE:
-	    flags = ((mpeg2dec.picture.nb_fields > 1) ? VO_BOTH_FIELDS :
-		     ((mpeg2dec.picture.flags & PIC_FLAG_TOP_FIELD_FIRST) ?
+	    picture = info->current_picture;
+	    flags = ((picture->nb_fields > 1) ? VO_BOTH_FIELDS :
+		     ((picture->flags & PIC_FLAG_TOP_FIELD_FIRST) ?
 		      VO_TOP_FIELD : VO_BOTTOM_FIELD));
-	    if ((mpeg2dec.picture.flags & PIC_MASK_CODING_TYPE) !=
+	    if ((picture->flags & PIC_MASK_CODING_TYPE) !=
 		PIC_FLAG_CODING_TYPE_B)
 		flags |= VO_PREDICTION_FLAG;
 	    mpeg2_set_buf (&mpeg2dec, vo_get_frame (output, flags));
 	    break;
 	case STATE_PICTURE_2ND:
-	    flags = ((mpeg2dec.picture.nb_fields > 1) ? VO_BOTH_FIELDS :
-		     ((mpeg2dec.picture.flags & PIC_FLAG_TOP_FIELD_FIRST) ?
-		      VO_TOP_FIELD : VO_BOTTOM_FIELD));
-	    vo_field (mpeg2dec.current_frame, flags);
+	    picture = info->current_picture_2nd;
+	    flags = ((picture->flags & PIC_FLAG_TOP_FIELD_FIRST) ?
+		     VO_TOP_FIELD : VO_BOTTOM_FIELD);
+	    vo_field (info->current_fbuf, flags);
 	    break;
 	case STATE_SLICE:
 	case STATE_END:
-	    vo_draw (((mpeg2dec.picture.flags & PIC_MASK_CODING_TYPE) ==
-		      PIC_FLAG_CODING_TYPE_B) ? mpeg2dec.current_frame :
-		     mpeg2dec.forward_reference_frame);
+	    vo_draw (info->display_fbuf);
 	    print_fps (0);
-	    if (state == STATE_END) {
-		vo_draw (mpeg2dec.backward_reference_frame);
-		print_fps (0);
-	    }
 	    break;
 	}
     }
