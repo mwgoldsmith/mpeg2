@@ -567,7 +567,7 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
     picture->nb_fields = 2;
 
     mpeg2dec->q_scale_type = 0;
-    decoder->intra_dc_precision = 0;
+    decoder->intra_dc_precision = 7;
     decoder->frame_pred_frame_dct = 1;
     decoder->concealment_motion_vectors = 0;
     decoder->scan = mpeg2_scan_norm;
@@ -591,7 +591,7 @@ static int picture_coding_ext (mpeg2dec_t * mpeg2dec)
     decoder->b_motion.f_code[1] = (buffer[2] >> 4) - 1;
 
     flags = picture->flags;
-    decoder->intra_dc_precision = (buffer[2] >> 2) & 3;
+    decoder->intra_dc_precision = 7 - ((buffer[2] >> 2) & 3);
     decoder->picture_structure = buffer[2] & 3;
     switch (decoder->picture_structure) {
     case TOP_FIELD:

@@ -272,7 +272,7 @@ static inline int get_luma_dc_dct_diff (mpeg2_decoder_t * const decoder)
 	    dc_diff =
 		UBITS (bit_buf, size) - UBITS (SBITS (~bit_buf, 1), size);
 	    bit_buf <<= size;
-	    return dc_diff;
+	    return dc_diff << decoder->intra_dc_precision;
 	} else {
 	    DUMPBITS (bit_buf, bits, 3);
 	    return 0;
@@ -284,7 +284,7 @@ static inline int get_luma_dc_dct_diff (mpeg2_decoder_t * const decoder)
 	NEEDBITS (bit_buf, bits, bit_ptr);
 	dc_diff = UBITS (bit_buf, size) - UBITS (SBITS (~bit_buf, 1), size);
 	DUMPBITS (bit_buf, bits, size);
-	return dc_diff;
+	return dc_diff << decoder->intra_dc_precision;
     }
 #undef bit_buf
 #undef bits
@@ -309,7 +309,7 @@ static inline int get_chroma_dc_dct_diff (mpeg2_decoder_t * const decoder)
 	    dc_diff =
 		UBITS (bit_buf, size) - UBITS (SBITS (~bit_buf, 1), size);
 	    bit_buf <<= size;
-	    return dc_diff;
+	    return dc_diff << decoder->intra_dc_precision;
 	} else {
 	    DUMPBITS (bit_buf, bits, 2);
 	    return 0;
@@ -321,7 +321,7 @@ static inline int get_chroma_dc_dct_diff (mpeg2_decoder_t * const decoder)
 	NEEDBITS (bit_buf, bits, bit_ptr);
 	dc_diff = UBITS (bit_buf, size) - UBITS (SBITS (~bit_buf, 1), size);
 	DUMPBITS (bit_buf, bits, size);
-	return dc_diff;
+	return dc_diff << decoder->intra_dc_precision;
     }
 #undef bit_buf
 #undef bits
@@ -938,11 +938,11 @@ static inline void slice_intra_DCT (mpeg2_decoder_t * const decoder,
     NEEDBITS (bit_buf, bits, bit_ptr);
     /* Get the intra DC coefficient and inverse quantize it */
     if (cc == 0)
-	decoder->dc_dct_pred[0] += get_luma_dc_dct_diff (decoder);
+	decoder->DCTblock[0] =
+	    decoder->dc_dct_pred[0] += get_luma_dc_dct_diff (decoder);
     else
-	decoder->dc_dct_pred[cc] += get_chroma_dc_dct_diff (decoder);
-    decoder->DCTblock[0] =
-	decoder->dc_dct_pred[cc] << (7 - decoder->intra_dc_precision);
+	decoder->DCTblock[0] =
+	    decoder->dc_dct_pred[cc] += get_chroma_dc_dct_diff (decoder);
 
     if (decoder->mpeg1) {
 	if (decoder->coding_type != D_TYPE)
@@ -1520,7 +1520,7 @@ static inline int slice_init (mpeg2_decoder_t * const decoder, int code)
     const MBAtab * mba;
 
     decoder->dc_dct_pred[0] = decoder->dc_dct_pred[1] =
-	decoder->dc_dct_pred[2] = 128 << decoder->intra_dc_precision;
+	decoder->dc_dct_pred[2] = 16384;
 
     decoder->f_motion.pmv[0][0] = decoder->f_motion.pmv[0][1] = 0;
     decoder->f_motion.pmv[1][0] = decoder->f_motion.pmv[1][1] = 0;
@@ -1710,7 +1710,7 @@ void mpeg2_slice (mpeg2_decoder_t * const decoder, const int code,
 	    }
 
 	    decoder->dc_dct_pred[0] = decoder->dc_dct_pred[1] =
-		decoder->dc_dct_pred[2] = 128 << decoder->intra_dc_precision;
+		decoder->dc_dct_pred[2] = 16384;
 	}
 
 	NEXT_MACROBLOCK;
@@ -1743,7 +1743,7 @@ void mpeg2_slice (mpeg2_decoder_t * const decoder, const int code,
 
 	if (mba_inc) {
 	    decoder->dc_dct_pred[0] = decoder->dc_dct_pred[1] =
-		decoder->dc_dct_pred[2] = 128 << decoder->intra_dc_precision;
+		decoder->dc_dct_pred[2] = 16384;
 
 	    if (decoder->coding_type == P_TYPE) {
 		do {
