@@ -60,6 +60,7 @@ fi
 
 dnl Checks for libtool - this must be done after we set cflags
 AM_DISABLE_SHARED
+AC_LIBTOOL_WIN32_DLL
 AM_PROG_LIBTOOL
 
 dnl Checks for libraries.

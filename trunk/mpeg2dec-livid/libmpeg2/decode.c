@@ -35,13 +35,14 @@
 
 mpeg2_config_t config;
 
-void mpeg2_init (mpeg2dec_t * mpeg2dec, vo_setup_t * output_setup)
+void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
+		 vo_setup_t * output_setup)
 {
     static int do_init = 1;
 
     if (do_init) {
 	do_init = 0;
-	config.flags = mm_accel () | MM_ACCEL_MLIB;
+	config.flags = mm_accel;
 	idct_init ();
 	motion_comp_init ();
 	mpeg2dec->chunk_buffer = (uint8_t *) malloc(224 * 1024 + 4);
