@@ -8,7 +8,7 @@ typedef struct vo_driver_s {
     vo_open_t * open;
 } vo_driver_t;
 
-vo_driver_t * vo_drivers (void);
+vo_driver_t const * vo_drivers (void);
 
 going thru the driver array, we find the driver entry with the name we
 want, and use the associated setup field in the next steps. If we do

@@ -67,7 +67,7 @@ static vo_driver_t video_out_drivers[] = {
     {NULL, NULL}
 };
 
-vo_driver_t * vo_drivers (void)
+vo_driver_t const * vo_drivers (void)
 {
     return video_out_drivers;
 }

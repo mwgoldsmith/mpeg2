@@ -134,7 +134,7 @@ static void print_fps (int final)
 static void print_usage (char ** argv)
 {
     int i;
-    vo_driver_t * drivers;
+    vo_driver_t const * drivers;
 
     fprintf (stderr, "usage: "
 	     "%s [-h] [-o <mode>] [-s [<track>]] [-t <pid>] [-p] [-c] \\\n"
@@ -158,7 +158,7 @@ static void print_usage (char ** argv)
 static void handle_args (int argc, char ** argv)
 {
     int c;
-    vo_driver_t * drivers;
+    vo_driver_t const * drivers;
     int i;
     char * s;
 
@@ -290,6 +290,7 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 	    break;
 	case STATE_SLICE:
 	case STATE_END:
+	case STATE_INVALID_END:
 	    /* draw current picture */
 	    /* might free frame buffer */
 	    if (info->display_fbuf) {
