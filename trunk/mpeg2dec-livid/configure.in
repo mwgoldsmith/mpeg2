@@ -14,9 +14,7 @@ AC_PROG_GCC_TRADITIONAL
 dnl GCC-specific flags
 if test x"$GCC" = x"yes"; then
 
-    dnl compiler warnings (disabled to not confuse autoconf, test at the end)
-    dnl OPT_CFLAGS="$CFLAGS -Wall -Werror"
-    dnl AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS])
+    dnl -Wall -Werror moved to the end to not disturb the configure script
 
     dnl -O3
     changequote(<<,>>)
@@ -82,7 +80,6 @@ dnl Checks for library functions.
 
 builtin([include],[libmpeg2/configure.incl])
 builtin([include],[libvo/configure.incl])
-
 
 if test x"$GCC" = x"yes"; then
     dnl compiler warnings
