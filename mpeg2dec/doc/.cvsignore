@@ -4,8 +4,8 @@
 *.patch
 *.lo
 *.o
-mpeg2dec-*.tar.gz
 Makefile
 Makefile.in
 .deps
 .libs
+sample1
