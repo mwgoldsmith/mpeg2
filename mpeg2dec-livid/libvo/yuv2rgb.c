@@ -49,22 +49,21 @@ static void (* yuv2rgb_c_internal) (uint8_t *, uint8_t *,
 				    uint8_t *, uint8_t *,
 				    void *, void *, int);
 
-static void yuv2rgb_c (void * dst, uint8_t * py, 
-		       uint8_t * pu, uint8_t * pv, 
-		       int h_size, int v_size, 
-		       int rgb_stride, int y_stride, int uv_stride) 
+static void yuv2rgb_c (void * dst, uint8_t * py,
+		       uint8_t * pu, uint8_t * pv,
+		       int width, int height,
+		       int rgb_stride, int y_stride, int uv_stride)
 {
-    v_size >>= 1;
-
-    while (v_size--) {
+    height >>= 1;
+    do {
 	yuv2rgb_c_internal (py, py + y_stride, pu, pv, dst, dst + rgb_stride,
-			    h_size);
+			    width);
 
 	py += 2 * y_stride;
 	pu += uv_stride;
 	pv += uv_stride;
 	dst += 2 * rgb_stride;
-    }
+    } while (--height);
 }
 
 void yuv2rgb_init (int bpp, int mode) 
@@ -141,17 +140,17 @@ void * table_bU[256];
 
 static void yuv2rgb_c_32 (uint8_t * py_1, uint8_t * py_2,
 			  uint8_t * pu, uint8_t * pv,
-			  void * _dst_1, void * _dst_2, int h_size)
+			  void * _dst_1, void * _dst_2, int width)
 {
     int U, V, Y;
     uint32_t * r, * g, * b;
     uint32_t * dst_1, * dst_2;
 
-    h_size >>= 3;
+    width >>= 3;
     dst_1 = _dst_1;
     dst_2 = _dst_2;
 
-    while (h_size--) {
+    do {
 	RGB(0);
 	DST1(0);
 	DST2(0);
@@ -174,23 +173,23 @@ static void yuv2rgb_c_32 (uint8_t * py_1, uint8_t * py_2,
 	py_2 += 8;
 	dst_1 += 8;
 	dst_2 += 8;
-    }
+    } while (--width);
 }
 
 // This is very near from the yuv2rgb_c_32 code
 static void yuv2rgb_c_24_rgb (uint8_t * py_1, uint8_t * py_2,
 			      uint8_t * pu, uint8_t * pv,
-			      void * _dst_1, void * _dst_2, int h_size)
+			      void * _dst_1, void * _dst_2, int width)
 {
     int U, V, Y;
     uint8_t * r, * g, * b;
     uint8_t * dst_1, * dst_2;
 
-    h_size >>= 3;
+    width >>= 3;
     dst_1 = _dst_1;
     dst_2 = _dst_2;
 
-    while (h_size--) {
+    do {
 	RGB(0);
 	DST1RGB(0);
 	DST2RGB(0);
@@ -213,23 +212,23 @@ static void yuv2rgb_c_24_rgb (uint8_t * py_1, uint8_t * py_2,
 	py_2 += 8;
 	dst_1 += 24;
 	dst_2 += 24;
-    }
+    } while (--width);
 }
 
 // only trivial mods from yuv2rgb_c_24_rgb
 static void yuv2rgb_c_24_bgr (uint8_t * py_1, uint8_t * py_2,
 			      uint8_t * pu, uint8_t * pv,
-			      void * _dst_1, void * _dst_2, int h_size)
+			      void * _dst_1, void * _dst_2, int width)
 {
     int U, V, Y;
     uint8_t * r, * g, * b;
     uint8_t * dst_1, * dst_2;
 
-    h_size >>= 3;
+    width >>= 3;
     dst_1 = _dst_1;
     dst_2 = _dst_2;
 
-    while (h_size--) {
+    do {
 	RGB(0);
 	DST1BGR(0);
 	DST2BGR(0);
@@ -252,24 +251,24 @@ static void yuv2rgb_c_24_bgr (uint8_t * py_1, uint8_t * py_2,
 	py_2 += 8;
 	dst_1 += 24;
 	dst_2 += 24;
-    }
+    } while (--width);
 }
 
 // This is exactly the same code as yuv2rgb_c_32 except for the types of
 // r, g, b, dst_1, dst_2
 static void yuv2rgb_c_16 (uint8_t * py_1, uint8_t * py_2,
 			  uint8_t * pu, uint8_t * pv,
-			  void * _dst_1, void * _dst_2, int h_size)
+			  void * _dst_1, void * _dst_2, int width)
 {
     int U, V, Y;
     uint16_t * r, * g, * b;
     uint16_t * dst_1, * dst_2;
 
-    h_size >>= 3;
+    width >>= 3;
     dst_1 = _dst_1;
     dst_2 = _dst_2;
 
-    while (h_size--) {
+    do {
 	RGB(0);
 	DST1(0);
 	DST2(0);
@@ -292,7 +291,7 @@ static void yuv2rgb_c_16 (uint8_t * py_1, uint8_t * py_2,
 	py_2 += 8;
 	dst_1 += 8;
 	dst_2 += 8;
-    }
+    } while (--width);
 }
 
 static int div_round (int dividend, int divisor)
