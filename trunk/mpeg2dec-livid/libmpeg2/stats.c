@@ -93,9 +93,9 @@ static void stats_sequence (uint_8 * buffer)
 	int load_intra_quantizer_matrix;
 	int load_non_intra_quantizer_matrix;
 
-    vertical_size = (buffer[0] << 16) | (buffer[1] << 8) | buffer[2];
-    horizontal_size = vertical_size >> 12;
-    vertical_size &= 0xfff;
+	vertical_size = (buffer[0] << 16) | (buffer[1] << 8) | buffer[2];
+	horizontal_size = vertical_size >> 12;
+	vertical_size &= 0xfff;
 	aspect_ratio_information = buffer[3] >> 4;
 	frame_rate_code = buffer[3] & 15;
 	bit_rate_value = (buffer[4] << 10) | (buffer[5] << 2) | (buffer[6] >> 6);
@@ -207,17 +207,17 @@ static void stats_picture_coding_extension (uint_8 * buffer)
 	int repeat_first_field;
 	int progressive_frame;
 
-    f_code[0][0] = buffer[0] & 15;
-    f_code[0][1] = buffer[1] >> 4;
-    f_code[1][0] = buffer[1] & 15;
-    f_code[1][1] = buffer[2] >> 4;
-    intra_dc_precision = (buffer[2] >> 2) & 3;
+	f_code[0][0] = buffer[0] & 15;
+	f_code[0][1] = buffer[1] >> 4;
+	f_code[1][0] = buffer[1] & 15;
+	f_code[1][1] = buffer[2] >> 4;
+	intra_dc_precision = (buffer[2] >> 2) & 3;
 	picture_structure = buffer[2] & 3;
 	top_field_first = buffer[3] >> 7;
-    frame_pred_frame_dct = (buffer[3] >> 6) & 1;
-    concealment_motion_vectors = (buffer[3] >> 5) & 1;
-    q_scale_type = (buffer[3] >> 4) & 1;
-    intra_vlc_format = (buffer[3] >> 3) & 1;
+	frame_pred_frame_dct = (buffer[3] >> 6) & 1;
+	concealment_motion_vectors = (buffer[3] >> 5) & 1;
+	q_scale_type = (buffer[3] >> 4) & 1;
+	intra_vlc_format = (buffer[3] >> 3) & 1;
 	alternate_scan = (buffer[3] >> 2) & 1;
 	repeat_first_field = (buffer[3] >> 1) & 1;
 	progressive_frame = buffer[4] >> 7;
@@ -238,7 +238,7 @@ static void stats_picture_coding_extension (uint_8 * buffer)
 
 void stats_header (uint_8 code, uint_8 * buffer)
 {
-    if (! (debug_is_on ()))
+	if (! (debug_is_on ()))
 		return;
 
 	switch (code)
