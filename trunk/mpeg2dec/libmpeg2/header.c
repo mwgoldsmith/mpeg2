@@ -382,7 +382,7 @@ int mpeg2_header_picture_start (mpeg2dec_t * mpeg2dec)
 	picture->display_offset[2].x = mpeg2dec->display_offset_x;
     picture->display_offset[0].y = picture->display_offset[1].y =
 	picture->display_offset[2].y = mpeg2dec->display_offset_y;
-    return 0;
+    return mpeg2_parse_header (mpeg2dec);
 }
 
 int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
@@ -660,6 +660,7 @@ int mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec)
 			 mpeg2dec->fbuf[b_type + 1]->buf,
 			 mpeg2dec->fbuf[b_type]->buf);
     }
+    mpeg2dec->action = NULL;
     return 0;
 }
 
