@@ -481,7 +481,6 @@ static int xv_check_extension (x11_instance_t * instance,
 			       &dummy, &dummy, &dummy) != Success) ||
 	    (version < 2) || ((version == 2) && (release < 2))) {
 	    fprintf (stderr, "No xv extension\n");
-	    instance->adaptorInfo++; // to avoid re-testing
 	    return 1;
 	}
 
