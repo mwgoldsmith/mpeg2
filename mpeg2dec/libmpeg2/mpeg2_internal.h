@@ -86,7 +86,7 @@ typedef struct picture_s {
 
     int quantizer_scale;	/* remove */
     int dmv_offset;		/* remove */
-    int v_offset;		/* remove */
+    unsigned int v_offset;	/* remove */
 
 
     /* now non-slice-specific information */
