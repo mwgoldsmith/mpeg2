@@ -337,7 +337,7 @@ static inline void idct_col (int16_t * in, int16_t * out)
     psubsw_r2r (mm5, mm7);		// mm7 = u12-v12
     pmulhw_r2r (mm0, mm1);		// mm1 = b1
     movq_r2m (mm6, *&scratch1);		// save b0
-    paddsw_r2r (mm7, mm7);		// mm7 = 2*(u12-v12);
+    paddsw_r2r (mm7, mm7);		// mm7 = 2*(u12-v12)
     movq_r2r (mm4, mm6);		// mm6 = v26
     pmulhw_r2r (mm0, mm7);		// mm7 = b2
     movq_m2r (*(in+4*8), mm5);		// mm5 = x4

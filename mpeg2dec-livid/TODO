@@ -1,6 +1,3 @@
-* things we dont get quite right yet (though we dont see the difference)
-	* IDCT routine compliant with IEEE1180
-
 * things we dont implement yet
 	* field pictures
 	* mpeg1 - full-pixel MC, have to find test streams
