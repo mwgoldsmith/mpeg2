@@ -52,6 +52,8 @@ twilight_zone/walken/mpeg1_stuffing		# OK - mpeg1 macroblk stuffing
 #twilight_zone/walken/mpeg1_start_slice		# OK - weird mba at slice start
 #twilight_zone/walken/mpeg1_slice		# OK - general slice structure
 twilight_zone/walken/repeat_sequence_bitrate	# OK - variable bitrate value
+twilight_zone/walken/progressive_12x12		# OK - progressive sequence
+twilight_zone/walken/interlaced_12x12		# OK - nonprogressive sequence
 twilight_zone/anonymous/anonymous		# OK
 twilight_zone/chromatic/chroma_dct_type-1	# OK
 twilight_zone/tcela/tcela-12			# OK - IDCT drift - see 7.4.4
