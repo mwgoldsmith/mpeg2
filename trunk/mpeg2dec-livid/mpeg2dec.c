@@ -34,7 +34,6 @@
 #include "config.h"
 #include "libmpeg2/mpeg2.h"
 //#include "libvo/video_out.h"
-#include "display.h"
 
 
 #define BUFFER_SIZE 2048
