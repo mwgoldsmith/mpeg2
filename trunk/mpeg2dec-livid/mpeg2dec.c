@@ -45,25 +45,32 @@ static struct timeval tv_beg;
 static struct timeval tv_end;
 static uint_32 elapsed = 0;
 static uint_32 total_elapsed = 0;
+static uint_32 last_count = 0;
 static uint_32 demux_dvd = 0;
 static vo_functions_t *video_out;
 
 static void print_fps(uint_32 final) 
 {
-	int fps, tfps;
+	int fps, tfps, frames;
 	frame_counter++;
 	
 	gettimeofday(&tv_end, NULL);
 	elapsed = (tv_end.tv_sec - tv_beg.tv_sec) * 1000000+ 
 		  (tv_end.tv_usec - tv_beg.tv_usec);        
+	if (elapsed < 1000000)	/* only display every second */
+		return;
 	tv_beg = tv_end;
 	total_elapsed += elapsed / 10000;	/* store 1/100ts */
-	fps = 1000000/(elapsed+1);
-	tfps = frame_counter*100/(total_elapsed+1);
+	frames = frame_counter - last_count;
 
-	fprintf(stderr, "%8d %8d.%03d %8d %8d.%02d\r", frame_counter,
-		fps, (1000000000/(elapsed+1)) - (fps * 1000), total_elapsed,
-		tfps, frame_counter * 10000/(total_elapsed+1) - (tfps * 100));
+	fps = frames * 1000000 / (elapsed + 1);
+	tfps = frame_counter * 100 / (total_elapsed + 1);
+
+	fprintf(stderr, "%8d %8d.%02d %8d %8d.%02d\r", frame_counter,
+		fps, frames * 100000000 / (elapsed + 1) - (fps * 100),
+		total_elapsed, tfps,
+		frame_counter * 10000/(total_elapsed+1) - (tfps * 100));
+	last_count = frame_counter;
 	if (final)
 		putchar('\n');
 }
