@@ -277,8 +277,8 @@ static void yuv2rgb_c_8 (uint8_t * py_1, uint8_t * py_2,
     d73 = dither_8x8_73[(2*loop) & 7];
 
     width >>= 3;
-    dst_1 = _dst_1;
-    dst_2 = _dst_2;
+    dst_1 = (uint8_t *) _dst_1;
+    dst_2 = (uint8_t *) _dst_2;
 
     do {
 	RGB (uint8_t, 0);
@@ -417,19 +417,18 @@ static yuv2rgb_c_internal * yuv2rgb_c_init (int order, int bpp)
 
 	entry_size = sizeof (uint8_t);
 	table_r = table_332 + 197;
-	table_g = table_332 + 197 + 682;
+	table_g = table_332 + 197 + 682 + 30;
 	table_b = table_332 + 197 + 2*682;
 
 	for (i = -197; i < 256+197+30; i++)
 	    ((uint8_t *)table_r)[i] =
 		(table_Y[i+384] * 7 / 255) << ((order == CONVERT_RGB) ? 5 : 0);
 	for (i = -132; i < 256+132+30; i++)
-	    ((uint8_t *)table_g)[i] =
+	    ((uint8_t *)table_g)[i-30] =
 		(table_Y[i+384] * 7 / 255) << ((order == CONVERT_RGB) ? 2 : 3);
 	for (i = -232; i < 256+232+71; i++)
 	    ((uint8_t *)table_b)[i] =
 		(table_Y[i+384] / 85) << ((order == CONVERT_RGB) ? 0 : 6);
-	table_g += 30;	/* green dither is reversed */
 	break;
 
     default:
