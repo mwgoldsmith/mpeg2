@@ -1,9 +1,8 @@
 * before 0.2.0 :
 	* fix xshm completion events in libvo
 	* get rid of memcpy in xv/xvshm
-	* get rid of HACK_MODE
-		* put back slice handling
-		* interlaced slices
+	* put back slice handling
+	* interlaced slices
 	* clean up frame_t declaration and usage (libvo/libmpeg2)
 
 * things we dont implement yet
@@ -12,12 +11,12 @@
 		* destination macroblock overflow
 		* MC source out of bounds (maybe signal handler for that one ?)
 	* make the decoder reentrant (if the speed impact is small enough)
+	* win32 port ?
 
 * structural optimizations
 	* integrate idct_add and idct_copy into the main idct routine
 	* get rid of slice structure, put it into picture
 	* do yuv per sub-slice (probably big speed boost)
-	* pass pictures to libvo in decoding order not display order
 	* try different memory arrangements for pictures (yuyv, pitch, ...)
 
 * local optimizations
