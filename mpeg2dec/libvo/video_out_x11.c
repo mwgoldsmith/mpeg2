@@ -474,7 +474,7 @@ static int xv_check_extension (x11_instance_t * instance,
 		}
 
     XvFreeAdaptorInfo (adaptorInfo);
-    fprintf (stderr, "Cannot find xv port\n");
+    fprintf (stderr, "Cannot find xv %s port\n", fourcc_str);
     return 1;
 }
 
@@ -551,7 +551,7 @@ static int common_setup (vo_instance_t * _instance, unsigned int width,
     instance->index = 0;
 
 #ifdef LIBVO_XV
-    if (instance-> xv == 1 &&
+    if (instance->xv == 1 &&
 	(chroma_width == width >> 1) && (chroma_height == height >> 1) &&
 	(!xv_check_extension (instance, FOURCC_YV12, "YV12"))) {
 	if (xv_alloc_frames (instance, 3 * width * height / 2, FOURCC_YV12))
@@ -564,7 +564,7 @@ static int common_setup (vo_instance_t * _instance, unsigned int width,
 	       (!xv_check_extension (instance, FOURCC_UYVY, "UYVY"))) {
 	if (xv_alloc_frames (instance, 2 * width * height, FOURCC_UYVY))
 	    return 1;
-	instance->vo.setup_fbuf = xv_setup_fbuf;
+	instance->vo.setup_fbuf = x11_setup_fbuf;
 	instance->vo.draw = xv_draw_frame;
 	instance->teardown = xv_teardown;
 	result->convert = convert_uyvy;
