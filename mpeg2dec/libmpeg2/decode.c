@@ -255,9 +255,9 @@ void mpeg2_pts (mpeg2dec_t * mpeg2dec, uint32_t pts)
 
 void mpeg2_close (mpeg2dec_t * mpeg2dec)
 {
-    static uint8_t finalizer[] = {0,0,1,0xb4};
+    /* static uint8_t finalizer[] = {0,0,1,0xb4}; */
 
-    mpeg2_decode_data (mpeg2dec, finalizer, finalizer+4);
+    /* mpeg2_decode_data (mpeg2dec, finalizer, finalizer+4); */
 
     mpeg2_free (mpeg2dec->chunk_buffer);
     mpeg2_free (mpeg2dec->decoder);
