@@ -11,6 +11,8 @@
 #include <errno.h>
 #include <inttypes.h>
 
+#ifdef __OMS__
+
 #include <oms/log.h>
 #include <oms/plugin/codec.h>
 
@@ -100,3 +102,7 @@ int plugin_init (char *whoami)
 void plugin_exit (void)
 {
 }
+
+
+#endif
+
