@@ -74,6 +74,8 @@ typedef struct picture_s {
     int f_code[2][2];
     //quantization factor for intra dc coefficients
     int intra_dc_precision;
+    //top/bottom/both fields
+    int picture_structure;
     //bool to indicate all predictions are frame based
     int frame_pred_frame_dct;
     //bool to indicate whether intra blocks have motion vectors 
@@ -100,6 +102,8 @@ typedef struct picture_s {
     uint8_t * forward_reference_frame[3];
     uint8_t * backward_reference_frame[3];
     uint8_t * throwaway_frame[3];
+
+    int second_field;
 
     // MPEG1 - testing
     uint8_t mpeg1;

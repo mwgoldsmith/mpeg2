@@ -155,33 +155,32 @@ static int parse_chunk (INITTYPE * output, int code, uint8_t * buffer)
 {
     int is_frame_done;
 
-    if (is_sequence_needed && code != 0xb3)	/* b3 = sequence_header_code */
+    if (is_sequence_needed && (code != 0xb3))	/* b3 = sequence_header_code */
 	return 0;
 
     stats_header (code, buffer);
 
     is_frame_done = in_slice && ((!code) || (code >= 0xb0));
 
-    if (is_frame_done && (!drop_frame)) {
-	if ((HACK_MODE == 2) || (picture.mpeg1)) {
-	    uint8_t ** bar;
+    if (is_frame_done) {
+	in_slice = 0;
 
-	    if (picture.picture_coding_type == B_TYPE)
-		bar = picture.throwaway_frame;
-	    else
-		bar = picture.forward_reference_frame;
-
-	    output->draw_frame (bar);
-	}
-	output->flip_page ();
-    }
-
+	if (!drop_frame) {
+	    if (((HACK_MODE == 2) || (picture.mpeg1)) &&
+		((picture.picture_structure == FRAME_PICTURE) ||
+		 (picture.second_field))) {
+		if (picture.picture_coding_type == B_TYPE)
+		    output->draw_frame(picture.throwaway_frame);
+		else
+		    output->draw_frame(picture.forward_reference_frame);
+	    }
+	    output->flip_page ();
 #ifdef ARCH_X86
-    if (config.flags & MM_ACCEL_X86_MMX)
-	emms ();
+	    if (config.flags & MM_ACCEL_X86_MMX)
+		emms ();
 #endif
-
-    in_slice = 0;
+	}
+    }
 
     switch (code) {
     case 0x00:	/* picture_start_code */
@@ -189,9 +188,7 @@ static int parse_chunk (INITTYPE * output, int code, uint8_t * buffer)
 	    printf ("bad picture header\n");
 	    exit (1);
 	}
-
 	drop_frame = drop_flag && (picture.picture_coding_type == B_TYPE);
-	decode_reorder_frames ();
 	break;
 
     case 0xb3:	/* sequence_header_code */
@@ -200,26 +197,6 @@ static int parse_chunk (INITTYPE * output, int code, uint8_t * buffer)
 	    exit (1);
 	}
 	is_sequence_needed = 0;
-
-	if (!is_display_initialized) {
-
-	    ATTR_TYPE attr;
-	    attr.width = picture.coded_picture_width;
-	    attr.height = picture.coded_picture_height;
-	    attr.fullscreen = 0;
-	    attr.title = NULL;
-#ifndef __OMS__
-            attr.format = 0x32315659;
-#endif
-
-	    if (output->setup (&attr USERDATA)) {
-	      printf ("display init failed\n");
-	      exit (1);
-	    }
-
-	    decode_allocate_image_buffers (output, &picture);
-	    is_display_initialized = 1;
-	}
 	break;
 
     case 0xb5:	/* extension_start_code */
@@ -236,14 +213,38 @@ static int parse_chunk (INITTYPE * output, int code, uint8_t * buffer)
 	if (code >= 0xb0)
 	    break;
 
+	if (!(in_slice)) {
+	    in_slice = 1;
+
+	    if (!is_display_initialized) {
+		ATTR_TYPE attr;
+
+		attr.width = picture.coded_picture_width;
+		attr.height = picture.coded_picture_height;
+		attr.fullscreen = 0;
+		attr.title = NULL;
+#ifndef __OMS__
+		attr.format = 0x32315659;
+#endif
+
+		if (output->setup (&attr USERDATA)) {
+		    printf ("display init failed\n");
+		    exit (1);
+		}
+
+		decode_allocate_image_buffers (output, &picture);
+		decode_reorder_frames ();
+		is_display_initialized = 1;
+	    } else if (!picture.second_field)
+		decode_reorder_frames ();
+	}
+
 	drop_frame |= drop_flag && (picture.picture_coding_type == B_TYPE);
 	
 	if (!drop_frame) {
-
 	    slice_process (&picture, code, buffer);
 
 	    if ((HACK_MODE < 2) && (!picture.mpeg1)) {
-
 		uint8_t * foo[3];
 		uint8_t ** bar;
 		int offset;
@@ -268,14 +269,11 @@ static int parse_chunk (INITTYPE * output, int code, uint8_t * buffer)
 	    if (config.flags & MM_ACCEL_X86_MMX)
 		emms ();
 #endif
-
-	    in_slice = 1;
 	}
     }
 
     return is_frame_done;
 }
-
 
 int mpeg2_decode_data (INITTYPE *output, uint8_t *current, uint8_t *end)
 {
