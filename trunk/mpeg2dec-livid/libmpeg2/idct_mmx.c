@@ -85,82 +85,110 @@ static inline void idct_row (int16_t * row, int offset,
 #ifdef SSE
 
 // SSE row IDCT
-#define table(c1,c2,c3,c4,c5,c6,c7)	{  c4,  c2,  c4,  c6,	\
-					   c4,  c6, -c4, -c2,	\
-					   c1,  c3,  c3, -c7,	\
-					   c5,  c7, -c1, -c5,	\
-					   c4, -c6,  c4, -c2,	\
-					  -c4,  c2,  c4, -c6,	\
-					   c5, -c1,  c7, -c5,	\
-					   c7,  c3,  c3, -c1 }
+#define table(c1,c2,c3,c4,c5,c6,c7)	{  c4,  c2, -c4, -c2,	\
+					   c4,  c6,  c4,  c6,	\
+					   c1,  c3, -c1, -c5,	\
+					   c5,  c7,  c3, -c7,	\
+					   c4, -c6,  c4, -c6,	\
+					  -c4,  c2,  c4, -c2,	\
+					   c5, -c1,  c3, -c1,	\
+					   c7,  c3,  c7, -c5 }
 #define rounder(bias) {round (bias), round (bias)}
 static inline void idct_row_head (int16_t * row, int offset, int16_t * table)
 {
-    movq_m2r (*(row+offset), mm0);	// mm0 = x3 x2 x1 x0
-    movq_m2r (*(row+offset+4), mm1);	// mm1 = x7 x6 x5 x4
-    movq_r2r (mm0, mm2);		// mm2 = x3 x2 x1 x0
-    movq_m2r (*table, mm3);		// mm3 = C6 C4 C2 C4
-    pshufw_r2r (mm0, mm0, 0x88);	// mm0 = x2 x0 x2 x0
-    movq_m2r (*(table+4), mm4);		// mm4 = -C2 -C4 C6 C4
-    movq_r2r (mm1, mm5);		// mm5 = x7 x6 x5 x4
-    pmaddwd_r2r (mm0, mm3);		// mm3 = C4*x0+C6*x2 C4*x0+C2*x2
+    movq_m2r (*(row+offset), mm2);	// mm2 = x6 x4 x2 x0
+
+    movq_m2r (*(row+offset+4), mm5);	// mm5 = x7 x5 x3 x1
+    movq_r2r (mm2, mm0);		// mm0 = x6 x4 x2 x0
+
+    movq_m2r (*table, mm3);		// mm3 = -C2 -C4 C2 C4
+    movq_r2r (mm5, mm6);		// mm6 = x7 x5 x3 x1
+
+    movq_m2r (*(table+4), mm4);		// mm4 = C6 C4 C6 C4
+    pmaddwd_r2r (mm0, mm3);		// mm3 = -C4*x4-C2*x6 C4*x0+C2*x2
+
+    pshufw_r2r (mm2, mm2, 0x4e);	// mm2 = x2 x0 x6 x4
 }
 static inline void idct_row (int16_t * table, int32_t * rounder)
 {
-    movq_m2r (*(table+8), mm6);		// mm6 = -C7 C3 C3 C1
-    pshufw_r2r (mm1, mm1, 0x88);	// mm1 = x6 x4 x6 x4
-    pmaddwd_r2r (mm1, mm4);		// mm4 = -C4*x4-C2*x6 C4*x4+C6*x6
-    movq_m2r (*(table+12), mm7);	// mm7 = -C5 -C1 C7 C5
-    pshufw_r2r (mm2, mm2, 0xdd);	// mm2 = x3 x1 x3 x1
-    pmaddwd_r2r (mm2, mm6);		// mm6 = C3*x1-C7*x3 C1*x1+C3*x3
-    pshufw_r2r (mm5, mm5, 0xdd);	// mm5 = x7 x5 x7 x5
-    pmaddwd_r2r (mm5, mm7);		// mm7 = -C1*x5-C5*x7 C5*x5+C7*x7
+    movq_m2r (*(table+8), mm1);		// mm1 = -C5 -C1 C3 C1
+    pmaddwd_r2r (mm2, mm4);		// mm4 = C4*x0+C6*x2 C4*x4+C6*x6
+
+    pmaddwd_m2r (*(table+16), mm0);	// mm0 = C4*x4-C6*x6 C4*x0-C6*x2
+    pshufw_r2r (mm6, mm6, 0x4e);	// mm6 = x3 x1 x7 x5
+
+    movq_m2r (*(table+12), mm7);	// mm7 = -C7 C3 C7 C5
+    pmaddwd_r2r (mm5, mm1);		// mm1 = -C1*x5-C5*x7 C1*x1+C3*x3
+
     paddd_m2r (*rounder, mm3);		// mm3 += rounder
-    pmaddwd_m2r (*(table+16), mm0);	// mm0 = C4*x0-C2*x2 C4*x0-C6*x2
+    pmaddwd_r2r (mm6, mm7);		// mm7 = C3*x1-C7*x3 C5*x5+C7*x7
+
+    pmaddwd_m2r (*(table+20), mm2);	// mm2 = C4*x0-C2*x2 -C4*x4+C2*x6
     paddd_r2r (mm4, mm3);		// mm3 = a1 a0 + rounder
-    pmaddwd_m2r (*(table+20), mm1);	// mm1 = C4*x4-C6*x6 -C4*x4+C2*x6
+
+    pmaddwd_m2r (*(table+24), mm5);	// mm5 = C3*x5-C1*x7 C5*x1-C1*x3
     movq_r2r (mm3, mm4);		// mm4 = a1 a0 + rounder
-    pmaddwd_m2r (*(table+24), mm2);	// mm2 = C7*x1-C5*x3 C5*x1-C1*x3
-    paddd_r2r (mm7, mm6);		// mm6 = b1 b0
-    pmaddwd_m2r (*(table+28), mm5);	// mm5 = C3*x5-C1*x7 C7*x5+C3*x7
-    paddd_r2r (mm6, mm3);		// mm3 = a1+b1 a0+b0 + rounder
+
+    pmaddwd_m2r (*(table+28), mm6);	// mm6 = C7*x1-C5*x3 C7*x5+C3*x7
+    paddd_r2r (mm7, mm1);		// mm1 = b1 b0
+
     paddd_m2r (*rounder, mm0);		// mm0 += rounder
-    psrad_i2r (ROW_SHIFT, mm3);		// mm3 = y1 y0
-    paddd_r2r (mm1, mm0);		// mm0 = a3 a2 + rounder
-    psubd_r2r (mm6, mm4);		// mm4 = a1-b1 a0-b0 + rounder
-    movq_r2r (mm0, mm7);		// mm7 = a3 a2 + rounder
-    paddd_r2r (mm5, mm2);		// mm2 = b3 b2
-    paddd_r2r (mm2, mm0);		// mm0 = a3+b3 a2+b2 + rounder
-    psrad_i2r (ROW_SHIFT, mm4);		// mm4 = y6 y7
-    psubd_r2r (mm2, mm7);		// mm7 = a3-b3 a2-b2 + rounder
-    psrad_i2r (ROW_SHIFT, mm0);		// mm0 = y3 y2
+    psubd_r2r (mm1, mm3);		// mm3 = a1-b1 a0-b0 + rounder
+
+    psrad_i2r (ROW_SHIFT, mm3);		// mm3 = y6 y7
+    paddd_r2r (mm4, mm1);		// mm1 = a1+b1 a0+b0 + rounder
+
+    paddd_r2r (mm2, mm0);		// mm0 = a3 a2 + rounder
+    psrad_i2r (ROW_SHIFT, mm1);		// mm1 = y1 y0
+
+    paddd_r2r (mm6, mm5);		// mm5 = b3 b2
+    movq_r2r (mm0, mm4);		// mm4 = a3 a2 + rounder
+
+    paddd_r2r (mm5, mm0);		// mm0 = a3+b3 a2+b2 + rounder
+    psubd_r2r (mm5, mm4);		// mm4 = a3-b3 a2-b2 + rounder
 }
 static inline void idct_row_tail (int16_t * row, int store)
 {
-    psrad_i2r (ROW_SHIFT, mm7);		// mm7 = y4 y5
-    packssdw_r2r (mm0, mm3);		// mm3 = y3 y2 y1 y0
-    packssdw_r2r (mm4, mm7);		// mm7 = y6 y7 y4 y5
-    movq_r2m (mm3, *(row+store));	// save y3 y2 y1 y0
-    pshufw_r2r (mm7, mm7, 0xb1);	// y7 y6 y5 y4
-    movq_r2m (mm7, *(row+store+4));	// save y7 y6 y5 y4
+    psrad_i2r (ROW_SHIFT, mm0);		// mm0 = y3 y2
+
+    psrad_i2r (ROW_SHIFT, mm4);		// mm4 = y4 y5
+
+    packssdw_r2r (mm0, mm1);		// mm1 = y3 y2 y1 y0
+
+    packssdw_r2r (mm3, mm4);		// mm4 = y6 y7 y4 y5
+
+    movq_r2m (mm1, *(row+store));	// save y3 y2 y1 y0
+    pshufw_r2r (mm4, mm4, 0xb1);	// mm4 = y7 y6 y5 y4
+
+    // slot
+
+    movq_r2m (mm4, *(row+store+4));	// save y7 y6 y5 y4
 }
 static inline void idct_row_mid (int16_t * row, int store,
 				 int offset, int16_t * table)
 {
-    movq_m2r (*(row+offset), mm6);	// mm6 = x3 x2 x1 x0
-    psrad_i2r (ROW_SHIFT, mm7);		// mm7 = y4 y5
-    movq_m2r (*(row+offset+4), mm1);	// mm1 = x7 x6 x5 x4
-    packssdw_r2r (mm0, mm3);		// mm3 = y3 y2 y1 y0
-    movq_r2r (mm6, mm2);		// mm2 = x3 x2 x1 x0
-    packssdw_r2r (mm4, mm7);		// mm7 = y6 y7 y4 y5
-    movq_r2m (mm3, *(row+store));	// save y3 y2 y1 y0
-    pshufw_r2r (mm7, mm7, 0xb1);	// y7 y6 y5 y4
-    movq_m2r (*table, mm3);		// mm3 = C6 C4 C2 C4
-    pshufw_r2r (mm6, mm0, 0x88);	// mm0 = x2 x0 x2 x0
-    movq_m2r (*(table+4), mm4);		// mm4 = -C2 -C4 C6 C4
-    movq_r2r (mm1, mm5);		// mm5 = x7 x6 x5 x4
-    movq_r2m (mm7, *(row+store+4));	// save y7 y6 y5 y4
-    pmaddwd_r2r (mm0, mm3);		// mm3 = C4*x0+C6*x2 C4*x0+C2*x2
+    movq_m2r (*(row+offset), mm2);	// mm2 = x6 x4 x2 x0
+    psrad_i2r (ROW_SHIFT, mm0);		// mm0 = y3 y2
+
+    movq_m2r (*(row+offset+4), mm5);	// mm5 = x7 x5 x3 x1
+    psrad_i2r (ROW_SHIFT, mm4);		// mm4 = y4 y5
+
+    packssdw_r2r (mm0, mm1);		// mm1 = y3 y2 y1 y0
+    movq_r2r (mm5, mm6);		// mm6 = x7 x5 x3 x1
+
+    packssdw_r2r (mm3, mm4);		// mm4 = y6 y7 y4 y5
+    movq_r2r (mm2, mm0);		// mm0 = x6 x4 x2 x0
+
+    movq_r2m (mm1, *(row+store));	// save y3 y2 y1 y0
+    pshufw_r2r (mm4, mm4, 0xb1);	// mm4 = y7 y6 y5 y4
+
+    movq_m2r (*table, mm3);		// mm3 = -C2 -C4 C2 C4
+    movq_r2m (mm4, *(row+store+4));	// save y7 y6 y5 y4
+
+    pmaddwd_r2r (mm0, mm3);		// mm3 = -C4*x4-C2*x6 C4*x0+C2*x2
+
+    movq_m2r (*(table+4), mm4);		// mm4 = C6 C4 C6 C4
+    pshufw_r2r (mm2, mm2, 0x4e);	// mm2 = x2 x0 x6 x4
 }
 
 #else
@@ -177,92 +205,115 @@ static inline void idct_row_mid (int16_t * row, int store,
 #define rounder(bias) {round (bias), round (bias)}
 static inline void idct_row_head (int16_t * row, int offset, int16_t * table)
 {
-    movq_m2r (*(row+offset), mm0);	// mm0 = x6 x4 x2 x0
+    movq_m2r (*(row+offset), mm2);	// mm2 = x6 x4 x2 x0
+
     movq_m2r (*(row+offset+4), mm5);	// mm5 = x7 x5 x3 x1
-    movq_r2r (mm0, mm2);		// mm2 = x6 x4 x2 x0
+    movq_r2r (mm2, mm0);		// mm0 = x6 x4 x2 x0
+
     movq_m2r (*table, mm3);		// mm3 = C6 C4 C2 C4
+    movq_r2r (mm5, mm6);		// mm6 = x7 x5 x3 x1
+
     punpckldq_r2r (mm0, mm0);		// mm0 = x2 x0 x2 x0
+
     movq_m2r (*(table+4), mm4);		// mm4 = -C2 -C4 C6 C4
     pmaddwd_r2r (mm0, mm3);		// mm3 = C4*x0+C6*x2 C4*x0+C2*x2
-    movq_r2r (mm5, mm6);		// mm6 = x7 x5 x3 x1
+
+    movq_m2r (*(table+8), mm1);		// mm1 = -C7 C3 C3 C1
+    punpckhdq_r2r (mm2, mm2);		// mm2 = x6 x4 x6 x4
 }
 static inline void idct_row (int16_t * table, int32_t * rounder)
 {
-    movq_m2r (*(table+8), mm1);		// mm1 = -C7 C3 C3 C1
-    punpckhdq_r2r (mm2, mm2);		// mm2 = x6 x4 x6 x4
     pmaddwd_r2r (mm2, mm4);		// mm4 = -C4*x4-C2*x6 C4*x4+C6*x6
     punpckldq_r2r (mm5, mm5);		// mm5 = x3 x1 x3 x1
+
     pmaddwd_m2r (*(table+16), mm0);	// mm0 = C4*x0-C2*x2 C4*x0-C6*x2
     punpckhdq_r2r (mm6, mm6);		// mm6 = x7 x5 x7 x5
+
     movq_m2r (*(table+12), mm7);	// mm7 = -C5 -C1 C7 C5
     pmaddwd_r2r (mm5, mm1);		// mm1 = C3*x1-C7*x3 C1*x1+C3*x3
+
     paddd_m2r (*rounder, mm3);		// mm3 += rounder
     pmaddwd_r2r (mm6, mm7);		// mm7 = -C1*x5-C5*x7 C5*x5+C7*x7
+
     pmaddwd_m2r (*(table+20), mm2);	// mm2 = C4*x4-C6*x6 -C4*x4+C2*x6
     paddd_r2r (mm4, mm3);		// mm3 = a1 a0 + rounder
+
     pmaddwd_m2r (*(table+24), mm5);	// mm5 = C7*x1-C5*x3 C5*x1-C1*x3
     movq_r2r (mm3, mm4);		// mm4 = a1 a0 + rounder
+
     pmaddwd_m2r (*(table+28), mm6);	// mm6 = C3*x5-C1*x7 C7*x5+C3*x7
     paddd_r2r (mm7, mm1);		// mm1 = b1 b0
+
     paddd_m2r (*rounder, mm0);		// mm0 += rounder
     psubd_r2r (mm1, mm3);		// mm3 = a1-b1 a0-b0 + rounder
+
     psrad_i2r (ROW_SHIFT, mm3);		// mm3 = y6 y7
     paddd_r2r (mm4, mm1);		// mm1 = a1+b1 a0+b0 + rounder
+
     paddd_r2r (mm2, mm0);		// mm0 = a3 a2 + rounder
     psrad_i2r (ROW_SHIFT, mm1);		// mm1 = y1 y0
+
     paddd_r2r (mm6, mm5);		// mm5 = b3 b2
-    movq_r2r (mm0, mm4);		// mm4 = a3 a2 + rounder
+    movq_r2r (mm0, mm7);		// mm7 = a3 a2 + rounder
+
     paddd_r2r (mm5, mm0);		// mm0 = a3+b3 a2+b2 + rounder
-    psubd_r2r (mm5, mm4);		// mm4 = a3-b3 a2-b2 + rounder
+    psubd_r2r (mm5, mm7);		// mm7 = a3-b3 a2-b2 + rounder
 }
 static inline void idct_row_tail (int16_t * row, int store)
 {
     psrad_i2r (ROW_SHIFT, mm0);		// mm0 = y3 y2
-    psrad_i2r (ROW_SHIFT, mm4);		// mm4 = y4 y5
+
+    psrad_i2r (ROW_SHIFT, mm7);		// mm7 = y4 y5
+
     packssdw_r2r (mm0, mm1);		// mm1 = y3 y2 y1 y0
-    packssdw_r2r (mm3, mm4);		// mm4 = y6 y7 y4 y5
-    movq_r2r (mm4, mm7);		// mm7 = y6 y7 y4 y5
-    psrld_i2r (16, mm4);		// mm4 = 0 y6 0 y4
+
+    packssdw_r2r (mm3, mm7);		// mm7 = y6 y7 y4 y5
+
     movq_r2m (mm1, *(row+store));	// save y3 y2 y1 y0
+    movq_r2r (mm7, mm4);		// mm4 = y6 y7 y4 y5
+
     pslld_i2r (16, mm7);		// mm7 = y7 0 y5 0
+
+    psrld_i2r (16, mm4);		// mm4 = 0 y6 0 y4
+
     por_r2r (mm4, mm7);			// mm7 = y7 y6 y5 y4
+
     // slot
+
     movq_r2m (mm7, *(row+store+4));	// save y7 y6 y5 y4
 }
 static inline void idct_row_mid (int16_t * row, int store,
 				 int offset, int16_t * table)
 {
-#if 1
-    idct_row_tail (row, store);
-    idct_row_head (row, offset, table);
-#else	// for some reason this scheduled version seems to be slower... ???
     movq_m2r (*(row+offset), mm2);	// mm2 = x6 x4 x2 x0
     psrad_i2r (ROW_SHIFT, mm0);		// mm0 = y3 y2
 
     movq_m2r (*(row+offset+4), mm5);	// mm5 = x7 x5 x3 x1
-    psrad_i2r (ROW_SHIFT, mm4);		// mm4 = y4 y5
+    psrad_i2r (ROW_SHIFT, mm7);		// mm7 = y4 y5
 
-    movq_r2r (mm5, mm6);		// mm6 = x7 x5 x3 x1
     packssdw_r2r (mm0, mm1);		// mm1 = y3 y2 y1 y0
+    movq_r2r (mm5, mm6);		// mm6 = x7 x5 x3 x1
 
+    packssdw_r2r (mm3, mm7);		// mm7 = y6 y7 y4 y5
     movq_r2r (mm2, mm0);		// mm0 = x6 x4 x2 x0
-    packssdw_r2r (mm3, mm4);		// mm4 = y6 y7 y4 y5
-
-    movq_r2r (mm4, mm7);		// mm7 = y6 y7 y4 y5
-    psrld_i2r (16, mm4);		// mm4 = 0 y6 0 y4
 
     movq_r2m (mm1, *(row+store));	// save y3 y2 y1 y0
-    pslld_i2r (16, mm7);		// mm7 = y7 0 y5 0
+    movq_r2r (mm7, mm1);		// mm1 = y6 y7 y4 y5
+
+    punpckldq_r2r (mm0, mm0);		// mm0 = x2 x0 x2 x0
+    psrld_i2r (16, mm7);		// mm7 = 0 y6 0 y4
 
     movq_m2r (*table, mm3);		// mm3 = C6 C4 C2 C4
-    por_r2r (mm4, mm7);			// mm7 = y7 y6 y5 y4
+    pslld_i2r (16, mm1);		// mm1 = y7 0 y5 0
 
     movq_m2r (*(table+4), mm4);		// mm4 = -C2 -C4 C6 C4
-    punpckldq_r2r (mm0, mm0);		// mm0 = x2 x0 x2 x0
+    por_r2r (mm1, mm7);			// mm7 = y7 y6 y5 y4
+
+    movq_m2r (*(table+8), mm1);		// mm1 = -C7 C3 C3 C1
+    punpckhdq_r2r (mm2, mm2);		// mm2 = x6 x4 x6 x4
 
     movq_r2m (mm7, *(row+store+4));	// save y7 y6 y5 y4
     pmaddwd_r2r (mm0, mm3);		// mm3 = C4*x0+C6*x2 C4*x0+C2*x2
-#endif
 }
 
 #endif
@@ -617,10 +668,11 @@ void idct_block_add_mmx (int16_t * block, uint8_t * dest, int stride)
 
 void idct_mmx_init (void)
 {
-#ifndef SSE	// the MMX idct uses a reordered input, so we patch scan tables
     extern uint8_t scan_norm[64];
     extern uint8_t scan_alt[64];
     int i, j;
+
+    // the mmx/sse idct uses a reordered input, so we patch scan tables
 
     for (i = 0; i < 64; i++) {
 	j = scan_norm[i];
@@ -628,5 +680,4 @@ void idct_mmx_init (void)
 	j = scan_alt[i];
 	scan_alt[i] = (j & 0x38) | ((j & 6) >> 1) | ((j & 1) << 2);
     }
-#endif
 }
