@@ -224,8 +224,7 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
     const mpeg2_sequence_t * seq = info->sequence;
     const mpeg2_gop_t * gop = info->gop;
     const mpeg2_picture_t * pic;
-    int i;
-    int nb_pos;
+    unsigned int i, nb_pos;
 
     if (state == STATE_BUFFER &&
 	sequence_match (seq) && gop_match (gop) &&
@@ -365,7 +364,7 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
 	fprintf (f, "         USER_DATA %d bytes\n", info->user_data_len);
 	if (verbose > 3)
 	    for (i = 0; i < info->user_data_len; i += 16) {
-		int j;
+		unsigned int j;
 
 		fprintf (f, "         ");
 		for (j = i; j < i + 16; j++)
