@@ -2,6 +2,7 @@
 	* fix xshm completion events in libvo
 	* get rid of HACK_MODE
 		* libvo reordering
+		* interlaced slices
 
 * things we dont implement yet
 	* dont crash on bad streams, make sure we can resync after a while
