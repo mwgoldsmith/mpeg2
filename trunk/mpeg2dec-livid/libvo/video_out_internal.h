@@ -14,7 +14,7 @@
 frame_t * libvo_common_alloc (int width, int height);
 void libvo_common_free (frame_t * frame);
 
-#define __LIBVO_EXTERN(x,id) \
+#define LIBVO_EXTERN(x,id) \
 vo_output_video_t video_out_##x = {\
 	name: id,\
         close:                  x ## _close,\
@@ -25,11 +25,3 @@ vo_output_video_t video_out_##x = {\
 	allocate_image_buffer:  x ## _allocate_image_buffer,\
 	free_image_buffer:      x ## _free_image_buffer,\
 };
-
-#ifdef __OMS__
-#define LIBVO_EXTERN(x,id) \
-	__LIBVO_EXTERN (x, id) \
-	vo_output_video_t * video_out_oms_plugin = &video_out_##x;
-#else
-#define LIBVO_EXTERN(x,id) __LIBVO_EXTERN(x,id)
-#endif
