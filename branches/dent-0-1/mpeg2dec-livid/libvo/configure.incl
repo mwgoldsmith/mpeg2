@@ -89,7 +89,7 @@ fi
 
 AM_CONDITIONAL(HAVE_X11,test x$have_x11 = "xyes")
 
-if test "x$have_x11_lib" = "xyes"; then
+if test "x$have_x11" = "xyes"; then
 	AC_DEFINE(HAVE_X11)
 	LIBS_VIDEO_OUTPUT="$LIBS_VIDEO_OUTPUT display_x11.la"
 fi
