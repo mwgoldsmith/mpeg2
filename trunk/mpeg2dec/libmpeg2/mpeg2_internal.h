@@ -167,6 +167,7 @@ struct mpeg2dec_s {
     int bytes_since_pts;
 
     int first;
+    int alloc_index_user;
     int alloc_index;
     uint8_t first_decode_slice;
     uint8_t nb_decode_slices;
