@@ -51,15 +51,15 @@ for dir in $dirs; do
     if [ -f $basedir/$dir/stream ]; then
 	echo $dir
 	$mpeg2dec -vvvv $accel -o md5 $basedir/$dir/stream >dump 2>&1 >md5
-	if [ -f $basedir/$dir/$md5 ]; then
+	if [ ! -f $basedir/$dir/$md5 ]; then
+	    echo MISSING FILE $dir/$md5
+	elif [ ! -f $basedir/$dir/IGNORE-MD5 ]; then
 	    diff -wu md5 $basedir/$dir/$md5 || error=1
-	else
-	    echo missing file $dir/$md5
 	fi
-	if [ -f $basedir/$dir/dump ]; then
-	    sed '1d' dump | diff -wu - $basedir/$dir/dump || error=1
+	if [ ! -f $basedir/$dir/dump ]; then
+	    echo MISSING FILE $dir/dump
 	else
-	    echo missing file $dir/dump
+	    sed '1d' dump | diff -wu - $basedir/$dir/dump || error=1
 	fi
 	rm -f md5 dump core
     else
