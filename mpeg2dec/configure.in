@@ -66,6 +66,7 @@ elif test x"$GCC" = x"yes"; then
 	    [ARCH_OPT_CFLAGS="$TRY_CFLAGS"
 	    AC_DEFINE([ARCH_PPC],,[ppc architecture])]);;
     sparc-* | sparc64-*)
+	AC_DEFINE([ARCH_SPARC],,[sparc architecture])
 	TRY_CFLAGS="$OPT_CFLAGS -mcpu=ultrasparc -mvis -Wa,-Av9b"
 	AC_TRY_CFLAGS([$TRY_CFLAGS $CFLAGS],[OPT_CFLAGS="$TRY_CFLAGS"]);;
     alpha*)
