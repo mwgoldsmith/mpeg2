@@ -13,4 +13,7 @@ libmpeg2_la_SOURCES = alloc.c decode.c header.c cpu_state.c slice.c \
 libmpeg2_la_LIBADD = @LIBMPEG2_LIBS@
 libmpeg2_la_LDFLAGS = -no-undefined
 
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = libmpeg2.pc
+
 EXTRA_DIST = configure.incl vlc.h mpeg2_internal.h
