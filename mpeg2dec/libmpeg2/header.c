@@ -382,31 +382,30 @@ void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
 			      (sequence->chroma_height == sequence->height));
 
     if (mpeg2dec->sequence.width != (unsigned)-1) {
-	unsigned int new_byte_rate;
-
 	/*
 	 * According to 6.1.1.6, repeat sequence headers should be
-	 * identical to the original. However some DVDs dont respect
-	 * that and have different bitrates in the repeat sequence
-	 * headers. So we'll ignore that in the comparison and still
-	 * consider these as repeat sequence headers.
-	 *
-	 * However, be careful not to alter the current sequence when
-	 * returning STATE_INVALID_END.
+	 * identical to the original. However some encoders dont
+	 * respect that and change various fields (including bitrate
+	 * and aspect ratio) in the repeat sequence headers. So we
+	 * choose to be as conservative as possible and only restart
+	 * the decoder if the width, height, chroma_width,
+	 * chroma_height or low_delay flag are modified.
 	 */
-	new_byte_rate = sequence->byte_rate;
-	sequence->byte_rate = mpeg2dec->sequence.byte_rate;
-	if (memcmp (&(mpeg2dec->sequence), sequence,
-		    sizeof (mpeg2_sequence_t))) {
+	if (sequence->width != mpeg2dec->sequence.width ||
+	    sequence->height != mpeg2dec->sequence.height ||
+	    sequence->chroma_width != mpeg2dec->sequence.chroma_width ||
+	    sequence->chroma_height != mpeg2dec->sequence.chroma_height ||
+	    ((sequence->flags ^ mpeg2dec->sequence.flags) &
+	     SEQ_FLAG_LOW_DELAY)) {
 	    decoder->stride_frame = sequence->width;
-	    sequence->byte_rate = new_byte_rate;
 	    mpeg2_header_end (mpeg2dec);
 	    mpeg2dec->action = invalid_end_action;
 	    mpeg2dec->state = STATE_INVALID_END;
 	    return;
 	}
-	sequence->byte_rate = new_byte_rate;
-	mpeg2dec->state = STATE_SEQUENCE_REPEATED;
+	mpeg2dec->state = (memcmp (&(mpeg2dec->sequence), sequence,
+				   sizeof (mpeg2_sequence_t)) ?
+			   STATE_SEQUENCE_MODIFIED : STATE_SEQUENCE_REPEATED);
     } else
 	decoder->stride_frame = sequence->width;
     mpeg2dec->sequence = *sequence;
