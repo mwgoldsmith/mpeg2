@@ -74,6 +74,7 @@ void idct_init (void)
 	fprintf (stderr, "Using MMX for IDCT transform\n");
 	idct_block_copy = idct_block_copy_mmx;
 	idct_block_add = idct_block_add_mmx;
+	idct_mmx_init ();
     } else
 #endif
 #ifdef HAVE_MLIB

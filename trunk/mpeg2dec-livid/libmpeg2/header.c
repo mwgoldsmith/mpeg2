@@ -54,7 +54,7 @@ static uint8_t default_intra_quantizer_matrix[64] ALIGN_16_BYTE = {
     83
 };
 
-static uint8_t scan_norm[64] ALIGN_16_BYTE =
+uint8_t scan_norm[64] ALIGN_16_BYTE =
 { 
     // Zig-Zag scan pattern
      0, 1, 8,16, 9, 2, 3,10,
@@ -67,7 +67,7 @@ static uint8_t scan_norm[64] ALIGN_16_BYTE =
     53,60,61,54,47,55,62,63
 };
 
-static uint8_t scan_alt[64] ALIGN_16_BYTE =
+uint8_t scan_alt[64] ALIGN_16_BYTE =
 { 
     // Alternate scan pattern
     0,8,16,24,1,9,2,10,17,25,32,40,48,56,57,49,
