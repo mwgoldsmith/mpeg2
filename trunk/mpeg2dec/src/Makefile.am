@@ -11,4 +11,6 @@ lib_LTLIBRARIES = libcpuaccel.la
 libcpuaccel_la_SOURCES = cpu_accel.c
 libcpuaccel_la_LDFLAGS = -no-undefined
 
+man_MANS = mpeg2dec.1 extract_mpeg2.1
+
 EXTRA_DIST = configure.incl getopt.h
