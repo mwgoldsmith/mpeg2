@@ -55,37 +55,129 @@ static struct x11_priv_s {
     GC gc;
     XVisualInfo vinfo;
     XImage *ximage;
-    int depth, bpp;
+    int bpp;
     int X_already_started;	// = 0
 
     // XSHM
     XShmSegmentInfo Shminfo; // num_buffers
 } x11_priv;
 
-static int x11_open (void)
+static int _xshm_create (XShmSegmentInfo *Shminfo, int size)	// xxxxxxxxxx
 {
-    int screen;
-    XGCValues xgcv;
-    Colormap theCmap;
-    XSetWindowAttributes xswa;
-    unsigned long xswamask;
     struct x11_priv_s *priv = &x11_priv;
-    XWindowAttributes attribs;
+	
+    Shminfo->shmid = shmget (IPC_PRIVATE, size, IPC_CREAT | 0777);
 
-    if (priv->X_already_started)
+    if (Shminfo->shmid < 0) {
+	fprintf (stderr, "Shared memory error, disabling (seg id error: %s)\n", strerror (errno));
 	return -1;
+    }
+	
+    Shminfo->shmaddr = (char *) shmat(Shminfo->shmid, 0, 0);
+
+    if (Shminfo->shmaddr == ((char *) -1)) {
+	if (Shminfo->shmaddr != ((char *) -1))
+	    shmdt(Shminfo->shmaddr);
+	fprintf (stderr, "Shared memory error, disabling (address error)\n");
+	return -1;
+    }
+		
+    Shminfo->readOnly = False;
+    XShmAttach(priv->display, Shminfo);
+
+    return 0;
+}
+
+static void _xshm_destroy (XShmSegmentInfo *Shminfo)	// xxxxxxxxx
+{
+    struct x11_priv_s *priv = &x11_priv;
+	
+    XShmDetach (priv->display, Shminfo);
+    shmdt (Shminfo->shmaddr);
+    shmctl (Shminfo->shmid, IPC_RMID, 0);
+}
+
+static int x11_get_visual_info (void)
+{
+    struct x11_priv_s *priv = &x11_priv;
+    XVisualInfo visualTemplate;
+    XVisualInfo * XvisualInfoTable;
+    XVisualInfo * XvisualInfo;
+    int number;
+    int i;
+
+    // list truecolor visuals for the default screen
+    visualTemplate.class = TrueColor;
+    visualTemplate.screen = DefaultScreen (priv->display);
+    XvisualInfoTable =
+	XGetVisualInfo (priv->display,
+			VisualScreenMask | VisualClassMask, &visualTemplate,
+			&number);
+    if (XvisualInfoTable == NULL)
+	return 1;
+
+    // find the visual with the highest depth
+    XvisualInfo = XvisualInfoTable;
+    for (i = 1; i < number; i++)
+	if (XvisualInfoTable[i].depth > XvisualInfo->depth)
+	    XvisualInfo = XvisualInfoTable + i;
+
+    priv->vinfo = *XvisualInfo;
+    XFree (XvisualInfoTable);
+    return 0;
+}
+
+static void x11_create_window (int width, int height)
+{
+    struct x11_priv_s *priv = &x11_priv;
+    XSetWindowAttributes attr;
+
+    attr.background_pixmap = None;
+    attr.backing_store = NotUseful;
+    attr.event_mask = 0;
+    priv->window =
+	XCreateWindow (priv->display, DefaultRootWindow (priv->display),
+		       0 /* x */, 0 /* y */, width, height,
+		       0 /* border_width */, priv->vinfo.depth,
+		       InputOutput, priv->vinfo.visual,
+		       CWBackPixmap | CWBackingStore | CWEventMask, &attr);
+}
+
+static void x11_create_gc (void)
+{
+    struct x11_priv_s *priv = &x11_priv;
+    XGCValues gcValues;
+
+    priv->gc = XCreateGC (priv->display, priv->window, 0, &gcValues);
+}
+
+static int x11_setup (vo_output_video_attr_t * vo_attr)
+{
+    int width, height;
+    int mode;
+    struct x11_priv_s *priv = &x11_priv;
+
+    width = vo_attr->width;
+    height = vo_attr->height;
 
     priv->display = XOpenDisplay (NULL);
     if (! (priv->display)) {
-	fprintf (stderr, "Can not open display");
-	return -1;
+	fprintf (stderr, "Can not open display\n");
+	return 1;
     }
 
-    XGetWindowAttributes (priv->display, DefaultRootWindow(priv->display), &attribs);
+    if (x11_get_visual_info ()) {
+	fprintf (stderr, "No truecolor visual\n");
+	return 1;
+    }
 
-    priv->depth = attribs.depth;
+    x11_create_window (width, height);
+    x11_create_gc ();
 
-    screen = DefaultScreen (priv->display);
+    // FIXME set WM_DELETE_WINDOW protocol ? to avoid shm leaks
+
+    // should move this after everything than could potentially fail
+    XMapWindow (priv->display, priv->window);
 
     /*
      *
@@ -99,119 +191,21 @@ static int x11_open (void)
      *     color is 24 bit depth, but can be 24 bpp or 32 bpp.
      */
 
-    switch (priv->depth) {
-    case 15:
-    case 16:
-    case 24:
-    case 32:
-	break;
-
-    default:
-	/* The root window may be 8bit but there might still be
-	 * visuals with other bit depths. For example this is the
-	 * case on Sun/Solaris machines.
-	 */
-	priv->depth = 24;
-	break;
-    }
-
-    XMatchVisualInfo (priv->display, screen, priv->depth, TrueColor, &priv->vinfo);
-
-    theCmap   = XCreateColormap(priv->display, RootWindow(priv->display,screen), priv->vinfo.visual, AllocNone);
-
-    xswa.background_pixel = 0;
-    xswa.border_pixel     = 1;
-    xswa.colormap         = theCmap;
-    xswa.event_mask = 0;
-    xswamask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
-
-    priv->window =
-	XCreateWindow (priv->display,
-		       RootWindow (priv->display,screen),
-		       0, 0, 320, 200,
-		       4, priv->depth, CopyFromParent, priv->vinfo.visual,
-		       xswamask, &xswa);
-
-    // Map window
-    XMapWindow (priv->display, priv->window);
-
-    XFlush (priv->display);
-    XSync (priv->display, False);
-
-    priv->gc = XCreateGC (priv->display, priv->window, 0L, &xgcv);
-
     if (XShmQueryExtension (priv->display)) {
-	printf ("Using MIT Shared memory extension");
+	printf ("Using MIT Shared memory extension\n");
     } else {
 	printf ("no shm\n");
 	exit (1);
     }
 
-    priv->X_already_started = 1;
-    return 0;
-}
-
-static int _xshm_create (XShmSegmentInfo *Shminfo, int size)
-{
-    struct x11_priv_s *priv = &x11_priv;
-	
-    Shminfo->shmid = shmget (IPC_PRIVATE, size, IPC_CREAT | 0777);
-
-    if (Shminfo->shmid < 0) {
-	fprintf (stderr, "Shared memory error, disabling (seg id error: %s)", strerror (errno));
-	return -1;
-    }
-	
-    Shminfo->shmaddr = (char *) shmat(Shminfo->shmid, 0, 0);
-
-    if (Shminfo->shmaddr == ((char *) -1)) {
-	if (Shminfo->shmaddr != ((char *) -1))
-	    shmdt(Shminfo->shmaddr);
-	fprintf (stderr, "Shared memory error, disabling (address error)");
-	return -1;
-    }
-		
-    Shminfo->readOnly = False;
-    XShmAttach(priv->display, Shminfo);
-
-    return 0;
-}
-
-static void _xshm_destroy (XShmSegmentInfo *Shminfo)
-{
-    struct x11_priv_s *priv = &x11_priv;
-	
-    XShmDetach (priv->display, Shminfo);
-    shmdt (Shminfo->shmaddr);
-    shmctl (Shminfo->shmid, IPC_RMID, 0);
-}
-
-/**
- * connect to server, create and map window,
- * allocate colors and (shared) memory
- **/
-
-static int x11_setup (vo_output_video_attr_t * vo_attr)
-{
-    int width, height;
-    int mode;
-    struct x11_priv_s *priv = &x11_priv;
-
-    width = vo_attr->width;
-    height = vo_attr->height;
-
-    x11_open ();
-
     priv->image_width = width;
     priv->image_height = height;
 
-    XResizeWindow (priv->display, priv->window, priv->image_width, priv->image_height);
-
-    priv->ximage = XShmCreateImage (priv->display, priv->vinfo.visual, priv->depth, ZPixmap, NULL, &priv->Shminfo, width, priv->image_height);
+    priv->ximage = XShmCreateImage (priv->display, priv->vinfo.visual, priv->vinfo.depth, ZPixmap, NULL, &priv->Shminfo, width, priv->image_height);
 
     // If no go, then revert to normal Xlib calls.
     if (!priv->ximage) {
-	fprintf (stderr, "Shared memory error, disabling (Ximage error)");
+	fprintf (stderr, "Shared memory error\n");
 	exit (1);
     }
 
@@ -234,11 +228,11 @@ static int x11_setup (vo_output_video_attr_t * vo_attr)
 #else
     if (priv->ximage->byte_order != LSBFirst) {
 #endif
-	fprintf (stderr, "No support fon non-native XImage byte order");
+	fprintf (stderr, "No support fon non-native XImage byte order\n");
 	return -1;
     }
 
-    yuv2rgb_init ((priv->depth == 24) ? priv->bpp : priv->depth, mode);
+    yuv2rgb_init ((priv->vinfo.depth == 24) ? priv->bpp : priv->vinfo.depth, mode);
     return 0;
 }
 
@@ -246,7 +240,7 @@ static int x11_close(void *plugin)
 {
     struct x11_priv_s *priv = &x11_priv;
 
-    printf ("Closing video plugin");
+    printf ("Closing video plugin\n");
 
     if (priv->Shminfo.shmaddr) {
 	_xshm_destroy(&priv->Shminfo);
