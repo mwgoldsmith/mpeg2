@@ -43,6 +43,7 @@ struct vo_frame_s {
     int top_field_first;
     int repeat_first_field;
     int picture_coding_type;
+    uint32_t pts;
 };
 
 typedef vo_instance_t * vo_open_t (void);

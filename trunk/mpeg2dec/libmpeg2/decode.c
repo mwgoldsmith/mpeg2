@@ -68,7 +68,7 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
 
     memset (mpeg2dec->picture, 0, sizeof (picture_t));
 
-    /* initialize supstructures */
+    /* initialize substructures */
     mpeg2_header_state_init (mpeg2dec->picture);
 }
 
@@ -178,6 +178,7 @@ static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
 		frame->top_field_first = picture->top_field_first;
 		frame->repeat_first_field = picture->repeat_first_field;
 		frame->picture_coding_type = picture->picture_coding_type;
+		frame->pts = mpeg2dec->pts;
 	    }
 	}
 
@@ -202,29 +203,44 @@ static inline uint8_t * copy_chunk (mpeg2dec_t * mpeg2dec,
     if (limit > end)
 	limit = end;
 
-    while (1) {
+    do {
 	byte = *current++;
-	if (shift != 0x00000100) {
-	    shift = (shift | byte) << 8;
-	    *chunk_ptr++ = byte;
-	    if (current < limit)
-		continue;
-	    if (current == end) {
-		mpeg2dec->chunk_ptr = chunk_ptr;
-		mpeg2dec->shift = shift;
-		return NULL;
-	    } else {
-		/* we filled the chunk buffer without finding a start code */
-		mpeg2dec->code = 0xb4;	/* sequence_error_code */
-		mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
-		return current;
-	    }
-	}
-	mpeg2dec->code = byte;
+	if (shift == 0x00000100)
+	    goto startcode;
+	shift = (shift | byte) << 8;
+	*chunk_ptr++ = byte;
+    } while (current < limit);
+
+    mpeg2dec->bytes_since_pts += chunk_ptr - mpeg2dec->chunk_ptr;
+    mpeg2dec->shift = shift;
+    if (current == end) {
+	mpeg2dec->chunk_ptr = chunk_ptr;
+	return NULL;
+    } else {
+	/* we filled the chunk buffer without finding a start code */
 	mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
-	mpeg2dec->shift = 0xffffff00;
+	mpeg2dec->code = 0xb4;	/* sequence_error_code */
 	return current;
     }
+
+startcode:
+    mpeg2dec->bytes_since_pts += chunk_ptr + 1 - mpeg2dec->chunk_ptr;
+    mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
+    mpeg2dec->shift = 0xffffff00;
+    mpeg2dec->code = byte;
+    if (!byte) {
+	if (!mpeg2dec->num_pts)
+	    mpeg2dec->pts = 0;	/* none */
+	else if (mpeg2dec->bytes_since_pts >= 4) {
+	    mpeg2dec->num_pts = 0;
+	    mpeg2dec->pts = mpeg2dec->pts_current;
+	} else if (mpeg2dec->num_pts > 1) {
+	    mpeg2dec->num_pts = 1;
+	    mpeg2dec->pts = mpeg2dec->pts_previous;
+	} else
+	    mpeg2dec->pts = 0;	/* none */
+    }
+    return current;
 }
 
 int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
@@ -242,6 +258,14 @@ int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
 	ret += parse_chunk (mpeg2dec, code, mpeg2dec->chunk_buffer);
     }
     return ret;
+}
+
+void mpeg2_pts (mpeg2dec_t * mpeg2dec, uint32_t pts)
+{
+    mpeg2dec->pts_previous = mpeg2dec->pts_current;
+    mpeg2dec->pts_current = pts;
+    mpeg2dec->num_pts++;
+    mpeg2dec->bytes_since_pts = 0;
 }
 
 void mpeg2_close (mpeg2dec_t * mpeg2dec)

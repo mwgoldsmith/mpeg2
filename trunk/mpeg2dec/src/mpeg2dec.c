@@ -368,9 +368,20 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 		    len = 9 + header[8];
 		    NEEDBYTES (len);
 		    /* header points to the mpeg2 pes header */
+		    if (header[7] & 0x80) {
+			uint32_t pts;
+
+			pts = (((buf[9] >> 1) << 30) |
+			       (buf[10] << 22) | ((buf[11] >> 1) << 15) |
+			       (buf[12] << 7) | (buf[13] >> 1));
+			mpeg2_pts (&mpeg2dec, pts);
+		    }
 		} else {	/* mpeg1 */
+		    int len_skip;
+		    uint8_t * ptsbuf;
+
 		    len = 7;
-		    while ((header-1)[len] == 0xff) {
+		    while (header[len - 1] == 0xff) {
 			len++;
 			NEEDBYTES (len);
 			if (len == 23) {
@@ -378,13 +389,23 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 			    break;
 			}
 		    }
-		    if (((header-1)[len] & 0xc0) == 0x40) {
+		    if ((header[len - 1] & 0xc0) == 0x40) {
 			len += 2;
 			NEEDBYTES (len);
 		    }
-		    len += mpeg1_skip_table[(header - 1)[len] >> 4];
+		    len_skip = len;
+		    len += mpeg1_skip_table[header[len - 1] >> 4];
 		    NEEDBYTES (len);
 		    /* header points to the mpeg1 pes header */
+		    ptsbuf = header + len_skip;
+		    if (ptsbuf[-1] & 0x20) {
+			uint32_t pts;
+
+			pts = (((ptsbuf[-1] >> 1) << 30) |
+			       (ptsbuf[0] << 22) | ((ptsbuf[1] >> 1) << 15) |
+			       (ptsbuf[2] << 7) | (ptsbuf[3] >> 1));
+			mpeg2_pts (&mpeg2dec, pts);
+		    }
 		}
 		DONEBYTES (len);
 		bytes = 6 + (header[4] << 8) + header[5] - len;
@@ -393,10 +414,10 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 		    state = DEMUX_DATA;
 		    state_bytes = bytes - (end - buf);
 		    return 0;
-		} else if (bytes <= 0)
-		    continue;
-		decode_mpeg2 (buf, buf + bytes);
-		buf += bytes;
+		} else if (bytes > 0) {
+		    decode_mpeg2 (buf, buf + bytes);
+		    buf += bytes;
+		}
 	    } else if (header[3] < 0xb9) {
 		fprintf (stderr,
 			 "looks like a video stream, not system stream\n");
