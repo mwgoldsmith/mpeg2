@@ -44,6 +44,7 @@ static uint32_t total_elapsed;
 static uint32_t last_count = 0;
 static uint32_t demux_dvd = 0;
 static mpeg2dec_t mpeg2dec;
+static vo_output_video_t* video_out;
 
 static void print_fps (int final) 
 {
@@ -122,7 +123,6 @@ static void handle_args (int argc, char * argv[])
 {
     int c;
     int i;
-    vo_output_video_t* video_out=NULL;
 
     while ((c = getopt (argc,argv,"so:")) != -1) {
 	switch (c) {
@@ -295,6 +295,7 @@ int main (int argc,char *argv[])
 	es_loop ();
 
     mpeg2_close (&mpeg2dec);
+    video_out->close (&video_out);
     print_fps (1);
     return 0;
 }
