@@ -149,7 +149,6 @@ int mpeg2_seek_header (mpeg2dec_t * mpeg2dec)
 	mpeg2dec->code = mpeg2dec->buf_start[-1];
     }
     mpeg2dec->chunk_start = mpeg2dec->chunk_buffer;
-    mpeg2dec->sequence.width = -1;
     return 0;
 }
 
