@@ -2,6 +2,12 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.13)
 AC_INIT(src/mpeg2dec.c)
 AC_CONFIG_AUX_DIR(autotools)
+
+dnl Detect the canonical host and target build environment
+dnl (madmac: moved because of autoconf warnings)
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
+
 AM_INIT_AUTOMAKE(mpeg2dec,0.1.8-cvs)
 AM_CONFIG_HEADER(include/config.h)
 AM_MAINTAINER_MODE
@@ -9,6 +15,21 @@ AM_MAINTAINER_MODE
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_GCC_TRADITIONAL
+
+dnl 64-bit compilation handling for IRIX 6.x (needs to come before libtool init)
+case "$target" in
+    mips-sgi-irix6.*)
+	echo Turning on 64 bit compilation for IRIX 6.x.
+	dnl GCC-specific flags
+	if test x"$GCC" = x"yes"; then
+          dnl Turn on 64bit compilation.
+          CFLAGS="$CFLAGS -mabi=64";
+	else
+          CFLAGS="$CFLAGS -64";
+	fi
+;;
+esac
+
 AM_DISABLE_SHARED
 AM_PROG_LIBTOOL
 
@@ -29,7 +50,6 @@ dnl Checks for library functions.
 
 dnl GCC-specific flags
 if test x"$GCC" = x"yes"; then
-
     dnl compiler warnings
     OPT_CFLAGS="$CFLAGS -Wall -Werror"
     AC_TRY_CFLAGS([$OPT_CFLAGS],[CFLAGS=$OPT_CFLAGS])
@@ -63,6 +83,7 @@ if test x"$GCC" = x"yes"; then
     esac
 fi
 
+
 dnl gcc __attribute__ ((aligned ()))
 AC_C_ATTRIBUTE_ALIGNED
 
@@ -70,3 +91,9 @@ builtin([include],[libmpeg2/configure.incl])
 builtin([include],[libvo/configure.incl])
 
 AC_OUTPUT(Makefile autotools/Makefile include/Makefile test/Makefile src/Makefile libmpeg2/Makefile libvo/Makefile)
+
+
+
+
+
+
