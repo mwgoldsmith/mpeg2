@@ -102,7 +102,8 @@ static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
 
     switch (code) {
     case 0x00:	/* picture_start_code */
-	if (mpeg2_header_picture (decoder, buffer)) {
+	if (mpeg2_header_picture (buffer, decoder,
+				  &(mpeg2dec->info.picture))) {
 	    fprintf (stderr, "bad picture header\n");
 	    exit (1);
 	}
@@ -111,7 +112,8 @@ static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
 	break;
 
     case 0xb3:	/* sequence_header_code */
-	if (mpeg2_header_sequence (decoder, buffer)) {
+	if (mpeg2_header_sequence (buffer, decoder,
+				   &(mpeg2dec->info.sequence))) {
 	    fprintf (stderr, "bad sequence header\n");
 	    exit (1);
 	}
@@ -129,11 +131,10 @@ static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
 		vo_get_frame (mpeg2dec->output,
 			      VO_PREDICTION_FLAG | VO_BOTH_FIELDS);
 	}
-	mpeg2dec->frame_rate_code = decoder->frame_rate_code;	/* FIXME */
 	break;
 
     case 0xb5:	/* extension_start_code */
-	if (mpeg2_header_extension (decoder, buffer)) {
+	if (mpeg2_header_extension (buffer, decoder, &(mpeg2dec->info))) {
 	    fprintf (stderr, "bad extension\n");
 	    exit (1);
 	}
@@ -170,14 +171,14 @@ static inline int parse_chunk (mpeg2dec_t * mpeg2dec, int code,
 
 		/* hopefully vektor will be happy */
 		frame = decoder->current_frame;
-		frame->aspect_ratio = decoder->aspect_ratio_information;
-		frame->frame_rate_code = decoder->frame_rate_code;
-		frame->bitrate = decoder->bitrate;
-		frame->progressive_sequence = decoder->progressive_sequence;
-		frame->progressive_frame = decoder->progressive_frame;
-		frame->top_field_first = decoder->top_field_first;
-		frame->repeat_first_field = decoder->repeat_first_field;
-		frame->picture_coding_type = decoder->picture_coding_type;
+		frame->aspect_ratio = mpeg2dec->info.sequence.aspect_ratio;
+		frame->frame_rate_code = mpeg2dec->info.sequence.frame_rate_code;
+		frame->bitrate = mpeg2dec->info.sequence.bitrate;
+		frame->progressive_sequence = mpeg2dec->info.sequence.progressive_sequence;
+		frame->progressive_frame = mpeg2dec->info.picture.progressive_frame;
+		frame->top_field_first = mpeg2dec->info.picture.top_field_first;
+		frame->repeat_first_field = mpeg2dec->info.picture.repeat_first_field;
+		frame->picture_coding_type = mpeg2dec->info.picture.picture_coding_type;
 		frame->pts = mpeg2dec->pts;
 	    }
 	}

@@ -24,7 +24,30 @@
 #ifndef MPEG2_H
 #define MPEG2_H
 
-/* Structure for the mpeg2dec decoder */
+typedef struct {
+    int width;
+    int height;
+
+    int display_width;
+    int display_height;
+
+    int aspect_ratio;
+    int frame_rate_code;
+    int bitrate;
+    int progressive_sequence;
+} sequence_t;
+
+typedef struct {
+    int progressive_frame;
+    int top_field_first;
+    int repeat_first_field;
+    int picture_coding_type;
+} picture_t;
+
+typedef struct {
+    sequence_t sequence;
+    picture_t picture;
+} mpeg2_info_t;
 
 typedef struct {
     vo_instance_t * output;
@@ -54,19 +77,32 @@ typedef struct {
     int num_pts;
     int bytes_since_pts;
 
-    /* ONLY for 0.2.x release - will not stay there later */
-    int frame_rate_code;
+    mpeg2_info_t info;
 } mpeg2dec_t ;
 
 
 
+typedef struct decoder_s decoder_t;
+
+void mpeg2_header_state_init (decoder_t * decoder);
+
+int mpeg2_header_picture (uint8_t * buffer, decoder_t * decoder,
+                          picture_t * picture);
+
+int mpeg2_header_sequence (uint8_t * buffer, decoder_t * decoder,
+                           sequence_t * sequence);
+
+int mpeg2_header_extension (uint8_t * buffer, decoder_t * decoder,
+                            mpeg2_info_t * info);
+
+void mpeg2_slice (decoder_t * decoder, int code, uint8_t * buffer);
 
 
-/* initialize mpegdec with a opaque user pointer */
+
+
 void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
 		 vo_instance_t * output);
 
-/* destroy everything which was allocated, shutdown the output */
 void mpeg2_close (mpeg2dec_t * mpeg2dec);
 
 int mpeg2_decode_data (mpeg2dec_t * mpeg2dec,
