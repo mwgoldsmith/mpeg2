@@ -155,7 +155,6 @@ mpeg2_init(void)
 
 }
 
-uint_32 frame_counter = 0;
 
 void
 decode_reorder_frames(void)
@@ -309,8 +308,6 @@ mpeg2_decode_frame(void)
 	if(bitstream_show(32) == SEQUENCE_END_CODE)
 		is_sequence_needed = 1;
 
-	printf("frame_counter = %d\n",frame_counter++);
-	
 	return &mpeg2_frame;
 }
 

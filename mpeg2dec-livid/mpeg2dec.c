@@ -46,6 +46,7 @@ void fill_buffer(uint_32 **start,uint_32 **end)
 
 int main(int argc,char *argv[])
 {
+	uint_32 frame_counter = 0;
 	mpeg2_frame_t *my_frame;
 
 	if(argc < 2)
@@ -79,6 +80,7 @@ int main(int argc,char *argv[])
 	{
 		my_frame = mpeg2_decode_frame();
 		display_frame(my_frame->frame);
+		printf("frame_counter = %d\n",frame_counter++);
 	}
 
   return 0;
