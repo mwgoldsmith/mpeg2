@@ -152,6 +152,10 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	mpeg2_header_end (mpeg2dec);
 	return STATE_END;
 
+    case RECEIVED (0x01, STATE_PICTURE):
+    case RECEIVED (0x01, STATE_PICTURE_2ND):
+	mpeg2_header_slice (mpeg2dec);
+
     next_chunk:
 	mpeg2dec->chunk_ptr = mpeg2dec->chunk_start;
     default:
@@ -165,9 +169,6 @@ int mpeg2_parse (mpeg2dec_t * mpeg2dec)
 	goto next_chunk;
 
     if ((unsigned) (code - 1) < 0xb0 - 1) {
-	if (mpeg2dec->state != STATE_SLICE &&
-	    mpeg2dec->state != STATE_SLICE_1ST)
-	    mpeg2_header_slice (mpeg2dec);
 	if (! (mpeg2dec->picture->flags & PIC_FLAG_SKIP))
 	    mpeg2_slice (&(mpeg2dec->decoder), code, mpeg2dec->chunk_start);
 	if ((unsigned) (mpeg2dec->code - 1) < 0xb0 - 1)
