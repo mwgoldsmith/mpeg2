@@ -8,18 +8,18 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#include <oms/oms.h>
-#include <oms/plugin/codec_video.h>
+#include <oms/log.h>
+#include <oms/plugin/codec.h>
 
 #include "config.h"
 #include "mpeg2.h"
 
-static int _mpeg2dec_open	(plugin_t *plugin, void *foo);
-static int _mpeg2dec_close	(plugin_t *plugin);
-static int _mpeg2dec_read	(plugin_t *plugin, buf_t *buf, buf_entry_t *buf_entry);
-static int _mpeg2dec_set_flag	(plugin_codec_video_t *plugin, uint flag, uint val);
+static int _mpeg2dec_open	(void *plugin, void *foo);
+static int _mpeg2dec_close	(void *plugin);
+static int _mpeg2dec_read	(void *plugin, buf_t *buf, buf_entry_t *buf_entry);
+static int _mpeg2dec_set_flag	(void *plugin, uint flag, uint val);
 
-static plugin_codec_video_t codec_mpeg2dec = {
+static plugin_codec_t codec_mpeg2dec = {
         open:		_mpeg2dec_open,
         close:		_mpeg2dec_close,
         read:		_mpeg2dec_read,
@@ -29,31 +29,30 @@ static plugin_codec_video_t codec_mpeg2dec = {
 
 /************************************************/
 
-static int _mpeg2dec_open (plugin_t *plugin, void *foo)
+static int _mpeg2dec_open (void *plugin, void *foo)
 {
 	mpeg2_init ();
 	return 0;
 }
 
 
-static int _mpeg2dec_close (plugin_t *plugin)
+static int _mpeg2dec_close (void *plugin)
 {
-	//FIXME: how are we supposed to call mpeg2_close without
-	//the output struct?
-	//mpeg2_close(plugin->output);
+	mpeg2_close(((plugin_codec_t *) plugin)->output);
+
 	return 0;
 }
 
 
-static int _mpeg2dec_read (plugin_t *plugin, buf_t *buf, buf_entry_t *buf_entry)
+static int _mpeg2dec_read (void *plugin, buf_t *buf, buf_entry_t *buf_entry)
 {       
-	mpeg2_decode_data (((plugin_codec_video_t *) plugin)->output, buf_entry->data, buf_entry->data+buf_entry->data_len);
+	mpeg2_decode_data (((plugin_codec_t *) plugin)->output, buf_entry->data, buf_entry->data+buf_entry->data_len);
 
         return 0;
 }
 
 
-static int _mpeg2dec_set_flag (plugin_codec_video_t *plugin, uint flag, uint val)
+static int _mpeg2dec_set_flag (void *plugin, uint flag, uint val)
 {
 	switch (flag) {
 	case FLAG_VIDEO_INITIALIZED:
