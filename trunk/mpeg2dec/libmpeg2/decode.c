@@ -215,6 +215,7 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
 	case RECEIVED (0x00, STATE_PICTURE_2ND):
 	illegal:
 		/* illegal codes (0x00 - 0xb8) or system codes (0xb9 - 0xff) */
+		mpeg2dec->state = STATE_INVALID;
 		break;
 	    } else if (mpeg2dec->state == STATE_PICTURE ||
 		       mpeg2dec->state == STATE_PICTURE_2ND)
