@@ -51,7 +51,7 @@ do {					\
 #else
 #define BUTTERFLY(t0,t1,W0,W1,d0,d1)	\
 do {					\
-    int tmp = W0 * (d0 + d1);		\
+    int_fast32_t tmp = W0 * (d0 + d1);	\
     t0 = tmp + (W1 - W0) * d1;		\
     t1 = tmp - (W1 + W0) * d0;		\
 } while (0)
@@ -256,7 +256,7 @@ void mpeg2_idct_add_mvi (const int last, int16_t * block,
 	p7 = ldq (dest + 7 * stride);
 
 	if (DC > 0) {
-	    DCs = BYTE_VEC (DC);
+	    DCs = BYTE_VEC (likely (DC <= 255) ? DC : 255);
 	    p0 += minub8 (DCs, ~p0);
 	    p1 += minub8 (DCs, ~p1);
 	    p2 += minub8 (DCs, ~p2);
@@ -266,7 +266,7 @@ void mpeg2_idct_add_mvi (const int last, int16_t * block,
 	    p6 += minub8 (DCs, ~p6);
 	    p7 += minub8 (DCs, ~p7);
 	} else {
-	    DCs = BYTE_VEC (-DC);
+	    DCs = BYTE_VEC (likely (-DC <= 255) ? -DC : 255);
 	    p0 -= minub8 (DCs, p0);
 	    p1 -= minub8 (DCs, p1);
 	    p2 -= minub8 (DCs, p2);
