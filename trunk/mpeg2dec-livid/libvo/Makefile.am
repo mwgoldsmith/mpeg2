@@ -6,7 +6,7 @@ CFLAGS = -g -O3 -Wall -Werror @LIBVO_CFLAGS@ @GLOBAL_CFLAGS@ @X_CFLAGS@
 
 lib_LTLIBRARIES = libvo.la
 
-include_HEADER = video_out.h 
+include_HEADERS = video_out.h 
 
 libvo_la_LIBADD =  @LIBVO_CONFIG_OBJS@ @LIBVO_CONFIG_LIBS@ @X_PRE_LIBS@ @X_LIBS@ -lXext
 libvo_la_DEPENDENCIES = @LIBVO_CONFIG_OBJS@
