@@ -242,6 +242,11 @@ mpeg2_decode_frame(void)
 
 			if(mba_inc > 1)
 			{
+				//FIXME: this should be a function in parse.c instead
+				//reset intra dc predictor on skipped block
+				slice.dc_dct_pred[0]=slice.dc_dct_pred[1]=slice.dc_dct_pred[2]=
+					1<<(picture.intra_dc_precision + 7);
+
 				//handling of skipped mb's differs between P_TYPE and B_TYPE
 				//pictures
 				if(picture.picture_coding_type == P_TYPE)

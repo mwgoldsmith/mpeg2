@@ -549,7 +549,7 @@ parse_non_intra_block(const picture_t *picture,slice_t *slice,sint_16 *dest,uint
 	uint_16 run;
 	sint_16 val;
 	uint_8 *scan = picture->scan;
-	uint_8 *quant_matrix = picture->intra_quantizer_matrix;
+	uint_8 *quant_matrix = picture->non_intra_quantizer_matrix;
 	sint_16 quantizer_scale = slice->quantizer_scale;
 
 	//Clear the entire block and bring it into the cache
@@ -634,10 +634,11 @@ static void parse_motion_vector(sint_16 *prev_mv, sint_16 *curr_mv,const uint_8 
     prev_mv[1] >>= 1; 
 
   curr_mv[1] = compute_motion_vector(prev_mv[1],r_size,motion_code,motion_residual);
-	prev_mv[1] = curr_mv[1];
-
+  
   if (mb->mvscale)
-    prev_mv[1] <<= 1;
+    curr_mv[1] <<= 1;
+
+  prev_mv[1] = curr_mv[1];
 
 	//XXX dmvectors are unsed right now...
   if (mb->dmv)
