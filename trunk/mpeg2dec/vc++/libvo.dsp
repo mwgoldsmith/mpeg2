@@ -89,7 +89,7 @@ SOURCE=..\libvo\video_out.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\libvo\video_out_mga.c
+SOURCE=..\libvo\video_out_dx.c
 # End Source File
 # Begin Source File
 

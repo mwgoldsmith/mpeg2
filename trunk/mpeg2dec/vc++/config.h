@@ -9,8 +9,11 @@
 /* maximum supported data alignment */
 /* #undef ATTRIBUTE_ALIGNED_MAX */
 
-/* Define to 1 if you have the `__builtin_expect' function. */
+/* Define if you have the `__builtin_expect' function. */
 /* #undef HAVE_BUILTIN_EXPECT */
+
+/* Define to 1 if you have the <ddraw.h> header file. */
+#define HAVE_DDRAW_H 1
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 /* #undef HAVE_DLFCN_H */
@@ -57,8 +60,8 @@
 /* libmpeg2 mediaLib support */
 /* #undef LIBMPEG2_MLIB */
 
-/* libvo MGA support */
-/* #undef LIBVO_MGA */
+/* libvo DirectX support */
+#define LIBVO_DX
 
 /* libvo mediaLib support */
 /* #undef LIBVO_MLIB */
