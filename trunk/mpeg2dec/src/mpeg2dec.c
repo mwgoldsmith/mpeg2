@@ -50,6 +50,7 @@ static int demux_pid = 0;
 static int disable_accel = 0;
 static mpeg2dec_t mpeg2dec;
 static vo_open_t * output_open = NULL;
+static vo_instance_t * output;
 
 #ifdef HAVE_SYS_TIME_H
 
@@ -207,6 +208,56 @@ static void handle_args (int argc, char ** argv)
 	}
     } else
 	in_file = stdin;
+}
+
+int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
+{
+    int state, ret, flags;
+
+    ret = 0;
+    while (1) {
+	state = mpeg2_buffer (mpeg2dec, &current, end);
+	switch (state) {
+	case -1:
+	    return ret;
+	case STATE_SEQUENCE:
+	    if (vo_setup (output, mpeg2dec->sequence.width,
+			  mpeg2dec->sequence.height)) {
+		fprintf (stderr, "display setup failed\n");
+		exit (1);
+	    }
+	    flags = VO_PREDICTION_FLAG | VO_BOTH_FIELDS;
+	    mpeg2_set_buf (mpeg2dec, vo_get_frame (output, flags));
+	    mpeg2_set_buf (mpeg2dec, vo_get_frame (output, flags));
+	    break;
+	case STATE_PICTURE:
+	    flags = ((mpeg2dec->picture.nb_fields > 1) ? VO_BOTH_FIELDS :
+		     ((mpeg2dec->picture.flags & PIC_FLAG_TOP_FIELD_FIRST) ?
+		      VO_TOP_FIELD : VO_BOTTOM_FIELD));
+	    if ((mpeg2dec->picture.flags & PIC_MASK_CODING_TYPE) !=
+		PIC_FLAG_CODING_TYPE_B)
+		flags |= VO_PREDICTION_FLAG;
+	    mpeg2_set_buf (mpeg2dec, vo_get_frame (output, flags));
+	    break;
+	case STATE_PICTURE_2ND:
+	    flags = ((mpeg2dec->picture.nb_fields > 1) ? VO_BOTH_FIELDS :
+		     ((mpeg2dec->picture.flags & PIC_FLAG_TOP_FIELD_FIRST) ?
+		      VO_TOP_FIELD : VO_BOTTOM_FIELD));
+	    vo_field (mpeg2dec->current_frame, flags);
+	    break;
+	case STATE_SLICE:
+	case STATE_END:
+	    vo_draw (((mpeg2dec->picture.flags & PIC_MASK_CODING_TYPE) ==
+		      PIC_FLAG_CODING_TYPE_B) ? mpeg2dec->current_frame :
+		     mpeg2dec->forward_reference_frame);
+	    ret++;
+	    if (state == STATE_END) {
+		vo_draw (mpeg2dec->backward_reference_frame);
+		ret++;
+	    }
+	    break;
+	}
+    }
 }
 
 static void decode_mpeg2 (uint8_t * buf, uint8_t * end)
@@ -498,7 +549,6 @@ static void es_loop (void)
 
 int main (int argc, char ** argv)
 {
-    vo_instance_t * output;
     uint32_t accel;
 
 #ifdef HAVE_IO_H
@@ -518,7 +568,7 @@ int main (int argc, char ** argv)
 	fprintf (stderr, "Can not open output\n");
 	return 1;
     }
-    mpeg2_init (&mpeg2dec, accel, output);
+    mpeg2_init (&mpeg2dec, accel);
 
     if (demux_pid)
 	ts_loop ();

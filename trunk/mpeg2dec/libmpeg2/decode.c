@@ -34,17 +34,7 @@
 
 #define BUFFER_SIZE (1194 * 1024)
 
-#define STATE_INVALID 0
-#define STATE_SEQUENCE 1
-#define STATE_GOP 2
-#define STATE_PICTURE 3
-#define STATE_SLICE_1ST 4
-#define STATE_PICTURE_2ND 5
-#define STATE_SLICE 6
-#define STATE_END 7
-
-void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
-		 vo_instance_t * output)
+void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel)
 {
     static int do_init = 1;
 
@@ -61,7 +51,6 @@ void mpeg2_init (mpeg2dec_t * mpeg2dec, uint32_t mm_accel,
     mpeg2dec->shift = 0xffffff00;
     mpeg2dec->last_sequence.width = (unsigned int) -1;
     mpeg2dec->state = STATE_INVALID;
-    mpeg2dec->output = output;
     mpeg2dec->chunk_ptr = mpeg2dec->chunk_buffer;
     mpeg2dec->code = 0xb4;
 
@@ -238,7 +227,7 @@ int mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t ** current, uint8_t * end)
     }
 }
 
-static int set_buf (mpeg2dec_t * mpeg2dec, vo_frame_t * buf)
+int mpeg2_set_buf (mpeg2dec_t * mpeg2dec, vo_frame_t * buf)
 {
     if (mpeg2dec->state == STATE_SEQUENCE) {
 	if (!(mpeg2dec->forward_reference_frame)) {
@@ -254,54 +243,6 @@ static int set_buf (mpeg2dec_t * mpeg2dec, vo_frame_t * buf)
 	mpeg2dec->backward_reference_frame = mpeg2dec->current_frame = buf;
     }
     return 0;
-}
-
-int mpeg2_decode_data (mpeg2dec_t * mpeg2dec, uint8_t * current, uint8_t * end)
-{
-    int state, ret;
-
-    ret = 0;
-    while (1) {
-	decoder_t * decoder = mpeg2dec->decoder;
-
-	state = mpeg2_buffer (mpeg2dec, &current, end);
-	switch (state) {
-	case -1:
-	    return ret;
-	case STATE_SEQUENCE:
-	    if (vo_setup (mpeg2dec->output, decoder->width, decoder->height)) {
-		fprintf (stderr, "display setup failed\n");
-		exit (1);
-	    }
-	    set_buf (mpeg2dec,
-		     vo_get_frame (mpeg2dec->output,
-				   VO_PREDICTION_FLAG | VO_BOTH_FIELDS));
-	    set_buf (mpeg2dec,
-		     vo_get_frame (mpeg2dec->output,
-				   VO_PREDICTION_FLAG | VO_BOTH_FIELDS));
-	    break;
-	case STATE_PICTURE:
-	    set_buf (mpeg2dec, vo_get_frame (mpeg2dec->output,
-					     (decoder->picture_structure |
-					      (decoder->coding_type == B_TYPE ?
-					       0 : VO_PREDICTION_FLAG))));
-	    break;
-	case STATE_PICTURE_2ND:
-	    vo_field (mpeg2dec->current_frame, decoder->picture_structure);
-	    break;
-	case STATE_SLICE:
-	case STATE_END:
-	    vo_draw ((decoder->coding_type == B_TYPE) ?
-		     mpeg2dec->current_frame :
-		     mpeg2dec->forward_reference_frame);
-	    ret++;
-	    if (state == STATE_END) {
-		vo_draw (mpeg2dec->backward_reference_frame);
-		ret++;
-	    }
-	    break;
-	}
-    }
 }
 
 void mpeg2_pts (mpeg2dec_t * mpeg2dec, uint32_t pts)
