@@ -145,7 +145,7 @@ static RETSIGTYPE sigill_handler (int sig)
 #endif /* ACCEL_DETECT && (ARCH_PPC || ARCH_SPARC) */
 
 #ifdef ARCH_PPC
-static inline uint32_t arch_accel (uint32_t accel)
+static uint32_t arch_accel (uint32_t accel)
 {
 #ifdef ACCEL_DETECT
     if ((accel & (MPEG2_ACCEL_PPC_ALTIVEC | MPEG2_ACCEL_DETECT)) ==
@@ -182,7 +182,7 @@ static inline uint32_t arch_accel (uint32_t accel)
 #endif /* ARCH_PPC */
 
 #ifdef ARCH_SPARC
-static inline uint32_t arch_accel (uint32_t accel)
+static uint32_t arch_accel (uint32_t accel)
 {
     if (accel & MPEG2_ACCEL_SPARC_VIS2)
 	accel |= MPEG2_ACCEL_SPARC_VIS;
