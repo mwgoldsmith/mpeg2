@@ -4,17 +4,14 @@ set -e
 
 # Check for automake
 amvers="no"
-if automake-1.9 --version >/dev/null 2>&1; then
-  amvers="-1.9"
-elif automake-1.8 --version >/dev/null 2>&1; then
-  amvers="-1.8"
-elif automake-1.7 --version >/dev/null 2>&1; then
-  amvers="-1.7"
-elif automake-1.6 --version >/dev/null 2>&1; then
-  amvers="-1.6"
-elif automake-1.5 --version >/dev/null 2>&1; then
-  amvers="-1.5"
-elif automake --version > /dev/null 2>&1; then
+for v in "-1.9" "19" "-1.8" "18" "-1.7" "17" "-1.6" "16" "-1.5" "15"; do
+  if automake${v} --version >/dev/null 2>&1; then
+    amvers="${v}"
+    break
+  fi
+done
+
+if test "${amvers}" = "no" && automake --version > /dev/null 2>&1; then
   amvers="`automake --version | sed -e '1s/[^0-9]*//' -e q`"
   if expr "$amvers" "<" "1.5" > /dev/null 2>&1; then
     amvers="no"
@@ -29,12 +26,32 @@ if test "$amvers" = "no"; then
   exit 1
 fi
 
+# Check for autoconf
+acvers="no"
+for v in "" "259" "253"; do
+  if autoconf${v} --version >/dev/null 2>&1; then
+    acvers="${v}"
+    break
+  fi
+done
+
+if test "$acvers" = "no"; then
+  set +x
+  echo "$0: you need autoconf"
+  exit 1
+fi
+
 # Check for libtool
 libtoolize="no"
 if glibtoolize --version >/dev/null 2>&1; then
   libtoolize="glibtoolize"
-elif libtoolize --version >/dev/null 2>&1; then
-  libtoolize="libtoolize"
+else
+  for v in "16" "15" "" "14"; do
+    if libtoolize${v} --version >/dev/null 2>&1; then
+      libtoolize="libtoolize${v}"
+      break
+    fi
+  done
 fi
 
 if test "$libtoolize" = "no"; then
@@ -55,8 +72,8 @@ if test -f "ltmain.sh"; then
 fi
 
 aclocal${amvers} -I autotools
-autoconf
-autoheader
+autoconf${acvers}
+autoheader${acvers}
 #add --include-deps if you want to bootstrap with any other compiler than gcc
 #automake${amvers} --add-missing --copy --include-deps
 automake${amvers} --add-missing --copy
