@@ -69,7 +69,7 @@ elif test x"$GCC" = x"yes"; then
 	AC_TRY_CFLAGS([$TRY_CFLAGS $CFLAGS],[OPT_CFLAGS="$TRY_CFLAGS"]);;
     ppc-* | powerpc-*)
 	have_altivec=no
-	for TRY_CFLAGS in -mpim-altivec -faltivec -maltivec -fvec; do
+	for TRY_CFLAGS in "-mpim-altivec -force_cpusubtype_ALL" -faltivec -maltivec -fvec; do
 	    AC_TRY_CFLAGS([$OPT_CFLAGS $TRY_CFLAGS $CFLAGS],
 		[save_CFLAGS="$CFLAGS"
 		 CFLAGS="$OPT_CFLAGS $TRY_CFLAGS $CFLAGS"
