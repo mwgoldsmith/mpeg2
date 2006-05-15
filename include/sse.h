@@ -1,9 +1,8 @@
 /*
  * sse.h
- * Copyright (C) 1999-2003 R. Fisher
+ * Copyright (C) 1999 R. Fisher
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
- * See http://libmpeg2.sourceforge.net/ for updates.
  *
  * mpeg2dec is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +18,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 
 typedef	union {
 	float			sf[4];	/* Single-precision (32-bit) value */
