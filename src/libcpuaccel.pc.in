@@ -3,8 +3,8 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: libmpeg2convert
-Description: libmpeg2 helper functions for converting to various formats.
+Name: libcpuaccel
+Description: CPU detection library for libmpeg2.
 Version: @VERSION@
-Libs: -L${libdir} -lmpeg2convert
+Libs: -L${libdir} -lcpuaccel
 Cflags: -I${includedir}/@PACKAGE@

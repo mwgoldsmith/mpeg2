@@ -85,10 +85,6 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\src\dump_state.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\src\getopt.c
 # End Source File
 # Begin Source File
@@ -98,6 +94,10 @@ SOURCE=..\src\gettimeofday.c
 # Begin Source File
 
 SOURCE=..\src\mpeg2dec.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\cpu_accel.obj
 # End Source File
 # End Group
 # Begin Group "Header Files"

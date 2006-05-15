@@ -1,6 +1,6 @@
 /*
  * motion_comp.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
@@ -26,35 +26,30 @@
 #include <inttypes.h>
 
 #include "mpeg2.h"
-#include "attributes.h"
 #include "mpeg2_internal.h"
+#include "mm_accel.h"
 
 mpeg2_mc_t mpeg2_mc;
 
-void mpeg2_mc_init (uint32_t accel)
+void mpeg2_mc_init (uint32_t mm_accel)
 {
 #ifdef ARCH_X86
-    if (accel & MPEG2_ACCEL_X86_MMXEXT)
+    if (mm_accel & MM_ACCEL_X86_MMXEXT)
 	mpeg2_mc = mpeg2_mc_mmxext;
-    else if (accel & MPEG2_ACCEL_X86_3DNOW)
+    else if (mm_accel & MM_ACCEL_X86_3DNOW)
 	mpeg2_mc = mpeg2_mc_3dnow;
-    else if (accel & MPEG2_ACCEL_X86_MMX)
+    else if (mm_accel & MM_ACCEL_X86_MMX)
 	mpeg2_mc = mpeg2_mc_mmx;
     else
 #endif
 #ifdef ARCH_PPC
-    if (accel & MPEG2_ACCEL_PPC_ALTIVEC)
+    if (mm_accel & MM_ACCEL_PPC_ALTIVEC)
 	mpeg2_mc = mpeg2_mc_altivec;
     else
 #endif
-#ifdef ARCH_ALPHA
-    if (accel & MPEG2_ACCEL_ALPHA)
-	mpeg2_mc = mpeg2_mc_alpha;
-    else
-#endif
-#ifdef ARCH_SPARC
-    if (accel & MPEG2_ACCEL_SPARC_VIS)
-	mpeg2_mc = mpeg2_mc_vis;
+#ifdef LIBMPEG2_MLIB
+    if (mm_accel & MM_ACCEL_MLIB)
+	mpeg2_mc = mpeg2_mc_mlib;
     else
 #endif
 	mpeg2_mc = mpeg2_mc_c;

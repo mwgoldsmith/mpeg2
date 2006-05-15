@@ -1,6 +1,6 @@
 /*
  * video_out_mga.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
@@ -164,9 +164,7 @@ static void mga_close (vo_instance_t * _instance)
     libvo_common_free_frames ((vo_instance_t *) instance);
 }
 
-static int mga_setup (vo_instance_t * _instance, unsigned int width,
-		      unsigned int height, unsigned int chroma_width,
-		      unsigned int chroma_height, vo_setup_result_t * result)
+static int mga_setup (vo_instance_t * _instance, int width, int height)
 {
     mga_instance_t * instance;
     char * frame_mem;

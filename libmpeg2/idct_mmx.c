@@ -1,6 +1,6 @@
 /*
  * idct_mmx.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
@@ -28,11 +28,11 @@
 #include <inttypes.h>
 
 #include "mpeg2.h"
-#include "attributes.h"
 #include "mpeg2_internal.h"
+#include "attributes.h"
 #include "mmx.h"
 
-#define ROW_SHIFT 15
+#define ROW_SHIFT 11
 #define COL_SHIFT 6
 
 #define round(bias) ((int)(((bias)+0.5) * (1<<ROW_SHIFT)))
@@ -686,69 +686,6 @@ static inline void block_zero (int16_t * const block)
 }
 
 
-#define CPU_MMXEXT 0
-#define CPU_MMX 1
-
-#define dup4(reg)			\
-do {					\
-    if (cpu != CPU_MMXEXT) {		\
-	punpcklwd_r2r (reg, reg);	\
-	punpckldq_r2r (reg, reg);	\
-    } else				\
-	pshufw_r2r (reg, reg, 0x00);	\
-} while (0)
-
-static inline void block_add_DC (int16_t * const block, uint8_t * dest,
-				 const int stride, const int cpu)
-{
-    movd_v2r ((block[0] + 64) >> 7, mm0);
-    pxor_r2r (mm1, mm1);
-    movq_m2r (*dest, mm2);
-    dup4 (mm0);
-    psubsw_r2r (mm0, mm1);
-    packuswb_r2r (mm0, mm0);
-    paddusb_r2r (mm0, mm2);
-    packuswb_r2r (mm1, mm1);
-    movq_m2r (*(dest + stride), mm3);
-    psubusb_r2r (mm1, mm2);
-    block[0] = 0;
-    paddusb_r2r (mm0, mm3);
-    movq_r2m (mm2, *dest);
-    psubusb_r2r (mm1, mm3);
-    movq_m2r (*(dest + 2*stride), mm2);
-    dest += stride;
-    movq_r2m (mm3, *dest);
-    paddusb_r2r (mm0, mm2);
-    movq_m2r (*(dest + 2*stride), mm3);
-    psubusb_r2r (mm1, mm2);
-    dest += stride;
-    paddusb_r2r (mm0, mm3);
-    movq_r2m (mm2, *dest);
-    psubusb_r2r (mm1, mm3);
-    movq_m2r (*(dest + 2*stride), mm2);
-    dest += stride;
-    movq_r2m (mm3, *dest);
-    paddusb_r2r (mm0, mm2);
-    movq_m2r (*(dest + 2*stride), mm3);
-    psubusb_r2r (mm1, mm2);
-    dest += stride;
-    paddusb_r2r (mm0, mm3);
-    movq_r2m (mm2, *dest);
-    psubusb_r2r (mm1, mm3);
-    movq_m2r (*(dest + 2*stride), mm2);
-    dest += stride;
-    movq_r2m (mm3, *dest);
-    paddusb_r2r (mm0, mm2);
-    movq_m2r (*(dest + 2*stride), mm3);
-    psubusb_r2r (mm1, mm2);
-    block[63] = 0;
-    paddusb_r2r (mm0, mm3);
-    movq_r2m (mm2, *(dest + stride));
-    psubusb_r2r (mm1, mm3);
-    movq_r2m (mm3, *(dest + 2*stride));
-}
-
-
 declare_idct (mmxext_idct, mmxext_table,
 	      mmxext_row_head, mmxext_row, mmxext_row_tail, mmxext_row_mid)
 
@@ -760,15 +697,12 @@ void mpeg2_idct_copy_mmxext (int16_t * const block, uint8_t * const dest,
     block_zero (block);
 }
 
-void mpeg2_idct_add_mmxext (const int last, int16_t * const block,
-			    uint8_t * const dest, const int stride)
+void mpeg2_idct_add_mmxext (int16_t * const block, uint8_t * const dest,
+			    const int stride)
 {
-    if (last != 129 || (block[0] & (7 << 4)) == (4 << 4)) {
-	mmxext_idct (block);
-	block_add (block, dest, stride);
-	block_zero (block);
-    } else
-	block_add_DC (block, dest, stride, CPU_MMXEXT);
+    mmxext_idct (block);
+    block_add (block, dest, stride);
+    block_zero (block);
 }
 
 
@@ -783,15 +717,12 @@ void mpeg2_idct_copy_mmx (int16_t * const block, uint8_t * const dest,
     block_zero (block);
 }
 
-void mpeg2_idct_add_mmx (const int last, int16_t * const block,
-			 uint8_t * const dest, const int stride)
+void mpeg2_idct_add_mmx (int16_t * const block, uint8_t * const dest,
+			 const int stride)
 {
-    if (last != 129 || (block[0] & (7 << 4)) == (4 << 4)) {
-	mmx_idct (block);
-	block_add (block, dest, stride);
-	block_zero (block);
-    } else
-	block_add_DC (block, dest, stride, CPU_MMX);
+    mmx_idct (block);
+    block_add (block, dest, stride);
+    block_zero (block);
 }
 
 

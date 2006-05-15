@@ -1,5 +1,5 @@
 /*
- * gettimeofday.h
+ * convert.h
  * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
@@ -21,20 +21,38 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#if defined(HAVE_SYS_TIME_H) && defined(HAVE_GETTIMEOFDAY)
-#include <sys/time.h>
-#elif defined(HAVE_SYS_TIMEB_H) && defined(HAVE_FTIME)
+#ifndef CONVERT_H
+#define CONVERT_H
 
-#define HAVE_GETTIMEOFDAY 1
-#define CUSTOM_GETTIMEOFDAY 1
+#define CONVERT_FRAME 0
+#define CONVERT_TOP_FIELD 1
+#define CONVERT_BOTTOM_FIELD 2
+#define CONVERT_BOTH_FIELDS 3
 
-struct timeval {
-    long tv_sec;
-    long tv_usec;
-};
+typedef struct convert_init_s {
+    void * id;
+    int id_size;
+    int buf_size[3];
+    void (* start) (void * id, uint8_t * const * dest, int flags);
+    void (* copy) (void * id, uint8_t * const * src, unsigned int v_offset);
+} convert_init_t;
 
-void gettimeofday (struct timeval * tp, void * dummy);
+typedef void convert_t (int width, int height, void * arg,
+			convert_init_t * result);
 
-#else
-#undef HAVE_GETTIMEOFDAY
-#endif
+convert_t convert_rgb32;
+convert_t convert_rgb24;
+convert_t convert_rgb16;
+convert_t convert_rgb15;
+convert_t convert_bgr32;
+convert_t convert_bgr24;
+convert_t convert_bgr16;
+convert_t convert_bgr15;
+
+#define CONVERT_RGB 0
+#define CONVERT_BGR 1
+convert_t * convert_rgb (int order, int bpp);
+
+void convert_accel (uint32_t accel);
+
+#endif /* CONVERT_H */
