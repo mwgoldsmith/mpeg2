@@ -10,5 +10,4 @@ Makefile.in
 .libs
 mpeg2dec
 extract_mpeg2
-corrupt_mpeg2
-seed
+libmpeg2dec.la

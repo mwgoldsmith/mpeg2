@@ -1,10 +1,8 @@
 /*
  * video_out_mga.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
- * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
+ * Copyright (C) 1999-2001 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
- * See http://libmpeg2.sourceforge.net/ for updates.
  *
  * mpeg2dec is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -117,7 +116,7 @@ static void yuv2g400_c (uint8_t * dst, uint8_t * py,
     } while (--i);
 }
 
-typedef struct {
+typedef struct mga_instance_s {
     vo_instance_t vo;
     int prediction_index;
     vo_frame_t * frame_ptr[3];
@@ -148,7 +147,7 @@ static void mga_draw_frame (vo_frame_t * frame)
     ioctl (instance->fd, MGA_VID_FSEL, &instance->next_frame);
 
     instance->next_frame ^= 2; /* switch between fields A1 and B1 */
-    if (instance->next_frame)
+    if (instance->next_frame) 
 	instance->vid_data = instance->frame1;
     else
 	instance->vid_data = instance->frame0;
@@ -164,9 +163,7 @@ static void mga_close (vo_instance_t * _instance)
     libvo_common_free_frames ((vo_instance_t *) instance);
 }
 
-static int mga_setup (vo_instance_t * _instance, unsigned int width,
-		      unsigned int height, unsigned int chroma_width,
-		      unsigned int chroma_height, vo_setup_result_t * result)
+static int mga_setup (vo_instance_t * _instance, int width, int height)
 {
     mga_instance_t * instance;
     char * frame_mem;
@@ -220,7 +217,7 @@ vo_instance_t * vo_mga_open (void)
 
     instance->vo.setup = mga_setup;
     instance->vo.close = mga_close;
-    instance->vo.set_frame = libvo_common_set_frame;
+    instance->vo.get_frame = libvo_common_get_frame;
 
     return (vo_instance_t *) instance;
 }

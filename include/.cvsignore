@@ -8,7 +8,7 @@ Makefile
 Makefile.in
 .deps
 .libs
-config.h
 config.h.in
-inttypes.h
-stamp-h*
+stamp-h.in
+config.h
+stamp-h

@@ -1,13 +1,12 @@
 /*
  * video_out_sdl.c
  *
- * Copyright (C) 2000-2003 Ryan C. Gordon <icculus@lokigames.com> and
+ * Copyright (C) 2000-2001 Ryan C. Gordon <icculus@lokigames.com> and
  *                         Dominik Schnitzer <aeneas@linuxvideo.org>
  *
  * SDL info, source, and binaries can be found at http://www.libsdl.org/
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
- * See http://libmpeg2.sourceforge.net/ for updates.
  *
  * mpeg2dec is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,48 +30,42 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <SDL/SDL.h>
 #include <inttypes.h>
+#include <SDL/SDL.h>
 
 #include "video_out.h"
+#include "video_out_internal.h"
 
-typedef struct {
+typedef struct sdl_frame_s {
+    vo_frame_t vo;
+    SDL_Overlay * overlay;
+} sdl_frame_t;
+
+typedef struct sdl_instance_s {
     vo_instance_t vo;
-    int width;
-    int height;
+    int prediction_index;
+    vo_frame_t * frame_ptr[3];
+    sdl_frame_t frame[3];
+
     SDL_Surface * surface;
     Uint32 sdlflags;
     Uint8 bpp;
 } sdl_instance_t;
 
-static void sdl_setup_fbuf (vo_instance_t * _instance,
-			    uint8_t ** buf, void ** id)
+static vo_frame_t * sdl_get_frame (vo_instance_t * _instance, int flags)
 {
-    sdl_instance_t * instance = (sdl_instance_t *) _instance;
-    SDL_Overlay * overlay;
+    sdl_instance_t * instance;
+    sdl_frame_t * frame;
 
-    *id = overlay = SDL_CreateYUVOverlay (instance->width, instance->height,
-					  SDL_YV12_OVERLAY, instance->surface);
-    buf[0] = overlay->pixels[0];
-    buf[1] = overlay->pixels[2];
-    buf[2] = overlay->pixels[1];
-    if (((long)buf[0] & 15) || ((long)buf[1] & 15) || ((long)buf[2] & 15)) {
-	fprintf (stderr, "Unaligned buffers. Anyone know how to fix this ?\n");
-	exit (1);
-    }
+    instance = (sdl_instance_t *) _instance;
+    frame = (sdl_frame_t *) libvo_common_get_frame ((vo_instance_t *) instance,
+						    flags);
+    SDL_LockYUVOverlay (frame->overlay);
+    return (vo_frame_t *) frame;
 }
 
-static void sdl_start_fbuf (vo_instance_t * instance,
-			    uint8_t * const * buf, void * id)
+static void check_events (sdl_instance_t * instance)
 {
-    SDL_LockYUVOverlay ((SDL_Overlay *) id);
-}
-
-static void sdl_draw_frame (vo_instance_t * _instance,
-			    uint8_t * const * buf, void * id)
-{
-    sdl_instance_t * instance = (sdl_instance_t *) _instance;
-    SDL_Overlay * overlay = (SDL_Overlay *) id;
     SDL_Event event;
 
     while (SDL_PollEvent (&event))
@@ -80,16 +73,44 @@ static void sdl_draw_frame (vo_instance_t * _instance,
 	    instance->surface =
 		SDL_SetVideoMode (event.resize.w, event.resize.h,
 				  instance->bpp, instance->sdlflags);
-    SDL_DisplayYUVOverlay (overlay, &(instance->surface->clip_rect));
 }
 
-static void sdl_discard (vo_instance_t * _instance,
-			 uint8_t * const * buf, void * id)
+static void sdl_draw_frame (vo_frame_t * _frame)
 {
-    SDL_UnlockYUVOverlay ((SDL_Overlay *) id);
+    sdl_frame_t * frame;
+    sdl_instance_t * instance;
+
+    frame = (sdl_frame_t *) _frame;
+    instance = (sdl_instance_t *) frame->vo.instance;
+
+    SDL_UnlockYUVOverlay (frame->overlay);
+    SDL_DisplayYUVOverlay (frame->overlay, &(instance->surface->clip_rect));
+    check_events (instance);
 }
 
-#if 0
+static int sdl_alloc_frames (sdl_instance_t * instance, int width, int height)
+{
+    int i;
+
+    for (i = 0; i < 3; i++) {
+	instance->frame[i].overlay =
+	    SDL_CreateYUVOverlay (width, height, SDL_YV12_OVERLAY,
+				  instance->surface);
+	if (instance->frame[i].overlay == NULL)
+	    return 1;
+	instance->frame_ptr[i] = (vo_frame_t *) (instance->frame + i);
+	instance->frame[i].vo.base[0] = instance->frame[i].overlay->pixels[0];
+	instance->frame[i].vo.base[1] = instance->frame[i].overlay->pixels[2];
+	instance->frame[i].vo.base[2] = instance->frame[i].overlay->pixels[1];
+	instance->frame[i].vo.copy = NULL;
+	instance->frame[i].vo.field = NULL;
+	instance->frame[i].vo.draw = sdl_draw_frame;
+	instance->frame[i].vo.instance = (vo_instance_t *) instance;
+    }
+
+    return 0;
+}
+
 static void sdl_close (vo_instance_t * _instance)
 {
     sdl_instance_t * instance;
@@ -101,18 +122,13 @@ static void sdl_close (vo_instance_t * _instance)
     SDL_FreeSurface (instance->surface);
     SDL_QuitSubSystem (SDL_INIT_VIDEO);
 }
-#endif
 
-static int sdl_setup (vo_instance_t * _instance, unsigned int width,
-		      unsigned int height, unsigned int chroma_width,
-		      unsigned int chroma_height, vo_setup_result_t * result)
+static int sdl_setup (vo_instance_t * _instance, int width, int height)
 {
     sdl_instance_t * instance;
 
     instance = (sdl_instance_t *) _instance;
 
-    instance->width = width;
-    instance->height = height;
     instance->surface = SDL_SetVideoMode (width, height, instance->bpp,
 					  instance->sdlflags);
     if (! (instance->surface)) {
@@ -120,7 +136,11 @@ static int sdl_setup (vo_instance_t * _instance, unsigned int width,
 	return 1;
     }
 
-    result->convert = NULL;
+    if (sdl_alloc_frames (instance, width, height)) {
+	fprintf (stderr, "sdl could not allocate frame buffers\n");
+	return 1;
+    }
+
     return 0;
 }
 
@@ -129,21 +149,19 @@ vo_instance_t * vo_sdl_open (void)
     sdl_instance_t * instance;
     const SDL_VideoInfo * vidInfo;
 
-    instance = (sdl_instance_t *) malloc (sizeof (sdl_instance_t));
+    instance = malloc (sizeof (sdl_instance_t));
     if (instance == NULL)
 	return NULL;
 
     instance->vo.setup = sdl_setup;
-    instance->vo.setup_fbuf = sdl_setup_fbuf;
-    instance->vo.set_fbuf = NULL;
-    instance->vo.start_fbuf = sdl_start_fbuf;
-    instance->vo.discard = sdl_discard;
-    instance->vo.draw = sdl_draw_frame;
-    instance->vo.close = NULL; /* sdl_close; */
+    instance->vo.close = sdl_close;
+    instance->vo.get_frame = sdl_get_frame;
+
+    instance->surface = NULL;
     instance->sdlflags = SDL_HWSURFACE | SDL_RESIZABLE;
 
-    putenv("SDL_VIDEO_YUV_HWACCEL=1");
-    putenv("SDL_VIDEO_X11_NODIRECTCOLOR=1");
+    setenv("SDL_VIDEO_YUV_HWACCEL", "1", 1);
+    setenv("SDL_VIDEO_X11_NODIRECTCOLOR", "1", 1);
 
     if (SDL_Init (SDL_INIT_VIDEO)) {
 	fprintf (stderr, "sdl video initialization failed.\n");

@@ -1,10 +1,8 @@
 /*
  * video_out.h
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
- * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
+ * Copyright (C) 1999-2001 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
- * See http://libmpeg2.sourceforge.net/ for updates.
  *
  * mpeg2dec is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,33 +19,26 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-struct mpeg2_sequence_s;
-struct mpeg2_convert_init_s;
-typedef struct {
-    int (* convert) (int stage, void * id,
-		     const struct mpeg2_sequence_s * sequence,
-		     int stride, uint32_t accel, void * arg,
-		     struct mpeg2_convert_init_s * result);
-} vo_setup_result_t;
-
+typedef struct vo_frame_s vo_frame_t;
 typedef struct vo_instance_s vo_instance_t;
-struct vo_instance_s {
-    int (* setup) (vo_instance_t * instance, unsigned int width,
-		   unsigned int height, unsigned int chroma_width,
-		   unsigned int chroma_height, vo_setup_result_t * result);
-    void (* setup_fbuf) (vo_instance_t * instance, uint8_t ** buf, void ** id);
-    void (* set_fbuf) (vo_instance_t * instance, uint8_t ** buf, void ** id);
-    void (* start_fbuf) (vo_instance_t * instance,
-			 uint8_t * const * buf, void * id);
-    void (* draw) (vo_instance_t * instance, uint8_t * const * buf, void * id);
-    void (* discard) (vo_instance_t * instance,
-		      uint8_t * const * buf, void * id);
-    void (* close) (vo_instance_t * instance);
+
+struct vo_frame_s {
+    uint8_t * base[3];	/* pointer to 3 planes */
+    void (* copy) (vo_frame_t * frame, uint8_t ** src);
+    void (* field) (vo_frame_t * frame, int flags);
+    void (* draw) (vo_frame_t * frame);
+    vo_instance_t * instance;
 };
 
 typedef vo_instance_t * vo_open_t (void);
 
-typedef struct {
+struct vo_instance_s {
+    int (* setup) (vo_instance_t * this, int width, int height);
+    void (* close) (vo_instance_t * this);
+    vo_frame_t * (* get_frame) (vo_instance_t * this, int flags);
+};
+
+typedef struct vo_driver_s {
     char * name;
     vo_open_t * open;
 } vo_driver_t;
@@ -55,4 +46,41 @@ typedef struct {
 void vo_accel (uint32_t accel);
 
 /* return NULL terminated array of all drivers */
-vo_driver_t const * vo_drivers (void);
+vo_driver_t * vo_drivers (void);
+
+static vo_instance_t * vo_open (vo_open_t * open)
+{
+    return open ();
+}
+
+static int vo_setup (vo_instance_t * this, int width, int height)
+{
+    return this->setup (this, width, height);
+}
+
+static inline void vo_close (vo_instance_t * this)
+{
+    if (this->close)
+	this->close (this);
+}
+
+#define VO_TOP_FIELD 1
+#define VO_BOTTOM_FIELD 2
+#define VO_BOTH_FIELDS (VO_TOP_FIELD | VO_BOTTOM_FIELD)
+#define VO_PREDICTION_FLAG 4
+
+static inline vo_frame_t * vo_get_frame (vo_instance_t * this, int flags)
+{
+    return this->get_frame (this, flags);
+}
+
+static inline void vo_field (vo_frame_t * frame, int flags)
+{
+    if (frame->field)
+	frame->field (frame, flags);
+}
+
+static inline void vo_draw (vo_frame_t * frame)
+{
+    frame->draw (frame);
+}

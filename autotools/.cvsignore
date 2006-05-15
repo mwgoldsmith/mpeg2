@@ -10,10 +10,8 @@ Makefile.in
 .libs
 config.guess
 config.sub
-depcomp
-install-sh
 ltconfig
 ltmain.sh
-missing
+install-sh
 mkinstalldirs
-compile
+missing

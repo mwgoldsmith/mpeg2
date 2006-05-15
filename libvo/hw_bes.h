@@ -1,10 +1,8 @@
 /*
  * hw_bes.h
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
- * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
+ * Copyright (C) 1999-2001 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
- * See http://libmpeg2.sourceforge.net/ for updates.
  *
  * mpeg2dec is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,19 +22,20 @@
 #ifndef __LINUX_HW_BES_H
 #define __LINUX_HW_BES_H
 
-typedef struct {
-    uint32_t card_type;
-    uint32_t ram_size;
-    uint32_t src_width;
-    uint32_t src_height;
-    uint32_t dest_width;
-    uint32_t dest_height;
-    uint32_t x_org;
-    uint32_t y_org;
-    uint8_t  colkey_on;
-    uint8_t  colkey_red;
-    uint8_t  colkey_green;
-    uint8_t  colkey_blue;
+typedef struct mga_vid_config_s
+{
+uint32_t card_type;
+uint32_t ram_size;
+uint32_t src_width;
+uint32_t src_height;
+uint32_t dest_width;
+uint32_t dest_height;
+uint32_t x_org;
+uint32_t y_org;
+uint8_t  colkey_on;
+uint8_t  colkey_red;
+uint8_t  colkey_green;
+uint8_t  colkey_blue;
 } mga_vid_config_t;
 
 #define MGA_VID_CONFIG    _IOR('J', 1, mga_vid_config_t)
