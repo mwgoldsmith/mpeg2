@@ -1,11 +1,7 @@
 /*
- *  idct_mmx.c
+ *  debug.h
  *
  *  Copyright (C) Aaron Holtzman <aholtzma@ess.engr.uvic.ca> - Nov 1999
- *
- *  Portions of this code are from the MPEG software simulation group
- *  idct implementation. This code will be replaced with a new
- *  implementation soon.
  *
  *  This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
  *	
@@ -25,19 +21,16 @@
  *
  */
 
-#include <stdio.h>
-#include <mmx.h>
-#include "mpeg2.h"
-#include "mpeg2_internal.h"
+inline int debug_is_on(void);
 
-#include "idct.h"
-
-void idct_block_mmx(sint_16* foo);
-
-void
-idct_end_mmx()
-{
-	emms();
+#ifdef __GNUC__
+#define dprintf(format,args...)\
+{\
+	if (debug_is_on())\
+	{\
+		fprintf(stderr,format,## args);\
+	}\
 }
-
-
+#else
+void dprintf(char fmt[],...);
+#endif

@@ -1,11 +1,7 @@
 /*
- *  idct_mmx.c
+ *  idct_mlib.h
  *
- *  Copyright (C) Aaron Holtzman <aholtzma@ess.engr.uvic.ca> - Nov 1999
- *
- *  Portions of this code are from the MPEG software simulation group
- *  idct implementation. This code will be replaced with a new
- *  implementation soon.
+ *  Copyright (C) 1999, Håkan Hjort <d95hjort@dtek.chalmers.se>
  *
  *  This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
  *	
@@ -25,19 +21,5 @@
  *
  */
 
-#include <stdio.h>
-#include <mmx.h>
-#include "mpeg2.h"
-#include "mpeg2_internal.h"
-
-#include "idct.h"
-
-void idct_block_mmx(sint_16* foo);
-
-void
-idct_end_mmx()
-{
-	emms();
-}
-
-
+void idct_block_mlib(macroblock_t *mb);
+void idct_end_mlib();

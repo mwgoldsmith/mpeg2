@@ -1,11 +1,9 @@
 /*
- *  idct_mmx.c
+ *  stats.h
  *
  *  Copyright (C) Aaron Holtzman <aholtzma@ess.engr.uvic.ca> - Nov 1999
  *
- *  Portions of this code are from the MPEG software simulation group
- *  idct implementation. This code will be replaced with a new
- *  implementation soon.
+ *  Decodes an MPEG-2 video stream.
  *
  *  This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
  *	
@@ -24,20 +22,15 @@
  *  the Free Software Foundation, 
  *
  */
+ 
+void stats_sequence_header(picture_t *picture);
+void stats_gop_header(picture_t *picture);
+void stats_picture_header(picture_t* picture);
+void stats_slice_header(slice_t* slice);
+void stats_macroblock(macroblock_t *mb);
+void stats_picture_coding_ext_header(picture_t *picture);
+void stats_sequence_ext(picture_t *picture);
+void stats_sequence_display_ext(picture_t *picture);
 
-#include <stdio.h>
-#include <mmx.h>
-#include "mpeg2.h"
-#include "mpeg2_internal.h"
-
-#include "idct.h"
-
-void idct_block_mmx(sint_16* foo);
-
-void
-idct_end_mmx()
-{
-	emms();
-}
-
-
+//FIXME These still need fixins
+void stats_quant_matrix_ext_header(picture_t *picture);

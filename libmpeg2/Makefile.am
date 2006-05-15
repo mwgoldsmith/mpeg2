@@ -1,21 +1,39 @@
-SUBDIRS = convert
+##
+## Process this file with automake to produce Makefile.in
+##
 
-AM_CFLAGS = $(OPT_CFLAGS) $(LIBMPEG2_CFLAGS)
+AUTOMAKE_OPTIONS = no-dependencies foreign
 
-lib_LTLIBRARIES = libmpeg2.la
-libmpeg2_la_SOURCES = alloc.c header.c decode.c slice.c motion_comp.c idct.c
-libmpeg2_la_LIBADD = libmpeg2arch.la
-libmpeg2_la_LDFLAGS = -no-undefined
+DEFS = $(CFLAGS) @DEFS@
+INCLUDES = -I$(top_builddir)/include -I.
 
-noinst_LTLIBRARIES = libmpeg2arch.la
-libmpeg2arch_la_SOURCES = motion_comp_mmx.c idct_mmx.c \
-			  motion_comp_altivec.c idct_altivec.c \
-			  motion_comp_alpha.c idct_alpha.c \
-			  motion_comp_vis.c \
-			  cpu_accel.c cpu_state.c
-libmpeg2arch_la_CFLAGS = $(OPT_CFLAGS) $(ARCH_OPT_CFLAGS) $(LIBMPEG2_CFLAGS)
+libdir = $(OMS_PLUGINDIR)
 
-pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libmpeg2.pc
 
-EXTRA_DIST = configure.incl vlc.h mpeg2_internal.h
+## Libs
+lib_LTLIBRARIES = codec_mpeg2dec.la
+
+include_HEADERS = mpeg2.h 
+
+codec_mpeg2dec_la_LIBADD = @LIBMPEG2_CONFIG_OBJS@ 
+codec_mpeg2dec_la_DEPENDENCIES = @LIBMPEG2_CONFIG_OBJS@
+codec_mpeg2dec_la_LDFLAGS = -avoid-version -module Wl,-soname,codec_mpeg2dec.so
+
+codec_mpeg2dec_la_SOURCES = getvlc.c slice.c header.c stats.c idct.c motion_comp.c\
+	motion_comp_c.c codec.c bitstream.c debug.c
+
+EXTRA_codec_mpeg2dec_la_SOURCES = idct_mmx.c idct_block_mmx.S idct_mlib.c\
+	motion_comp_mmx.c motion_comp_mlib.c 
+
+noinst_HEADERS = mpeg2.h getvlc.h stats.h header.h slice.h motion_comp.h\
+	mpeg2_internal.h idct.h debug.h bitstream.h idct_mmx.h idct_mlib.h mmx.h
+
+
+mostlyclean-generic:
+	-rm -f *~ \#* .*~ .\#*
+
+
+maintainer-clean-generic:
+	-@echo "This command is intended for maintainers to use;"
+	-@echo "it deletes files that may require special tools to rebuild."
+	-rm -f Makefile.in
