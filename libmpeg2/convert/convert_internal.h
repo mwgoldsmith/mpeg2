@@ -24,8 +24,7 @@
 typedef struct {
     uint8_t * rgb_ptr;
     int width;
-    int field;
-    int y_stride, rgb_stride, y_increm, uv_increm, rgb_increm, rgb_slice;
+    int y_stride, rgb_stride, y_increm, uv_increm, rgb_increm;
     int chroma420, convert420;
     int dither_offset, dither_stride;
     int y_stride_frame, uv_stride_frame, rgb_stride_frame, rgb_stride_min;

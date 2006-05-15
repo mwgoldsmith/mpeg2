@@ -4,8 +4,7 @@ DISTCLEANFILES = cpu_accel.obj rgb_mmx.obj cpu_state.obj \
 EXTRA_DIST = config.h inttypes.h libmpeg2.dsp libmpeg2convert.dsp \
 	     libvo.dsp mpeg2dec.dsp mpeg2dec.dsw $(DISTCLEANFILES)
 
-WIN_GCC = i586-mingw32msvc-gcc \
-	  -I$(top_srcdir)/include -I$(top_builddir)/include \
+WIN_GCC = i586-mingw32msvc-gcc -I$(top_srcdir)/vc++ -I$(top_srcdir)/include \
 	  -Wall -Werror -O3 -fomit-frame-pointer -mcpu=pentiumpro
 
 cpu_accel.obj: FORCE

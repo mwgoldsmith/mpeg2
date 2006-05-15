@@ -1,8 +1,5 @@
 /* vc++/config.h - manually adapted from include/config.h.in */
 
-/* Suppress warnings relating to mismatched declarations */
-#pragma warning (disable:4028)
-
 /* autodetect accelerations */
 #define ACCEL_DETECT
 
@@ -139,7 +136,7 @@
 /* #undef TIME_WITH_SYS_TIME */
 
 /* Version number of package */
-#define VERSION "0.4.1-cvs"
+#define VERSION "0.4.1"
 
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
