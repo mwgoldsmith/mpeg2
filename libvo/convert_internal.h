@@ -1,6 +1,6 @@
 /*
- * mpeg2convert.h
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * convert_internal.h
+ * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
@@ -21,28 +21,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MPEG2CONVERT_H
-#define MPEG2CONVERT_H
+typedef struct {
+    uint8_t * rgb_ptr;
+    int width;
+    int uv_stride, uv_stride_frame;
+    int rgb_stride, rgb_stride_frame;
+    void (* yuv2rgb) (uint8_t *, uint8_t *, uint8_t *, uint8_t *,
+		      void *, void *, int);
+} convert_rgb_t;
 
-mpeg2_convert_t mpeg2convert_rgb32;
-mpeg2_convert_t mpeg2convert_rgb24;
-mpeg2_convert_t mpeg2convert_rgb16;
-mpeg2_convert_t mpeg2convert_rgb15;
-mpeg2_convert_t mpeg2convert_rgb8;
-mpeg2_convert_t mpeg2convert_bgr32;
-mpeg2_convert_t mpeg2convert_bgr24;
-mpeg2_convert_t mpeg2convert_bgr16;
-mpeg2_convert_t mpeg2convert_bgr15;
-mpeg2_convert_t mpeg2convert_bgr8;
+typedef void yuv2rgb_copy (void * id, uint8_t * const * src,
+			   unsigned int v_offset);
 
-typedef enum {
-    MPEG2CONVERT_RGB = 0,
-    MPEG2CONVERT_BGR = 1
-} mpeg2convert_rgb_order_t;
-
-mpeg2_convert_t * mpeg2convert_rgb (mpeg2convert_rgb_order_t order,
-				    unsigned int bpp);
-
-mpeg2_convert_t mpeg2convert_uyvy;
-
-#endif /* MPEG2CONVERT_H */
+yuv2rgb_copy * yuv2rgb_init_mmxext (int bpp, int mode);
+yuv2rgb_copy * yuv2rgb_init_mmx (int bpp, int mode);
+yuv2rgb_copy * yuv2rgb_init_mlib (int bpp, int mode);

@@ -1,6 +1,6 @@
 /*
  * video_out_null.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
@@ -26,21 +26,16 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include "mpeg2.h"
 #include "video_out.h"
-#include "mpeg2convert.h"
+#include "convert.h"
 
 static void null_draw_frame (vo_instance_t * instance,
 			     uint8_t * const * buf, void * id)
 {
 }
 
-static vo_instance_t * internal_open (int setup (vo_instance_t *, unsigned int,
-						 unsigned int, unsigned int,
-						 unsigned int,
-						 vo_setup_result_t *),
-				      void draw (vo_instance_t *,
-						 uint8_t * const *, void *))
+static vo_instance_t * internal_open (int setup (vo_instance_t *, int, int,
+						 vo_setup_result_t *))
 {
     vo_instance_t * instance;
 
@@ -52,16 +47,15 @@ static vo_instance_t * internal_open (int setup (vo_instance_t *, unsigned int,
     instance->setup_fbuf = NULL;
     instance->set_fbuf = NULL;
     instance->start_fbuf = NULL;
-    instance->draw = draw;
+    instance->draw = null_draw_frame;
     instance->discard = NULL;
-    instance->close = (void (*) (vo_instance_t *)) free;
+    instance->close = NULL;
 
     return instance;
 }
 
-static int null_setup (vo_instance_t * instance, unsigned int width,
-		       unsigned int height, unsigned int chroma_width,
-		       unsigned int chroma_height, vo_setup_result_t * result)
+static int null_setup (vo_instance_t * instance, int width, int height,
+		       vo_setup_result_t * result)
 {
     result->convert = NULL;
     return 0;
@@ -69,17 +63,10 @@ static int null_setup (vo_instance_t * instance, unsigned int width,
 
 vo_instance_t * vo_null_open (void)
 {
-    return internal_open (null_setup, null_draw_frame);
+    return internal_open (null_setup);
 }
 
-vo_instance_t * vo_nullskip_open (void)
-{
-    return internal_open (null_setup, NULL);
-}
-
-static void nullslice_start (void * id, const mpeg2_fbuf_t * fbuf,
-			     const mpeg2_picture_t * picture,
-			     const mpeg2_gop_t * gop)
+static void nullslice_start (void * id, uint8_t * const * dest, int flags)
 {
 }
 
@@ -88,21 +75,16 @@ static void nullslice_copy (void * id, uint8_t * const * src,
 {
 }
 
-static int nullslice_convert (int stage, void * id,
-			      const mpeg2_sequence_t * seq,
-			      int stride, uint32_t accel, void * arg,
-			      mpeg2_convert_init_t * result)
+static void nullslice_convert (int width, int height, uint32_t accel,
+			       void * arg, convert_init_t * result)
 {
     result->id_size = 0;
     result->buf_size[0] = result->buf_size[1] = result->buf_size[2] = 0;
     result->start = nullslice_start;
     result->copy = nullslice_copy;
-    return 0;
 }
 
-static int nullslice_setup (vo_instance_t * instance, unsigned int width,
-			    unsigned int height, unsigned int chroma_width,
-			    unsigned int chroma_height,
+static int nullslice_setup (vo_instance_t * instance, int width, int height,
 			    vo_setup_result_t * result)
 {
     result->convert = nullslice_convert;
@@ -111,33 +93,29 @@ static int nullslice_setup (vo_instance_t * instance, unsigned int width,
 
 vo_instance_t * vo_nullslice_open (void)
 {
-    return internal_open (nullslice_setup, null_draw_frame);
+    return internal_open (nullslice_setup);
 }
 
-static int nullrgb16_setup (vo_instance_t * instance, unsigned int width,
-			    unsigned int height, unsigned int chroma_width,
-			    unsigned int chroma_height,
+static int nullrgb16_setup (vo_instance_t * instance, int width, int height,
 			    vo_setup_result_t * result)
 {
-    result->convert = mpeg2convert_rgb16;
+    result->convert = convert_rgb16;
     return 0;
 }
 
-static int nullrgb32_setup (vo_instance_t * instance, unsigned int width,
-			    unsigned int height, unsigned int chroma_width,
-			    unsigned int chroma_height,
+static int nullrgb32_setup (vo_instance_t * instance, int width, int height,
 			    vo_setup_result_t * result)
 {
-    result->convert = mpeg2convert_rgb32;
+    result->convert = convert_rgb32;
     return 0;
 }
 
 vo_instance_t * vo_nullrgb16_open (void)
 {
-    return internal_open (nullrgb16_setup, null_draw_frame);
+    return internal_open (nullrgb16_setup);
 }
 
 vo_instance_t * vo_nullrgb32_open (void)
 {
-    return internal_open (nullrgb32_setup, null_draw_frame);
+    return internal_open (nullrgb32_setup);
 }
