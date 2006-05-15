@@ -1,10 +1,8 @@
 /*
  * video_out_mga.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
- * See http://libmpeg2.sourceforge.net/ for updates.
  *
  * mpeg2dec is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,9 +19,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/* FIXME this should allocate AGP memory via agpgart and then we */
-/* can use AGP transfers to the framebuffer */
-
 #include "config.h"
 
 #ifdef LIBVO_MGA
@@ -35,193 +30,249 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-#include <inttypes.h>
 
 #include "video_out.h"
 #include "video_out_internal.h"
+#include "drivers/mga_vid.h"
 
-#include "hw_bes.h"
-#include "attributes.h"
-#include "mmx.h"
+LIBVO_EXTERN(mga)
 
-static void yuvinterleave (uint8_t * dst, uint8_t * pu, uint8_t * pv,
-			   int width)
+static vo_info_t vo_info = 
 {
-    width >>= 3;
-    do {
-	dst[0] = pu[0];
-	dst[1] = pv[0];
-	dst[2] = pu[1];
-	dst[3] = pv[1];
-	dst[4] = pu[2];
-	dst[5] = pv[2];
-	dst[6] = pu[3];
-	dst[7] = pv[3];
-	dst += 8;
-	pu += 4;
-	pv += 4;
-    } while (--width);
+    "Matrox Millennium G200/G400 (/dev/mgavid)",
+    "mga",
+    "Aaron Holtzman <aholtzma@ess.engr.uvic.ca>",
+    ""
+};
+
+static mga_vid_config_t mga_vid_config;
+static uint8_t *vid_data, *frame0, *frame1;
+static int next_frame = 0;
+static int f;
+
+static void
+write_frame_g200(uint8_t *y,uint8_t *cr, uint8_t *cb)
+{
+	uint8_t *dest;
+	uint32_t bespitch,h,w;
+
+	dest = vid_data;
+	bespitch = (mga_vid_config.src_width + 31) & ~31;
+
+	for(h=0; h < mga_vid_config.src_height; h++)
+	{
+		memcpy(dest, y, mga_vid_config.src_width);
+		y += mga_vid_config.src_width;
+		dest += bespitch;
+	}
+
+	for(h=0; h < mga_vid_config.src_height/2; h++)
+	{
+		for(w=0; w < mga_vid_config.src_width/2; w++)
+		{
+			*dest++ = *cb++;
+			*dest++ = *cr++;
+		}
+		dest += bespitch - mga_vid_config.src_width;
+	}
 }
 
-static void yuv2g200_c (uint8_t * dst, uint8_t * py,
-			uint8_t * pu, uint8_t * pv,
-			int width, int height,
-			int bes_stride, int y_stride, int uv_stride)
+static void
+write_frame_g400(uint8_t *y,uint8_t *cr, uint8_t *cb)
 {
-    int i;
+	uint8_t *dest;
+	uint32_t bespitch,h;
 
-    i = height;
-    do {
-	memcpy (dst, py, width);
-	py += y_stride;
-	dst += bes_stride;
-    } while (--i);
+	dest = vid_data;
+	bespitch = (mga_vid_config.src_width + 31) & ~31;
 
-    i = height >> 1;
-    do {
-	yuvinterleave (dst, pu, pv, width);
-	pu += uv_stride;
-	pv += uv_stride;
-	dst += bes_stride;
-    } while (--i);
+	for(h=0; h < mga_vid_config.src_height; h++) 
+	{
+		memcpy(dest, y, mga_vid_config.src_width);
+		y += mga_vid_config.src_width;
+		dest += bespitch;
+	}
+
+	for(h=0; h < mga_vid_config.src_height/2; h++) 
+	{
+		memcpy(dest, cb, mga_vid_config.src_width/2);
+		cb += mga_vid_config.src_width/2;
+		dest += bespitch/2;
+	}
+
+	for(h=0; h < mga_vid_config.src_height/2; h++) 
+	{
+		memcpy(dest, cr, mga_vid_config.src_width/2);
+		cr += mga_vid_config.src_width/2;
+		dest += bespitch/2;
+	}
 }
 
-static void yuv2g400_c (uint8_t * dst, uint8_t * py,
-			uint8_t * pu, uint8_t * pv,
-			int width, int height,
-			int bes_stride, int y_stride, int uv_stride)
+static void
+write_slice_g200(uint8_t *y,uint8_t *cr, uint8_t *cb,uint32_t slice_num)
 {
-    int i;
+	uint8_t *dest;
+	uint32_t bespitch,h,w;
 
-    i = height;
-    do {
-	memcpy (dst, py, width);
-	py += y_stride;
-	dst += bes_stride;
-    } while (--i);
+	bespitch = (mga_vid_config.src_width + 31) & ~31;
+	dest = vid_data + bespitch * 16 * slice_num;
 
-    width >>= 1;
-    bes_stride >>= 1;
-    i = height >> 1;
-    do {
-	memcpy (dst, pu, width);
-	pu += uv_stride;
-	dst += bes_stride;
-    } while (--i);
+	for(h=0; h < 16; h++) 
+	{
+		memcpy(dest, y, mga_vid_config.src_width);
+		y += mga_vid_config.src_width;
+		dest += bespitch;
+	}
 
-    i = height >> 1;
-    do {
-	memcpy (dst, pv, width);
-	pv += uv_stride;
-	dst += bes_stride;
-    } while (--i);
+	dest = vid_data +  bespitch * mga_vid_config.src_height + 
+		bespitch * 8 * slice_num;
+
+	for(h=0; h < 8; h++)
+	{
+		for(w=0; w < mga_vid_config.src_width/2; w++)
+		{
+			*dest++ = *cb++;
+			*dest++ = *cr++;
+		}
+		dest += bespitch - mga_vid_config.src_width;
+	}
 }
 
-typedef struct {
-    vo_instance_t vo;
-    int prediction_index;
-    vo_frame_t * frame_ptr[3];
-    vo_frame_t frame[3];
-
-    int fd;
-    mga_vid_config_t mga_vid_config;
-    uint8_t * vid_data;
-    uint8_t * frame0;
-    uint8_t * frame1;
-    int next_frame;
-    int stride;
-} mga_instance_t;
-
-static void mga_draw_frame (vo_frame_t * frame)
+static void
+write_slice_g400(uint8_t *y,uint8_t *cr, uint8_t *cb,uint32_t slice_num)
 {
-    mga_instance_t * instance;
+	uint8_t *dest;
+	uint32_t bespitch,h;
 
-    instance = (mga_instance_t *) frame->instance;
+	bespitch = (mga_vid_config.src_width + 31) & ~31;
+	dest = vid_data + bespitch * 16 * slice_num;
 
-    yuv2g400_c (instance->vid_data,
-		frame->base[0], frame->base[1], frame->base[2],
-		instance->mga_vid_config.src_width,
-		instance->mga_vid_config.src_height,
-		instance->stride, instance->mga_vid_config.src_width,
-		instance->mga_vid_config.src_width >> 1);
+	for(h=0; h < 16; h++) 
+	{
+		memcpy(dest, y, mga_vid_config.src_width);
+		y += mga_vid_config.src_width;
+		dest += bespitch;
+	}
 
-    ioctl (instance->fd, MGA_VID_FSEL, &instance->next_frame);
+	dest = vid_data +  bespitch * mga_vid_config.src_height + 
+		bespitch/2 * 8 * slice_num;
 
-    instance->next_frame ^= 2; /* switch between fields A1 and B1 */
-    if (instance->next_frame)
-	instance->vid_data = instance->frame1;
-    else
-	instance->vid_data = instance->frame0;
+	for(h=0; h < 8; h++) 
+	{
+		memcpy(dest, cb, mga_vid_config.src_width/2);
+		cb += mga_vid_config.src_width/2;
+		dest += bespitch/2;
+	}
+
+	dest = vid_data +  bespitch * mga_vid_config.src_height + 
+		+ bespitch * mga_vid_config.src_height / 4 + bespitch/2 * 8 * slice_num;
+
+	for(h=0; h < 8; h++) 
+	{
+		memcpy(dest, cr, mga_vid_config.src_width/2);
+		cr += mga_vid_config.src_width/2;
+		dest += bespitch/2;
+	}
 }
 
-static void mga_close (vo_instance_t * _instance)
+static uint32_t
+draw_slice(uint8_t *src[], int slice_num)
 {
-    mga_instance_t * instance;
+	if (mga_vid_config.card_type == MGA_G200)
+		write_slice_g200(src[0],src[2],src[1],slice_num);
+	else
+		write_slice_g400(src[0],src[2],src[1],slice_num);
 
-    instance = (mga_instance_t *) _instance;
-
-    close (instance->fd);
-    libvo_common_free_frames ((vo_instance_t *) instance);
+	return 0;
 }
 
-static int mga_setup (vo_instance_t * _instance, unsigned int width,
-		      unsigned int height, unsigned int chroma_width,
-		      unsigned int chroma_height, vo_setup_result_t * result)
+static void
+flip_page(void)
 {
-    mga_instance_t * instance;
-    char * frame_mem;
-    int frame_size;
+	ioctl(f,MGA_VID_FSEL,&next_frame);
 
-    instance = (mga_instance_t *) _instance;
+	next_frame = 2 - next_frame; // switch between fields A1 and B1
 
-    if (ioctl (instance->fd, MGA_VID_ON, 0)) {
-	close (instance->fd);
-	return 1;
-    }
-
-    instance->mga_vid_config.src_width = width;
-    instance->mga_vid_config.src_height = height;
-    instance->mga_vid_config.dest_width = width;
-    instance->mga_vid_config.dest_height = height;
-    instance->mga_vid_config.x_org = 10;
-    instance->mga_vid_config.y_org = 10;
-    instance->mga_vid_config.colkey_on = 1;
-
-    if (ioctl (instance->fd, MGA_VID_CONFIG, &(instance->mga_vid_config)))
-	perror ("Error in instance->mga_vid_config ioctl");
-    ioctl (instance->fd, MGA_VID_ON, 0);
-
-    instance->stride = (width + 31) & ~31;
-    frame_size = instance->stride * height * 3 / 2;
-    frame_mem = (char*)mmap (0, frame_size*2, PROT_WRITE, MAP_SHARED, instance->fd, 0);
-    instance->frame0 = frame_mem;
-    instance->frame1 = frame_mem + frame_size;
-    instance->vid_data = frame_mem;
-    instance->next_frame = 0;
-
-    return libvo_common_alloc_frames ((vo_instance_t *) instance,
-				      width, height, sizeof (vo_frame_t),
-				      NULL, NULL, mga_draw_frame);
+	if (next_frame) 
+		vid_data = frame1;
+	else
+		vid_data = frame0;
 }
 
-vo_instance_t * vo_mga_open (void)
+static uint32_t
+draw_frame(uint8_t *src[])
 {
-    mga_instance_t * instance;
+	if (mga_vid_config.card_type == MGA_G200)
+		write_frame_g200(src[0], src[2], src[1]);
+	else
+		write_frame_g400(src[0], src[2], src[1]);
 
-    instance = malloc (sizeof (mga_instance_t));
-    if (instance == NULL)
-	return NULL;
-
-    instance->fd = open ("/dev/mga_vid", O_RDWR);
-    if (instance->fd < 0) {
-	free (instance);
-	return NULL;
-    }
-
-    instance->vo.setup = mga_setup;
-    instance->vo.close = mga_close;
-    instance->vo.set_frame = libvo_common_set_frame;
-
-    return (vo_instance_t *) instance;
+	flip_page();
+	return 0;
 }
+
+static uint32_t
+init(int width, int height, int fullscreen, char *title, uint32_t format)
+{
+	char *frame_mem;
+	uint32_t frame_size;
+
+	f = open("/dev/mga_vid",O_RDWR);
+
+	if(f == -1)
+	{
+		fprintf(stderr,"Couldn't open /dev/mga_vid\n"); 
+		return(-1);
+	}
+
+	mga_vid_config.src_width = width;
+	mga_vid_config.src_height= height;
+	mga_vid_config.dest_width = width;
+	mga_vid_config.dest_height= height;
+	//mga_vid_config.dest_width = 1280;
+	//mga_vid_config.dest_height= 1024;
+	mga_vid_config.x_org= 0;
+	mga_vid_config.y_org= 0;
+
+	if (ioctl(f,MGA_VID_CONFIG,&mga_vid_config))
+	{
+		perror("Error in mga_vid_config ioctl");
+	}
+	ioctl(f,MGA_VID_ON,0);
+
+	frame_size = ((width + 31) & ~31) * height + (((width + 31) & ~31) * height) / 2;
+	frame_mem = (char*)mmap(0,frame_size*2,PROT_WRITE,MAP_SHARED,f,0);
+	frame0 = frame_mem;
+	frame1 = frame_mem + frame_size;
+	vid_data = frame0;
+	next_frame = 0;
+
+	//clear the buffer
+	memset(frame_mem,0x80,frame_size*2);
+
+  return 0;
+}
+
+static const vo_info_t*
+get_info(void)
+{
+	return &vo_info;
+}
+
+//FIXME this should allocate AGP memory via agpgart and then we
+//can use AGP transfers to the framebuffer
+static vo_image_buffer_t* 
+allocate_image_buffer()
+{
+	//use the generic fallback
+	return allocate_image_buffer_common(mga_vid_config.dest_height, mga_vid_config.dest_width, 0x32315659);
+}
+
+static void	
+free_image_buffer(vo_image_buffer_t* image)
+{
+	//use the generic fallback
+	free_image_buffer_common(image);
+}
+
 #endif

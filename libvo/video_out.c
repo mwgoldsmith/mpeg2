@@ -1,10 +1,8 @@
 /*
  * video_out.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
- * See http://libmpeg2.sourceforge.net/ for updates.
  *
  * mpeg2dec is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,57 +19,88 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "config.h"
-
+#include <stdio.h>
 #include <stdlib.h>
-#include <inttypes.h>
+#include <string.h>
 
+#include "config.h"
 #include "video_out.h"
 
-/* Externally visible list of all vo drivers */
+//
+// Externally visible list of all vo drivers
+//
 
-extern vo_open_t vo_xv_open;
-extern vo_open_t vo_xv2_open;
-extern vo_open_t vo_x11_open;
-extern vo_open_t vo_dxrgb_open;
-extern vo_open_t vo_dx_open;
-extern vo_open_t vo_sdl_open;
-extern vo_open_t vo_null_open;
-extern vo_open_t vo_nullslice_open;
-extern vo_open_t vo_nullskip_open;
-extern vo_open_t vo_nullrgb16_open;
-extern vo_open_t vo_nullrgb32_open;
-extern vo_open_t vo_pgm_open;
-extern vo_open_t vo_pgmpipe_open;
-extern vo_open_t vo_md5_open;
+extern vo_functions_t video_out_x11;
+extern vo_functions_t video_out_sdl;
+extern vo_functions_t video_out_mga;
+extern vo_functions_t video_out_3dfx;
+extern vo_functions_t video_out_syncfb;
+extern vo_functions_t video_out_null;
+extern vo_functions_t video_out_pgm;
+extern vo_functions_t video_out_md5;
 
-static vo_driver_t video_out_drivers[] = {
-#ifdef LIBVO_XV
-    {"xv", vo_xv_open},
-    {"xv2", vo_xv2_open},
-#endif
+vo_functions_t* video_out_drivers[] = 
+{
 #ifdef LIBVO_X11
-    {"x11", vo_x11_open},
-#endif
-#ifdef LIBVO_DX
-    {"dxrgb", vo_dxrgb_open},
-    {"dx", vo_dx_open},
+	&video_out_x11,
 #endif
 #ifdef LIBVO_SDL
-    {"sdl", vo_sdl_open},
+	&video_out_sdl,
 #endif
-    {"null", vo_null_open},
-    {"nullslice", vo_nullslice_open},
-    {"nullskip", vo_nullskip_open},
-    {"nullrgb16", vo_nullrgb16_open},
-    {"nullrgb32", vo_nullrgb32_open},
-    {"pgm", vo_pgm_open},
-    {"pgmpipe", vo_pgmpipe_open},
-    {"md5", vo_md5_open},
-    {NULL, NULL}
+#ifdef LIBVO_MGA
+	&video_out_mga,
+#endif
+#ifdef LIBVO_3DFX
+	&video_out_3dfx,
+#endif
+#ifdef LIBVO_SYNCFB
+	&video_out_syncfb,
+#endif
+	&video_out_null,
+	&video_out_pgm,
+	&video_out_md5,
+	NULL
 };
 
-vo_driver_t const * vo_drivers (void)
+
+//
+// Here are the generic fallback routines that could
+// potentially be used by more than one display driver
+//
+
+
+//FIXME this should allocate AGP memory via agpgart and then we
+//can use AGP transfers to the framebuffer
+vo_image_buffer_t* 
+allocate_image_buffer_common (int width, int height, uint32_t format)
 {
-    return video_out_drivers;
+    vo_image_buffer_t *image;
+    uint32_t image_size;
+
+    //we only know how to do YV12 right now
+    if (format != 0x32315659) return NULL;
+	
+    image = malloc(sizeof(vo_image_buffer_t));
+
+    if(!image) return NULL;
+
+    image->height = height;
+    image->width = width;
+    image->format = format;
+	
+    image_size = width * height * 3 / 2;
+    image->base = malloc(image_size);
+
+    if (!image->base) {
+	free (image);
+	return NULL;
+    }
+
+    return image;
+}
+
+void free_image_buffer_common(vo_image_buffer_t* image)
+{
+    free (image->base);
+    free (image);
 }

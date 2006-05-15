@@ -1,10 +1,8 @@
 /*
  * motion_comp.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
- * See http://libmpeg2.sourceforge.net/ for updates.
  *
  * mpeg2dec is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,110 +19,107 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include "config.h"
-
-#include <inttypes.h>
-
 #include "mpeg2.h"
-#include "attributes.h"
 #include "mpeg2_internal.h"
+#include "debug.h"
 
-mpeg2_mc_t mpeg2_mc;
+#include "motion_comp.h"
 
-void mpeg2_mc_init (uint32_t accel)
+mc_functions_t mc_functions;
+
+void motion_comp_init (void)
 {
+
 #ifdef ARCH_X86
-    if (accel & MPEG2_ACCEL_X86_MMXEXT)
-	mpeg2_mc = mpeg2_mc_mmxext;
-    else if (accel & MPEG2_ACCEL_X86_3DNOW)
-	mpeg2_mc = mpeg2_mc_3dnow;
-    else if (accel & MPEG2_ACCEL_X86_MMX)
-	mpeg2_mc = mpeg2_mc_mmx;
-    else
+    if (config.flags & MPEG2_MMX_ENABLE) {
+	fprintf (stderr, "Using MMX for motion compensation\n");
+	mc_functions = mc_functions_mmx;
+    } else
 #endif
-#ifdef ARCH_PPC
-    if (accel & MPEG2_ACCEL_PPC_ALTIVEC)
-	mpeg2_mc = mpeg2_mc_altivec;
-    else
+#ifdef LIBMPEG2_MLIB
+    if (config.flags & MPEG2_MLIB_ENABLE) {
+	fprintf (stderr, "Using mlib for motion compensation\n");
+	mc_functions = mc_functions_mlib;
+    } else
 #endif
-#ifdef ARCH_ALPHA
-    if (accel & MPEG2_ACCEL_ALPHA)
-	mpeg2_mc = mpeg2_mc_alpha;
-    else
-#endif
-#ifdef ARCH_SPARC
-    if (accel & MPEG2_ACCEL_SPARC_VIS)
-	mpeg2_mc = mpeg2_mc_vis;
-    else
-#endif
-	mpeg2_mc = mpeg2_mc_c;
+    {
+	fprintf (stderr, "No accelerated motion compensation found\n");
+	mc_functions = mc_functions_c;
+    }
 }
 
 #define avg2(a,b) ((a+b+1)>>1)
 #define avg4(a,b,c,d) ((a+b+c+d+2)>>2)
 
-#define predict_o(i) (ref[i])
+#define predict(i) (ref[i])
 #define predict_x(i) (avg2 (ref[i], ref[i+1]))
 #define predict_y(i) (avg2 (ref[i], (ref+stride)[i]))
-#define predict_xy(i) (avg4 (ref[i], ref[i+1], \
-			     (ref+stride)[i], (ref+stride)[i+1]))
+#define predict_xy(i) (avg4 (ref[i], ref[i+1], (ref+stride)[i], (ref+stride)[i+1]))
 
 #define put(predictor,i) dest[i] = predictor (i)
 #define avg(predictor,i) dest[i] = avg2 (predictor (i), dest[i])
 
-/* mc function template */
+// mc function template
 
-#define MC_FUNC(op,xy)							\
-static void MC_##op##_##xy##_16_c (uint8_t * dest, const uint8_t * ref,	\
-				   const int stride, int height)	\
-{									\
-    do {								\
-	op (predict_##xy, 0);						\
-	op (predict_##xy, 1);						\
-	op (predict_##xy, 2);						\
-	op (predict_##xy, 3);						\
-	op (predict_##xy, 4);						\
-	op (predict_##xy, 5);						\
-	op (predict_##xy, 6);						\
-	op (predict_##xy, 7);						\
-	op (predict_##xy, 8);						\
-	op (predict_##xy, 9);						\
-	op (predict_##xy, 10);						\
-	op (predict_##xy, 11);						\
-	op (predict_##xy, 12);						\
-	op (predict_##xy, 13);						\
-	op (predict_##xy, 14);						\
-	op (predict_##xy, 15);						\
-	ref += stride;							\
-	dest += stride;							\
-    } while (--height);							\
-}									\
-static void MC_##op##_##xy##_8_c (uint8_t * dest, const uint8_t * ref,	\
-				  const int stride, int height)		\
-{									\
-    do {								\
-	op (predict_##xy, 0);						\
-	op (predict_##xy, 1);						\
-	op (predict_##xy, 2);						\
-	op (predict_##xy, 3);						\
-	op (predict_##xy, 4);						\
-	op (predict_##xy, 5);						\
-	op (predict_##xy, 6);						\
-	op (predict_##xy, 7);						\
-	ref += stride;							\
-	dest += stride;							\
-    } while (--height);							\
+#define MC_FUNC(op,xy)						\
+static void motion_comp_##op####xy##_16x16_c (uint8_t * dest,	\
+					      uint8_t * ref,	\
+					      int stride,	\
+					      int height)	\
+{								\
+    do {							\
+	op (predict##xy, 0);					\
+	op (predict##xy, 1);					\
+	op (predict##xy, 2);					\
+	op (predict##xy, 3);					\
+	op (predict##xy, 4);					\
+	op (predict##xy, 5);					\
+	op (predict##xy, 6);					\
+	op (predict##xy, 7);					\
+	op (predict##xy, 8);					\
+	op (predict##xy, 9);					\
+	op (predict##xy, 10);					\
+	op (predict##xy, 11);					\
+	op (predict##xy, 12);					\
+	op (predict##xy, 13);					\
+	op (predict##xy, 14);					\
+	op (predict##xy, 15);					\
+	ref += stride;						\
+	dest += stride;						\
+    } while (--height);						\
+}								\
+static void motion_comp_##op####xy##_8x8_c (uint8_t * dest,	\
+					    uint8_t * ref,	\
+					    int stride,		\
+					    int height)		\
+{								\
+    do {							\
+	op (predict##xy, 0);					\
+	op (predict##xy, 1);					\
+	op (predict##xy, 2);					\
+	op (predict##xy, 3);					\
+	op (predict##xy, 4);					\
+	op (predict##xy, 5);					\
+	op (predict##xy, 6);					\
+	op (predict##xy, 7);					\
+	ref += stride;						\
+	dest += stride;						\
+    } while (--height);						\
 }
 
-/* definitions of the actual mc functions */
+// definitions of the actual mc functions
 
-MC_FUNC (put,o)
-MC_FUNC (avg,o)
-MC_FUNC (put,x)
-MC_FUNC (avg,x)
-MC_FUNC (put,y)
-MC_FUNC (avg,y)
-MC_FUNC (put,xy)
-MC_FUNC (avg,xy)
+MC_FUNC (put,)
+MC_FUNC (avg,)
+MC_FUNC (put,_x)
+MC_FUNC (avg,_x)
+MC_FUNC (put,_y)
+MC_FUNC (avg,_y)
+MC_FUNC (put,_xy)
+MC_FUNC (avg,_xy)
 
-MPEG2_MC_EXTERN (c)
+MOTION_COMP_EXTERN (c)
