@@ -1,6 +1,6 @@
 /*
- * gettimeofday.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * video_out_internal.h
+ * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
@@ -21,20 +21,24 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "config.h"
+extern uint32_t vo_mm_accel;
 
-#include "gettimeofday.h"
+int libvo_common_alloc_frames (vo_instance_t * instance, int width, int height,
+			       int frame_size,
+			       void (* copy) (vo_frame_t *, uint8_t **),
+			       void (* field) (vo_frame_t *, int),
+			       void (* draw) (vo_frame_t *));
+void libvo_common_free_frames (vo_instance_t * instance);
+vo_frame_t * libvo_common_get_frame (vo_instance_t * instance, int prediction);
 
-#ifdef CUSTOM_GETTIMEOFDAY
+#define MODE_RGB  0x1
+#define MODE_BGR  0x2
 
-#include <sys/timeb.h>
+extern void (* yuv2rgb) (uint8_t * image, uint8_t * py,
+                         uint8_t * pu, uint8_t * pv, int h_size, int v_size,
+                         int rgb_stride, int y_stride, int uv_stride);
 
-void gettimeofday (struct timeval * tp, void * dummy)
-{
-    struct timeb tm;
-    ftime (&tm);
-    tp->tv_sec = tm.time;
-    tp->tv_usec = tm.millitm * 1000;
-}
-
-#endif
+void yuv2rgb_init (int bpp, int mode);
+int yuv2rgb_init_mmxext (int bpp, int mode);
+int yuv2rgb_init_mmx (int bpp, int mode);
+int yuv2rgb_init_mlib (int bpp, int mode);

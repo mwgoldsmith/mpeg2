@@ -7,5 +7,12 @@
 mpeg2dec-*.tar.gz
 Makefile
 Makefile.in
+configure
 .deps
 .libs
+aclocal.m4
+config.log
+config.cache
+libtool
+config.status
+gmon.out

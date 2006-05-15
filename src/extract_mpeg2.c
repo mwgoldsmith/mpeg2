@@ -1,6 +1,6 @@
 /*
  * extract_mpeg2.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * Copyright (C) 2000-2002 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
@@ -28,10 +28,6 @@
 #include <string.h>
 #include <errno.h>
 #include <getopt.h>
-#ifdef HAVE_IO_H
-#include <fcntl.h>
-#include <io.h>
-#endif
 #include <inttypes.h>
 
 #define BUFFER_SIZE 4096
@@ -39,15 +35,12 @@ static uint8_t buffer[BUFFER_SIZE];
 static FILE * in_file;
 static int demux_track = 0xe0;
 static int demux_pid = 0;
-static int demux_pva = 0;
 
 static void print_usage (char ** argv)
 {
-    fprintf (stderr, "usage: %s [-h] [-s <track>] [-t <pid>] [-p] <file>\n"
-	     "\t-h\tdisplay help\n"
+    fprintf (stderr, "usage: %s [-s <track>] [-t <pid>] <file>\n"
 	     "\t-s\tset track number (0-15 or 0xe0-0xef)\n"
-	     "\t-t\tuse transport stream demultiplexer, pid 0x10-0x1ffe\n"
-	     "\t-p\tuse pva demultiplexer\n",
+	     "\t-t\tuse transport stream demultiplexer, pid 0x10-0x1ffe\n",
 	     argv[0]);
 
     exit (1);
@@ -58,28 +51,24 @@ static void handle_args (int argc, char ** argv)
     int c;
     char * s;
 
-    while ((c = getopt (argc, argv, "hs:t:p")) != -1)
+    while ((c = getopt (argc, argv, "s:t:")) != -1)
 	switch (c) {
 	case 's':
-	    demux_track = strtol (optarg, &s, 0);
+	    demux_track = strtol (optarg, &s, 16);
 	    if (demux_track < 0xe0)
 		demux_track += 0xe0;
-	    if (demux_track < 0xe0 || demux_track > 0xef || *s) {
+	    if ((demux_track < 0xe0) || (demux_track > 0xef) || (*s)) {
 		fprintf (stderr, "Invalid track number: %s\n", optarg);
 		print_usage (argv);
 	    }
 	    break;
 
 	case 't':
-	    demux_pid = strtol (optarg, &s, 0);
-	    if (demux_pid < 0x10 || demux_pid > 0x1ffe || *s) {
+	    demux_pid = strtol (optarg, &s, 16);
+	    if ((demux_pid < 0x10) || (demux_pid > 0x1ffe) || (*s)) {
 		fprintf (stderr, "Invalid pid: %s\n", optarg);
 		print_usage (argv);
 	    }
-	    break;
-
-	case 'p':
-	    demux_pva = 1;
 	    break;
 
 	default:
@@ -89,7 +78,7 @@ static void handle_args (int argc, char ** argv)
     if (optind < argc) {
 	in_file = fopen (argv[optind], "rb");
 	if (!in_file) {
-	    fprintf (stderr, "%s - could not open file %s\n", strerror (errno),
+	    fprintf (stderr, "%s - couldnt open file %s\n", strerror (errno),
 		     argv[optind]);
 	    exit (1);
 	}
@@ -227,7 +216,7 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 	    /* break;         */
 	    return 1;
 	case 0xba:	/* pack header */
-	    NEEDBYTES (5);
+	    NEEDBYTES (12);
 	    if ((header[4] & 0xc0) == 0x40) {	/* mpeg2 */
 		NEEDBYTES (14);
 		len = 14 + (header[13] & 7);
@@ -235,12 +224,11 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 		DONEBYTES (len);
 		/* header points to the mpeg2 pack header */
 	    } else if ((header[4] & 0xf0) == 0x20) {	/* mpeg1 */
-		NEEDBYTES (12);
 		DONEBYTES (12);
 		/* header points to the mpeg1 pack header */
 	    } else {
 		fprintf (stderr, "weird pack header\n");
-		DONEBYTES (5);
+		exit (1);
 	    }
 	    break;
 	default:
@@ -257,7 +245,7 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 		    while ((header-1)[len] == 0xff) {
 			len++;
 			NEEDBYTES (len);
-			if (len > 23) {
+			if (len == 23) {
 			    fprintf (stderr, "too much stuffing\n");
 			    break;
 			}
@@ -284,7 +272,7 @@ static int demux (uint8_t * buf, uint8_t * end, int flags)
 	    } else if (header[3] < 0xb9) {
 		fprintf (stderr,
 			 "looks like a video stream, not system stream\n");
-		DONEBYTES (4);
+		exit (1);
 	    } else {
 		NEEDBYTES (6);
 		DONEBYTES (6);
@@ -311,116 +299,24 @@ static void ps_loop (void)
     } while (end == buffer + BUFFER_SIZE);
 }
 
-static int pva_demux (uint8_t * buf, uint8_t * end)
-{
-    static int state = DEMUX_SKIP;
-    static int state_bytes = 0;
-    static uint8_t head_buf[12];
-
-    uint8_t * header;
-    int bytes;
-    int len;
-
-    switch (state) {
-    case DEMUX_HEADER:
-        if (state_bytes > 0) {
-            header = head_buf;
-            bytes = state_bytes;
-            goto continue_header;
-        }
-        break;
-    case DEMUX_DATA:
-        if (state_bytes > end - buf) {
-            fwrite (buf, end - buf, 1, stdout);
-            state_bytes -= end - buf;
-            return 0;
-        }
-        fwrite (buf, state_bytes, 1, stdout);
-        buf += state_bytes;
-        break;
-    case DEMUX_SKIP:
-        if (state_bytes > end - buf) {
-            state_bytes -= end - buf;
-            return 0;
-        }
-        buf += state_bytes;
-        break;
-    }
-
-    while (1) {
-    payload_start:
-	header = buf;
-	bytes = end - buf;
-    continue_header:
-	NEEDBYTES (2);
-	if (header[0] != 0x41 || header[1] != 0x56) {
-	    if (header != head_buf) {
-		buf++;
-		goto payload_start;
-	    } else {
-		header[0] = header[1];
-		bytes = 1;
-		goto continue_header;
-	    }
-	}
-	NEEDBYTES (8);
-	if (header[2] != 1) {
-	    DONEBYTES (8);
-	    bytes = (header[6] << 8) + header[7];
-	    if (bytes > end - buf) {
-		state = DEMUX_SKIP;
-		state_bytes = bytes - (end - buf);
-		return 0;
-	    } 
-	    buf += bytes; 
-	} else {
-	    len = 8;
-	    if (header[5] & 0x10) {
-		len = 12;
-		NEEDBYTES (len);
-	    }
-	    DONEBYTES (len);
-	    bytes = (header[6] << 8) + header[7] + 8 - len;
-	    if (bytes > end - buf) {
-		fwrite (buf, end - buf, 1, stdout);
-		state = DEMUX_DATA;
-		state_bytes = bytes - (end - buf);
-		return 0;
-	    } else if (bytes > 0) {
-		fwrite (buf, bytes, 1, stdout);
-		buf += bytes;
-	    }
-	}
-    }
-}
-
-static void pva_loop (void)
-{
-    uint8_t * end;
-
-    do {
-	end = buffer + fread (buffer, 1, BUFFER_SIZE, in_file);
-	pva_demux (buffer, end);
-    } while (end == buffer + BUFFER_SIZE);
-}
-
 static void ts_loop (void)
 {
+#define PACKETS (BUFFER_SIZE / 188)
     uint8_t * buf;
-    uint8_t * nextbuf;
     uint8_t * data;
     uint8_t * end;
+    int packets;
+    int i;
     int pid;
 
-    buf = buffer;
-    while (1) {
-	end = buf + fread (buf, 1, buffer + BUFFER_SIZE - buf, in_file);
-	buf = buffer;
-	for (; (nextbuf = buf + 188) <= end; buf = nextbuf) {
-	    if (*buf != 0x47) {
+    do {
+	packets = fread (buffer, 188, PACKETS, in_file);
+	for (i = 0; i < packets; i++) {
+	    buf = buffer + i * 188;
+	    end = buf + 188;
+	    if (buf[0] != 0x47) {
 		fprintf (stderr, "bad sync byte\n");
-		nextbuf = buf + 1;
-		continue;
+		exit (1);
 	    }
 	    pid = ((buf[1] << 8) + buf[2]) & 0x1fff;
 	    if (pid != demux_pid)
@@ -428,31 +324,19 @@ static void ts_loop (void)
 	    data = buf + 4;
 	    if (buf[3] & 0x20) {	/* buf contains an adaptation field */
 		data = buf + 5 + buf[4];
-		if (data > nextbuf)
+		if (data > end)
 		    continue;
 	    }
 	    if (buf[3] & 0x10)
-		demux (data, nextbuf,
-		       (buf[1] & 0x40) ? DEMUX_PAYLOAD_START : 0);
+		demux (data, end, (buf[1] & 0x40) ? DEMUX_PAYLOAD_START : 0);
 	}
-	if (end != buffer + BUFFER_SIZE)
-	    break;
-	memcpy (buffer, buf, end - buf);
-	buf = buffer + (end - buf);
-    }
+    } while (packets == PACKETS);
 }
 
 int main (int argc, char ** argv)
 {
-#ifdef HAVE_IO_H
-    setmode (fileno (stdin), O_BINARY);
-    setmode (fileno (stdout), O_BINARY);
-#endif
-
     handle_args (argc, argv);
 
-    if (demux_pva)
-	pva_loop ();
     if (demux_pid)
 	ts_loop ();
     else

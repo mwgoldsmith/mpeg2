@@ -1,21 +1,16 @@
-SUBDIRS = convert
-
-AM_CFLAGS = $(OPT_CFLAGS) $(LIBMPEG2_CFLAGS)
+CFLAGS = @CFLAGS@ @LIBMPEG2_CFLAGS@
 
 lib_LTLIBRARIES = libmpeg2.la
-libmpeg2_la_SOURCES = alloc.c header.c decode.c slice.c motion_comp.c idct.c
-libmpeg2_la_LIBADD = libmpeg2arch.la
+libmpeg2_la_SOURCES = decode.c header.c stats.c cpu_state.c slice.c \
+		      motion_comp.c motion_comp_mlib.c motion_comp_mmx.c \
+		      motion_comp_altivec.c \
+		      idct.c idct_mlib.c idct_mmx.c idct_altivec.c
+# the source ordering seems to impact the speed.
+# On my setup the following ordering is about 2% faster.
+# I'll have to investigate...
+# libmpeg2_la_SOURCES = slice.c header.c stats.c idct.c motion_comp.c \
+# decode.c idct_mmx.c motion_comp_mmx.c
+libmpeg2_la_LIBADD = @LIBMPEG2_LIBS@
 libmpeg2_la_LDFLAGS = -no-undefined
-
-noinst_LTLIBRARIES = libmpeg2arch.la
-libmpeg2arch_la_SOURCES = motion_comp_mmx.c idct_mmx.c \
-			  motion_comp_altivec.c idct_altivec.c \
-			  motion_comp_alpha.c idct_alpha.c \
-			  motion_comp_vis.c \
-			  cpu_accel.c cpu_state.c
-libmpeg2arch_la_CFLAGS = $(OPT_CFLAGS) $(ARCH_OPT_CFLAGS) $(LIBMPEG2_CFLAGS)
-
-pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libmpeg2.pc
 
 EXTRA_DIST = configure.incl vlc.h mpeg2_internal.h

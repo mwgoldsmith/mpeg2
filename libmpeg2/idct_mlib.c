@@ -1,7 +1,6 @@
 /*
- * mpeg2convert.h
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
- * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
+ * idct_mlib.c
+ * Copyright (C) 1999-2002 Håkan Hjort <d95hjort@dtek.chalmers.se>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
  * See http://libmpeg2.sourceforge.net/ for updates.
@@ -21,28 +20,34 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MPEG2CONVERT_H
-#define MPEG2CONVERT_H
+#include "config.h"
 
-mpeg2_convert_t mpeg2convert_rgb32;
-mpeg2_convert_t mpeg2convert_rgb24;
-mpeg2_convert_t mpeg2convert_rgb16;
-mpeg2_convert_t mpeg2convert_rgb15;
-mpeg2_convert_t mpeg2convert_rgb8;
-mpeg2_convert_t mpeg2convert_bgr32;
-mpeg2_convert_t mpeg2convert_bgr24;
-mpeg2_convert_t mpeg2convert_bgr16;
-mpeg2_convert_t mpeg2convert_bgr15;
-mpeg2_convert_t mpeg2convert_bgr8;
+#ifdef LIBMPEG2_MLIB
 
-typedef enum {
-    MPEG2CONVERT_RGB = 0,
-    MPEG2CONVERT_BGR = 1
-} mpeg2convert_rgb_order_t;
+#include <mlib_types.h>
+#include <mlib_status.h>
+#include <mlib_sys.h>
+#include <mlib_video.h>
+#include <inttypes.h>
 
-mpeg2_convert_t * mpeg2convert_rgb (mpeg2convert_rgb_order_t order,
-				    unsigned int bpp);
+#include "mpeg2_internal.h"
 
-mpeg2_convert_t mpeg2convert_uyvy;
+void mpeg2_idct_add_mlib (int16_t * block, uint8_t * dest, int stride)
+{
+    mlib_VideoIDCT_IEEE_S16_S16 (block, block);
+    mlib_VideoAddBlock_U8_S16 (dest, block, stride);
+}
 
-#endif /* MPEG2CONVERT_H */
+void mpeg2_idct_copy_mlib_non_ieee (int16_t * block, uint8_t * dest,
+				    int stride)
+{
+    mlib_VideoIDCT8x8_U8_S16 (dest, block, stride);
+}
+
+void mpeg2_idct_add_mlib_non_ieee (int16_t * block, uint8_t * dest, int stride)
+{
+    mlib_VideoIDCT8x8_S16_S16 (block, block);
+    mlib_VideoAddBlock_U8_S16 (dest, block, stride);
+}
+
+#endif
