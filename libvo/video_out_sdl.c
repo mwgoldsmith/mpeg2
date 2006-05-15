@@ -1,170 +1,364 @@
+//PLUGIN_INFO(INFO_NAME, "Simple Direct Media Library (SDL)");
+//PLUGIN_INFO(INFO_AUTHOR, "Ryan C. Gordon <icculus@lokigames.com>");
+
 /*
- * video_out_sdl.c
+ *  video_out_sdl.c
  *
- * Copyright (C) 2000-2003 Ryan C. Gordon <icculus@lokigames.com> and
- *                         Dominik Schnitzer <aeneas@linuxvideo.org>
+ *  Copyright (C) Ryan C. Gordon <icculus@lokigames.com> - April 22, 2000.
  *
- * SDL info, source, and binaries can be found at http://www.libsdl.org/
+ *  A mpeg2dec display driver that does output through the
+ *  Simple DirectMedia Layer (SDL) library. This effectively gives us all
+ *  sorts of output options: X11, SVGAlib, fbcon, AAlib, GGI. Win32, MacOS
+ *  and BeOS support, too. Yay. SDL info, source, and binaries can be found
+ *  at http://slouken.devolution.com/SDL/
  *
- * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
- * See http://libmpeg2.sourceforge.net/ for updates.
+ *  This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
+ *	
+ *  mpeg2dec is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2, or (at your option)
+ *  any later version.
+ *   
+ *  mpeg2dec is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *   
+ *  You should have received a copy of the GNU General Public License
+ *  along with GNU Make; see the file COPYING.  If not, write to
+ *  the Free Software Foundation, 
  *
- * mpeg2dec is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * mpeg2dec is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "config.h"
-
-#ifdef LIBVO_SDL
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <oms/oms.h>
+#include <oms/plugin/output_video.h>
+
 #include <SDL/SDL.h>
-#include <inttypes.h>
 
-#include "video_out.h"
+static SDL_Surface *surface = NULL;
+static SDL_Overlay *overlay = NULL;
+static SDL_Rect dispSize;
+static Uint8 *keyState = NULL;
+static int framePlaneY = -1;
+static int framePlaneUV = -1;
+static int slicePlaneY = -1;
+static int slicePlaneUV = -1;
 
-typedef struct {
-    vo_instance_t vo;
-    int width;
-    int height;
-    SDL_Surface * surface;
-    Uint32 sdlflags;
-    Uint8 bpp;
-} sdl_instance_t;
 
-static void sdl_setup_fbuf (vo_instance_t * _instance,
-			    uint8_t ** buf, void ** id)
+static int _sdl_open		(plugin_t *plugin, void *name);
+static int _sdl_close		(plugin_t *plugin);
+static int _sdl_setup		(plugin_output_video_attr_t *attr);
+static int _sdl_draw_frame	(uint8_t *src[]);
+static int _sdl_draw_slice	(uint8_t *src[], uint32_t slice_num);
+static void flip_page		(void);
+static void free_image_buffer	(vo_image_buffer_t* image);
+static vo_image_buffer_t *allocate_image_buffer (uint32_t height, uint32_t width, uint32_t format);
+
+static plugin_output_video_t video_sdl = {
+        open:		_sdl_open,
+        close:		_sdl_close,
+        setup:		_sdl_setup,
+        draw_frame:	_sdl_draw_frame,
+        draw_slice:	_sdl_draw_slice,
+        flip_page:	flip_page,
+        allocate_image_buffer:	allocate_image_buffer,
+        free_image_buffer:	free_image_buffer
+};
+
+
+/**
+ *
+ **/
+
+static int _sdl_open (plugin_t *plugin, void *name)
 {
-    sdl_instance_t * instance = (sdl_instance_t *) _instance;
-    SDL_Overlay * overlay;
-
-    *id = overlay = SDL_CreateYUVOverlay (instance->width, instance->height,
-					  SDL_YV12_OVERLAY, instance->surface);
-    buf[0] = overlay->pixels[0];
-    buf[1] = overlay->pixels[2];
-    buf[2] = overlay->pixels[1];
-    if (((long)buf[0] & 15) || ((long)buf[1] & 15) || ((long)buf[2] & 15)) {
-	fprintf (stderr, "Unaligned buffers. Anyone know how to fix this ?\n");
-	exit (1);
-    }
+	return 0;
 }
 
-static void sdl_start_fbuf (vo_instance_t * instance,
-			    uint8_t * const * buf, void * id)
+
+/**
+ *
+ **/
+
+static int _sdl_close (plugin_t *plugin)
 {
-    SDL_LockYUVOverlay ((SDL_Overlay *) id);
+	return 0;
 }
 
-static void sdl_draw_frame (vo_instance_t * _instance,
-			    uint8_t * const * buf, void * id)
-{
-    sdl_instance_t * instance = (sdl_instance_t *) _instance;
-    SDL_Overlay * overlay = (SDL_Overlay *) id;
-    SDL_Event event;
 
-    while (SDL_PollEvent (&event))
-	if (event.type == SDL_VIDEORESIZE)
-	    instance->surface =
-		SDL_SetVideoMode (event.resize.w, event.resize.h,
-				  instance->bpp, instance->sdlflags);
-    SDL_DisplayYUVOverlay (overlay, &(instance->surface->clip_rect));
+/**
+ * Take a null-terminated array of pointers, and find the last element.
+ *
+ *    params : array == array of which we want to find the last element.
+ *   returns : index of last NON-NULL element.
+ **/
+
+static inline int findArrayEnd(SDL_Rect **array)
+{
+	int i=0;
+	while (array[i++]);	// keep loopin' ...
+
+	return i-1;
 }
 
-static void sdl_discard (vo_instance_t * _instance,
-			 uint8_t * const * buf, void * id)
+
+/**
+ * Initialize an SDL surface and an SDL YUV overlay.
+ *
+ *    params : width  == width of video we'll be displaying.
+ *             height == height of video we'll be displaying.
+ *             fullscreen == want to be fullscreen?
+ *             title == Title for window titlebar.
+ *   returns : non-zero on success, zero on error.
+ **/
+
+static int _sdl_setup (plugin_output_video_attr_t *attr)
 {
-    SDL_UnlockYUVOverlay ((SDL_Overlay *) id);
-}
+	int rc = 0;
+	int i = 0;
+	const SDL_VideoInfo *vidInfo = NULL;
+	int desiredWidth = -1;
+	int desiredHeight = -1;
+	SDL_Rect **modes = NULL;
+	Uint32 sdlflags = SDL_HWSURFACE;
+	Uint8 bpp;
 
-#if 0
-static void sdl_close (vo_instance_t * _instance)
-{
-    sdl_instance_t * instance;
-    int i;
+	if (attr->fullscreen)
+		sdlflags |= SDL_FULLSCREEN;
 
-    instance = (sdl_instance_t *) _instance;
-    for (i = 0; i < 3; i++)
-	SDL_FreeYUVOverlay (instance->frame[i].overlay);
-    SDL_FreeSurface (instance->surface);
-    SDL_QuitSubSystem (SDL_INIT_VIDEO);
-}
-#endif
-
-static int sdl_setup (vo_instance_t * _instance, unsigned int width,
-		      unsigned int height, unsigned int chroma_width,
-		      unsigned int chroma_height, vo_setup_result_t * result)
-{
-    sdl_instance_t * instance;
-
-    instance = (sdl_instance_t *) _instance;
-
-    instance->width = width;
-    instance->height = height;
-    instance->surface = SDL_SetVideoMode (width, height, instance->bpp,
-					  instance->sdlflags);
-    if (! (instance->surface)) {
-	fprintf (stderr, "sdl could not set the desired video mode\n");
-	return 1;
-    }
-
-    result->convert = NULL;
-    return 0;
-}
-
-vo_instance_t * vo_sdl_open (void)
-{
-    sdl_instance_t * instance;
-    const SDL_VideoInfo * vidInfo;
-
-    instance = (sdl_instance_t *) malloc (sizeof (sdl_instance_t));
-    if (instance == NULL)
-	return NULL;
-
-    instance->vo.setup = sdl_setup;
-    instance->vo.setup_fbuf = sdl_setup_fbuf;
-    instance->vo.set_fbuf = NULL;
-    instance->vo.start_fbuf = sdl_start_fbuf;
-    instance->vo.discard = sdl_discard;
-    instance->vo.draw = sdl_draw_frame;
-    instance->vo.close = NULL; /* sdl_close; */
-    instance->sdlflags = SDL_HWSURFACE | SDL_RESIZABLE;
-
-    putenv("SDL_VIDEO_YUV_HWACCEL=1");
-    putenv("SDL_VIDEO_X11_NODIRECTCOLOR=1");
-
-    if (SDL_Init (SDL_INIT_VIDEO)) {
-	fprintf (stderr, "sdl video initialization failed.\n");
-	return NULL;
-    }
-
-    vidInfo = SDL_GetVideoInfo ();
-    if (!SDL_ListModes (vidInfo->vfmt, SDL_HWSURFACE | SDL_RESIZABLE)) {
-	instance->sdlflags = SDL_RESIZABLE;
-	if (!SDL_ListModes (vidInfo->vfmt, SDL_RESIZABLE)) {
-	    fprintf (stderr, "sdl couldn't get any acceptable video mode\n");
-	    return NULL;
+	if ((rc = SDL_Init (SDL_INIT_VIDEO))) {
+		LOG (LOG_ERROR, "SDL_Init failed! rc == (%d)", rc);
+		return -1;
 	}
-    }
-    instance->bpp = vidInfo->vfmt->BitsPerPixel;
-    if (instance->bpp < 16) {
-	fprintf(stderr, "sdl has to emulate a 16 bit surfaces, "
-		"that will slow things down.\n");
-	instance->bpp = 16;
-    }
 
-    return (vo_instance_t *) instance;
+	atexit (SDL_VideoQuit);
+
+	vidInfo = SDL_GetVideoInfo ();
+
+	if (!(modes = SDL_ListModes (vidInfo->vfmt, sdlflags))) {
+		sdlflags &= ~SDL_FULLSCREEN;
+
+		if (!(modes = SDL_ListModes (vidInfo->vfmt, sdlflags))) { // try without fullscreen.
+			sdlflags &= ~SDL_HWSURFACE;
+
+			if (!(modes = SDL_ListModes(vidInfo->vfmt, sdlflags))) {   // give me ANYTHING.
+				LOG (LOG_ERROR, "SDL_ListModes failed");
+				return -1;
+			}
+		}
+	}
+
+	if (modes == (SDL_Rect **) -1) {   // anything is fine.
+		desiredWidth = attr->width;
+		desiredHeight = attr->height;
+	} else {
+		// we want to get the lowest resolution that'll fit the video.
+		//  ...so start at the far end of the array.
+		for (i = findArrayEnd(modes); ((i >= 0) && (desiredWidth == -1)); i--) {
+			if ((modes[i]->w >= attr->width) && (modes[i]->h >= attr->height)) {
+				desiredWidth = modes[i]->w;
+				desiredHeight = modes[i]->h;
+			}
+		}
+	}
+
+	if ((desiredWidth < 0) || (desiredHeight < 0)) {
+		LOG (LOG_ERROR, "Couldn't produce a mode with at least a (%dx%d) resolution!", attr->width, attr->height);
+		return -1;
+	}
+
+	dispSize.x = (desiredWidth - attr->width) / 2;
+	dispSize.y = (desiredHeight - attr->height) / 2;
+	dispSize.w = attr->width;
+	dispSize.h = attr->height;
+
+        // hide cursor. The cursor is annoying in fullscreen, and when
+        //  using the SDL AAlib target, it tries to draw the cursor,
+        //  which slows us down quite a bit.
+//	if ((sdlflags & SDL_FULLSCREEN) ||
+		SDL_ShowCursor(0);
+
+        // YUV overlays need at least 16-bit color depth, but the
+        //  display might less. The SDL AAlib target says it can only do
+        //  8-bits, for example. So, if the display is less than 16-bits,
+        //  we'll force the BPP to 16, and pray that SDL can emulate for us.
+	bpp = vidInfo->vfmt->BitsPerPixel;
+
+	if (bpp < 16) {
+		LOG (LOG_WARNING, "Your SDL display target wants to be at a color");
+		LOG (LOG_WARNING, " depth of (%d), but we need it to be at least 16 bits,", bpp);
+		LOG (LOG_WARNING, " so we need to emulate 16-bit color. This is going to slow");
+		LOG (LOG_WARNING, " things down; you might want to increase your display's");
+		LOG (LOG_WARNING, " color depth, if possible");
+		bpp = 16;  // (*shrug*)
+	}
+
+	if (!(surface = SDL_SetVideoMode (desiredWidth, desiredHeight, bpp, sdlflags))) {
+		LOG (LOG_ERROR, "SDL could not set the video mode");
+		return -1;
+	}
+
+	if (attr->title)
+		SDL_WM_SetCaption (attr->title, "oms");
+	else
+		SDL_WM_SetCaption ("", "oms");
+
+	if (!(overlay = SDL_CreateYUVOverlay (attr->width, attr->height, SDL_IYUV_OVERLAY, surface))) {
+		LOG (LOG_ERROR, "Couldn't create an SDL-based YUV overlay");
+		return -1;
+	}
+
+	keyState = SDL_GetKeyState (NULL);
+
+	framePlaneY = (dispSize.w * dispSize.h);
+	framePlaneUV = ((dispSize.w / 2) * (dispSize.h / 2));
+	slicePlaneY = ((dispSize.w) * 16);
+	slicePlaneUV = ((dispSize.w / 2) * (8));
+
+	return 0;
 }
-#endif
+
+
+/**
+ * Draw a frame to the SDL YUV overlay.
+ *
+ *   params : *src[] == the Y, U, and V planes that make up the frame.
+ *  returns : non-zero on success, zero on error.
+ **/
+
+static int _sdl_draw_frame (uint8_t *src[])
+{
+	char *dst;
+
+	if (SDL_LockYUVOverlay (overlay)) {
+		LOG (LOG_ERROR, "Couldn't lock SDL-based YUV overlay");
+		return 0;
+	}
+
+	dst = overlay->pixels;
+	memcpy (dst, src[0], framePlaneY);
+	dst += framePlaneY;
+	memcpy (dst, src[1], framePlaneUV);
+	dst += framePlaneUV;
+	memcpy (dst, src[2], framePlaneUV);
+
+	SDL_UnlockYUVOverlay (overlay);
+	flip_page ();
+
+	return -1;
+}
+
+
+/**
+ * Draw a slice (16 rows of image) to the SDL YUV overlay.
+ *
+ *   params : *src[] == the Y, U, and V planes that make up the slice.
+ *  returns : non-zero on error, zero on success.
+ **/
+
+static int _sdl_draw_slice (uint8_t *src[], uint32_t slice_num)
+{
+	char *dst;
+
+	if (SDL_LockYUVOverlay (overlay)) {
+		LOG (LOG_ERROR, "Couldn't lock SDL-based YUV overlay");
+		return -1;
+	}
+
+	dst = overlay->pixels + (slicePlaneY * slice_num);
+	memcpy (dst, src[0], slicePlaneY);
+	dst = overlay->pixels + framePlaneY + (slicePlaneUV * slice_num);
+	memcpy (dst, src[1], slicePlaneUV);
+	dst += framePlaneUV;
+	memcpy (dst, src[2], slicePlaneUV);
+	
+	SDL_UnlockYUVOverlay (overlay);
+
+	return 0;
+}
+
+
+/**
+ *
+ **/
+
+static void flip_page (void)
+{
+	SDL_PumpEvents ();  // get keyboard and win resize events.
+
+	if ((SDL_GetModState () & KMOD_ALT) &&
+		((keyState[SDLK_KP_ENTER] == SDL_PRESSED) ||
+		(keyState[SDLK_RETURN] == SDL_PRESSED))) {
+		SDL_WM_ToggleFullScreen (surface);
+	}
+
+	SDL_DisplayYUVOverlay (overlay, &dispSize);
+}
+
+
+/**
+ *
+ **/
+
+static vo_image_buffer_t *allocate_image_buffer (uint32_t height, uint32_t width, uint32_t format)
+{
+	vo_image_buffer_t *image;
+
+	if (!(image = malloc (sizeof (vo_image_buffer_t))))
+		return NULL;
+
+	image->height   = height;
+	image->width    = width;
+	image->format   = format;
+
+	//we only know how to do 4:2:0 planar yuv right now.
+	if (!(image->base = malloc (width * height * 3 / 2))) {
+		free(image);
+		return NULL;
+	}
+	
+	return image;
+}
+
+
+/**
+ *
+ **/
+
+static void free_image_buffer (vo_image_buffer_t* image)
+{
+	free (image->base);
+	free (image);
+}
+
+
+/**
+ * Initialize Plugin.
+ **/
+
+int plugin_init (char *whoami)
+{
+	pluginRegister (whoami,
+		PLUGIN_ID_OUTPUT_VIDEO,
+		"sdl",
+		NULL,
+		NULL,
+		&video_sdl);
+
+	return 0;
+}
+
+
+/**
+ * Cleanup Plugin.
+ **/
+
+void plugin_exit (void)
+{
+}
+

@@ -1,1005 +1,613 @@
 /*
- * motion_comp_mmx.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
- * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
+ *  motion_comp_mmx.c
  *
- * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
- * See http://libmpeg2.sourceforge.net/ for updates.
+ *  Intel MMX implementation of motion_comp_c routines.
+ *  MMX code written by David I. Lehn <dlehn@vt.edu>.
+ *  lib{mmx,xmmx,sse} can be found at http://shay.ecn.purdue.edu/~swar/
  *
- * mpeg2dec is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ *  Copyright (C) Aaron Holtzman <aholtzma@ess.engr.uvic.ca> - Nov 1999
  *
- * mpeg2dec is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *  This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
+ *	
+ *  mpeg2dec is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2, or (at your option)
+ *  any later version.
+ *   
+ *  mpeg2dec is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *   
+ *  You should have received a copy of the GNU General Public License
+ *  along with GNU Make; see the file COPYING.  If not, write to
+ *  the Free Software Foundation, 
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdlib.h>
+#include <stdio.h>
 #include "config.h"
-
-#ifdef ARCH_X86
-
-#include <inttypes.h>
-
-#include "mpeg2.h"
-#include "attributes.h"
-#include "mpeg2_internal.h"
 #include "mmx.h"
+#include "debug.h"
+#include "mpeg2.h"
+#include "mpeg2_internal.h"
 
-#define CPU_MMXEXT 0
-#define CPU_3DNOW 1
+#include "motion_comp.h"
 
 
-/* MMX code - needs a rewrite */
 
-/*
- * Motion Compensation frequently needs to average values using the
- * formula (x+y+1)>>1. Both MMXEXT and 3Dnow include one instruction
- * to compute this, but it's been left out of classic MMX.
- *
- * We need to be careful of overflows when doing this computation.
- * Rather than unpacking data to 16-bits, which reduces parallelism,
- * we use the following formulas:
- *
- * (x+y)>>1 == (x&y)+((x^y)>>1)
- * (x+y+1)>>1 == (x|y)-((x^y)>>1)
- */
-
-/* some rounding constants */
-static mmx_t mask1 = {0xfefefefefefefefeLL};
-static mmx_t round4 = {0x0002000200020002LL};
+// some rounding constants
+mmx_t round1 = {0x0001000100010001LL};
+mmx_t round4 = {0x0002000200020002LL};
 
 /*
  * This code should probably be compiled with loop unrolling
- * (ie, -funroll-loops in gcc)becuase some of the loops
- * use a small static number of iterations. This was written
+ * (ie, -funroll-loops in gcc) becuase some of the loops
+ * use a small static number of iterations.  This was written
  * with the assumption the compiler knows best about when
  * unrolling will help
  */
 
-static inline void mmx_zero_reg ()
+static inline void
+mmx_zero_reg()
 {
-    /* load 0 into mm0 */
-    pxor_r2r (mm0, mm0);
+   // load 0 into mm0
+   pxor_r2r(mm0,mm0);
 }
 
-static inline void mmx_average_2_U8 (uint8_t * dest, const uint8_t * src1,
-				     const uint8_t * src2)
+static inline void
+mmx_average_2_U8(uint8_t *dst, uint8_t *src1, uint8_t *src2)
 {
-    /* *dest = (*src1 + *src2 + 1)/ 2; */
-
-    movq_m2r (*src1, mm1);	/* load 8 src1 bytes */
-    movq_r2r (mm1, mm2);	/* copy 8 src1 bytes */
-
-    movq_m2r (*src2, mm3);	/* load 8 src2 bytes */
-    movq_r2r (mm3, mm4);	/* copy 8 src2 bytes */
-
-    pxor_r2r (mm1, mm3);	/* xor src1 and src2 */
-    pand_m2r (mask1, mm3);	/* mask lower bits */
-    psrlq_i2r (1, mm3);		/* /2 */
-    por_r2r (mm2, mm4);		/* or src1 and src2 */
-    psubb_r2r (mm3, mm4);	/* subtract subresults */
-    movq_r2m (mm4, *dest);	/* store result in dest */
-}
-
-static inline void mmx_interp_average_2_U8 (uint8_t * dest,
-					    const uint8_t * src1,
-					    const uint8_t * src2)
-{
-    /* *dest = (*dest + (*src1 + *src2 + 1)/ 2 + 1)/ 2; */
-
-    movq_m2r (*dest, mm1);	/* load 8 dest bytes */
-    movq_r2r (mm1, mm2);	/* copy 8 dest bytes */
-
-    movq_m2r (*src1, mm3);	/* load 8 src1 bytes */
-    movq_r2r (mm3, mm4);	/* copy 8 src1 bytes */
-
-    movq_m2r (*src2, mm5);	/* load 8 src2 bytes */
-    movq_r2r (mm5, mm6);	/* copy 8 src2 bytes */
-
-    pxor_r2r (mm3, mm5);	/* xor src1 and src2 */
-    pand_m2r (mask1, mm5);	/* mask lower bits */
-    psrlq_i2r (1, mm5);		/* /2 */
-    por_r2r (mm4, mm6);		/* or src1 and src2 */
-    psubb_r2r (mm5, mm6);	/* subtract subresults */
-    movq_r2r (mm6, mm5);	/* copy subresult */
-
-    pxor_r2r (mm1, mm5);	/* xor srcavg and dest */
-    pand_m2r (mask1, mm5);	/* mask lower bits */
-    psrlq_i2r (1, mm5);		/* /2 */
-    por_r2r (mm2, mm6);		/* or srcavg and dest */
-    psubb_r2r (mm5, mm6);	/* subtract subresults */
-    movq_r2m (mm6, *dest);	/* store result in dest */
-}
-
-static inline void mmx_average_4_U8 (uint8_t * dest, const uint8_t * src1,
-				     const uint8_t * src2,
-				     const uint8_t * src3,
-				     const uint8_t * src4)
-{
-    /* *dest = (*src1 + *src2 + *src3 + *src4 + 2)/ 4; */
-
-    movq_m2r (*src1, mm1);	/* load 8 src1 bytes */
-    movq_r2r (mm1, mm2);	/* copy 8 src1 bytes */
+   //
+   // *dst = clip_to_u8((*src1 + *src2 + 1)/2);
+   //
 
-    punpcklbw_r2r (mm0, mm1);	/* unpack low src1 bytes */
-    punpckhbw_r2r (mm0, mm2);	/* unpack high src1 bytes */
+   //mmx_zero_reg();
 
-    movq_m2r (*src2, mm3);	/* load 8 src2 bytes */
-    movq_r2r (mm3, mm4);	/* copy 8 src2 bytes */
+   movq_m2r(*src1,mm1);        // load 8 src1 bytes
+   movq_r2r(mm1,mm2);          // copy 8 src1 bytes
 
-    punpcklbw_r2r (mm0, mm3);	/* unpack low src2 bytes */
-    punpckhbw_r2r (mm0, mm4);	/* unpack high src2 bytes */
+   movq_m2r(*src2,mm3);        // load 8 src2 bytes
+   movq_r2r(mm3,mm4);          // copy 8 src2 bytes
 
-    paddw_r2r (mm3, mm1);	/* add lows */
-    paddw_r2r (mm4, mm2);	/* add highs */
+   punpcklbw_r2r(mm0,mm1);     // unpack low src1 bytes
+   punpckhbw_r2r(mm0,mm2);     // unpack high src1 bytes
 
-    /* now have partials in mm1 and mm2 */
+   punpcklbw_r2r(mm0,mm3);     // unpack low src2 bytes
+   punpckhbw_r2r(mm0,mm4);     // unpack high src2 bytes
 
-    movq_m2r (*src3, mm3);	/* load 8 src3 bytes */
-    movq_r2r (mm3, mm4);	/* copy 8 src3 bytes */
+   paddw_r2r(mm3,mm1);         // add lows to mm1
+   paddw_m2r(round1,mm1);
+   psraw_i2r(1,mm1);           // /2
 
-    punpcklbw_r2r (mm0, mm3);	/* unpack low src3 bytes */
-    punpckhbw_r2r (mm0, mm4);	/* unpack high src3 bytes */
+   paddw_r2r(mm4,mm2);         // add highs to mm2
+   paddw_m2r(round1,mm2);
+   psraw_i2r(1,mm2);           // /2
 
-    paddw_r2r (mm3, mm1);	/* add lows */
-    paddw_r2r (mm4, mm2);	/* add highs */
-
-    movq_m2r (*src4, mm5);	/* load 8 src4 bytes */
-    movq_r2r (mm5, mm6);	/* copy 8 src4 bytes */
-
-    punpcklbw_r2r (mm0, mm5);	/* unpack low src4 bytes */
-    punpckhbw_r2r (mm0, mm6);	/* unpack high src4 bytes */
+   packuswb_r2r(mm2,mm1);      // pack (w/ saturation)
+   movq_r2m(mm1,*dst);         // store result in dst
+}
 
-    paddw_r2r (mm5, mm1);	/* add lows */
-    paddw_r2r (mm6, mm2);	/* add highs */
+static inline void
+mmx_interp_average_2_U8(uint8_t *dst, uint8_t *src1, uint8_t *src2)
+{
+   //
+   // *dst = clip_to_u8((*dst + (*src1 + *src2 + 1)/2 + 1)/2);
+   //
 
-    /* now have subtotal in mm1 and mm2 */
+   //mmx_zero_reg();
 
-    paddw_m2r (round4, mm1);
-    psraw_i2r (2, mm1);		/* /4 */
-    paddw_m2r (round4, mm2);
-    psraw_i2r (2, mm2);		/* /4 */
-
-    packuswb_r2r (mm2, mm1);	/* pack (w/ saturation) */
-    movq_r2m (mm1, *dest);	/* store result in dest */
-}
+   movq_m2r(*dst,mm1);            // load 8 dst bytes
+   movq_r2r(mm1,mm2);             // copy 8 dst bytes
 
-static inline void mmx_interp_average_4_U8 (uint8_t * dest,
-					    const uint8_t * src1,
-					    const uint8_t * src2,
-					    const uint8_t * src3,
-					    const uint8_t * src4)
-{
-    /* *dest = (*dest + (*src1 + *src2 + *src3 + *src4 + 2)/ 4 + 1)/ 2; */
+   movq_m2r(*src1,mm3);           // load 8 src1 bytes
+   movq_r2r(mm3,mm4);             // copy 8 src1 bytes
 
-    movq_m2r (*src1, mm1);	/* load 8 src1 bytes */
-    movq_r2r (mm1, mm2);	/* copy 8 src1 bytes */
+   movq_m2r(*src2,mm5);           // load 8 src2 bytes
+   movq_r2r(mm5,mm6);             // copy 8 src2 bytes
 
-    punpcklbw_r2r (mm0, mm1);	/* unpack low src1 bytes */
-    punpckhbw_r2r (mm0, mm2);	/* unpack high src1 bytes */
+   punpcklbw_r2r(mm0,mm1);        // unpack low dst bytes
+   punpckhbw_r2r(mm0,mm2);        // unpack high dst bytes
 
-    movq_m2r (*src2, mm3);	/* load 8 src2 bytes */
-    movq_r2r (mm3, mm4);	/* copy 8 src2 bytes */
+   punpcklbw_r2r(mm0,mm3);        // unpack low src1 bytes
+   punpckhbw_r2r(mm0,mm4);        // unpack high src1 bytes
 
-    punpcklbw_r2r (mm0, mm3);	/* unpack low src2 bytes */
-    punpckhbw_r2r (mm0, mm4);	/* unpack high src2 bytes */
+   punpcklbw_r2r(mm0,mm5);        // unpack low src2 bytes
+   punpckhbw_r2r(mm0,mm6);        // unpack high src2 bytes
 
-    paddw_r2r (mm3, mm1);	/* add lows */
-    paddw_r2r (mm4, mm2);	/* add highs */
+   paddw_r2r(mm5,mm3);            // add lows
+   paddw_m2r(round1,mm3);
+   psraw_i2r(1,mm3);              // /2
 
-    /* now have partials in mm1 and mm2 */
+   paddw_r2r(mm6,mm4);            // add highs
+   paddw_m2r(round1,mm4);
+   psraw_i2r(1,mm4);              // /2
 
-    movq_m2r (*src3, mm3);	/* load 8 src3 bytes */
-    movq_r2r (mm3, mm4);	/* copy 8 src3 bytes */
+   paddw_r2r(mm3,mm1);            // add lows
+   paddw_m2r(round1,mm1);
+   psraw_i2r(1,mm1);              // /2
 
-    punpcklbw_r2r (mm0, mm3);	/* unpack low src3 bytes */
-    punpckhbw_r2r (mm0, mm4);	/* unpack high src3 bytes */
+   paddw_r2r(mm4,mm2);            // add highs
+   paddw_m2r(round1,mm2);
+   psraw_i2r(1,mm2);              // /2
 
-    paddw_r2r (mm3, mm1);	/* add lows */
-    paddw_r2r (mm4, mm2);	/* add highs */
+   packuswb_r2r(mm2,mm1);         // pack (w/ saturation)
+   movq_r2m(mm1,*dst);            // store result in dst
+}
 
-    movq_m2r (*src4, mm5);	/* load 8 src4 bytes */
-    movq_r2r (mm5, mm6);	/* copy 8 src4 bytes */
+static inline void
+mmx_average_4_U8(uint8_t *dst, uint8_t *src1, uint8_t *src2, uint8_t *src3, uint8_t *src4)
+{
+   //
+   // *dst = clip_to_u8((*src1 + *src2 + *src3 + *src4 + 2)/4);
+   //
 
-    punpcklbw_r2r (mm0, mm5);	/* unpack low src4 bytes */
-    punpckhbw_r2r (mm0, mm6);	/* unpack high src4 bytes */
+   //mmx_zero_reg();
 
-    paddw_r2r (mm5, mm1);	/* add lows */
-    paddw_r2r (mm6, mm2);	/* add highs */
+   movq_m2r(*src1,mm1);                // load 8 src1 bytes
+   movq_r2r(mm1,mm2);                  // copy 8 src1 bytes
 
-    paddw_m2r (round4, mm1);
-    psraw_i2r (2, mm1);		/* /4 */
-    paddw_m2r (round4, mm2);
-    psraw_i2r (2, mm2);		/* /4 */
+   punpcklbw_r2r(mm0,mm1);             // unpack low src1 bytes
+   punpckhbw_r2r(mm0,mm2);             // unpack high src1 bytes
 
-    /* now have subtotal/4 in mm1 and mm2 */
+   movq_m2r(*src2,mm3);                // load 8 src2 bytes
+   movq_r2r(mm3,mm4);                  // copy 8 src2 bytes
 
-    movq_m2r (*dest, mm3);	/* load 8 dest bytes */
-    movq_r2r (mm3, mm4);	/* copy 8 dest bytes */
+   punpcklbw_r2r(mm0,mm3);             // unpack low src2 bytes
+   punpckhbw_r2r(mm0,mm4);             // unpack high src2 bytes
 
-    packuswb_r2r (mm2, mm1);	/* pack (w/ saturation) */
-    movq_r2r (mm1,mm2);		/* copy subresult */
+   paddw_r2r(mm3,mm1);                 // add lows
+   paddw_r2r(mm4,mm2);                 // add highs
 
-    pxor_r2r (mm1, mm3);	/* xor srcavg and dest */
-    pand_m2r (mask1, mm3);	/* mask lower bits */
-    psrlq_i2r (1, mm3);		/* /2 */
-    por_r2r (mm2, mm4);		/* or srcavg and dest */
-    psubb_r2r (mm3, mm4);	/* subtract subresults */
-    movq_r2m (mm4, *dest);	/* store result in dest */
-}
+   // now have partials in mm1 and mm2
 
-/*-----------------------------------------------------------------------*/
+   movq_m2r(*src3,mm3);                // load 8 src3 bytes
+   movq_r2r(mm3,mm4);                  // copy 8 src3 bytes
 
-static inline void MC_avg_mmx (const int width, int height, uint8_t * dest,
-			       const uint8_t * ref, const int stride)
-{
-    mmx_zero_reg ();
+   punpcklbw_r2r(mm0,mm3);             // unpack low src3 bytes
+   punpckhbw_r2r(mm0,mm4);             // unpack high src3 bytes
 
-    do {
-	mmx_average_2_U8 (dest, dest, ref);
+   paddw_r2r(mm3,mm1);                 // add lows
+   paddw_r2r(mm4,mm2);                 // add highs
 
-	if (width == 16)
-	    mmx_average_2_U8 (dest+8, dest+8, ref+8);
+   movq_m2r(*src4,mm5);                // load 8 src4 bytes
+   movq_r2r(mm5,mm6);                  // copy 8 src4 bytes
 
-	dest += stride;
-	ref += stride;
-    } while (--height);
-}
+   punpcklbw_r2r(mm0,mm5);             // unpack low src4 bytes
+   punpckhbw_r2r(mm0,mm6);             // unpack high src4 bytes
 
-static void MC_avg_o_16_mmx (uint8_t * dest, const uint8_t * ref,
-			     int stride, int height)
-{
-    MC_avg_mmx (16, height, dest, ref, stride);
-}
+   paddw_r2r(mm5,mm1);                 // add lows
+   paddw_r2r(mm6,mm2);                 // add highs
 
-static void MC_avg_o_8_mmx (uint8_t * dest, const uint8_t * ref,
-			    int stride, int height)
-{
-    MC_avg_mmx (8, height, dest, ref, stride);
-}
+   // now have subtotal in mm1 and mm2
 
-/*-----------------------------------------------------------------------*/
+   paddw_m2r(round4,mm1);
+   psraw_i2r(2,mm1);                   // /4
+   paddw_m2r(round4,mm2);
+   psraw_i2r(2,mm2);                   // /4
 
-static inline void MC_put_mmx (const int width, int height, uint8_t * dest,
-			       const uint8_t * ref, const int stride)
-{
-    mmx_zero_reg ();
-
-    do {
-	movq_m2r (* ref, mm1);	/* load 8 ref bytes */
-	movq_r2m (mm1,* dest);	/* store 8 bytes at curr */
-
-	if (width == 16)
-	    {
-		movq_m2r (* (ref+8), mm1);	/* load 8 ref bytes */
-		movq_r2m (mm1,* (dest+8));	/* store 8 bytes at curr */
-	    }
-
-	dest += stride;
-	ref += stride;
-    } while (--height);
+   packuswb_r2r(mm2,mm1);              // pack (w/ saturation)
+   movq_r2m(mm1,*dst);                 // store result in dst
 }
 
-static void MC_put_o_16_mmx (uint8_t * dest, const uint8_t * ref,
-			     int stride, int height)
+static inline void
+mmx_interp_average_4_U8(uint8_t *dst, uint8_t *src1, uint8_t *src2, uint8_t *src3, uint8_t *src4)
 {
-    MC_put_mmx (16, height, dest, ref, stride);
-}
+   //
+   // *dst = clip_to_u8((*dst + (*src1 + *src2 + *src3 + *src4 + 2)/4 + 1)/2);
+   //
 
-static void MC_put_o_8_mmx (uint8_t * dest, const uint8_t * ref,
-			    int stride, int height)
-{
-    MC_put_mmx (8, height, dest, ref, stride);
-}
+   //mmx_zero_reg();
 
-/*-----------------------------------------------------------------------*/
+   movq_m2r(*src1,mm1);                // load 8 src1 bytes
+   movq_r2r(mm1,mm2);                  // copy 8 src1 bytes
 
-/* Half pixel interpolation in the x direction */
-static inline void MC_avg_x_mmx (const int width, int height, uint8_t * dest,
-				 const uint8_t * ref, const int stride)
-{
-    mmx_zero_reg ();
+   punpcklbw_r2r(mm0,mm1);             // unpack low src1 bytes
+   punpckhbw_r2r(mm0,mm2);             // unpack high src1 bytes
 
-    do {
-	mmx_interp_average_2_U8 (dest, ref, ref+1);
+   movq_m2r(*src2,mm3);                // load 8 src2 bytes
+   movq_r2r(mm3,mm4);                  // copy 8 src2 bytes
 
-	if (width == 16)
-	    mmx_interp_average_2_U8 (dest+8, ref+8, ref+9);
+   punpcklbw_r2r(mm0,mm3);             // unpack low src2 bytes
+   punpckhbw_r2r(mm0,mm4);             // unpack high src2 bytes
 
-	dest += stride;
-	ref += stride;
-    } while (--height);
-}
+   paddw_r2r(mm3,mm1);                 // add lows
+   paddw_r2r(mm4,mm2);                 // add highs
 
-static void MC_avg_x_16_mmx (uint8_t * dest, const uint8_t * ref,
-			     int stride, int height)
-{
-    MC_avg_x_mmx (16, height, dest, ref, stride);
-}
+   // now have partials in mm1 and mm2
 
-static void MC_avg_x_8_mmx (uint8_t * dest, const uint8_t * ref,
-			    int stride, int height)
-{
-    MC_avg_x_mmx (8, height, dest, ref, stride);
-}
+   movq_m2r(*src3,mm3);                // load 8 src3 bytes
+   movq_r2r(mm3,mm4);                  // copy 8 src3 bytes
 
-/*-----------------------------------------------------------------------*/
+   punpcklbw_r2r(mm0,mm3);             // unpack low src3 bytes
+   punpckhbw_r2r(mm0,mm4);             // unpack high src3 bytes
 
-static inline void MC_put_x_mmx (const int width, int height, uint8_t * dest,
-				 const uint8_t * ref, const int stride)
-{
-    mmx_zero_reg ();
+   paddw_r2r(mm3,mm1);                 // add lows
+   paddw_r2r(mm4,mm2);                 // add highs
 
-    do {
-	mmx_average_2_U8 (dest, ref, ref+1);
+   movq_m2r(*src4,mm5);                // load 8 src4 bytes
+   movq_r2r(mm5,mm6);                  // copy 8 src4 bytes
 
-	if (width == 16)
-	    mmx_average_2_U8 (dest+8, ref+8, ref+9);
+   punpcklbw_r2r(mm0,mm5);             // unpack low src4 bytes
+   punpckhbw_r2r(mm0,mm6);             // unpack high src4 bytes
 
-	dest += stride;
-	ref += stride;
-    } while (--height);
-}
+   paddw_r2r(mm5,mm1);                 // add lows
+   paddw_r2r(mm6,mm2);                 // add highs
 
-static void MC_put_x_16_mmx (uint8_t * dest, const uint8_t * ref,
-			     int stride, int height)
-{
-    MC_put_x_mmx (16, height, dest, ref, stride);
-}
+   paddw_m2r(round4,mm1);
+   psraw_i2r(2,mm1);                   // /4
+   paddw_m2r(round4,mm2);
+   psraw_i2r(2,mm2);                   // /4
 
-static void MC_put_x_8_mmx (uint8_t * dest, const uint8_t * ref,
-			    int stride, int height)
-{
-    MC_put_x_mmx (8, height, dest, ref, stride);
-}
+   // now have subtotal/4 in mm1 and mm2
 
-/*-----------------------------------------------------------------------*/
+   movq_m2r(*dst,mm3);                 // load 8 dst bytes
+   movq_r2r(mm3,mm4);                  // copy 8 dst bytes
 
-static inline void MC_avg_xy_mmx (const int width, int height, uint8_t * dest,
-				  const uint8_t * ref, const int stride)
-{
-    const uint8_t * ref_next = ref + stride;
+   punpcklbw_r2r(mm0,mm3);             // unpack low dst bytes
+   punpckhbw_r2r(mm0,mm4);             // unpack high dst bytes
 
-    mmx_zero_reg ();
+   paddw_r2r(mm3,mm1);                 // add lows
+   paddw_r2r(mm4,mm2);                 // add highs
 
-    do {
-	mmx_interp_average_4_U8 (dest, ref, ref+1, ref_next, ref_next+1);
+   paddw_m2r(round1,mm1);
+   psraw_i2r(1,mm1);                   // /2
+   paddw_m2r(round1,mm2);
+   psraw_i2r(1,mm2);                   // /2
 
-	if (width == 16)
-	    mmx_interp_average_4_U8 (dest+8, ref+8, ref+9,
-				     ref_next+8, ref_next+9);
+   // now have end value in mm1 and mm2
 
-	dest += stride;
-	ref += stride;
-	ref_next += stride;
-    } while (--height);
+   packuswb_r2r(mm2,mm1);              // pack (w/ saturation)
+   movq_r2m(mm1,*dst);                 // store result in dst
 }
 
-static void MC_avg_xy_16_mmx (uint8_t * dest, const uint8_t * ref,
-			      int stride, int height)
+void 
+motion_comp_idct_copy_mmx (uint8_t *dst, int16_t *block, uint32_t stride)
 {
-    MC_avg_xy_mmx (16, height, dest, ref, stride);
-}
+	int y;
 
-static void MC_avg_xy_8_mmx (uint8_t * dest, const uint8_t * ref,
-			     int stride, int height)
-{
-    MC_avg_xy_mmx (8, height, dest, ref, stride);
+	for (y = 0; y < 8; y++) 
+	{
+		movq_m2r(*block,mm1);
+		movq_m2r(*(block+4),mm2);
+		block += 8;
+		packuswb_r2r(mm2,mm1);
+		movq_r2m(mm1,*dst);
+		dst += stride;
+	}
 }
 
-/*-----------------------------------------------------------------------*/
 
-static inline void MC_put_xy_mmx (const int width, int height, uint8_t * dest,
-				  const uint8_t * ref, const int stride)
+// Add a motion compensated 8x8 block to the current block
+void
+motion_comp_idct_add_mmx( uint8_t *dst, int16_t *block, uint32_t stride) 
 {
-    const uint8_t * ref_next = ref + stride;
+	int y;
 
-    mmx_zero_reg ();
+	mmx_zero_reg();
 
-    do {
-	mmx_average_4_U8 (dest, ref, ref+1, ref_next, ref_next+1);
+	for (y = 0; y < 8; y++) 
+	{
+			movq_m2r(*dst,mm1);            // load 8 curr bytes
+			movq_r2r(mm1,mm2);             // copy 8 curr bytes
 
-	if (width == 16)
-	    mmx_average_4_U8 (dest+8, ref+8, ref+9, ref_next+8, ref_next+9);
+			punpcklbw_r2r(mm0,mm1);        // unpack low curr bytes
+			punpckhbw_r2r(mm0,mm2);        // unpack high curr bytes
 
-	dest += stride;
-	ref += stride;
-	ref_next += stride;
-    } while (--height);
-}
+			movq_m2r(*block,mm3);          // load 4 mc words (mc0)
+			paddsw_r2r(mm3,mm1);           // mm1=curr+mc0 (w/ saturatation)
 
-static void MC_put_xy_16_mmx (uint8_t * dest, const uint8_t * ref,
-			      int stride, int height)
-{
-    MC_put_xy_mmx (16, height, dest, ref, stride);
-}
+			movq_m2r(*(block+4),mm4);      // load next 4 mc words (mc1)
+			paddsw_r2r(mm4,mm2);           // mm2=curr+mc1 (w/ saturatation)
 
-static void MC_put_xy_8_mmx (uint8_t * dest, const uint8_t * ref,
-			     int stride, int height)
-{
-    MC_put_xy_mmx (8, height, dest, ref, stride);
-}
+			packuswb_r2r(mm2,mm1);         // pack (w/ saturation)
+			movq_r2m(mm1,*dst);            // store result in curr
+
+			dst   += stride;
+			block += 8;
+	}
+}  
 
-/*-----------------------------------------------------------------------*/
+//-----------------------------------------------------------------------
 
-static inline void MC_avg_y_mmx (const int width, int height, uint8_t * dest,
-				 const uint8_t * ref, const int stride)
+static inline void 
+motion_comp_avg_mmx( const uint8_t width, const int32_t height, uint8_t *curr_block,
+      uint8_t *ref_block, const int32_t stride)
 {
-    const uint8_t * ref_next = ref + stride;
+	int y;
 
-    mmx_zero_reg ();
+	mmx_zero_reg();
 
-    do {
-	mmx_interp_average_2_U8 (dest, ref, ref_next);
+	for (y = 0; y < height; y++) 
+	{
+		mmx_average_2_U8(curr_block, curr_block, ref_block);
 
-	if (width == 16)
-	    mmx_interp_average_2_U8 (dest+8, ref+8, ref_next+8);
+		if(width == 16)
+			mmx_average_2_U8(curr_block + 8, curr_block + 8, ref_block + 8);
 
-	dest += stride;
-	ref += stride;
-	ref_next += stride;
-    } while (--height);
+		curr_block += stride;
+		ref_block  += stride;
+	}
 }
 
-static void MC_avg_y_16_mmx (uint8_t * dest, const uint8_t * ref,
-			     int stride, int height)
+void
+motion_comp_avg_16x16_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t stride, 
+		const int32_t height)
 {
-    MC_avg_y_mmx (16, height, dest, ref, stride);
+   motion_comp_avg_mmx( 16, height, curr_block, ref_block, stride);
 }
 
-static void MC_avg_y_8_mmx (uint8_t * dest, const uint8_t * ref,
-			    int stride, int height)
+void
+motion_comp_avg_8x8_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t stride, 
+		const int32_t height)
 {
-    MC_avg_y_mmx (8, height, dest, ref, stride);
+   motion_comp_avg_mmx( 8, height, curr_block, ref_block, stride);
 }
 
-/*-----------------------------------------------------------------------*/
+//-----------------------------------------------------------------------
 
-static inline void MC_put_y_mmx (const int width, int height, uint8_t * dest,
-				 const uint8_t * ref, const int stride)
+static inline void
+motion_comp_put_mmx( const uint8_t width, const int32_t height, uint8_t *curr_block, 
+		uint8_t *ref_block, const int32_t stride)
 {
-    const uint8_t * ref_next = ref + stride;
+	int y;
 
-    mmx_zero_reg ();
+	mmx_zero_reg();
 
-    do {
-	mmx_average_2_U8 (dest, ref, ref_next);
+	for (y = 0; y < height; y++) 
+	{
+		movq_m2r(*ref_block,mm1);    // load 8 ref bytes
+		movq_r2m(mm1,*curr_block);   // store 8 bytes at curr
 
-	if (width == 16)
-	    mmx_average_2_U8 (dest+8, ref+8, ref_next+8);
+		if(width == 16)
+		{
+			movq_m2r(*(ref_block + 8),mm1);    // load 8 ref bytes
+			movq_r2m(mm1,*(curr_block+8));   // store 8 bytes at curr
+		}
 
-	dest += stride;
-	ref += stride;
-	ref_next += stride;
-    } while (--height);
+		curr_block += stride;
+		ref_block  += stride;
+	}
 }
 
-static void MC_put_y_16_mmx (uint8_t * dest, const uint8_t * ref,
-			     int stride, int height)
+void
+motion_comp_put_16x16_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t stride, const int32_t height)
 {
-    MC_put_y_mmx (16, height, dest, ref, stride);
+   motion_comp_put_mmx( 16, height, curr_block, ref_block, stride);
 }
 
-static void MC_put_y_8_mmx (uint8_t * dest, const uint8_t * ref,
-			    int stride, int height)
+void
+motion_comp_put_8x8_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t stride, const int32_t height)
 {
-    MC_put_y_mmx (8, height, dest, ref, stride);
+   motion_comp_put_mmx( 8, height, curr_block, ref_block, stride);
 }
-
-
-MPEG2_MC_EXTERN (mmx)
-
-
-
-
-
-
-
-/* CPU_MMXEXT/CPU_3DNOW adaptation layer */
-
-#define pavg_r2r(src,dest)		\
-do {					\
-    if (cpu == CPU_MMXEXT)		\
-	pavgb_r2r (src, dest);		\
-    else				\
-	pavgusb_r2r (src, dest);	\
-} while (0)
-
-#define pavg_m2r(src,dest)		\
-do {					\
-    if (cpu == CPU_MMXEXT)		\
-	pavgb_m2r (src, dest);		\
-    else				\
-	pavgusb_m2r (src, dest);	\
-} while (0)
-
-
-/* CPU_MMXEXT code */
-
 
-static inline void MC_put1_8 (int height, uint8_t * dest, const uint8_t * ref,
-			      const int stride)
-{
-    do {
-	movq_m2r (*ref, mm0);
-	movq_r2m (mm0, *dest);
-	ref += stride;
-	dest += stride;
-    } while (--height);
-}
+//-----------------------------------------------------------------------
 
-static inline void MC_put1_16 (int height, uint8_t * dest, const uint8_t * ref,
-			       const int stride)
+// Half pixel interpolation in the x direction
+static inline void 
+motion_comp_avg_x_mmx( const uint8_t width, const int32_t height, uint8_t *curr_block, 
+		uint8_t *ref_block, const int32_t stride) 
 {
-    do {
-	movq_m2r (*ref, mm0);
-	movq_m2r (*(ref+8), mm1);
-	ref += stride;
-	movq_r2m (mm0, *dest);
-	movq_r2m (mm1, *(dest+8));
-	dest += stride;
-    } while (--height);
-}
+	int y;
 
-static inline void MC_avg1_8 (int height, uint8_t * dest, const uint8_t * ref,
-			      const int stride, const int cpu)
-{
-    do {
-	movq_m2r (*ref, mm0);
-	pavg_m2r (*dest, mm0);
-	ref += stride;
-	movq_r2m (mm0, *dest);
-	dest += stride;
-    } while (--height);
-}
+	mmx_zero_reg();
 
-static inline void MC_avg1_16 (int height, uint8_t * dest, const uint8_t * ref,
-			       const int stride, const int cpu)
-{
-    do {
-	movq_m2r (*ref, mm0);
-	movq_m2r (*(ref+8), mm1);
-	pavg_m2r (*dest, mm0);
-	pavg_m2r (*(dest+8), mm1);
-	movq_r2m (mm0, *dest);
-	ref += stride;
-	movq_r2m (mm1, *(dest+8));
-	dest += stride;
-    } while (--height);
-}
+	for (y = 0; y < height; y++) 
+	{
+		mmx_interp_average_2_U8(curr_block, ref_block, ref_block + 1);
 
-static inline void MC_put2_8 (int height, uint8_t * dest, const uint8_t * ref,
-			      const int stride, const int offset,
-			      const int cpu)
-{
-    do {
-	movq_m2r (*ref, mm0);
-	pavg_m2r (*(ref+offset), mm0);
-	ref += stride;
-	movq_r2m (mm0, *dest);
-	dest += stride;
-    } while (--height);
-}
+		if(width == 16)
+			mmx_interp_average_2_U8(curr_block + 8, ref_block + 8, ref_block + 9);
 
-static inline void MC_put2_16 (int height, uint8_t * dest, const uint8_t * ref,
-			       const int stride, const int offset,
-			       const int cpu)
-{
-    do {
-	movq_m2r (*ref, mm0);
-	movq_m2r (*(ref+8), mm1);
-	pavg_m2r (*(ref+offset), mm0);
-	pavg_m2r (*(ref+offset+8), mm1);
-	movq_r2m (mm0, *dest);
-	ref += stride;
-	movq_r2m (mm1, *(dest+8));
-	dest += stride;
-    } while (--height);
+		curr_block += stride;
+		ref_block  += stride;
+	}
 }
 
-static inline void MC_avg2_8 (int height, uint8_t * dest, const uint8_t * ref,
-			      const int stride, const int offset,
-			      const int cpu)
+void 
+motion_comp_avg_x_16x16_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
-    do {
-	movq_m2r (*ref, mm0);
-	pavg_m2r (*(ref+offset), mm0);
-	pavg_m2r (*dest, mm0);
-	ref += stride;
-	movq_r2m (mm0, *dest);
-	dest += stride;
-    } while (--height);
+   motion_comp_avg_x_mmx( 16, height, curr_block, ref_block, frame_stride);
 }
 
-static inline void MC_avg2_16 (int height, uint8_t * dest, const uint8_t * ref,
-			       const int stride, const int offset,
-			       const int cpu)
+void 
+motion_comp_avg_x_8x8_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
-    do {
-	movq_m2r (*ref, mm0);
-	movq_m2r (*(ref+8), mm1);
-	pavg_m2r (*(ref+offset), mm0);
-	pavg_m2r (*(ref+offset+8), mm1);
-	pavg_m2r (*dest, mm0);
-	pavg_m2r (*(dest+8), mm1);
-	ref += stride;
-	movq_r2m (mm0, *dest);
-	movq_r2m (mm1, *(dest+8));
-	dest += stride;
-    } while (--height);
+   motion_comp_avg_x_mmx( 8, height, curr_block, ref_block, frame_stride);
 }
 
-static mmx_t mask_one = {0x0101010101010101LL};
+//-----------------------------------------------------------------------
 
-static inline void MC_put4_8 (int height, uint8_t * dest, const uint8_t * ref,
-			      const int stride, const int cpu)
+static inline void
+motion_comp_put_x_mmx( const uint8_t width, const int32_t height, uint8_t *curr_block, uint8_t *ref_block, 
+		int32_t stride) 
 {
-    movq_m2r (*ref, mm0);
-    movq_m2r (*(ref+1), mm1);
-    movq_r2r (mm0, mm7);
-    pxor_r2r (mm1, mm7);
-    pavg_r2r (mm1, mm0);
-    ref += stride;
-
-    do {
-	movq_m2r (*ref, mm2);
-	movq_r2r (mm0, mm5);
-
-	movq_m2r (*(ref+1), mm3);
-	movq_r2r (mm2, mm6);
-
-	pxor_r2r (mm3, mm6);
-	pavg_r2r (mm3, mm2);
-
-	por_r2r (mm6, mm7);
-	pxor_r2r (mm2, mm5);
-
-	pand_r2r (mm5, mm7);
-	pavg_r2r (mm2, mm0);
+	int y;
 
-	pand_m2r (mask_one, mm7);
+	mmx_zero_reg();
 
-	psubusb_r2r (mm7, mm0);
+	for (y = 0; y < height; y++) 
+	{
+		mmx_average_2_U8(curr_block, ref_block, ref_block + 1);
 
-	ref += stride;
-	movq_r2m (mm0, *dest);
-	dest += stride;
+		if(width == 16)
+			mmx_average_2_U8(curr_block + 8, ref_block + 8, ref_block + 9);
 
-	movq_r2r (mm6, mm7);	/* unroll ! */
-	movq_r2r (mm2, mm0);	/* unroll ! */
-    } while (--height);
+		curr_block += stride;
+		ref_block  += stride;
+	}
 }
 
-static inline void MC_put4_16 (int height, uint8_t * dest, const uint8_t * ref,
-			       const int stride, const int cpu)
+void 
+motion_comp_put_x_16x16_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
-    do {
-	movq_m2r (*ref, mm0);
-	movq_m2r (*(ref+stride+1), mm1);
-	movq_r2r (mm0, mm7);
-	movq_m2r (*(ref+1), mm2);
-	pxor_r2r (mm1, mm7);
-	movq_m2r (*(ref+stride), mm3);
-	movq_r2r (mm2, mm6);
-	pxor_r2r (mm3, mm6);
-	pavg_r2r (mm1, mm0);
-	pavg_r2r (mm3, mm2);
-	por_r2r (mm6, mm7);
-	movq_r2r (mm0, mm6);
-	pxor_r2r (mm2, mm6);
-	pand_r2r (mm6, mm7);
-	pand_m2r (mask_one, mm7);
-	pavg_r2r (mm2, mm0);
-	psubusb_r2r (mm7, mm0);
-	movq_r2m (mm0, *dest);
-
-	movq_m2r (*(ref+8), mm0);
-	movq_m2r (*(ref+stride+9), mm1);
-	movq_r2r (mm0, mm7);
-	movq_m2r (*(ref+9), mm2);
-	pxor_r2r (mm1, mm7);
-	movq_m2r (*(ref+stride+8), mm3);
-	movq_r2r (mm2, mm6);
-	pxor_r2r (mm3, mm6);
-	pavg_r2r (mm1, mm0);
-	pavg_r2r (mm3, mm2);
-	por_r2r (mm6, mm7);
-	movq_r2r (mm0, mm6);
-	pxor_r2r (mm2, mm6);
-	pand_r2r (mm6, mm7);
-	pand_m2r (mask_one, mm7);
-	pavg_r2r (mm2, mm0);
-	psubusb_r2r (mm7, mm0);
-	ref += stride;
-	movq_r2m (mm0, *(dest+8));
-	dest += stride;
-    } while (--height);
+   motion_comp_put_x_mmx( 16, height, curr_block, ref_block, frame_stride);
 }
 
-static inline void MC_avg4_8 (int height, uint8_t * dest, const uint8_t * ref,
-			      const int stride, const int cpu)
+void 
+motion_comp_put_x_8x8_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
-    do {
-	movq_m2r (*ref, mm0);
-	movq_m2r (*(ref+stride+1), mm1);
-	movq_r2r (mm0, mm7);
-	movq_m2r (*(ref+1), mm2);
-	pxor_r2r (mm1, mm7);
-	movq_m2r (*(ref+stride), mm3);
-	movq_r2r (mm2, mm6);
-	pxor_r2r (mm3, mm6);
-	pavg_r2r (mm1, mm0);
-	pavg_r2r (mm3, mm2);
-	por_r2r (mm6, mm7);
-	movq_r2r (mm0, mm6);
-	pxor_r2r (mm2, mm6);
-	pand_r2r (mm6, mm7);
-	pand_m2r (mask_one, mm7);
-	pavg_r2r (mm2, mm0);
-	psubusb_r2r (mm7, mm0);
-	movq_m2r (*dest, mm1);
-	pavg_r2r (mm1, mm0);
-	ref += stride;
-	movq_r2m (mm0, *dest);
-	dest += stride;
-    } while (--height);
+   motion_comp_put_x_mmx( 8, height, curr_block, ref_block, frame_stride);
 }
 
-static inline void MC_avg4_16 (int height, uint8_t * dest, const uint8_t * ref,
-			       const int stride, const int cpu)
-{
-    do {
-	movq_m2r (*ref, mm0);
-	movq_m2r (*(ref+stride+1), mm1);
-	movq_r2r (mm0, mm7);
-	movq_m2r (*(ref+1), mm2);
-	pxor_r2r (mm1, mm7);
-	movq_m2r (*(ref+stride), mm3);
-	movq_r2r (mm2, mm6);
-	pxor_r2r (mm3, mm6);
-	pavg_r2r (mm1, mm0);
-	pavg_r2r (mm3, mm2);
-	por_r2r (mm6, mm7);
-	movq_r2r (mm0, mm6);
-	pxor_r2r (mm2, mm6);
-	pand_r2r (mm6, mm7);
-	pand_m2r (mask_one, mm7);
-	pavg_r2r (mm2, mm0);
-	psubusb_r2r (mm7, mm0);
-	movq_m2r (*dest, mm1);
-	pavg_r2r (mm1, mm0);
-	movq_r2m (mm0, *dest);
-
-	movq_m2r (*(ref+8), mm0);
-	movq_m2r (*(ref+stride+9), mm1);
-	movq_r2r (mm0, mm7);
-	movq_m2r (*(ref+9), mm2);
-	pxor_r2r (mm1, mm7);
-	movq_m2r (*(ref+stride+8), mm3);
-	movq_r2r (mm2, mm6);
-	pxor_r2r (mm3, mm6);
-	pavg_r2r (mm1, mm0);
-	pavg_r2r (mm3, mm2);
-	por_r2r (mm6, mm7);
-	movq_r2r (mm0, mm6);
-	pxor_r2r (mm2, mm6);
-	pand_r2r (mm6, mm7);
-	pand_m2r (mask_one, mm7);
-	pavg_r2r (mm2, mm0);
-	psubusb_r2r (mm7, mm0);
-	movq_m2r (*(dest+8), mm1);
-	pavg_r2r (mm1, mm0);
-	ref += stride;
-	movq_r2m (mm0, *(dest+8));
-	dest += stride;
-    } while (--height);
-}
 
-static void MC_avg_o_16_mmxext (uint8_t * dest, const uint8_t * ref,
-				int stride, int height)
-{
-    MC_avg1_16 (height, dest, ref, stride, CPU_MMXEXT);
-}
+//-----------------------------------------------------------------------
 
-static void MC_avg_o_8_mmxext (uint8_t * dest, const uint8_t * ref,
-			       int stride, int height)
+static inline void 
+motion_comp_avg_xy_mmx( const uint8_t width, const int32_t height, uint8_t *curr_block, uint8_t *ref_block, 
+		const int32_t stride) 
 {
-    MC_avg1_8 (height, dest, ref, stride, CPU_MMXEXT);
-}
+	int y;
+	uint8_t *ref_block_next = ref_block + stride;
 
-static void MC_put_o_16_mmxext (uint8_t * dest, const uint8_t * ref,
-				int stride, int height)
-{
-    MC_put1_16 (height, dest, ref, stride);
-}
+	mmx_zero_reg();
 
-static void MC_put_o_8_mmxext (uint8_t * dest, const uint8_t * ref,
-			       int stride, int height)
-{
-    MC_put1_8 (height, dest, ref, stride);
-}
+	for (y = 0; y < height; y++) 
+	{
+		mmx_interp_average_4_U8(curr_block, ref_block, ref_block + 1, ref_block_next, ref_block_next + 1);
 
-static void MC_avg_x_16_mmxext (uint8_t * dest, const uint8_t * ref,
-				int stride, int height)
-{
-    MC_avg2_16 (height, dest, ref, stride, 1, CPU_MMXEXT);
-}
+		if(width == 16)
+			mmx_interp_average_4_U8(curr_block + 8, ref_block + 8, ref_block + 9, ref_block_next + 8, ref_block_next + 9);
 
-static void MC_avg_x_8_mmxext (uint8_t * dest, const uint8_t * ref,
-			       int stride, int height)
-{
-    MC_avg2_8 (height, dest, ref, stride, 1, CPU_MMXEXT);
+		curr_block     += stride;
+		ref_block      += stride;
+		ref_block_next += stride;
+	}
 }
 
-static void MC_put_x_16_mmxext (uint8_t * dest, const uint8_t * ref,
-				int stride, int height)
+void 
+motion_comp_avg_xy_16x16_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
-    MC_put2_16 (height, dest, ref, stride, 1, CPU_MMXEXT);
+   motion_comp_avg_xy_mmx( 16, height, curr_block, ref_block, frame_stride);
 }
 
-static void MC_put_x_8_mmxext (uint8_t * dest, const uint8_t * ref,
-			       int stride, int height)
+void 
+motion_comp_avg_xy_8x8_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
-    MC_put2_8 (height, dest, ref, stride, 1, CPU_MMXEXT);
+   motion_comp_avg_xy_mmx( 8, height, curr_block, ref_block, frame_stride);
 }
 
-static void MC_avg_y_16_mmxext (uint8_t * dest, const uint8_t * ref,
-				int stride, int height)
-{
-    MC_avg2_16 (height, dest, ref, stride, stride, CPU_MMXEXT);
-}
+//-----------------------------------------------------------------------
 
-static void MC_avg_y_8_mmxext (uint8_t * dest, const uint8_t * ref,
-			       int stride, int height)
+static inline void 
+motion_comp_put_xy_mmx( const uint8_t width, const int32_t height, uint8_t *curr_block, uint8_t *ref_block, 
+		const int32_t stride) 
 {
-    MC_avg2_8 (height, dest, ref, stride, stride, CPU_MMXEXT);
-}
+	int y;
+	uint8_t *ref_block_next = ref_block + stride;
 
-static void MC_put_y_16_mmxext (uint8_t * dest, const uint8_t * ref,
-				int stride, int height)
-{
-    MC_put2_16 (height, dest, ref, stride, stride, CPU_MMXEXT);
-}
+	mmx_zero_reg();
 
-static void MC_put_y_8_mmxext (uint8_t * dest, const uint8_t * ref,
-			       int stride, int height)
-{
-    MC_put2_8 (height, dest, ref, stride, stride, CPU_MMXEXT);
-}
+	for (y = 0; y < height; y++) 
+	{
+		mmx_average_4_U8(curr_block, ref_block, ref_block + 1, ref_block_next, ref_block_next + 1);
 
-static void MC_avg_xy_16_mmxext (uint8_t * dest, const uint8_t * ref,
-				 int stride, int height)
-{
-    MC_avg4_16 (height, dest, ref, stride, CPU_MMXEXT);
-}
+		if(width == 16)
+			mmx_average_4_U8(curr_block + 8, ref_block + 8, ref_block + 9, ref_block_next + 8, ref_block_next + 9);
 
-static void MC_avg_xy_8_mmxext (uint8_t * dest, const uint8_t * ref,
-				int stride, int height)
-{
-    MC_avg4_8 (height, dest, ref, stride, CPU_MMXEXT);
+		curr_block     += stride;
+		ref_block      += stride;
+		ref_block_next += stride;
+	}
 }
 
-static void MC_put_xy_16_mmxext (uint8_t * dest, const uint8_t * ref,
-				 int stride, int height)
+void 
+motion_comp_put_xy_16x16_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
-    MC_put4_16 (height, dest, ref, stride, CPU_MMXEXT);
+   motion_comp_put_xy_mmx( 16, height, curr_block, ref_block, frame_stride);
 }
 
-static void MC_put_xy_8_mmxext (uint8_t * dest, const uint8_t * ref,
-				int stride, int height)
+void 
+motion_comp_put_xy_8x8_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
-    MC_put4_8 (height, dest, ref, stride, CPU_MMXEXT);
+   motion_comp_put_xy_mmx( 8, height, curr_block, ref_block, frame_stride);
 }
-
 
-MPEG2_MC_EXTERN (mmxext)
+//-----------------------------------------------------------------------
 
-
-
-static void MC_avg_o_16_3dnow (uint8_t * dest, const uint8_t * ref,
-			       int stride, int height)
-{
-    MC_avg1_16 (height, dest, ref, stride, CPU_3DNOW);
-}
-
-static void MC_avg_o_8_3dnow (uint8_t * dest, const uint8_t * ref,
-			      int stride, int height)
+static inline void 
+motion_comp_avg_y_mmx( const uint8_t width, const int32_t height, uint8_t *curr_block, uint8_t *ref_block,
+      const int32_t stride) 
 {
-    MC_avg1_8 (height, dest, ref, stride, CPU_3DNOW);
-}
+	int y;
+	uint8_t *ref_block_next = ref_block + stride;
 
-static void MC_put_o_16_3dnow (uint8_t * dest, const uint8_t * ref,
-			       int stride, int height)
-{
-    MC_put1_16 (height, dest, ref, stride);
-}
+	mmx_zero_reg();
 
-static void MC_put_o_8_3dnow (uint8_t * dest, const uint8_t * ref,
-			      int stride, int height)
-{
-    MC_put1_8 (height, dest, ref, stride);
-}
+	for (y = 0; y < height; y++) 
+	{
+		mmx_interp_average_2_U8(curr_block, ref_block, ref_block_next);
 
-static void MC_avg_x_16_3dnow (uint8_t * dest, const uint8_t * ref,
-			       int stride, int height)
-{
-    MC_avg2_16 (height, dest, ref, stride, 1, CPU_3DNOW);
-}
+		if(width == 16)
+			mmx_interp_average_2_U8(curr_block + 8, ref_block + 8, ref_block_next + 8);
 
-static void MC_avg_x_8_3dnow (uint8_t * dest, const uint8_t * ref,
-			      int stride, int height)
-{
-    MC_avg2_8 (height, dest, ref, stride, 1, CPU_3DNOW);
+		curr_block     += stride;
+		ref_block      += stride;
+		ref_block_next += stride;
+	}
 }
 
-static void MC_put_x_16_3dnow (uint8_t * dest, const uint8_t * ref,
-			       int stride, int height)
+void 
+motion_comp_avg_y_16x16_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
-    MC_put2_16 (height, dest, ref, stride, 1, CPU_3DNOW);
+   motion_comp_avg_y_mmx( 16, height, curr_block, ref_block, frame_stride);
 }
 
-static void MC_put_x_8_3dnow (uint8_t * dest, const uint8_t * ref,
-			      int stride, int height)
+void 
+motion_comp_avg_y_8x8_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
-    MC_put2_8 (height, dest, ref, stride, 1, CPU_3DNOW);
+   motion_comp_avg_y_mmx( 8, height, curr_block, ref_block, frame_stride);
 }
 
-static void MC_avg_y_16_3dnow (uint8_t * dest, const uint8_t * ref,
-			       int stride, int height)
-{
-    MC_avg2_16 (height, dest, ref, stride, stride, CPU_3DNOW);
-}
+//-----------------------------------------------------------------------
 
-static void MC_avg_y_8_3dnow (uint8_t * dest, const uint8_t * ref,
-			      int stride, int height)
+static inline void
+motion_comp_put_y_mmx( const uint8_t width, const int32_t height, uint8_t *curr_block, uint8_t *ref_block, 
+		const int32_t stride) 
 {
-    MC_avg2_8 (height, dest, ref, stride, stride, CPU_3DNOW);
-}
+	int y;
+	uint8_t *ref_block_next = ref_block + stride;
 
-static void MC_put_y_16_3dnow (uint8_t * dest, const uint8_t * ref,
-			       int stride, int height)
-{
-    MC_put2_16 (height, dest, ref, stride, stride, CPU_3DNOW);
-}
+	mmx_zero_reg();
 
-static void MC_put_y_8_3dnow (uint8_t * dest, const uint8_t * ref,
-			      int stride, int height)
-{
-    MC_put2_8 (height, dest, ref, stride, stride, CPU_3DNOW);
-}
+	for (y = 0; y < height; y++) 
+	{
+		mmx_average_2_U8(curr_block, ref_block, ref_block_next);
 
-static void MC_avg_xy_16_3dnow (uint8_t * dest, const uint8_t * ref,
-				int stride, int height)
-{
-    MC_avg4_16 (height, dest, ref, stride, CPU_3DNOW);
-}
+		if(width == 16)
+			mmx_average_2_U8(curr_block + 8, ref_block + 8, ref_block_next + 8);
 
-static void MC_avg_xy_8_3dnow (uint8_t * dest, const uint8_t * ref,
-			       int stride, int height)
-{
-    MC_avg4_8 (height, dest, ref, stride, CPU_3DNOW);
+		curr_block     += stride;
+		ref_block      += stride;
+		ref_block_next += stride;
+	}
 }
 
-static void MC_put_xy_16_3dnow (uint8_t * dest, const uint8_t * ref,
-				int stride, int height)
+void 
+motion_comp_put_y_16x16_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
-    MC_put4_16 (height, dest, ref, stride, CPU_3DNOW);
+   motion_comp_put_y_mmx( 16, height, curr_block, ref_block, frame_stride);
 }
 
-static void MC_put_xy_8_3dnow (uint8_t * dest, const uint8_t * ref,
-			       int stride, int height)
+void 
+motion_comp_put_y_8x8_mmx( uint8_t *curr_block, uint8_t *ref_block, const int32_t frame_stride, 
+		const int32_t height) 
 {
-    MC_put4_8 (height, dest, ref, stride, CPU_3DNOW);
+   motion_comp_put_y_mmx( 8, height, curr_block, ref_block, frame_stride);
 }
-
 
-MPEG2_MC_EXTERN (3dnow)
 
-#endif
+MOTION_COMP_EXTERN(mmx)

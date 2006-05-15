@@ -1,143 +1,171 @@
-/*
- * video_out_null.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
- * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
+//PLUGIN_INFO(INFO_NAME, "NULL video output");
+//PLUGIN_INFO(INFO_AUTHOR, "Aaron Holtzman <aholtzma@ess.engr.uvic.ca>");
+
+/* 
+ *  video_out_null.c
  *
- * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
- * See http://libmpeg2.sourceforge.net/ for updates.
+ *	Copyright (C) Aaron Holtzman - June 2000
  *
- * mpeg2dec is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ *  This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
+ *	
+ *  mpeg2dec is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2, or (at your option)
+ *  any later version.
+ *   
+ *  mpeg2dec is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *   
+ *  You should have received a copy of the GNU General Public License
+ *  along with GNU Make; see the file COPYING.  If not, write to
+ *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. 
  *
- * mpeg2dec is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "config.h"
 
 #include <stdlib.h>
-#include <inttypes.h>
 
-#include "mpeg2.h"
-#include "video_out.h"
-#include "mpeg2convert.h"
+#include <oms/oms.h>
+#include <oms/plugin/output_video.h>
 
-static void null_draw_frame (vo_instance_t * instance,
-			     uint8_t * const * buf, void * id)
+static int _null_open		(plugin_t *plugin, void *name);
+static int _null_close		(plugin_t *plugin);
+static int _null_setup		(plugin_output_video_attr_t *attr);
+static int _null_draw_frame	(uint8_t *src[]);
+static int _null_draw_slice	(uint8_t *src[], uint32_t slice_num);
+static void _null_flip_page	(void);
+static void _null_free_image_buffer   (vo_image_buffer_t* image);
+static vo_image_buffer_t* _null_allocate_image_buffer(uint32_t height, uint32_t width, uint32_t format);
+
+static plugin_output_video_t video_null = {
+	open:		_null_open,
+	close:		_null_close,
+	setup:		_null_setup,
+	draw_frame:	_null_draw_frame,
+	draw_slice:	_null_draw_slice,
+	flip_page:	_null_flip_page,
+	allocate_image_buffer:	_null_allocate_image_buffer,
+	free_image_buffer:	_null_free_image_buffer
+};
+
+
+/**
+ *
+ **/
+
+static int _null_open (plugin_t *plugin, void *name)
+{
+        return 0;
+}
+
+
+/**
+ *
+ **/
+
+static int _null_close (plugin_t *plugin)
+{
+	return 0;
+}
+
+
+/**
+ *
+ **/
+
+static int _null_draw_slice (uint8_t *src[], uint32_t slice_num)
+{
+	return 0;
+}
+
+
+/**
+ *
+ **/
+
+static int _null_draw_frame (uint8_t *src[])
+{
+	return 0;
+}
+
+
+/**
+ *
+ **/
+
+static void _null_flip_page(void)
 {
 }
 
-static vo_instance_t * internal_open (int setup (vo_instance_t *, unsigned int,
-						 unsigned int, unsigned int,
-						 unsigned int,
-						 vo_setup_result_t *),
-				      void draw (vo_instance_t *,
-						 uint8_t * const *, void *))
+
+/**
+ *
+ **/
+
+static int _null_setup (plugin_output_video_attr_t *attr)
 {
-    vo_instance_t * instance;
-
-    instance = (vo_instance_t *) malloc (sizeof (vo_instance_t));
-    if (instance == NULL)
-	return NULL;
-
-    instance->setup = setup;
-    instance->setup_fbuf = NULL;
-    instance->set_fbuf = NULL;
-    instance->start_fbuf = NULL;
-    instance->draw = draw;
-    instance->discard = NULL;
-    instance->close = (void (*) (vo_instance_t *)) free;
-
-    return instance;
+	return 0;
 }
 
-static int null_setup (vo_instance_t * instance, unsigned int width,
-		       unsigned int height, unsigned int chroma_width,
-		       unsigned int chroma_height, vo_setup_result_t * result)
+
+/**
+ *
+ **/
+
+static vo_image_buffer_t* _null_allocate_image_buffer (uint32_t height, uint32_t width, uint32_t format)
 {
-    result->convert = NULL;
-    return 0;
+	vo_image_buffer_t *image;
+
+	if (!(image = malloc (sizeof (vo_image_buffer_t))))
+		return NULL;
+
+	image->height   = height;
+	image->width    = width;
+	image->format   = format;
+
+	//we only know how to do 4:2:0 planar yuv right now.
+	if (!(image->base = malloc (width * height * 3 / 2))) {
+		free(image);
+		return NULL;
+	}
+
+	return image;
 }
 
-vo_instance_t * vo_null_open (void)
+
+/**
+ *
+ **/
+
+static void _null_free_image_buffer (vo_image_buffer_t* image)
 {
-    return internal_open (null_setup, null_draw_frame);
+	free (image->base);
+	free (image);
 }
 
-vo_instance_t * vo_nullskip_open (void)
+/**
+ * Initialize Plugin.
+ **/
+
+int plugin_init (char *whoami)
 {
-    return internal_open (null_setup, NULL);
+	pluginRegister (whoami,
+		PLUGIN_ID_OUTPUT_VIDEO,
+		"null",
+		NULL,
+		NULL,
+		&video_null);
+
+	return 0;
 }
 
-static void nullslice_start (void * id, const mpeg2_fbuf_t * fbuf,
-			     const mpeg2_picture_t * picture,
-			     const mpeg2_gop_t * gop)
-{
-}
 
-static void nullslice_copy (void * id, uint8_t * const * src,
-			    unsigned int v_offset)
-{
-}
+/**
+ * Cleanup Plugin.
+ **/
 
-static int nullslice_convert (int stage, void * id,
-			      const mpeg2_sequence_t * seq,
-			      int stride, uint32_t accel, void * arg,
-			      mpeg2_convert_init_t * result)
+void plugin_exit (void)
 {
-    result->id_size = 0;
-    result->buf_size[0] = result->buf_size[1] = result->buf_size[2] = 0;
-    result->start = nullslice_start;
-    result->copy = nullslice_copy;
-    return 0;
-}
-
-static int nullslice_setup (vo_instance_t * instance, unsigned int width,
-			    unsigned int height, unsigned int chroma_width,
-			    unsigned int chroma_height,
-			    vo_setup_result_t * result)
-{
-    result->convert = nullslice_convert;
-    return 0;
-}
-
-vo_instance_t * vo_nullslice_open (void)
-{
-    return internal_open (nullslice_setup, null_draw_frame);
-}
-
-static int nullrgb16_setup (vo_instance_t * instance, unsigned int width,
-			    unsigned int height, unsigned int chroma_width,
-			    unsigned int chroma_height,
-			    vo_setup_result_t * result)
-{
-    result->convert = mpeg2convert_rgb16;
-    return 0;
-}
-
-static int nullrgb32_setup (vo_instance_t * instance, unsigned int width,
-			    unsigned int height, unsigned int chroma_width,
-			    unsigned int chroma_height,
-			    vo_setup_result_t * result)
-{
-    result->convert = mpeg2convert_rgb32;
-    return 0;
-}
-
-vo_instance_t * vo_nullrgb16_open (void)
-{
-    return internal_open (nullrgb16_setup, null_draw_frame);
-}
-
-vo_instance_t * vo_nullrgb32_open (void)
-{
-    return internal_open (nullrgb32_setup, null_draw_frame);
 }

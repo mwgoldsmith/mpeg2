@@ -1,11 +1,7 @@
 /*
- *  idct_mmx.c
+ *  slice.h
  *
  *  Copyright (C) Aaron Holtzman <aholtzma@ess.engr.uvic.ca> - Nov 1999
- *
- *  Portions of this code are from the MPEG software simulation group
- *  idct implementation. This code will be replaced with a new
- *  implementation soon.
  *
  *  This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
  *	
@@ -24,19 +20,6 @@
  *  the Free Software Foundation, 
  *
  */
-
-#include <stdio.h>
-#include <mmx.h>
-#include <inttypes.h>
-
-#include "mpeg2.h"
-#include "mpeg2_internal.h"
-
-#include "idct.h"
-
-void idct_block_mmx (int16_t * foo);
-
-void
-idct_end_mmx()
-{
-}
+ 
+uint32_t slice_process (picture_t *picture, uint8_t code,  uint8_t *buffer);
+void slice_init(void);

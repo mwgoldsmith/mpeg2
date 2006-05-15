@@ -1,130 +1,232 @@
 /*
- * motion_comp.c
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
- * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
+ *  motion_comp.c
  *
- * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
- * See http://libmpeg2.sourceforge.net/ for updates.
+ *  Copyright (C) Aaron Holtzman <aholtzma@ess.engr.uvic.ca> - Nov 1999
  *
- * mpeg2dec is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ *  This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
+ *	
+ *  mpeg2dec is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2, or (at your option)
+ *  any later version.
+ *   
+ *  mpeg2dec is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *   
+ *  You should have received a copy of the GNU General Public License
+ *  along with GNU Make; see the file COPYING.  If not, write to
+ *  the Free Software Foundation, 
  *
- * mpeg2dec is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "config.h"
+//
+// This will get amusing in a few months I'm sure
+//
+// motion_comp.c rewrite counter:  6
+//
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <inttypes.h>
 
+#include "config.h"
 #include "mpeg2.h"
-#include "attributes.h"
 #include "mpeg2_internal.h"
+#include "debug.h"
 
-mpeg2_mc_t mpeg2_mc;
+#include "motion_comp.h"
 
-void mpeg2_mc_init (uint32_t accel)
+static mc_functions_t mc_functions;
+
+void
+motion_comp_init (void)
 {
-#ifdef ARCH_X86
-    if (accel & MPEG2_ACCEL_X86_MMXEXT)
-	mpeg2_mc = mpeg2_mc_mmxext;
-    else if (accel & MPEG2_ACCEL_X86_3DNOW)
-	mpeg2_mc = mpeg2_mc_3dnow;
-    else if (accel & MPEG2_ACCEL_X86_MMX)
-	mpeg2_mc = mpeg2_mc_mmx;
-    else
+
+#ifdef __i386__
+	if(config.flags & MPEG2_MMX_ENABLE)
+	{
+		fprintf (stderr, "Using MMX for motion compensation\n");
+		mc_functions = mc_functions_mmx;
+	}
+	else
 #endif
-#ifdef ARCH_PPC
-    if (accel & MPEG2_ACCEL_PPC_ALTIVEC)
-	mpeg2_mc = mpeg2_mc_altivec;
-    else
+#if HAVE_MLIB
+	if(config.flags & MPEG2_MLIB_ENABLE)
+	{
+		fprintf (stderr, "Using mlib for motion compensation\n");
+		mc_functions = mc_functions_mlib;
+	}
+	else
 #endif
-#ifdef ARCH_ALPHA
-    if (accel & MPEG2_ACCEL_ALPHA)
-	mpeg2_mc = mpeg2_mc_alpha;
-    else
-#endif
-#ifdef ARCH_SPARC
-    if (accel & MPEG2_ACCEL_SPARC_VIS)
-	mpeg2_mc = mpeg2_mc_vis;
-    else
-#endif
-	mpeg2_mc = mpeg2_mc_c;
+	{
+		fprintf (stderr, "No accelerated motion compensation found\n");
+		mc_functions = mc_functions_c;
+		motion_comp_c_init();
+	}
 }
 
-#define avg2(a,b) ((a+b+1)>>1)
-#define avg4(a,b,c,d) ((a+b+c+d+2)>>2)
+void motion_block (void (** table) (uint8_t *, uint8_t *, int32_t, int32_t), 
+		int x_pred, int y_pred, int field_select,
+		uint8_t * dst_y, uint8_t * dst_cr, uint8_t * dst_cb,
+		uint8_t * refframe[3], int pitch, int height)
+{
+	uint32_t xy_half;
+	uint8_t *src1, *src2;
 
-#define predict_o(i) (ref[i])
-#define predict_x(i) (avg2 (ref[i], ref[i+1]))
-#define predict_y(i) (avg2 (ref[i], (ref+stride)[i]))
-#define predict_xy(i) (avg4 (ref[i], ref[i+1], \
-			     (ref+stride)[i], (ref+stride)[i+1]))
+	xy_half = ((y_pred & 1) << 1) | (x_pred & 1);
+	x_pred >>= 1;
+	y_pred >>= 1;
 
-#define put(predictor,i) dest[i] = predictor (i)
-#define avg(predictor,i) dest[i] = avg2 (predictor (i), dest[i])
+	src1 = refframe[0] + x_pred + y_pred * pitch + field_select * (pitch >> 1);
 
-/* mc function template */
+	table[xy_half] (dst_y, src1, pitch, height);
 
-#define MC_FUNC(op,xy)							\
-static void MC_##op##_##xy##_16_c (uint8_t * dest, const uint8_t * ref,	\
-				   const int stride, int height)	\
-{									\
-    do {								\
-	op (predict_##xy, 0);						\
-	op (predict_##xy, 1);						\
-	op (predict_##xy, 2);						\
-	op (predict_##xy, 3);						\
-	op (predict_##xy, 4);						\
-	op (predict_##xy, 5);						\
-	op (predict_##xy, 6);						\
-	op (predict_##xy, 7);						\
-	op (predict_##xy, 8);						\
-	op (predict_##xy, 9);						\
-	op (predict_##xy, 10);						\
-	op (predict_##xy, 11);						\
-	op (predict_##xy, 12);						\
-	op (predict_##xy, 13);						\
-	op (predict_##xy, 14);						\
-	op (predict_##xy, 15);						\
-	ref += stride;							\
-	dest += stride;							\
-    } while (--height);							\
-}									\
-static void MC_##op##_##xy##_8_c (uint8_t * dest, const uint8_t * ref,	\
-				  const int stride, int height)		\
-{									\
-    do {								\
-	op (predict_##xy, 0);						\
-	op (predict_##xy, 1);						\
-	op (predict_##xy, 2);						\
-	op (predict_##xy, 3);						\
-	op (predict_##xy, 4);						\
-	op (predict_##xy, 5);						\
-	op (predict_##xy, 6);						\
-	op (predict_##xy, 7);						\
-	ref += stride;							\
-	dest += stride;							\
-    } while (--height);							\
+	xy_half = ((y_pred & 1) << 1) | (x_pred & 1);
+	x_pred >>= 1;
+	y_pred >>= 1;
+	pitch >>= 1;
+	height >>= 1;
+
+	src1 = refframe[1] + x_pred + y_pred * pitch + field_select * (pitch >> 1);
+	src2 = refframe[2] + x_pred + y_pred * pitch + field_select * (pitch >> 1);
+
+
+	table[4+xy_half] (dst_cr, src1, pitch, height);
+	table[4+xy_half] (dst_cb, src2, pitch, height);
 }
 
-/* definitions of the actual mc functions */
+void
+motion_comp (picture_t * picture, macroblock_t *mb)
+{
+	int width, x, y;
+	int mb_width;
+	int pitch;
+	int d;
+	uint8_t *dst_y,*dst_cr,*dst_cb;
+	void (** table) (uint8_t *, uint8_t *, int32_t, int32_t);
 
-MC_FUNC (put,o)
-MC_FUNC (avg,o)
-MC_FUNC (put,x)
-MC_FUNC (avg,x)
-MC_FUNC (put,y)
-MC_FUNC (avg,y)
-MC_FUNC (put,xy)
-MC_FUNC (avg,xy)
+	width = picture->coded_picture_width;
+	mb_width = width >> 4;
 
-MPEG2_MC_EXTERN (c)
+
+	//handle interlaced blocks
+	if (mb->dct_type) 
+	{
+		d = 1;
+		pitch = width *2;
+	} 
+	else 
+	{
+		d = 8;
+		pitch = width;
+	}
+
+	//FIXME I'd really to take these two divides out.
+	//maybe do 16.16 fixed point mult 
+	//
+	//This don't seem to make much difference yet.
+	//y = ((mb->mba) * 1457) >> 16;
+	y = mb->mba / mb_width;
+	x = mb->mba - mb_width * y; 
+
+	dst_y = &picture->current_frame[0][x * 16 + y * width * 16];
+	dst_cr = &picture->current_frame[1][x * 8 + y * width * 8/2];
+	dst_cb = &picture->current_frame[2][x * 8 + y * width * 8/2];
+
+	if (mb->macroblock_type & MACROBLOCK_INTRA) 
+	{
+		/* intra block : there is no prediction, only IDCT components */
+
+		/* FIXME this could be merged into the IDCT transform */
+		mc_functions.idct_copy (dst_y, &mb->blocks[0*64], pitch);
+		mc_functions.idct_copy (dst_y + 8, &mb->blocks[1*64], pitch);
+		mc_functions.idct_copy (dst_y + width * d, &mb->blocks[2*64], pitch);
+		mc_functions.idct_copy (dst_y + width * d + 8, &mb->blocks[3*64], pitch);
+		mc_functions.idct_copy (dst_cr, &mb->blocks[4*64], width>>1);
+		mc_functions.idct_copy (dst_cb, &mb->blocks[5*64], width>>1);
+		
+		//clear the blocks for next time
+		memset(mb->blocks,0,sizeof(int16_t) * 6 * 64);
+	} 
+	else 
+	{ 
+		// Not an intra block
+
+		if (mb->macroblock_type & MACROBLOCK_MOTION_FORWARD) 
+		{
+			if (mb->motion_type == MC_FRAME) 
+			{
+				motion_block (mc_functions.put, mb->f_motion_vectors[0][0] + x * 32, 
+						mb->f_motion_vectors[0][1] + y * 32, 0, dst_y, dst_cr, dst_cb, 
+						picture->forward_reference_frame, width, 16);
+
+			} 
+			else 
+			{
+				motion_block (mc_functions.put, mb->f_motion_vectors[0][0] + x * 32, 
+						(mb->f_motion_vectors[0][1] >> 1) + y * 16, mb->f_motion_vertical_field_select[0], 
+						dst_y, dst_cr, dst_cb, picture->forward_reference_frame, width * 2, 8);
+
+				motion_block (mc_functions.put, mb->f_motion_vectors[1][0] + x * 32, 
+						(mb->f_motion_vectors[1][1] >> 1) + y * 16, mb->f_motion_vertical_field_select[1], 
+						dst_y + width, dst_cr + (width>>1), dst_cb + (width>>1), picture->forward_reference_frame, 
+						width * 2, 8);
+			}
+		}
+
+		if (mb->macroblock_type & MACROBLOCK_MOTION_BACKWARD) 
+		{
+			table = (mb->macroblock_type & MACROBLOCK_MOTION_FORWARD) ?
+				mc_functions.avg: mc_functions.put;
+
+			if (mb->motion_type == MC_FRAME) 
+			{
+				motion_block (table, mb->b_motion_vectors[0][0] + x * 32, 
+						mb->b_motion_vectors[0][1] + y * 32, 0, dst_y, dst_cr, dst_cb, 
+						picture->backward_reference_frame, width, 16);
+			} 
+			else 
+			{
+			motion_block (table, mb->b_motion_vectors[0][0] + x * 32, 
+					(mb->b_motion_vectors[0][1] >> 1) + y * 16, mb->b_motion_vertical_field_select[0], 
+					dst_y, dst_cr, dst_cb, picture->backward_reference_frame, width * 2, 8);
+
+			motion_block (table, mb->b_motion_vectors[1][0] + x * 32, 
+					(mb->b_motion_vectors[1][1] >> 1) + y * 16, mb->b_motion_vertical_field_select[1], 
+					dst_y + width, dst_cr + (width>>1), dst_cb + (width>>1), picture->backward_reference_frame, 
+					width * 2, 8);
+			}
+		}
+
+		if(mb->macroblock_type & MACROBLOCK_PATTERN) 
+		{
+			// We should assume zero forward motion if the block has none.
+			if (!(mb->macroblock_type & (MACROBLOCK_MOTION_FORWARD | MACROBLOCK_MOTION_BACKWARD)) ) 
+			{
+				fprintf (stderr, "PATTERN - NO MOTION");
+				fprintf (stderr, "EXIT\n");
+			}
+
+			if (mb->coded_block_pattern & 0x20)
+				mc_functions.idct_add (dst_y, &mb->blocks[0*64], pitch);
+			if (mb->coded_block_pattern & 0x10)
+				mc_functions.idct_add (dst_y + 8, &mb->blocks[1*64], pitch);
+			if (mb->coded_block_pattern & 0x08)
+				mc_functions.idct_add (dst_y + width * d, &mb->blocks[2*64], pitch);
+			if (mb->coded_block_pattern & 0x04)
+				mc_functions.idct_add (dst_y + width * d + 8, &mb->blocks[3*64], pitch);
+			if (mb->coded_block_pattern & 0x02)
+				mc_functions.idct_add (dst_cr, &mb->blocks[4*64], width >> 1);
+			if (mb->coded_block_pattern & 0x01)
+				mc_functions.idct_add (dst_cb, &mb->blocks[5*64], width >> 1);
+
+			//clear the blocks for next time
+			//I've tried only clearing blocks that had patterns, but it
+			//wasn't a gain - ah
+			memset(mb->blocks,0,sizeof(int16_t) * 6 * 64);
+		}
+	}
+}

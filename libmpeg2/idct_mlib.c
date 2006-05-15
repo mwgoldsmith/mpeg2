@@ -1,11 +1,7 @@
 /*
- *  idct_mmx.c
+ *  idct_mlib.c
  *
- *  Copyright (C) Aaron Holtzman <aholtzma@ess.engr.uvic.ca> - Nov 1999
- *
- *  Portions of this code are from the MPEG software simulation group
- *  idct implementation. This code will be replaced with a new
- *  implementation soon.
+ *  Copyright (C) 1999, Håkan Hjort <d95hjort@dtek.chalmers.se>
  *
  *  This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
  *	
@@ -26,17 +22,34 @@
  */
 
 #include <stdio.h>
-#include <mmx.h>
 #include <inttypes.h>
 
 #include "mpeg2.h"
 #include "mpeg2_internal.h"
 
 #include "idct.h"
-
-void idct_block_mmx (int16_t * foo);
+#include <mlib_types.h>
+#include <mlib_status.h>
+#include <mlib_sys.h>
+#include <mlib_video.h>
 
 void
-idct_end_mmx()
+idct_block_mlib(int16_t *block)
+{
+   // Aaron decided to integrate some scaling in the c/mmx code,
+   // we need to undo that now before calling a standard IDCT.
+   int i;
+   for (i=0; i<64; i++)
+   {
+       block[i] >>= 4;
+   }
+   // Should we use mlib_VideoIDCT_IEEE_S16_S16 here ??
+   // it's ~30% slower.
+   mlib_VideoIDCT8x8_S16_S16 (block, block);
+}
+
+void
+idct_end_mlib()
 {
 }
+

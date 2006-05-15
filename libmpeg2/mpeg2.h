@@ -1,11 +1,7 @@
 /*
- *  idct_mmx.c
+ *  mpeg2_internal.h
  *
- *  Copyright (C) Aaron Holtzman <aholtzma@ess.engr.uvic.ca> - Nov 1999
- *
- *  Portions of this code are from the MPEG software simulation group
- *  idct implementation. This code will be replaced with a new
- *  implementation soon.
+ *  Copyright (C) Aaron Holtzman <aholtzma@ess.engr.uvic.ca> - Mar 2000
  *
  *  This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
  *	
@@ -25,18 +21,20 @@
  *
  */
 
-#include <stdio.h>
-#include <mmx.h>
 #include <inttypes.h>
 
-#include "mpeg2.h"
-#include "mpeg2_internal.h"
+//config flags
+#define MPEG2_MMX_ENABLE        0x1
+#define MPEG2_3DNOW_ENABLE      0x2
+#define MPEG2_SSE_ENABLE        0x4
+#define MPEG2_ALTIVEC_ENABLE    0x8
+#define MPEG2_XIL_ENABLE        0x10
+#define MPEG2_MLIB_ENABLE       0x20
 
-#include "idct.h"
-
-void idct_block_mmx (int16_t * foo);
-
-void
-idct_end_mmx()
+typedef struct mpeg2_config_s
 {
-}
+	//Bit flags that enable various things
+	uint32_t flags;
+	//Callback that points the decoder to new stream data
+  void   (*fill_buffer_callback)(uint8_t **, uint8_t **);
+} mpeg2_config_t;

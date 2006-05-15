@@ -1,11 +1,7 @@
 /*
- *  idct_mmx.c
+ *  debug.c
  *
  *  Copyright (C) Aaron Holtzman <aholtzma@ess.engr.uvic.ca> - Nov 1999
- *
- *  Portions of this code are from the MPEG software simulation group
- *  idct implementation. This code will be replaced with a new
- *  implementation soon.
  *
  *  This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
  *	
@@ -25,18 +21,36 @@
  *
  */
 
-#include <stdio.h>
-#include <mmx.h>
-#include <inttypes.h>
+#include <stdlib.h>
+#include "debug.h"
 
-#include "mpeg2.h"
-#include "mpeg2_internal.h"
+static int debug_level = -1;
 
-#include "idct.h"
-
-void idct_block_mmx (int16_t * foo);
-
-void
-idct_end_mmx()
+// Determine is debug output is required.
+// We could potentially have multiple levels of debug info
+int debug_is_on(void)
 {
+	char *env_var;
+	
+	if(debug_level < 0)
+	{
+		env_var = getenv("MPEG2_DEBUG");
+
+		if (env_var)
+		{
+			debug_level = 1;
+		}
+		else
+			debug_level = 0;
+	}
+	
+	return debug_level;
 }
+
+//If you don't have gcc, then ya don't get debug output
+#ifndef __GNUC__
+void dprintf(char fmt[],...)
+{
+	int foo = 0;
+}
+#endif
