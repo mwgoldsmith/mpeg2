@@ -1,2 +1,0 @@
--Change y_blocks,cr_blocks,and cb_blocks in macroblock_t  and just do
- blocks[]. I think this could potentially make a lot of code simpler.
