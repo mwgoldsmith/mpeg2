@@ -73,7 +73,7 @@ static void print_fps (int final)
     static int total_elapsed;
     static int last_count = 0;
     struct timeval tv_end;
-    double fps, tfps;
+    float fps, tfps;
     int frames, elapsed;
 
     if (verbose)

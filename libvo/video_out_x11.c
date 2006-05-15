@@ -68,9 +68,7 @@ typedef struct x11_instance_s {
     GC gc;
     XVisualInfo vinfo;
     XShmSegmentInfo shminfo;
-    int xshm_extension;
     int completion_type;
-    int xshm;
 #ifdef LIBVO_XV
     unsigned int adaptors;
     XvAdaptorInfo * adaptorInfo;
@@ -99,15 +97,15 @@ static int open_display (x11_instance_t * instance, int width, int height)
 	return 1;
     }
 
-    instance->xshm_extension = 0;
-    if (XShmQueryVersion (instance->display, &major, &minor,
-			  &pixmaps) != 0 &&
-	(major > 1 || (major == 1 && minor >= 1))) {
-	instance->xshm_extension = 1;
-	instance->completion_type =
-	    XShmGetEventBase (instance->display) + ShmCompletion;
-    } else
+    if ((XShmQueryVersion (instance->display, &major, &minor,
+			   &pixmaps) == 0) ||
+	(major < 1) || ((major == 1) && (minor < 1))) {
 	fprintf (stderr, "No xshm extension\n");
+	return 1;
+    }
+
+    instance->completion_type =
+	XShmGetEventBase (instance->display) + ShmCompletion;
 
     /* list truecolor visuals for the default screen */
 #ifdef __cplusplus
@@ -172,7 +170,6 @@ static int handle_error (Display * display, XErrorEvent * error)
 
 static void * create_shm (x11_instance_t * instance, int size)
 {
-fprintf(stderr, "create_shm\n");
     instance->shminfo.shmid = shmget (IPC_PRIVATE, size, IPC_CREAT | 0777);
     if (instance->shminfo.shmid == -1)
 	goto error;
@@ -200,10 +197,6 @@ fprintf(stderr, "create_shm\n");
     if (shmerror) {
     error:
 	fprintf (stderr, "cannot create shared memory\n");
-	if (instance->shminfo.shmid != -1) {
-	    shmdt (instance->shminfo.shmaddr);
-	    shmctl (instance->shminfo.shmid, IPC_RMID, 0);
-	}
 	return NULL;
     }
 
@@ -217,7 +210,7 @@ static void destroy_shm (x11_instance_t * instance)
     shmctl (instance->shminfo.shmid, IPC_RMID, 0);
 }
 
-static void x11_event (x11_instance_t * instance)
+static void x11_event (x11_instance_t * instance)	/* XXXXXXXXXXX */
 {
     XEvent event;
     char * addr;
@@ -261,68 +254,50 @@ static void x11_draw_frame (vo_instance_t * _instance,
 
     frame = (x11_frame_t *) id;
     instance = (x11_instance_t *) _instance;
-    if (instance->xshm)
-	XShmPutImage (instance->display, instance->window, instance->gc,
-		      frame->ximage, 0, 0, 0, 0,
-		      instance->width, instance->height, True);
-    else
-	XPutImage (instance->display, instance->window, instance->gc,
-		   frame->ximage, 0, 0, 0, 0,
-		   instance->width, instance->height);
+
+    XShmPutImage (instance->display, instance->window, instance->gc,
+		  frame->ximage, 0, 0, 0, 0, instance->width, instance->height,
+		  True);
     XFlush (instance->display);
-    frame->wait_completion = instance->xshm;
-sleep(1);
+    frame->wait_completion = 1;
 }
 
-static int x11_alloc_frames (x11_instance_t * instance, int xshm)
+static int x11_alloc_frames (x11_instance_t * instance)
 {
     int size;
     char * alloc;
-    int i = 0;
-
-    if (xshm && !instance->xshm_extension)
-	return 1;
+    int i;
 
     size = 0;
     alloc = NULL;
-    while (i < 3) {
+    for (i = 0; i < 3; i++) {
 	instance->frame[i].wait_completion = 0;
-	instance->frame[i].ximage = xshm ?
+	instance->frame[i].ximage =
 	    XShmCreateImage (instance->display, instance->vinfo.visual,
 			     instance->vinfo.depth, ZPixmap, NULL /* data */,
 			     &(instance->shminfo),
-			     instance->width, instance->height) :
-	    XCreateImage(instance->display, instance->vinfo.visual,
-			 instance->vinfo.depth, ZPixmap, 0, NULL /* data */,
-			 instance->width, instance->height, 8, 0);
+			     instance->width, instance->height);
 	if (instance->frame[i].ximage == NULL) {
 	    fprintf (stderr, "Cannot create ximage\n");
 	    return 1;
-	} else if (xshm) {
-	    if (i == 0) {
-		size = (instance->frame[0].ximage->bytes_per_line *
-			instance->frame[0].ximage->height);
-		alloc = (char *) create_shm (instance, 3 * size);
-	    } else if (size != (instance->frame[i].ximage->bytes_per_line *
-				instance->frame[i].ximage->height)) {
-		fprintf (stderr, "unexpected ximage data size\n");
+	} else if (i == 0) {
+	    size = (instance->frame[0].ximage->bytes_per_line *
+		    instance->frame[0].ximage->height);
+	    alloc = (char *) create_shm (instance, 3 * size);
+	    if (alloc == NULL) {
+		XDestroyImage (instance->frame[i].ximage);
 		return 1;
 	    }
-	} else
-	    alloc =
-		(char *) malloc (instance->frame[i].ximage->bytes_per_line *
-				 instance->frame[i].ximage->height);
-	instance->frame[i].data = instance->frame[i].ximage->data = alloc;
-	i++;
-	if (alloc == NULL) {
-	    while (--i >= 0)
-		XDestroyImage (instance->frame[i].ximage);
+	} else if (size != (instance->frame[i].ximage->bytes_per_line *
+			    instance->frame[i].ximage->height)) {
+	    fprintf (stderr, "unexpected ximage data size\n");
 	    return 1;
 	}
+
+	instance->frame[i].data = instance->frame[i].ximage->data = alloc;
 	alloc += size;
     }
 
-    instance->xshm = xshm;
     return 0;
 }
 
@@ -335,8 +310,7 @@ static void x11_teardown (x11_instance_t * instance)
 	    x11_event (instance);
 	XDestroyImage (instance->frame[i].ximage);
     }
-    if (instance->xshm)
-	destroy_shm (instance);
+    destroy_shm (instance);
 }
 
 static void x11_close (vo_instance_t * _instance)
@@ -375,18 +349,12 @@ static void xv_draw_frame (vo_instance_t * _instance,
     x11_frame_t * frame = (x11_frame_t *) id;
     x11_instance_t * instance = (x11_instance_t *) _instance;
 
-    if (instance->xshm)
-	XvShmPutImage (instance->display, instance->port, instance->window,
-		       instance->gc, frame->xvimage, 0, 0,
-		       instance->width, instance->height, 0, 0,
-		       instance->width, instance->height, True);
-    else
-	XvPutImage (instance->display, instance->port, instance->window,
-		    instance->gc, frame->xvimage, 0, 0,
-		    instance->width, instance->height, 0, 0,
-		    instance->width, instance->height);
+    XvShmPutImage (instance->display, instance->port, instance->window,
+		   instance->gc, frame->xvimage, 0, 0,
+		   instance->width, instance->height, 0, 0,
+		   instance->width, instance->height, True);
     XFlush (instance->display);
-    frame->wait_completion = instance->xshm;
+    frame->wait_completion = 1;
 }
 
 static int xv_check_fourcc (x11_instance_t * instance, XvPortID port,
@@ -452,34 +420,23 @@ static int xv_alloc_frames (x11_instance_t * instance, int size,
     char * alloc;
     int i = 0;
 
-    instance->xshm = 1;
-    alloc = instance->xshm_extension  ?
-	(char *) create_shm (instance, 3 * size) : NULL;
-    if (alloc == NULL) {
-	instance->xshm = 0;
-	alloc = (char *) malloc (3 * size);
-	if (alloc == NULL)
-	    return 1;
-    }
+    alloc = (char *) create_shm (instance, 3 * size);
+    if (alloc == NULL)
+	return 1;
 
     while (i < 3) {
 	instance->frame[i].wait_completion = 0;
-	instance->frame[i].xvimage = instance->xshm ?
+	instance->frame[i].xvimage =
 	    XvShmCreateImage (instance->display, instance->port, fourcc,
 			      alloc, instance->width, instance->height,
-			      &(instance->shminfo)) :
-	    XvCreateImage (instance->display, instance->port, fourcc,
-			   alloc, instance->width, instance->height);
+			      &(instance->shminfo));
 	instance->frame[i].data = alloc;
 	alloc += size;
 	if ((instance->frame[i].xvimage == NULL) ||
 	    (instance->frame[i++].xvimage->data_size != size)) {
 	    while (--i >= 0)
 		XFree (instance->frame[i].xvimage);
-	    if (instance->xshm)
-		destroy_shm (instance);
-	    else
-		free (instance->frame[0].data);
+	    destroy_shm (instance);
 	    return 1;
 	}
     }
@@ -496,10 +453,7 @@ static void xv_teardown (x11_instance_t * instance)
 	    x11_event (instance);
 	XFree (instance->frame[i].xvimage);
     }
-    if (instance->xshm)
-	destroy_shm (instance);
-    else
-	free (instance->frame[0].data);
+    destroy_shm (instance);
     XvUngrabPort (instance->display, instance->port, 0);
 }
 #endif
@@ -553,7 +507,7 @@ static int common_setup (vo_instance_t * _instance, unsigned int width,
 	result->convert = mpeg2convert_uyvy;
     } else
 #endif
-    if (!x11_alloc_frames (instance, 1) || !x11_alloc_frames (instance, 0)) {
+    if (!x11_alloc_frames (instance)) {
 	int bpp;
 
 	instance->vo.setup_fbuf = x11_setup_fbuf;
