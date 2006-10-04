@@ -585,7 +585,7 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 
     /* XXXXXX decode extra_information_picture as well */
 
-    mpeg2dec->q_scale_type = 0;
+    decoder->q_scale_type = 0;
     decoder->intra_dc_precision = 7;
     decoder->frame_pred_frame_dct = 1;
     decoder->concealment_motion_vectors = 0;
@@ -631,7 +631,7 @@ static int picture_coding_ext (mpeg2dec_t * mpeg2dec)
     decoder->top_field_first = buffer[3] >> 7;
     decoder->frame_pred_frame_dct = (buffer[3] >> 6) & 1;
     decoder->concealment_motion_vectors = (buffer[3] >> 5) & 1;
-    mpeg2dec->q_scale_type = buffer[3] & 16;
+    decoder->q_scale_type = buffer[3] & 16;
     decoder->intra_vlc_format = (buffer[3] >> 3) & 1;
     decoder->scan = (buffer[3] & 4) ? mpeg2_scan_alt : mpeg2_scan_norm;
     if (!(buffer[4] & 0x80))
@@ -867,10 +867,10 @@ static void prescale (mpeg2dec_t * mpeg2dec, int index)
     int i, j, k;
     mpeg2_decoder_t * decoder = &(mpeg2dec->decoder);
 
-    if (mpeg2dec->scaled[index] != mpeg2dec->q_scale_type) {
-	mpeg2dec->scaled[index] = mpeg2dec->q_scale_type;
+    if (mpeg2dec->scaled[index] != decoder->q_scale_type) {
+	mpeg2dec->scaled[index] = decoder->q_scale_type;
 	for (i = 0; i < 32; i++) {
-	    k = mpeg2dec->q_scale_type ? non_linear_scale[i] : (i << 1);
+	    k = decoder->q_scale_type ? non_linear_scale[i] : (i << 1);
 	    for (j = 0; j < 64; j++)
 		decoder->quantizer_prescale[index][i][j] =
 		    k * mpeg2dec->quantizer_matrix[index][j];
