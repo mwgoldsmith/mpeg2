@@ -3,7 +3,7 @@ AC_PREREQ(2.54)
 AC_INIT
 AC_CONFIG_SRCDIR([src/mpeg2dec.c])
 AC_CONFIG_AUX_DIR(autotools)
-AC_CONFIG_FILES([Makefile autotools/Makefile include/Makefile test/Makefile
+AC_CONFIG_FILES([Makefile include/Makefile test/Makefile
     doc/Makefile src/Makefile libmpeg2/Makefile libmpeg2/convert/Makefile
     libvo/Makefile vc++/Makefile
     libmpeg2/libmpeg2.pc libmpeg2/convert/libmpeg2convert.pc])
