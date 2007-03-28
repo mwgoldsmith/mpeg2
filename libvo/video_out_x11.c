@@ -34,6 +34,7 @@
 #include <sys/shm.h>
 #include <X11/extensions/XShm.h>
 #include <inttypes.h>
+#include <unistd.h>
 /* since it doesn't seem to be defined on some platforms */
 int XShmGetEventBase (Display *);
 
