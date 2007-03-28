@@ -31,21 +31,12 @@ header="`grep -q '^[ \t]*A._CONFIG_HEADER' $conffile && echo yes || echo no`"
 
 # Check for automake
 amvers="no"
-for v in "-1.10" "110" "-1.9" "19" "-1.8" "18" "-1.7" "17" "-1.6" "16" "-1.5" "15"; do
+for v in "-1.10" "110" "-1.9" "19" "-1.8" "18" "-1.7" "17" "-1.6" "16" "-1.5" "15" ""; do
   if automake${v} --version >/dev/null 2>&1; then
     amvers="${v}"
     break
   fi
 done
-
-if test "${amvers}" = "no" && automake --version > /dev/null 2>&1; then
-  amvers="`automake --version | sed -e '1s/[^0-9]*//' -e q`"
-  if expr "$amvers" "<" "1.5" > /dev/null 2>&1; then
-    amvers="no"
-  else
-    amvers=""
-  fi
-fi
 
 if test "$amvers" = "no"; then
   echo "$0: you need automake version 1.5 or later"
