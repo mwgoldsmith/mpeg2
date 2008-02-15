@@ -127,7 +127,7 @@ static inline uint32_t arch_accel (uint32_t accel)
 }
 #endif /* ARCH_X86 || ARCH_X86_64 */
 
-#if defined(ACCEL_DETECT) && (defined(ARCH_PPC) || defined(ARCH_SPARC))
+#if defined(ACCEL_DETECT) && (defined(ARCH_PPC) || (defined(ARCH_SPARC) && defined(HAVE_VIS)))
 #include <signal.h>
 #include <setjmp.h>
 
