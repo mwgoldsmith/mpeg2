@@ -52,7 +52,7 @@ void mpeg2_mc_init (uint32_t accel)
 	mpeg2_mc = mpeg2_mc_alpha;
     else
 #endif
-#ifdef ARCH_SPARC
+#if defined(ARCH_SPARC) && defined(HAVE_VIS)
     if (accel & MPEG2_ACCEL_SPARC_VIS)
 	mpeg2_mc = mpeg2_mc_vis;
     else
