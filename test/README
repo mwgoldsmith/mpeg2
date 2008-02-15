@@ -9,7 +9,7 @@ or using CVS :
 # cvs login (Just press Return when prompted for a password)
 # cvs checkout mpeg2dec-streams
 
-(OK, I did some reorganization work on the archive, so its not really the
+(OK, I did some reorganization work on the archive, so it is not really the
 official suite anymore)
 
 Then,
