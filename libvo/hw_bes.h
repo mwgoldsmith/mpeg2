@@ -21,8 +21,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef __LINUX_HW_BES_H
-#define __LINUX_HW_BES_H
+#ifndef LIBMPEG2_HW_BES_H
+#define LIBMPEG2_HW_BES_H
 
 typedef struct {
     uint32_t card_type;
@@ -47,4 +47,4 @@ typedef struct {
 #define MGA_G200 0x1234
 #define MGA_G400 0x5678
 
-#endif
+#endif /* LIBMPEG2_HW_BES_H */

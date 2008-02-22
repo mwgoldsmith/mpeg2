@@ -21,6 +21,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef LIBMPEG2_MPEG2_INTERNAL_H
+#define LIBMPEG2_MPEG2_INTERNAL_H
+
 #define STATE_INTERNAL_NORETURN ((mpeg2_state_t)-1)
 
 /* macroblock modes */
@@ -304,3 +307,5 @@ extern mpeg2_mc_t mpeg2_mc_3dnow;
 extern mpeg2_mc_t mpeg2_mc_altivec;
 extern mpeg2_mc_t mpeg2_mc_alpha;
 extern mpeg2_mc_t mpeg2_mc_vis;
+
+#endif /* LIBMPEG2_MPEG2_INTERNAL_H */

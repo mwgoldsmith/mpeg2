@@ -21,6 +21,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef LIBMPEG2_VIDEO_OUT_H
+#define LIBMPEG2_VIDEO_OUT_H
+
 struct mpeg2_sequence_s;
 struct mpeg2_convert_init_s;
 typedef struct {
@@ -56,3 +59,5 @@ void vo_accel (uint32_t accel);
 
 /* return NULL terminated array of all drivers */
 vo_driver_t const * vo_drivers (void);
+
+#endif /* LIBMPEG2_VIDEO_OUT_H */
