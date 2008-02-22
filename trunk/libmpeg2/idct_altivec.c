@@ -41,7 +41,7 @@ typedef vector unsigned short vector_u16_t;
 typedef vector signed int vector_s32_t;
 typedef vector unsigned int vector_u32_t;
 
-#if defined(HAVE_ALTIVEC_H) && (__GNUC__ * 100 + __GNUC_MINOR__ < 303)
+#if defined(HAVE_ALTIVEC_H) && !defined(__APPLE_CC__) && (__GNUC__ * 100 + __GNUC_MINOR__ < 303)
 /* work around gcc <3.3 vec_mergel bug */
 static inline vector_s16_t my_vec_mergel (vector_s16_t const A,
 					  vector_s16_t const B)
