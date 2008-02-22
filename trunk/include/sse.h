@@ -20,6 +20,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef LIBMPEG2_SSE_H
+#define LIBMPEG2_SSE_H
+
 typedef	union {
 	float			sf[4];	/* Single-precision (32-bit) value */
 } ATTR_ALIGN(16) sse_t;	/* On a 16 byte (128-bit) boundary */
@@ -254,3 +257,4 @@ typedef	union {
 			      : /* nothing */ \
 			      : "X" (mem))
 
+#endif /* LIBMPEG2_SSE_H */
