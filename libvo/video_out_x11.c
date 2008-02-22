@@ -173,7 +173,6 @@ static int handle_error (Display * display, XErrorEvent * error)
 
 static void * create_shm (x11_instance_t * instance, int size)
 {
-fprintf(stderr, "create_shm\n");
     instance->shminfo.shmid = shmget (IPC_PRIVATE, size, IPC_CREAT | 0777);
     if (instance->shminfo.shmid == -1)
 	goto error;
@@ -272,7 +271,6 @@ static void x11_draw_frame (vo_instance_t * _instance,
 		   instance->width, instance->height);
     XFlush (instance->display);
     frame->wait_completion = instance->xshm;
-sleep(1);
 }
 
 static int x11_alloc_frames (x11_instance_t * instance, int xshm)
