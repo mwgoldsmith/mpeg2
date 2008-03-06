@@ -9,8 +9,10 @@ Sam Hocevar <sam@zoy.org> and Christophe Massiot <massiot@via.ecp.fr>
 are the current maintainers.
 
 Other contributors include:
+	Koji Agawa <i (AT) atty (DOT) jp> - ARM code
 	Bruno Barreyra <barreyra@ufl.edu> - build fixes
 	Gildas Bazin <gbazin@netcourrier.com> - mingw32 port
+	Diego Biurrun <diego@biurrun.de> - portability fixes
 	Alexander W. Chin <alexc@newt.phys.unsw.edu.au> - progressive_seq fix
 	Stephen Crowley <stephenc@dns2.digitalpassage.com> - build fixes
 	Didier Gautheron <dgautheron@magic.fr> - bug fixes
