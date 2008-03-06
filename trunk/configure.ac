@@ -17,6 +17,7 @@ AM_MAINTAINER_MODE
 dnl Checks for compiler
 AC_PROG_CC
 AC_PROG_GCC_TRADITIONAL
+AM_PROG_AS
 
 dnl Checks for headers. We do this before the CC-specific section because
 dnl autoconf generates tests for generic headers before the first header test.
@@ -58,6 +59,7 @@ elif test x"$GCC" = x"yes"; then
     AC_TRY_CFLAGS([$TRY_CFLAGS $CFLAGS],[OPT_CFLAGS="$TRY_CFLAGS"])
 
     dnl arch-specific flags
+    arm_conditional=false
     case "$host" in
     i?86-* | k?-* | x86_64-* | amd64-*)
 	AC_DEFINE([ARCH_X86],,[x86 architecture])
@@ -99,6 +101,9 @@ elif test x"$GCC" = x"yes"; then
 	AC_TRY_CFLAGS([$TRY_CFLAGS $CFLAGS],[OPT_CFLAGS="$TRY_CFLAGS"]);;
     alpha*)
 	AC_DEFINE([ARCH_ALPHA],,[alpha architecture]);;
+    arm*)
+	arm_conditional=:
+	AC_DEFINE([ARCH_ARM],,[ARM architecture]);;
     esac
 elif test x"$CC" = x"tendracc"; then
     dnl TenDRA portability checking compiler
@@ -117,6 +122,8 @@ else
 	AC_TRY_CFLAGS([$TRY_CFLAGS $CFLAGS],[OPT_CFLAGS="$TRY_CFLAGS"]);;
     esac
 fi
+
+AM_CONDITIONAL(ARCH_ARM, ${arm_conditional})
 
 dnl Checks for libtool - this must be done after we set cflags
 AC_DISABLE_SHARED

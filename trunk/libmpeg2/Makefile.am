@@ -11,8 +11,11 @@ noinst_LTLIBRARIES = libmpeg2arch.la
 libmpeg2arch_la_SOURCES = motion_comp_mmx.c idct_mmx.c \
 			  motion_comp_altivec.c idct_altivec.c \
 			  motion_comp_alpha.c idct_alpha.c \
-			  motion_comp_vis.c \
+			  motion_comp_vis.c motion_comp_arm.c \
 			  cpu_accel.c cpu_state.c
+if ARCH_ARM
+libmpeg2arch_la_SOURCES += motion_comp_arm_s.S
+endif
 libmpeg2arch_la_CFLAGS = $(OPT_CFLAGS) $(ARCH_OPT_CFLAGS) $(LIBMPEG2_CFLAGS)
 
 pkgconfigdir = $(libdir)/pkgconfig
