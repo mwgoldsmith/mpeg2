@@ -82,6 +82,7 @@ typedef struct mpeg2_gop_s {
 #define PIC_FLAG_COMPOSITE_DISPLAY 32
 #define PIC_FLAG_SKIP 64
 #define PIC_FLAG_TAGS 128
+#define PIC_FLAG_REPEAT_FIRST_FIELD 256
 #define PIC_MASK_COMPOSITE_DISPLAY 0xfffff000
 
 typedef struct mpeg2_picture_s {
