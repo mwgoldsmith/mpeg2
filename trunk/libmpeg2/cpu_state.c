@@ -43,7 +43,7 @@ static void state_restore_mmx (cpu_state_t * state)
 }
 #endif
 
-#if defined(ARCH_PPC) && defined(HAVE_ALTIVEC)
+#ifdef ARCH_PPC
 #if defined(__APPLE_CC__)	/* apple */
 #define LI(a,b) "li r" #a "," #b "\n\t"
 #define STVX0(a,b,c) "stvx v" #a ",0,r" #c "\n\t"
@@ -120,7 +120,7 @@ void mpeg2_cpu_state_init (uint32_t accel)
 	mpeg2_cpu_state_restore = state_restore_mmx;
     }
 #endif
-#if defined(ARCH_PPC) && defined(HAVE_ALTIVEC)
+#ifdef ARCH_PPC
     if (accel & MPEG2_ACCEL_PPC_ALTIVEC) {
 	mpeg2_cpu_state_save = state_save_altivec;
 	mpeg2_cpu_state_restore = state_restore_altivec;
