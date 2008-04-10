@@ -503,7 +503,7 @@ static void get_intra_block_B15 (mpeg2_decoder_t * const decoder,
 	    } else {
 
 		/* end of block. I commented out this code because if we */
-		/* dont exit here we will still exit at the later test :) */
+		/* do not exit here we will still exit at the later test :) */
 
 		/* if (i >= 128) break;	*/	/* end of block */
 
