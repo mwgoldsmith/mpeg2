@@ -466,7 +466,7 @@ void mpeg2_header_sequence_finalize (mpeg2dec_t * mpeg2dec)
     if (mpeg2dec->sequence.width != (unsigned)-1) {
 	/*
 	 * According to 6.1.1.6, repeat sequence headers should be
-	 * identical to the original. However some encoders dont
+	 * identical to the original. However some encoders do not
 	 * respect that and change various fields (including bitrate
 	 * and aspect ratio) in the repeat sequence headers. So we
 	 * choose to be as conservative as possible and only restart
