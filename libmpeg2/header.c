@@ -408,13 +408,13 @@ int mpeg2_guess_aspect (const mpeg2_sequence_t * sequence,
     return (height == 576) ? 1 : 2;
 }
 
-static void copy_matrix (mpeg2dec_t * mpeg2dec, int index)
+static void copy_matrix (mpeg2dec_t * mpeg2dec, int idx)
 {
-    if (memcmp (mpeg2dec->quantizer_matrix[index],
-		mpeg2dec->new_quantizer_matrix[index], 64)) {
-	memcpy (mpeg2dec->quantizer_matrix[index],
-		mpeg2dec->new_quantizer_matrix[index], 64);
-	mpeg2dec->scaled[index] = -1;
+    if (memcmp (mpeg2dec->quantizer_matrix[idx],
+		mpeg2dec->new_quantizer_matrix[idx], 64)) {
+	memcpy (mpeg2dec->quantizer_matrix[idx],
+		mpeg2dec->new_quantizer_matrix[idx], 64);
+	mpeg2dec->scaled[idx] = -1;
     }
 }
 
@@ -857,7 +857,7 @@ int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec)
     return 0;
 }
 
-static void prescale (mpeg2dec_t * mpeg2dec, int index)
+static void prescale (mpeg2dec_t * mpeg2dec, int idx)
 {
     static int non_linear_scale [] = {
 	 0,  1,  2,  3,  4,  5,   6,   7,
@@ -868,13 +868,13 @@ static void prescale (mpeg2dec_t * mpeg2dec, int index)
     int i, j, k;
     mpeg2_decoder_t * decoder = &(mpeg2dec->decoder);
 
-    if (mpeg2dec->scaled[index] != decoder->q_scale_type) {
-	mpeg2dec->scaled[index] = decoder->q_scale_type;
+    if (mpeg2dec->scaled[idx] != decoder->q_scale_type) {
+	mpeg2dec->scaled[idx] = decoder->q_scale_type;
 	for (i = 0; i < 32; i++) {
 	    k = decoder->q_scale_type ? non_linear_scale[i] : (i << 1);
 	    for (j = 0; j < 64; j++)
-		decoder->quantizer_prescale[index][i][j] =
-		    k * mpeg2dec->quantizer_matrix[index][j];
+		decoder->quantizer_prescale[idx][i][j] =
+		    k * mpeg2dec->quantizer_matrix[idx][j];
 	}
     }
 }
