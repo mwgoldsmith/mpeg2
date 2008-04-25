@@ -125,7 +125,7 @@ static void corrupt_arg (corrupt_t * corrupt, int type, char * s, char ** argv)
 {
     corrupt->type = type;
     if (! *s)
-	s = ",0-0xff,0-";
+	s = (char *)",0-0xff,0-";
     else if (*s != ',' || !isdigit (s[1]))
 	print_usage (argv);
     corrupt->chunk_start = strtol (s + 1, &s, 0);
@@ -136,7 +136,7 @@ static void corrupt_arg (corrupt_t * corrupt, int type, char * s, char ** argv)
     else
 	print_usage (argv);
     if (! *s)
-	s = ",32-";
+	s = (char *)",32-";
     else if (*s != ',' || !isdigit (s[1]))
 	print_usage (argv);
     corrupt->bit_start = strtol (s + 1, &s, 0);

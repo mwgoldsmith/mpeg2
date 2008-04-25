@@ -51,7 +51,7 @@ struct vo_instance_s {
 typedef vo_instance_t * vo_open_t (void);
 
 typedef struct {
-    char * name;
+    const char * name;
     vo_open_t * open;
 } vo_driver_t;
 
