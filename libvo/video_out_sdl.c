@@ -142,8 +142,8 @@ vo_instance_t * vo_sdl_open (void)
     instance->vo.close = NULL; /* sdl_close; */
     instance->sdlflags = SDL_HWSURFACE | SDL_RESIZABLE;
 
-    putenv("SDL_VIDEO_YUV_HWACCEL=1");
-    putenv("SDL_VIDEO_X11_NODIRECTCOLOR=1");
+    putenv((char *)"SDL_VIDEO_YUV_HWACCEL=1");
+    putenv((char *)"SDL_VIDEO_X11_NODIRECTCOLOR=1");
 
     if (SDL_Init (SDL_INIT_VIDEO)) {
 	fprintf (stderr, "sdl video initialization failed.\n");
