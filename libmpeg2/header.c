@@ -239,7 +239,7 @@ static int sequence_ext (mpeg2dec_t * mpeg2dec)
     sequence->vbv_buffer_size |= buffer[4] << 21;
 
     sequence->frame_period =
-	sequence->frame_period * ((buffer[5]&31)+1) / (((buffer[5]>>2)&3)+1);
+	sequence->frame_period * ((buffer[5]&31)+1) / (((buffer[5]>>5)&3)+1);
 
     mpeg2dec->ext_state = SEQ_DISPLAY_EXT;
 
