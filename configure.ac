@@ -3,7 +3,7 @@ AC_PREREQ(2.54)
 AC_INIT([mpeg2dec],[0.5.0-svn],[])
 
 AC_CONFIG_SRCDIR([src/mpeg2dec.c])
-AC_CONFIG_AUX_DIR(autotools)
+AC_CONFIG_AUX_DIR(.auto)
 AC_CONFIG_FILES([Makefile include/Makefile test/Makefile
     doc/Makefile src/Makefile libmpeg2/Makefile libmpeg2/convert/Makefile
     libvo/Makefile vc++/Makefile
@@ -133,8 +133,8 @@ AC_PROG_LIBTOOL
 dnl Checks for libraries.
 
 dnl Checks for header files.
-INCLUDES='-I$(top_srcdir)/include -I$(top_builddir)/include'
-AC_SUBST([INCLUDES])
+AM_CPPFLAGS='-I$(top_srcdir)/include -I$(top_builddir)/include'
+AC_SUBST([AM_CPPFLAGS])
 AC_HEADER_TIME
 AC_CHECK_TYPES([struct timeval], [], [],
     [#include <sys/time.h>
