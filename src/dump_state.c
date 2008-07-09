@@ -29,6 +29,9 @@
 
 #include "mpeg2.h"
 
+void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
+		 int offset, int verbose);
+
 static struct {
     const mpeg2_sequence_t * ptr;
     mpeg2_sequence_t value;
