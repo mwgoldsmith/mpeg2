@@ -79,7 +79,7 @@ AC_DEFUN([AC_C_ATTRIBUTE_ALIGNED],
 		} S = {0, 0};
 		switch (1) {
 		    case 0:
-		    case (int)(&((struct s *)0)->b) == $ac_cv_c_attr_align_try:
+		    case (long)(&((struct s *)0)->b) == $ac_cv_c_attr_align_try:
 			return 0;
 		}
 		return (long)&S;],
