@@ -47,6 +47,7 @@ int XShmGetEventBase (Display *);
 
 #include "mpeg2.h"
 #include "video_out.h"
+#include "vo_internal.h"
 #include "mpeg2convert.h"
 
 typedef struct {

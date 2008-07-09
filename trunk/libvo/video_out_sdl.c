@@ -35,6 +35,7 @@
 #include <inttypes.h>
 
 #include "video_out.h"
+#include "vo_internal.h"
 
 typedef struct {
     vo_instance_t vo;
