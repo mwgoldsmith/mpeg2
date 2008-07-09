@@ -34,7 +34,7 @@ elif test x"$GCC" = x"yes"; then
 
     dnl -Wall
     dnl -Werror moved to the end to not disturb the configure script
-    TRY_CFLAGS="$OPT_CFLAGS -Wall"
+    TRY_CFLAGS="$OPT_CFLAGS -Wall -Wpointer-arith -Wcast-align -Wcast-qual -Wstrict-prototypes -Wshadow -Waggregate-return -Wmissing-prototypes -Wnested-externs -Wsign-compare"
     AC_TRY_CFLAGS([$TRY_CFLAGS $CFLAGS],[OPT_CFLAGS="$TRY_CFLAGS"])
 
     dnl -O3
@@ -126,7 +126,6 @@ fi
 AM_CONDITIONAL(ARCH_ARM, ${arm_conditional})
 
 dnl Checks for libtool - this must be done after we set cflags
-AC_DISABLE_SHARED
 AC_LIBTOOL_WIN32_DLL
 AC_PROG_LIBTOOL
 
