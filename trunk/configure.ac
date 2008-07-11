@@ -42,7 +42,7 @@ elif test x"$GCC" = x"yes"; then
     TRY_CFLAGS=`echo "$OPT_CFLAGS $CFLAGS"|sed "s/-O[0-9]*//g"`
     changequote([,])
     TRY_CFLAGS="$TRY_CFLAGS -O3"
-    AC_TRY_CFLAGS([$TRY_CFLAGS],[OPT_CFLAGS="$TRY_CFLAGS"; CFLAGS=""])
+    AC_TRY_CFLAGS([$TRY_CFLAGS],[OPT_CFLAGS="$TRY_CFLAGS"])
 
     AC_ARG_ENABLE([debug],
 	[  --enable-debug          debug mode configuration])
@@ -113,7 +113,7 @@ elif test x"$CC" = x"tendracc"; then
     enable_sdl=no
 elif test x"$CC" = x"icc" -a x"`$CC -V 2>&1 | grep Intel`" != x""; then
     dnl Intel C++ compiler
-    OPT_CFLAGS="-g -O3 -unroll -ip"; CFLAGS=""
+    OPT_CFLAGS="-g -O3 -unroll -ip"
 else
     dnl non-gcc flags - we probably need exact configuration triplets here.
     case "$host" in
