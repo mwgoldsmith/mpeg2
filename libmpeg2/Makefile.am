@@ -5,7 +5,7 @@ AM_CFLAGS = $(OPT_CFLAGS) $(LIBMPEG2_CFLAGS)
 lib_LTLIBRARIES = libmpeg2.la
 libmpeg2_la_SOURCES = alloc.c header.c decode.c slice.c motion_comp.c idct.c
 libmpeg2_la_LIBADD = libmpeg2arch.la
-libmpeg2_la_LDFLAGS = -no-undefined
+libmpeg2_la_LDFLAGS = -no-undefined -version-info 1:1:1
 
 noinst_LTLIBRARIES = libmpeg2arch.la
 libmpeg2arch_la_SOURCES = motion_comp_mmx.c idct_mmx.c \
