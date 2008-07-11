@@ -213,9 +213,9 @@ void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
 		 int offset, int verbose)
 {
     static const char * state_name[] = {
-	"BUFFER", "SEQUENCE", "SEQUENCE_REPEATED", "SEQUENCE_MODIFIED", "GOP",
+	"BUFFER", "SEQUENCE", "SEQUENCE_REPEATED","GOP",
 	"PICTURE", "SLICE_1ST", "PICTURE_2ND", "SLICE", "END",
-	"INVALID", "INVALID_END"
+	"INVALID", "INVALID_END", "SEQUENCE_MODIFIED"
     };
     static const char * profile[] = { "HP", "Spatial", "SNR", "MP", "SP" };
     static const char * level[] = { "HL", "H-14", "ML", "LL" };
