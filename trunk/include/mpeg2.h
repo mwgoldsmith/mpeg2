@@ -121,15 +121,15 @@ typedef enum {
     STATE_BUFFER = 0,
     STATE_SEQUENCE = 1,
     STATE_SEQUENCE_REPEATED = 2,
-    STATE_SEQUENCE_MODIFIED = 3,
-    STATE_GOP = 4,
-    STATE_PICTURE = 5,
-    STATE_SLICE_1ST = 6,
-    STATE_PICTURE_2ND = 7,
-    STATE_SLICE = 8,
-    STATE_END = 9,
-    STATE_INVALID = 10,
-    STATE_INVALID_END = 11
+    STATE_GOP = 3,
+    STATE_PICTURE = 4,
+    STATE_SLICE_1ST = 5,
+    STATE_PICTURE_2ND = 6,
+    STATE_SLICE = 7,
+    STATE_END = 8,
+    STATE_INVALID = 9,
+    STATE_INVALID_END = 10,
+    STATE_SEQUENCE_MODIFIED = 11
 } mpeg2_state_t;
 
 typedef struct mpeg2_convert_init_s {
