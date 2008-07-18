@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.54)
-AC_INIT([libmpeg2],[0.5.0],[])
+AC_INIT([libmpeg2],[0.5.1],[])
 
 AC_CONFIG_SRCDIR([src/mpeg2dec.c])
 AC_CONFIG_AUX_DIR(.auto)
