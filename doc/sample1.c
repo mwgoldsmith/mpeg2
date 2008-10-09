@@ -69,7 +69,6 @@ static void sample1 (FILE * mpgfile)
     uint8_t buffer[BUFFER_SIZE];
     mpeg2dec_t * decoder;
     const mpeg2_info_t * info;
-    const mpeg2_sequence_t * sequence;
     mpeg2_state_t state;
     size_t size;
     int framenum = 0;
@@ -84,7 +83,6 @@ static void sample1 (FILE * mpgfile)
     size = (size_t)-1;
     do {
 	state = mpeg2_parse (decoder);
-	sequence = info->sequence;
 	switch (state) {
 	case STATE_BUFFER:
 	    size = fread (buffer, 1, BUFFER_SIZE, mpgfile);
@@ -94,8 +92,9 @@ static void sample1 (FILE * mpgfile)
 	case STATE_END:
 	case STATE_INVALID_END:
 	    if (info->display_fbuf)
-		save_pgm (sequence->width, sequence->height,
-			  sequence->chroma_width, sequence->chroma_height,
+		save_pgm (info->sequence->width, info->sequence->height,
+			  info->sequence->chroma_width,
+			  info->sequence->chroma_height,
 			  info->display_fbuf->buf, framenum++);
 	    break;
 	default:

@@ -68,15 +68,12 @@ static void save_pgm (int width, int height,
 static void sample3 (FILE * mpgfile)
 {
 #define BUFFER_SIZE 4096
-#define ALIGN_16(p) ((void *)(((uintptr_t)(p) + 15) & ~((uintptr_t)15)))
     uint8_t buffer[BUFFER_SIZE];
     mpeg2dec_t * decoder;
     const mpeg2_info_t * info;
-    const mpeg2_sequence_t * sequence;
     mpeg2_state_t state;
     size_t size;
     int framenum = 0;
-    uint8_t * mbuf[3][3];
     uint8_t * fbuf[3][3];
     int i, j;
 
@@ -90,7 +87,6 @@ static void sample3 (FILE * mpgfile)
     size = (size_t)-1;
     do {
 	state = mpeg2_parse (decoder);
-	sequence = info->sequence;
 	switch (state) {
 	case STATE_BUFFER:
 	    size = fread (buffer, 1, BUFFER_SIZE, mpgfile);
@@ -98,18 +94,22 @@ static void sample3 (FILE * mpgfile)
 	    break;
 	case STATE_SEQUENCE:
 	    for (i = 0; i < 3; i++) {
-		mbuf[i][0] = (uint8_t *) malloc (sequence->width *
-						 sequence->height + 15);
-		mbuf[i][1] = (uint8_t *) malloc (sequence->chroma_width * 
-						 sequence->chroma_height + 15);
-		mbuf[i][2] = (uint8_t *) malloc (sequence->chroma_width *  
-						 sequence->chroma_height + 15);
-		if (!mbuf[i][0] || !mbuf[i][1] || !mbuf[i][2]) {
+		fbuf[i][0] =
+		    (uint8_t *) mpeg2_malloc (info->sequence->width *
+					      info->sequence->height,
+					      MPEG2_ALLOC_YUV);
+		fbuf[i][1] =
+		    (uint8_t *) mpeg2_malloc (info->sequence->chroma_width * 
+					      info->sequence->chroma_height,
+					      MPEG2_ALLOC_YUV);
+		fbuf[i][2] =
+		    (uint8_t *) mpeg2_malloc (info->sequence->chroma_width *  
+					      info->sequence->chroma_height,
+					      MPEG2_ALLOC_YUV);
+		if (!fbuf[i][0] || !fbuf[i][1] || !fbuf[i][2]) {
 		    fprintf (stderr, "Could not allocate an output buffer.\n");
 		    exit (1);
 		}
-		for (j = 0; j < 3; j++)
-		    fbuf[i][j] = ALIGN_16 (mbuf[i][j]);
 		mpeg2_set_buf (decoder, fbuf[i], NULL);
 	    }
 	    break;
@@ -117,13 +117,14 @@ static void sample3 (FILE * mpgfile)
 	case STATE_END:
 	case STATE_INVALID_END:
 	    if (info->display_fbuf)
-		save_pgm (sequence->width, sequence->height,
-			  sequence->chroma_width, sequence->chroma_height,
+		save_pgm (info->sequence->width, info->sequence->height,
+			  info->sequence->chroma_width,
+			  info->sequence->chroma_height,
 			  info->display_fbuf->buf, framenum++);
 	    if (state != STATE_SLICE)
 		for (i = 0; i < 3; i++)
 		    for (j = 0; j < 3; j++)
-			free (mbuf[i][j]);
+			mpeg2_free (fbuf[i][j]);
 	    break;
 	default:
 	    break;
