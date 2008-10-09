@@ -66,7 +66,6 @@ static void save_pgm (int width, int height,
 }
 
 static struct fbuf_s {
-    uint8_t * mbuf[3];
     uint8_t * yuv[3];
     int used;
 } fbuf[3];
@@ -87,11 +86,9 @@ static struct fbuf_s * get_fbuf (void)
 static void sample5 (FILE * mpgfile)
 {
 #define BUFFER_SIZE 4096
-#define ALIGN_16(p) ((void *)(((uintptr_t)(p) + 15) & ~((uintptr_t)15)))
     uint8_t buffer[BUFFER_SIZE];
     mpeg2dec_t * decoder;
     const mpeg2_info_t * info;
-    const mpeg2_sequence_t * sequence;
     mpeg2_state_t state;
     size_t size;
     int framenum = 0;
@@ -108,7 +105,6 @@ static void sample5 (FILE * mpgfile)
     size = (size_t)-1;
     do {
 	state = mpeg2_parse (decoder);
-	sequence = info->sequence;
 	switch (state) {
 	case STATE_BUFFER:
 	    size = fread (buffer, 1, BUFFER_SIZE, mpgfile);
@@ -117,18 +113,22 @@ static void sample5 (FILE * mpgfile)
 	case STATE_SEQUENCE:
 	    mpeg2_custom_fbuf (decoder, 1);
 	    for (i = 0; i < 3; i++) {
-		fbuf[i].mbuf[0] = (uint8_t *) malloc (sequence->width *
-						 sequence->height + 15);
-		fbuf[i].mbuf[1] = (uint8_t *) malloc (sequence->chroma_width * 
-						 sequence->chroma_height + 15);
-		fbuf[i].mbuf[2] = (uint8_t *) malloc (sequence->chroma_width *  
-						 sequence->chroma_height + 15);
-		if (!fbuf[i].mbuf[0] || !fbuf[i].mbuf[1] || !fbuf[i].mbuf[2]) {
+		fbuf[i].yuv[0] =
+		    (uint8_t *) mpeg2_malloc (info->sequence->width *
+					      info->sequence->height,
+					      MPEG2_ALLOC_YUV);
+		fbuf[i].yuv[1] =
+		    (uint8_t *) mpeg2_malloc (info->sequence->chroma_width * 
+					      info->sequence->chroma_height,
+					      MPEG2_ALLOC_YUV);
+		fbuf[i].yuv[2] =
+		    (uint8_t *) mpeg2_malloc (info->sequence->chroma_width *  
+					      info->sequence->chroma_height,
+					      MPEG2_ALLOC_YUV);
+		if (!fbuf[i].yuv[0] || !fbuf[i].yuv[1] || !fbuf[i].yuv[2]) {
 		    fprintf (stderr, "Could not allocate an output buffer.\n");
 		    exit (1);
 		}
-		for (j = 0; j < 3; j++)
-		    fbuf[i].yuv[j] = ALIGN_16 (fbuf[i].mbuf[j]);
 		fbuf[i].used = 0;
 	    }
 	    for (i = 0; i < 2; i++) {
@@ -144,15 +144,16 @@ static void sample5 (FILE * mpgfile)
 	case STATE_END:
 	case STATE_INVALID_END:
 	    if (info->display_fbuf)
-		save_pgm (sequence->width, sequence->height,
-			  sequence->chroma_width, sequence->chroma_height,
+		save_pgm (info->sequence->width, info->sequence->height,
+			  info->sequence->chroma_width,
+			  info->sequence->chroma_height,
 			  info->display_fbuf->buf, framenum++);
 	    if (info->discard_fbuf)
                 ((struct fbuf_s *)info->discard_fbuf->id)->used = 0;
 	    if (state != STATE_SLICE)
 		for (i = 0; i < 3; i++)
 		    for (j = 0; j < 3; j++)
-			free (fbuf[i].mbuf[j]);
+			mpeg2_free (fbuf[i].yuv[j]);
 	    break;
 	default:
 	    break;
