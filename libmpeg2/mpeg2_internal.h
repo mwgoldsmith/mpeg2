@@ -51,6 +51,8 @@
 #define B_TYPE 3
 #define D_TYPE 4
 
+typedef struct mpeg2_decoder_s mpeg2_decoder_t;
+
 typedef void mpeg2_mc_fct (uint8_t *, const uint8_t *, int, int);
 
 typedef struct {
@@ -292,6 +294,12 @@ void mpeg2_idct_alpha_init (void);
 
 /* motion_comp.c */
 void mpeg2_mc_init (uint32_t accel);
+
+/* slice.c */
+
+void mpeg2_init_fbuf (mpeg2_decoder_t * decoder, uint8_t * current_fbuf[3],
+		      uint8_t * forward_fbuf[3], uint8_t * backward_fbuf[3]);
+void mpeg2_slice (mpeg2_decoder_t * decoder, int code, const uint8_t * buffer);
 
 typedef struct {
     mpeg2_mc_fct * put [8];

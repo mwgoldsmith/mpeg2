@@ -261,6 +261,3 @@ Advanced Function Reference
 mpeg2_convert
 mpeg2_set_buf
 mpeg2_custom_fbuf
-mpeg2_init_fbuf
-mpeg2_slice
-
