@@ -1597,15 +1597,38 @@ static void motion_dummy (mpeg2_decoder_t * const decoder,
 {
 }
 
-void mpeg2_init_fbuf (mpeg2_decoder_t * decoder, uint8_t * current_fbuf[3],
+void mpeg2_init_fbuf (mpeg2_decoder_t * decoder, mpeg2_sequence_t * sequence,
+		      mpeg2_picture_t * picture, coding_t * coding,
+		      uint8_t * current_fbuf[3],
 		      uint8_t * forward_fbuf[3], uint8_t * backward_fbuf[3])
 {
     int offset, stride, height, bottom_field;
 
+    decoder->mpeg1 = !(sequence->flags & SEQ_FLAG_MPEG2);
+    decoder->width = sequence->width;
+    height = sequence->height;
+    decoder->vertical_position_extension = (sequence->picture_height > 2800);
+
+    decoder->top_field_first =
+	((picture->flags & PIC_FLAG_TOP_FIELD_FIRST) != 0);
+    if (picture->nb_fields > 1)
+	decoder->picture_structure = FRAME_PICTURE;
+    else
+	decoder->picture_structure =
+	    decoder->top_field_first ? TOP_FIELD : BOTTOM_FIELD;
+
+    decoder->f_motion.f_code[0] = coding->f_code[0][0] - 1;
+    decoder->f_motion.f_code[1] = coding->f_code[0][1] - !(decoder->mpeg1);
+    decoder->b_motion.f_code[0] = coding->f_code[1][0] - 1;
+    decoder->b_motion.f_code[1] = coding->f_code[1][1] - !(decoder->mpeg1);
+    decoder->intra_dc_precision = 15 - coding->intra_dc_precision;
+    decoder->frame_pred_frame_dct = coding->frame_pred_frame_dct;
+    decoder->concealment_motion_vectors = coding->concealment_motion_vectors;
+    decoder->intra_vlc_format = coding->intra_vlc_format;
+
     stride = decoder->stride_frame;
     bottom_field = (decoder->picture_structure == BOTTOM_FIELD);
     offset = bottom_field ? stride : 0;
-    height = decoder->height;
 
     decoder->picture_dest[0] = current_fbuf[0] + offset;
     decoder->picture_dest[1] = current_fbuf[1] + (offset >> 1);
