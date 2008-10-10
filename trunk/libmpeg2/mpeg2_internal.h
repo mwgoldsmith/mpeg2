@@ -118,7 +118,6 @@ struct mpeg2_decoder_s {
 
     /* The width and height of the picture snapped to macroblock units */
     int width;
-    int height;
     int vertical_position_extension;
     int chroma_format;
 
@@ -160,6 +159,14 @@ typedef struct {
     mpeg2_fbuf_t fbuf;
 } fbuf_alloc_t;
 
+typedef struct {
+    int f_code[2][2];
+    int intra_dc_precision;
+    int frame_pred_frame_dct;
+    int concealment_motion_vectors;
+    int intra_vlc_format;
+} coding_t;
+
 struct mpeg2dec_s {
     mpeg2_decoder_t decoder;
 
@@ -200,6 +207,7 @@ struct mpeg2dec_s {
     mpeg2_picture_t new_picture;
     mpeg2_picture_t pictures[4];
     mpeg2_picture_t * picture;
+    coding_t coding;
     /*const*/ mpeg2_fbuf_t * fbuf[3];	/* 0: current fbuf, 1-2: prediction fbufs */
 
     fbuf_alloc_t fbuf_alloc[3];
@@ -296,8 +304,9 @@ void mpeg2_idct_alpha_init (void);
 void mpeg2_mc_init (uint32_t accel);
 
 /* slice.c */
-
-void mpeg2_init_fbuf (mpeg2_decoder_t * decoder, uint8_t * current_fbuf[3],
+void mpeg2_init_fbuf (mpeg2_decoder_t * decoder, mpeg2_sequence_t * sequence,
+		      mpeg2_picture_t * picture, coding_t * coding,
+		      uint8_t * current_fbuf[3],
 		      uint8_t * forward_fbuf[3], uint8_t * backward_fbuf[3]);
 void mpeg2_slice (mpeg2_decoder_t * decoder, int code, const uint8_t * buffer);
 
