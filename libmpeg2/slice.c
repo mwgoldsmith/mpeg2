@@ -1625,6 +1625,7 @@ void mpeg2_init_fbuf (mpeg2_decoder_t * decoder, mpeg2_sequence_t * sequence,
     decoder->frame_pred_frame_dct = coding->frame_pred_frame_dct;
     decoder->concealment_motion_vectors = coding->concealment_motion_vectors;
     decoder->intra_vlc_format = coding->intra_vlc_format;
+    decoder->scan = coding->alternate_scan ? mpeg2_scan_alt : mpeg2_scan_norm;
 
     stride = decoder->stride_frame;
     bottom_field = (decoder->picture_structure == BOTTOM_FIELD);

@@ -165,6 +165,7 @@ typedef struct {
     int frame_pred_frame_dct;
     int concealment_motion_vectors;
     int intra_vlc_format;
+    int alternate_scan;
 } coding_t;
 
 struct mpeg2dec_s {
