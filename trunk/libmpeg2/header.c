@@ -585,7 +585,7 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
     coding->intra_dc_precision = 8;
     coding->frame_pred_frame_dct = 1;
     coding->concealment_motion_vectors = 0;
-    decoder->scan = mpeg2_scan_norm;
+    coding->alternate_scan = 0;
     mpeg2dec->copy_matrix = 0;
 
     return 0;
@@ -627,7 +627,7 @@ static int picture_coding_ext (mpeg2dec_t * mpeg2dec)
     coding->concealment_motion_vectors = (buffer[3] >> 5) & 1;
     decoder->q_scale_type = buffer[3] & 16;
     coding->intra_vlc_format = (buffer[3] >> 3) & 1;
-    decoder->scan = (buffer[3] & 4) ? mpeg2_scan_alt : mpeg2_scan_norm;
+    coding->alternate_scan = (buffer[3] >> 2) & 1;
     if (!(buffer[4] & 0x80))
 	flags &= ~PIC_FLAG_PROGRESSIVE_FRAME;
     if (buffer[4] & 0x40)
