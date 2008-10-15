@@ -151,9 +151,6 @@ struct mpeg2_decoder_s {
 
     int mpeg1;
 
-    /* XXX: stuff due to xine shit */
-    int8_t q_scale_type;
-
     int8_t scaled[4];
 };
 
@@ -163,6 +160,7 @@ typedef struct {
 
 typedef struct {
     int f_code[2][2];
+    int q_scale_type;
     int intra_dc_precision;
     int frame_pred_frame_dct;
     int concealment_motion_vectors;

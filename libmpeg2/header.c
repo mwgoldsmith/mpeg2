@@ -525,7 +525,6 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 {
     uint8_t * buffer = mpeg2dec->chunk_start;
     mpeg2_picture_t * picture = &(mpeg2dec->new_picture);
-    mpeg2_decoder_t * decoder = &(mpeg2dec->decoder);
     coding_t * coding = &(mpeg2dec->coding);
     int type;
 
@@ -567,7 +566,7 @@ int mpeg2_header_picture (mpeg2dec_t * mpeg2dec)
 
     /* XXXXXX decode extra_information_picture as well */
 
-    decoder->q_scale_type = 0;
+    coding->q_scale_type = 0;
     coding->intra_dc_precision = 8;
     coding->frame_pred_frame_dct = 1;
     coding->concealment_motion_vectors = 0;
@@ -581,7 +580,6 @@ static int picture_coding_ext (mpeg2dec_t * mpeg2dec)
 {
     uint8_t * buffer = mpeg2dec->chunk_start;
     mpeg2_picture_t * picture = &(mpeg2dec->new_picture);
-    mpeg2_decoder_t * decoder = &(mpeg2dec->decoder);
     coding_t * coding = &(mpeg2dec->coding);
     uint32_t flags;
 
@@ -611,7 +609,7 @@ static int picture_coding_ext (mpeg2dec_t * mpeg2dec)
     }
     coding->frame_pred_frame_dct = (buffer[3] >> 6) & 1;
     coding->concealment_motion_vectors = (buffer[3] >> 5) & 1;
-    decoder->q_scale_type = buffer[3] & 16;
+    coding->q_scale_type = (buffer[3] >> 4) & 1;
     coding->intra_vlc_format = (buffer[3] >> 3) & 1;
     coding->alternate_scan = (buffer[3] >> 2) & 1;
     if (!(buffer[4] & 0x80))
