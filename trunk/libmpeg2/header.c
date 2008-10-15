@@ -99,6 +99,7 @@ void mpeg2_header_state_init (mpeg2dec_t * mpeg2dec)
     mpeg2dec->decoder.coding_type = I_TYPE;
     mpeg2dec->decoder.convert = NULL;
     mpeg2dec->decoder.convert_id = NULL;
+    mpeg2dec->coding.matrix_updates = 0;
     mpeg2dec->picture = mpeg2dec->pictures;
     mpeg2dec->fbuf[0] = &mpeg2dec->fbuf_alloc[0].fbuf;
     mpeg2dec->fbuf[1] = &mpeg2dec->fbuf_alloc[1].fbuf;
@@ -171,18 +172,17 @@ int mpeg2_header_sequence (mpeg2dec_t * mpeg2dec)
     mpeg2dec->copy_matrix = 3;
     if (buffer[7] & 2) {
 	for (i = 0; i < 64; i++)
-	    mpeg2dec->new_quantizer_matrix[0][mpeg2_scan_norm[i]] =
+	    mpeg2dec->new_quantizer_matrix[0][i] =
 		(buffer[i+7] << 7) | (buffer[i+8] >> 1);
 	buffer += 64;
     } else
 	for (i = 0; i < 64; i++)
-	    mpeg2dec->new_quantizer_matrix[0][mpeg2_scan_norm[i]] =
+	    mpeg2dec->new_quantizer_matrix[0][i] =
 		default_intra_quantizer_matrix[i];
 
     if (buffer[7] & 1)
 	for (i = 0; i < 64; i++)
-	    mpeg2dec->new_quantizer_matrix[1][mpeg2_scan_norm[i]] =
-		buffer[i+8];
+	    mpeg2dec->new_quantizer_matrix[1][i] = buffer[i+8];
     else
 	memset (mpeg2dec->new_quantizer_matrix[1], 16, 64);
 
@@ -408,32 +408,18 @@ int mpeg2_guess_aspect (const mpeg2_sequence_t * sequence,
     return (height == 576) ? 1 : 2;
 }
 
-static void copy_matrix (mpeg2dec_t * mpeg2dec, int idx)
-{
-    if (memcmp (mpeg2dec->quantizer_matrix[idx],
-		mpeg2dec->new_quantizer_matrix[idx], 64)) {
-	memcpy (mpeg2dec->quantizer_matrix[idx],
-		mpeg2dec->new_quantizer_matrix[idx], 64);
-	mpeg2dec->scaled[idx] = -1;
-    }
-}
-
 static void finalize_matrix (mpeg2dec_t * mpeg2dec)
 {
-    mpeg2_decoder_t * decoder = &(mpeg2dec->decoder);
+    coding_t * coding = &(mpeg2dec->coding);
     int i;
 
-    for (i = 0; i < 2; i++) {
-	if (mpeg2dec->copy_matrix & (1 << i))
-	    copy_matrix (mpeg2dec, i);
-	if ((mpeg2dec->copy_matrix & (4 << i)) &&
-	    memcmp (mpeg2dec->quantizer_matrix[i],
-		    mpeg2dec->new_quantizer_matrix[i+2], 64)) {
-	    copy_matrix (mpeg2dec, i + 2);
-	    decoder->chroma_quantizer[i] = decoder->quantizer_prescale[i+2];
-	} else if (mpeg2dec->copy_matrix & (5 << i))
-	    decoder->chroma_quantizer[i] = decoder->quantizer_prescale[i];
-    }
+    for (i = 0; i < 4; i++)
+	if (mpeg2dec->copy_matrix & (1 << i)) {
+	    memcpy (coding->quantizer_matrix[i],
+		    mpeg2dec->new_quantizer_matrix[i], 64);
+	    coding->matrix_updates =
+		(coding->matrix_updates & ~(4 << i)) | (1 << i);
+	}
 }
 
 static mpeg2_state_t invalid_end_action (mpeg2dec_t * mpeg2dec)
@@ -816,7 +802,7 @@ static int quant_matrix_ext (mpeg2dec_t * mpeg2dec)
     for (i = 0; i < 4; i++)
 	if (buffer[0] & (8 >> i)) {
 	    for (j = 0; j < 64; j++)
-		mpeg2dec->new_quantizer_matrix[i][mpeg2_scan_norm[j]] =
+		mpeg2dec->new_quantizer_matrix[i][j] =
 		    (buffer[j] << (i+5)) | (buffer[j+1] >> (3-i));
 	    mpeg2dec->copy_matrix |= 1 << i;
 	    buffer += 64;
@@ -850,28 +836,6 @@ int mpeg2_header_user_data (mpeg2dec_t * mpeg2dec)
     return 0;
 }
 
-static void prescale (mpeg2dec_t * mpeg2dec, int idx)
-{
-    static int non_linear_scale [] = {
-	 0,  1,  2,  3,  4,  5,   6,   7,
-	 8, 10, 12, 14, 16, 18,  20,  22,
-	24, 28, 32, 36, 40, 44,  48,  52,
-	56, 64, 72, 80, 88, 96, 104, 112
-    };
-    int i, j, k;
-    mpeg2_decoder_t * decoder = &(mpeg2dec->decoder);
-
-    if (mpeg2dec->scaled[idx] != decoder->q_scale_type) {
-	mpeg2dec->scaled[idx] = decoder->q_scale_type;
-	for (i = 0; i < 32; i++) {
-	    k = decoder->q_scale_type ? non_linear_scale[i] : (i << 1);
-	    for (j = 0; j < 64; j++)
-		decoder->quantizer_prescale[idx][i][j] =
-		    k * mpeg2dec->quantizer_matrix[idx][j];
-	}
-    }
-}
-
 mpeg2_state_t mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec)
 {
     mpeg2_decoder_t * decoder = &(mpeg2dec->decoder);
@@ -880,17 +844,6 @@ mpeg2_state_t mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec)
     mpeg2dec->state = ((mpeg2dec->picture->nb_fields > 1 ||
 			mpeg2dec->state == STATE_PICTURE_2ND) ?
 		       STATE_SLICE : STATE_SLICE_1ST);
-
-    if (mpeg2dec->decoder.coding_type != D_TYPE) {
-	prescale (mpeg2dec, 0);
-	if (decoder->chroma_quantizer[0] == decoder->quantizer_prescale[2])
-	    prescale (mpeg2dec, 2);
-	if (mpeg2dec->decoder.coding_type != I_TYPE) {
-	    prescale (mpeg2dec, 1);
-	    if (decoder->chroma_quantizer[1] == decoder->quantizer_prescale[3])
-		prescale (mpeg2dec, 3);
-	}
-    }
 
     if (!(mpeg2dec->nb_decode_slices))
 	mpeg2dec->picture->flags |= PIC_FLAG_SKIP;

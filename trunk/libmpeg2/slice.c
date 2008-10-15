@@ -1597,6 +1597,29 @@ static void motion_dummy (mpeg2_decoder_t * const decoder,
 {
 }
 
+static void prescale (mpeg2_decoder_t * decoder, coding_t * coding, int idx)
+{
+    static int non_linear_scale [] = {
+	 0,  1,  2,  3,  4,  5,   6,   7,
+	 8, 10, 12, 14, 16, 18,  20,  22,
+	24, 28, 32, 36, 40, 44,  48,  52,
+	56, 64, 72, 80, 88, 96, 104, 112
+    };
+    int i, j, k;
+
+    if ((coding->matrix_updates & (1 << idx)) != 0 ||
+	decoder->scaled[idx] != decoder->q_scale_type) {
+	coding->matrix_updates &= ~(1 << idx);
+	decoder->scaled[idx] = decoder->q_scale_type;
+	for (i = 0; i < 32; i++) {
+	    k = decoder->q_scale_type ? non_linear_scale[i] : (i << 1);
+	    for (j = 0; j < 64; j++)
+		decoder->quantizer_prescale[idx][i][mpeg2_scan_norm[j]] =
+		    k * coding->quantizer_matrix[idx][j];
+	}
+    }
+}
+
 void mpeg2_init_fbuf (mpeg2_decoder_t * decoder, mpeg2_sequence_t * sequence,
 		      mpeg2_picture_t * picture, coding_t * coding,
 		      uint8_t * current_fbuf[3],
@@ -1626,6 +1649,23 @@ void mpeg2_init_fbuf (mpeg2_decoder_t * decoder, mpeg2_sequence_t * sequence,
     decoder->concealment_motion_vectors = coding->concealment_motion_vectors;
     decoder->intra_vlc_format = coding->intra_vlc_format;
     decoder->scan = coding->alternate_scan ? mpeg2_scan_alt : mpeg2_scan_norm;
+
+    if (coding->matrix_updates & 1)
+	decoder->chroma_quantizer[0] =
+	    decoder->quantizer_prescale[(coding->matrix_updates & 4) ? 2 : 0];
+    if (coding->matrix_updates & 1)
+	decoder->chroma_quantizer[1] =
+	    decoder->quantizer_prescale[(coding->matrix_updates & 8) ? 3 : 1];
+    if (decoder->coding_type != D_TYPE) {
+	prescale (decoder, coding, 0);
+	if (decoder->chroma_quantizer[0] == decoder->quantizer_prescale[2])
+	    prescale (decoder, coding, 2);
+	if (decoder->coding_type != I_TYPE) {
+	    prescale (decoder, coding, 1);
+	    if (decoder->chroma_quantizer[1] == decoder->quantizer_prescale[3])
+		prescale (decoder, coding, 3);
+	}
+    }
 
     stride = decoder->stride_frame;
     bottom_field = (decoder->picture_structure == BOTTOM_FIELD);

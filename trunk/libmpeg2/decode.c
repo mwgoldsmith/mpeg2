@@ -420,7 +420,6 @@ mpeg2dec_t * mpeg2_init (void)
 	return NULL;
 
     memset (mpeg2dec->decoder.DCTblock, 0, 64 * sizeof (int16_t));
-    memset (mpeg2dec->quantizer_matrix, 0, 4 * 64 * sizeof (uint8_t));
 
     mpeg2dec->chunk_buffer = (uint8_t *) mpeg2_malloc (BUFFER_SIZE + 4,
 						       MPEG2_ALLOC_CHUNK);
