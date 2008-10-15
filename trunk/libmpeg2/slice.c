@@ -1608,11 +1608,11 @@ static void prescale (mpeg2_decoder_t * decoder, coding_t * coding, int idx)
     int i, j, k;
 
     if ((coding->matrix_updates & (1 << idx)) != 0 ||
-	decoder->scaled[idx] != decoder->q_scale_type) {
+	decoder->scaled[idx] != coding->q_scale_type) {
 	coding->matrix_updates &= ~(1 << idx);
-	decoder->scaled[idx] = decoder->q_scale_type;
+	decoder->scaled[idx] = coding->q_scale_type;
 	for (i = 0; i < 32; i++) {
-	    k = decoder->q_scale_type ? non_linear_scale[i] : (i << 1);
+	    k = coding->q_scale_type ? non_linear_scale[i] : (i << 1);
 	    for (j = 0; j < 64; j++)
 		decoder->quantizer_prescale[idx][i][mpeg2_scan_norm[j]] =
 		    k * coding->quantizer_matrix[idx][j];
