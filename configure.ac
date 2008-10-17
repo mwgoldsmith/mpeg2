@@ -34,7 +34,7 @@ elif test x"$GCC" = x"yes"; then
 
     dnl -Wall
     dnl -Werror moved to the end to not disturb the configure script
-    TRY_CFLAGS="$OPT_CFLAGS -Wall -Wpointer-arith -Wcast-align -Wcast-qual -Wstrict-prototypes -Wshadow -Waggregate-return -Wmissing-prototypes -Wnested-externs -Wsign-compare"
+    TRY_CFLAGS="$OPT_CFLAGS -Wall -Wpointer-arith -Wcast-align -Wcast-qual -Wshadow -Waggregate-return -Wmissing-prototypes -Wnested-externs -Wsign-compare"
     AC_TRY_CFLAGS([$TRY_CFLAGS $CFLAGS],[OPT_CFLAGS="$TRY_CFLAGS"])
 
     dnl -O3
