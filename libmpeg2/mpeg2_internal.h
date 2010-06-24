@@ -24,6 +24,9 @@
 #ifndef LIBMPEG2_MPEG2_INTERNAL_H
 #define LIBMPEG2_MPEG2_INTERNAL_H
 
+#include "attributes.h"
+#include "mpeg2.h"
+
 #define STATE_INTERNAL_NORETURN ((mpeg2_state_t)-1)
 
 /* macroblock modes */

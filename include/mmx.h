@@ -24,6 +24,8 @@
 #ifndef LIBMPEG2_MMX_H
 #define LIBMPEG2_MMX_H
 
+#include "attributes.h"
+
 /*
  * The type of an value that fits in an MMX register (note that long
  * long constant values MUST be suffixed by LL and unsigned long long
