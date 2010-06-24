@@ -24,6 +24,8 @@
 #ifndef LIBMPEG2_VLC_H
 #define LIBMPEG2_VLC_H
 
+#include "mpeg2_internal.h"
+
 #define GETWORD(bit_buf,shift,bit_ptr)				\
 do {								\
     bit_buf |= ((bit_ptr[0] << 8) | bit_ptr[1]) << (shift);	\

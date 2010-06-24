@@ -24,6 +24,8 @@
 #ifndef LIBMPEG2_MPEG2CONVERT_H
 #define LIBMPEG2_MPEG2CONVERT_H
 
+#include "mpeg2.h"
+
 mpeg2_convert_t mpeg2convert_rgb32;
 mpeg2_convert_t mpeg2convert_rgb24;
 mpeg2_convert_t mpeg2convert_rgb16;
