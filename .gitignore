@@ -23,3 +23,7 @@ doc/sample?
 src/corrupt_mpeg2
 src/extract_mpeg2
 src/mpeg2dec
+
+.vs/
+*.opendb
+*.sdf
