@@ -13,5 +13,60 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\arch">
+      <UniqueIdentifier>{14ab906e-d67e-4ba0-b02e-057e0d71717e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\libmpeg2\alloc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\header.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\decode.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\slice.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\motion_comp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\idct.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\motion_comp_mmx.c">
+      <Filter>Source Files\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\idct_mmx.c">
+      <Filter>Source Files\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\cpu_state.c">
+      <Filter>Source Files\arch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\cpu_accel.c">
+      <Filter>Source Files\arch</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\mpeg2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\attributes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libmpeg2\mpeg2_internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="cpu_state.obj" />
+    <Object Include="idct_mmx.obj" />
+    <Object Include="motion_comp_mmx.obj" />
+    <Object Include="cpu_accel.obj" />
   </ItemGroup>
 </Project>
