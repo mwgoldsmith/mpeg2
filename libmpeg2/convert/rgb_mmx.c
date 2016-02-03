@@ -25,8 +25,6 @@
 
 #include "config.h"
 
-#ifdef ARCH_X86
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
@@ -35,6 +33,9 @@
 #include "mpeg2convert.h"
 #include "convert_internal.h"
 #include "attributes.h"
+
+#if defined(MSVC_ASM) && defined(ARCH_X86)
+
 #include "mmx.h"
 
 #define CPU_MMXEXT 0
@@ -295,27 +296,32 @@ static void mmx_argb32 (void * id, uint8_t * const * src,
     argb32 (id, src, v_offset, CPU_MMX);
 }
 
-mpeg2convert_copy_t * mpeg2convert_rgb_mmxext (int order, int bpp,
-					       const mpeg2_sequence_t * seq)
-{
-    if (order == MPEG2CONVERT_RGB && seq->chroma_width < seq->width) {
-	if (bpp == 16)
+#endif
+
+#if defined(MSVC_ASM) || (!defined(MSVC_ASM) && defined(_WIN64))
+mpeg2convert_copy_t * mpeg2convert_rgb_mmxext (int order, int bpp, const mpeg2_sequence_t * seq) {
+#if defined(ARCH_X86)
+  if (order == MPEG2CONVERT_RGB && seq->chroma_width < seq->width) {
+  	if (bpp == 16)
 	    return mmxext_rgb16;
-	else if (bpp == 32)
+  	else if (bpp == 32)
 	    return mmxext_argb32;
-    }
+  }
+#endif
     return NULL;	/* Fallback to C */
 }
+#endif
 
-mpeg2convert_copy_t * mpeg2convert_rgb_mmx (int order, int bpp,
-					    const mpeg2_sequence_t * seq)
-{
-    if (order == MPEG2CONVERT_RGB && seq->chroma_width < seq->width) {
-	if (bpp == 16)
+#if defined(MSVC_ASM) || (!defined(MSVC_ASM) && defined(_WIN64))
+mpeg2convert_copy_t * mpeg2convert_rgb_mmx (int order, int bpp, const mpeg2_sequence_t * seq) {
+#if defined(ARCH_X86)
+  if (order == MPEG2CONVERT_RGB && seq->chroma_width < seq->width) {
+	  if (bpp == 16)
 	    return mmx_rgb16;
-	else if (bpp == 32)
+	  else if (bpp == 32)
 	    return mmx_argb32;
-    }
-    return NULL;	/* Fallback to C */
+  }
+#endif
+  return NULL;	/* Fallback to C */
 }
 #endif

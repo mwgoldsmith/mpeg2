@@ -29,7 +29,7 @@
 #include "attributes.h"
 #include "mpeg2_internal.h"
 
-#if defined(ARCH_X86) || defined(ARCH_X86_64)
+#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
 static inline uint32_t arch_accel (uint32_t accel)
 {
     if (accel & (MPEG2_ACCEL_X86_3DNOW | MPEG2_ACCEL_X86_MMXEXT))
@@ -127,7 +127,7 @@ static inline uint32_t arch_accel (uint32_t accel)
 }
 #endif /* ARCH_X86 || ARCH_X86_64 */
 
-#if defined(ACCEL_DETECT) && (defined(ARCH_PPC) || defined(ARCH_SPARC))
+#if defined(MSVC_ASM) && defined(ACCEL_DETECT) && (defined(ARCH_PPC) || defined(ARCH_SPARC))
 #include <signal.h>
 #include <setjmp.h>
 
@@ -146,7 +146,7 @@ static RETSIGTYPE sigill_handler (int sig)
 }
 #endif /* ACCEL_DETECT && (ARCH_PPC || ARCH_SPARC) */
 
-#ifdef ARCH_PPC
+#if defined(MSVC_ASM) && defined(ARCH_PPC)
 static uint32_t arch_accel (uint32_t accel)
 {
 #ifdef ACCEL_DETECT
@@ -183,7 +183,7 @@ static uint32_t arch_accel (uint32_t accel)
 }
 #endif /* ARCH_PPC */
 
-#ifdef ARCH_SPARC
+#if defined(MSVC_ASM) && defined(ARCH_SPARC)
 static uint32_t arch_accel (uint32_t accel)
 {
     if (accel & MPEG2_ACCEL_SPARC_VIS2)
@@ -229,7 +229,7 @@ static uint32_t arch_accel (uint32_t accel)
 }
 #endif /* ARCH_SPARC */
 
-#ifdef ARCH_ALPHA
+#if defined(MSVC_ASM) && defined(ARCH_ALPHA)
 static inline uint32_t arch_accel (uint32_t accel)
 {
     if (accel & MPEG2_ACCEL_ALPHA_MVI)
@@ -251,6 +251,7 @@ static inline uint32_t arch_accel (uint32_t accel)
 }
 #endif /* ARCH_ALPHA */
 
+#if defined(MSVC_ASM) || (!defined(MSVC_ASM) && defined(_WIN64))
 uint32_t mpeg2_detect_accel (uint32_t accel)
 {
 #if defined (ARCH_X86) || defined (ARCH_X86_64) || defined (ARCH_PPC) || defined (ARCH_ALPHA) || defined (ARCH_SPARC)
@@ -258,3 +259,4 @@ uint32_t mpeg2_detect_accel (uint32_t accel)
 #endif
     return accel;
 }
+#endif

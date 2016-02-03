@@ -23,13 +23,15 @@
 
 #include "config.h"
 
-#if defined(ARCH_X86) || defined(ARCH_X86_64)
+#if defined(MSVC_ASM) || (!defined(MSVC_ASM) && defined(_WIN64))
 
 #include <inttypes.h>
 
 #include "mpeg2.h"
 #include "attributes.h"
 #include "mpeg2_internal.h"
+
+#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
 #include "mmx.h"
 
 #define ROW_SHIFT 15
@@ -1222,74 +1224,76 @@ static inline void block_add_DC (int16_t * const block, uint8_t * dest,
     movq_r2m (mm3, *(dest + 2*stride));
 }
 
-void mpeg2_idct_copy_sse2 (int16_t * const block, uint8_t * const dest,
-			   const int stride)
-{
+#endif
+
+void mpeg2_idct_copy_sse2 (int16_t * const block, uint8_t * const dest, const int stride) {
+#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
     sse2_idct (block);
     sse2_block_copy (block, dest, stride);
     sse2_block_zero (block);
+#endif
 }
 
-void mpeg2_idct_add_sse2 (const int last, int16_t * const block,
-			  uint8_t * const dest, const int stride)
-{
+void mpeg2_idct_add_sse2 (const int last, int16_t * const block, uint8_t * const dest, const int stride) {
+#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
     if (last != 129 || (block[0] & (7 << 4)) == (4 << 4)) {
 	sse2_idct (block);
 	sse2_block_add (block, dest, stride);
 	sse2_block_zero (block);
     } else
 	block_add_DC (block, dest, stride, CPU_MMXEXT);
+#endif
 }
 
+#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
+declare_idct (mmxext_idct, mmxext_table, mmxext_row_head, mmxext_row, mmxext_row_tail, mmxext_row_mid)
+#endif
 
-declare_idct (mmxext_idct, mmxext_table,
-	      mmxext_row_head, mmxext_row, mmxext_row_tail, mmxext_row_mid)
-
-void mpeg2_idct_copy_mmxext (int16_t * const block, uint8_t * const dest,
-			     const int stride)
-{
+void mpeg2_idct_copy_mmxext (int16_t * const block, uint8_t * const dest, const int stride) {
+#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
     mmxext_idct (block);
     block_copy (block, dest, stride);
     block_zero (block);
+#endif
 }
 
-void mpeg2_idct_add_mmxext (const int last, int16_t * const block,
-			    uint8_t * const dest, const int stride)
-{
+void mpeg2_idct_add_mmxext (const int last, int16_t * const block, uint8_t * const dest, const int stride) {
+#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
     if (last != 129 || (block[0] & (7 << 4)) == (4 << 4)) {
 	mmxext_idct (block);
 	block_add (block, dest, stride);
 	block_zero (block);
     } else
 	block_add_DC (block, dest, stride, CPU_MMXEXT);
+#endif
 }
 
+#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
+declare_idct (mmx_idct, mmx_table, mmx_row_head, mmx_row, mmx_row_tail, mmx_row_mid)
+#endif
 
-declare_idct (mmx_idct, mmx_table,
-	      mmx_row_head, mmx_row, mmx_row_tail, mmx_row_mid)
-
-void mpeg2_idct_copy_mmx (int16_t * const block, uint8_t * const dest,
-			  const int stride)
-{
+void mpeg2_idct_copy_mmx (int16_t * const block, uint8_t * const dest, const int stride) {
+#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
     mmx_idct (block);
     block_copy (block, dest, stride);
     block_zero (block);
+#endif
 }
 
-void mpeg2_idct_add_mmx (const int last, int16_t * const block,
-			 uint8_t * const dest, const int stride)
-{
+void mpeg2_idct_add_mmx (const int last, int16_t * const block, uint8_t * const dest, const int stride) {
+#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
     if (last != 129 || (block[0] & (7 << 4)) == (4 << 4)) {
 	mmx_idct (block);
 	block_add (block, dest, stride);
 	block_zero (block);
     } else
 	block_add_DC (block, dest, stride, CPU_MMX);
+#endif
 }
 
 
-void mpeg2_idct_mmx_init (void)
-{
+void mpeg2_idct_mmx_init (void) {
+#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
     int i, j;
 
     /* the mmx/mmxext idct uses a reordered input, so we patch scan tables */
@@ -1300,6 +1304,7 @@ void mpeg2_idct_mmx_init (void)
 	j = mpeg2_scan_alt[i];
 	mpeg2_scan_alt[i] = (j & 0x38) | ((j & 6) >> 1) | ((j & 1) << 2);
     }
+#endif
 }
 
 #endif
