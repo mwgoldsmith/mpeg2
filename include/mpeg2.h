@@ -24,6 +24,20 @@
 #ifndef LIBMPEG2_MPEG2_H
 #define LIBMPEG2_MPEG2_H
 
+#if defined(_WIN32) || defined(_WIN64) || defined(_WINDOWS)
+#  if defined(MPEG2_DLL_BUILD)
+#    define MPEG2_API __declspec(dllexport)
+#  elif defined(_USRDLL)
+#    define MPEG2_API __declspec(dllimport)
+#  else
+#    define MPEG2_API 
+#  endif /* MPEG2_DLL_BUILD */
+#elif defined(__GNUC__) && (__GNUC__ >= 4)
+#  define MPEG2_API __attribute__((__visibility__("default")))
+#else
+#  define MPEG2_API
+#endif /* _WIN32 || _WIN64 || _WINDOWS */           
+
 #define MPEG2_VERSION(a,b,c) (((a)<<16)|((b)<<8)|(c))
 #define MPEG2_RELEASE MPEG2_VERSION (0, 5, 1)	/* 0.5.1 */
 
@@ -91,7 +105,7 @@ typedef struct mpeg2_picture_s {
     uint32_t tag, tag2;
     uint32_t flags;
     struct {
-	int x, y;
+	    int x, y;
     } display_offset[3];
 } mpeg2_picture_t;
 
@@ -134,23 +148,22 @@ typedef enum {
 typedef struct mpeg2_convert_init_s {
     unsigned int id_size;
     unsigned int buf_size[3];
-    void (* start) (void * id, const mpeg2_fbuf_t * fbuf,
-		    const mpeg2_picture_t * picture, const mpeg2_gop_t * gop);
+    void (* start) (void * id, const mpeg2_fbuf_t * fbuf, const mpeg2_picture_t * picture, const mpeg2_gop_t * gop);
     void (* copy) (void * id, uint8_t * const * src, unsigned int v_offset);
 } mpeg2_convert_init_t;
+
 typedef enum {
     MPEG2_CONVERT_SET = 0,
     MPEG2_CONVERT_STRIDE = 1,
     MPEG2_CONVERT_START = 2
 } mpeg2_convert_stage_t;
-typedef int mpeg2_convert_t (int stage, void * id,
-			     const mpeg2_sequence_t * sequence, int stride,
-			     uint32_t accel, void * arg,
-			     mpeg2_convert_init_t * result);
-int mpeg2_convert (mpeg2dec_t * mpeg2dec, mpeg2_convert_t convert, void * arg);
-int mpeg2_stride (mpeg2dec_t * mpeg2dec, int stride);
-void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id);
-void mpeg2_custom_fbuf (mpeg2dec_t * mpeg2dec, int custom_fbuf);
+
+typedef int mpeg2_convert_t (int stage, void * id, const mpeg2_sequence_t * sequence, int stride, uint32_t accel, void * arg, mpeg2_convert_init_t * result);
+           
+MPEG2_API int mpeg2_convert (mpeg2dec_t * mpeg2dec, mpeg2_convert_t convert, void * arg);
+MPEG2_API int mpeg2_stride (mpeg2dec_t * mpeg2dec, int stride);
+MPEG2_API void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id);
+MPEG2_API void mpeg2_custom_fbuf (mpeg2dec_t * mpeg2dec, int custom_fbuf);
 
 #define MPEG2_ACCEL_X86_MMX 1
 #define MPEG2_ACCEL_X86_3DNOW 2
@@ -165,24 +178,22 @@ void mpeg2_custom_fbuf (mpeg2dec_t * mpeg2dec, int custom_fbuf);
 #define MPEG2_ACCEL_ARM 1
 #define MPEG2_ACCEL_DETECT 0x80000000
 
-uint32_t mpeg2_accel (uint32_t accel);
-mpeg2dec_t * mpeg2_init (void);
-const mpeg2_info_t * mpeg2_info (mpeg2dec_t * mpeg2dec);
-void mpeg2_close (mpeg2dec_t * mpeg2dec);
+MPEG2_API uint32_t mpeg2_accel (uint32_t accel);
+MPEG2_API mpeg2dec_t * mpeg2_init (void);
+MPEG2_API const mpeg2_info_t * mpeg2_info (mpeg2dec_t * mpeg2dec);
+MPEG2_API void mpeg2_close (mpeg2dec_t * mpeg2dec);
 
-void mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t * start, uint8_t * end);
-int mpeg2_getpos (mpeg2dec_t * mpeg2dec);
-mpeg2_state_t mpeg2_parse (mpeg2dec_t * mpeg2dec);
+MPEG2_API void mpeg2_buffer (mpeg2dec_t * mpeg2dec, uint8_t * start, uint8_t * end);
+MPEG2_API int mpeg2_getpos (mpeg2dec_t * mpeg2dec);
+MPEG2_API mpeg2_state_t mpeg2_parse (mpeg2dec_t * mpeg2dec);
 
-void mpeg2_reset (mpeg2dec_t * mpeg2dec, int full_reset);
-void mpeg2_skip (mpeg2dec_t * mpeg2dec, int skip);
-void mpeg2_slice_region (mpeg2dec_t * mpeg2dec, int start, int end);
+MPEG2_API void mpeg2_reset (mpeg2dec_t * mpeg2dec, int full_reset);
+MPEG2_API void mpeg2_skip (mpeg2dec_t * mpeg2dec, int skip);
+MPEG2_API void mpeg2_slice_region (mpeg2dec_t * mpeg2dec, int start, int end);
 
-void mpeg2_tag_picture (mpeg2dec_t * mpeg2dec, uint32_t tag, uint32_t tag2);
+MPEG2_API void mpeg2_tag_picture (mpeg2dec_t * mpeg2dec, uint32_t tag, uint32_t tag2);
 
-int mpeg2_guess_aspect (const mpeg2_sequence_t * sequence,
-			unsigned int * pixel_width,
-			unsigned int * pixel_height);
+MPEG2_API int mpeg2_guess_aspect (const mpeg2_sequence_t * sequence, unsigned int * pixel_width, unsigned int * pixel_height);
 
 typedef enum {
     MPEG2_ALLOC_MPEG2DEC = 0,
@@ -192,9 +203,8 @@ typedef enum {
     MPEG2_ALLOC_CONVERTED = 4
 } mpeg2_alloc_t;
 
-void * mpeg2_malloc (unsigned size, mpeg2_alloc_t reason);
-void mpeg2_free (void * buf);
-void mpeg2_malloc_hooks (void * malloc (unsigned, mpeg2_alloc_t),
-			 int free (void *));
+MPEG2_API void * mpeg2_malloc (unsigned size, mpeg2_alloc_t reason);
+MPEG2_API void mpeg2_free (void * buf);
+MPEG2_API void mpeg2_malloc_hooks (void * malloc (unsigned, mpeg2_alloc_t), int free (void *));
 
 #endif /* LIBMPEG2_MPEG2_H */

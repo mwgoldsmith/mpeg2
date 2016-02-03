@@ -24,6 +24,20 @@
 #ifndef LIBMPEG2_MPEG2CONVERT_H
 #define LIBMPEG2_MPEG2CONVERT_H
 
+#if defined(_WIN32) || defined(_WIN64) || defined(_WINDOWS)
+#  if defined(MPEG2CONVERT_DLL_BUILD)
+#    define MPEG2CONVERT_API __declspec(dllexport)
+#  elif defined(_USRDLL)
+#    define MPEG2CONVERT_API __declspec(dllimport)
+#  else
+#    define MPEG2CONVERT_API 
+#  endif /* MPEG2CONVERT_DLL_BUILD */
+#elif defined(__GNUC__) && (__GNUC__ >= 4)
+#  define MPEG2CONVERT_API __attribute__((__visibility__("default")))
+#else
+#  define MPEG2CONVERT_API
+#endif /* _WIN32 || _WIN64 || _WINDOWS */           
+
 #include "mpeg2.h"
 
 mpeg2_convert_t mpeg2convert_rgb32;
@@ -42,8 +56,7 @@ typedef enum {
     MPEG2CONVERT_BGR = 1
 } mpeg2convert_rgb_order_t;
 
-mpeg2_convert_t * mpeg2convert_rgb (mpeg2convert_rgb_order_t order,
-				    unsigned int bpp);
+MPEG2CONVERT_API mpeg2_convert_t * mpeg2convert_rgb (mpeg2convert_rgb_order_t order, unsigned int bpp);
 
 mpeg2_convert_t mpeg2convert_uyvy;
 
