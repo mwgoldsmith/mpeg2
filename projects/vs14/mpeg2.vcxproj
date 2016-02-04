@@ -201,6 +201,47 @@
     <Bscmake>
       <PreserveSbr>true</PreserveSbr>
     </Bscmake>
+    <PreBuildEvent>
+      <Command>
+ECHO ON
+SETLOCAL EnableDelayedExpansion EnableExtensions
+
+IF EXIST "$(OutDir)..\..\licenses\$(ProjectName).txt" (
+  DEL "$(OutDir)..\..\licenses\$(ProjectName).txt"
+)
+
+FOR %%H IN (mpeg2.h) DO (
+  SET "_HEADER=%%H"
+  IF EXIST "$(OutDir)..\..\include\mpeg2\!_HEADER!" (
+    DEL /f /q "$(OutDir)..\..\include\mpeg2\!_HEADER!"
+  )
+)
+
+:: Delete directory if empty; silence if failure
+RD /q "$(OutDir)..\..\include\mpeg2\" 2&gt;NUL
+
+ENDLOCAL
+</Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+ECHO Off
+SETLOCAL EnableDelayedExpansion EnableExtensions
+
+MKDIR "$(OutDir)..\..\include"
+MKDIR "$(OutDir)..\..\include\mpeg2"
+
+FOR %%H IN (mpeg2.h) DO (
+  SET "_HEADER=%%H"
+  COPY "$(ProjectDir)..\..\include\!_HEADER!" "$(OutDir)..\..\include\mpeg2"
+)
+
+MKDIR "$(OutDir)..\..\licenses"
+COPY "$(ProjectDir)..\..\COPYING" "$(OutDir)..\..\licenses\$(ProjectName).txt" 
+
+ENDLOCAL
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -223,6 +264,47 @@
     <Bscmake>
       <PreserveSbr>true</PreserveSbr>
     </Bscmake>
+    <PreBuildEvent>
+      <Command>
+ECHO ON
+SETLOCAL EnableDelayedExpansion EnableExtensions
+
+IF EXIST "$(OutDir)..\..\licenses\$(ProjectName).txt" (
+  DEL "$(OutDir)..\..\licenses\$(ProjectName).txt"
+)
+
+FOR %%H IN (mpeg2.h) DO (
+  SET "_HEADER=%%H"
+  IF EXIST "$(OutDir)..\..\include\mpeg2\!_HEADER!" (
+    DEL /f /q "$(OutDir)..\..\include\mpeg2\!_HEADER!"
+  )
+)
+
+:: Delete directory if empty; silence if failure
+RD /q "$(OutDir)..\..\include\mpeg2\" 2&gt;NUL
+
+ENDLOCAL
+</Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+ECHO Off
+SETLOCAL EnableDelayedExpansion EnableExtensions
+
+MKDIR "$(OutDir)..\..\include"
+MKDIR "$(OutDir)..\..\include\mpeg2"
+
+FOR %%H IN (mpeg2.h) DO (
+  SET "_HEADER=%%H"
+  COPY "$(ProjectDir)..\..\include\!_HEADER!" "$(OutDir)..\..\include\mpeg2"
+)
+
+MKDIR "$(OutDir)..\..\licenses"
+COPY "$(ProjectDir)..\..\COPYING" "$(OutDir)..\..\licenses\$(ProjectName).txt" 
+
+ENDLOCAL
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -248,6 +330,47 @@
     <Bscmake>
       <PreserveSbr>true</PreserveSbr>
     </Bscmake>
+    <PreBuildEvent>
+      <Command>
+ECHO ON
+SETLOCAL EnableDelayedExpansion EnableExtensions
+
+IF EXIST "$(OutDir)..\..\licenses\$(ProjectName).txt" (
+  DEL "$(OutDir)..\..\licenses\$(ProjectName).txt"
+)
+
+FOR %%H IN (mpeg2.h) DO (
+  SET "_HEADER=%%H"
+  IF EXIST "$(OutDir)..\..\include\mpeg2\!_HEADER!" (
+    DEL /f /q "$(OutDir)..\..\include\mpeg2\!_HEADER!"
+  )
+)
+
+:: Delete directory if empty; silence if failure
+RD /q "$(OutDir)..\..\include\mpeg2\" 2&gt;NUL
+
+ENDLOCAL
+</Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+ECHO Off
+SETLOCAL EnableDelayedExpansion EnableExtensions
+
+MKDIR "$(OutDir)..\..\include"
+MKDIR "$(OutDir)..\..\include\mpeg2"
+
+FOR %%H IN (mpeg2.h) DO (
+  SET "_HEADER=%%H"
+  COPY "$(ProjectDir)..\..\include\!_HEADER!" "$(OutDir)..\..\include\mpeg2"
+)
+
+MKDIR "$(OutDir)..\..\licenses"
+COPY "$(ProjectDir)..\..\COPYING" "$(OutDir)..\..\licenses\$(ProjectName).txt" 
+
+ENDLOCAL
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -272,6 +395,47 @@
     <Bscmake>
       <PreserveSbr>true</PreserveSbr>
     </Bscmake>
+    <PreBuildEvent>
+      <Command>
+ECHO ON
+SETLOCAL EnableDelayedExpansion EnableExtensions
+
+IF EXIST "$(OutDir)..\..\licenses\$(ProjectName).txt" (
+  DEL "$(OutDir)..\..\licenses\$(ProjectName).txt"
+)
+
+FOR %%H IN (mpeg2.h) DO (
+  SET "_HEADER=%%H"
+  IF EXIST "$(OutDir)..\..\include\mpeg2\!_HEADER!" (
+    DEL /f /q "$(OutDir)..\..\include\mpeg2\!_HEADER!"
+  )
+)
+
+:: Delete directory if empty; silence if failure
+RD /q "$(OutDir)..\..\include\mpeg2\" 2&gt;NUL
+
+ENDLOCAL
+</Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+ECHO Off
+SETLOCAL EnableDelayedExpansion EnableExtensions
+
+MKDIR "$(OutDir)..\..\include"
+MKDIR "$(OutDir)..\..\include\mpeg2"
+
+FOR %%H IN (mpeg2.h) DO (
+  SET "_HEADER=%%H"
+  COPY "$(ProjectDir)..\..\include\!_HEADER!" "$(OutDir)..\..\include\mpeg2"
+)
+
+MKDIR "$(OutDir)..\..\licenses"
+COPY "$(ProjectDir)..\..\COPYING" "$(OutDir)..\..\licenses\$(ProjectName).txt" 
+
+ENDLOCAL
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">
     <ClCompile>
@@ -299,6 +463,47 @@
     <Bscmake>
       <PreserveSbr>true</PreserveSbr>
     </Bscmake>
+    <PreBuildEvent>
+      <Command>
+ECHO ON
+SETLOCAL EnableDelayedExpansion EnableExtensions
+
+IF EXIST "$(OutDir)..\..\licenses\$(ProjectName).txt" (
+  DEL "$(OutDir)..\..\licenses\$(ProjectName).txt"
+)
+
+FOR %%H IN (mpeg2.h) DO (
+  SET "_HEADER=%%H"
+  IF EXIST "$(OutDir)..\..\include\mpeg2\!_HEADER!" (
+    DEL /f /q "$(OutDir)..\..\include\mpeg2\!_HEADER!"
+  )
+)
+
+:: Delete directory if empty; silence if failure
+RD /q "$(OutDir)..\..\include\mpeg2\" 2&gt;NUL
+
+ENDLOCAL
+</Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+ECHO Off
+SETLOCAL EnableDelayedExpansion EnableExtensions
+
+MKDIR "$(OutDir)..\..\include"
+MKDIR "$(OutDir)..\..\include\mpeg2"
+
+FOR %%H IN (mpeg2.h) DO (
+  SET "_HEADER=%%H"
+  COPY "$(ProjectDir)..\..\include\!_HEADER!" "$(OutDir)..\..\include\mpeg2"
+)
+
+MKDIR "$(OutDir)..\..\licenses"
+COPY "$(ProjectDir)..\..\COPYING" "$(OutDir)..\..\licenses\$(ProjectName).txt" 
+
+ENDLOCAL
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">
     <ClCompile>
@@ -325,6 +530,47 @@
     <Bscmake>
       <PreserveSbr>true</PreserveSbr>
     </Bscmake>
+    <PreBuildEvent>
+      <Command>
+ECHO ON
+SETLOCAL EnableDelayedExpansion EnableExtensions
+
+IF EXIST "$(OutDir)..\..\licenses\$(ProjectName).txt" (
+  DEL "$(OutDir)..\..\licenses\$(ProjectName).txt"
+)
+
+FOR %%H IN (mpeg2.h) DO (
+  SET "_HEADER=%%H"
+  IF EXIST "$(OutDir)..\..\include\mpeg2\!_HEADER!" (
+    DEL /f /q "$(OutDir)..\..\include\mpeg2\!_HEADER!"
+  )
+)
+
+:: Delete directory if empty; silence if failure
+RD /q "$(OutDir)..\..\include\mpeg2\" 2&gt;NUL
+
+ENDLOCAL
+</Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+ECHO Off
+SETLOCAL EnableDelayedExpansion EnableExtensions
+
+MKDIR "$(OutDir)..\..\include"
+MKDIR "$(OutDir)..\..\include\mpeg2"
+
+FOR %%H IN (mpeg2.h) DO (
+  SET "_HEADER=%%H"
+  COPY "$(ProjectDir)..\..\include\!_HEADER!" "$(OutDir)..\..\include\mpeg2"
+)
+
+MKDIR "$(OutDir)..\..\licenses"
+COPY "$(ProjectDir)..\..\COPYING" "$(OutDir)..\..\licenses\$(ProjectName).txt" 
+
+ENDLOCAL
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
     <ClCompile>
@@ -357,6 +603,47 @@
     <Bscmake>
       <PreserveSbr>true</PreserveSbr>
     </Bscmake>
+    <PreBuildEvent>
+      <Command>
+ECHO ON
+SETLOCAL EnableDelayedExpansion EnableExtensions
+
+IF EXIST "$(OutDir)..\..\licenses\$(ProjectName).txt" (
+  DEL "$(OutDir)..\..\licenses\$(ProjectName).txt"
+)
+
+FOR %%H IN (mpeg2.h) DO (
+  SET "_HEADER=%%H"
+  IF EXIST "$(OutDir)..\..\include\mpeg2\!_HEADER!" (
+    DEL /f /q "$(OutDir)..\..\include\mpeg2\!_HEADER!"
+  )
+)
+
+:: Delete directory if empty; silence if failure
+RD /q "$(OutDir)..\..\include\mpeg2\" 2&gt;NUL
+
+ENDLOCAL
+</Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+ECHO Off
+SETLOCAL EnableDelayedExpansion EnableExtensions
+
+MKDIR "$(OutDir)..\..\include"
+MKDIR "$(OutDir)..\..\include\mpeg2"
+
+FOR %%H IN (mpeg2.h) DO (
+  SET "_HEADER=%%H"
+  COPY "$(ProjectDir)..\..\include\!_HEADER!" "$(OutDir)..\..\include\mpeg2"
+)
+
+MKDIR "$(OutDir)..\..\licenses"
+COPY "$(ProjectDir)..\..\COPYING" "$(OutDir)..\..\licenses\$(ProjectName).txt" 
+
+ENDLOCAL
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
     <ClCompile>
@@ -387,6 +674,47 @@
     <Bscmake>
       <PreserveSbr>true</PreserveSbr>
     </Bscmake>
+    <PreBuildEvent>
+      <Command>
+ECHO ON
+SETLOCAL EnableDelayedExpansion EnableExtensions
+
+IF EXIST "$(OutDir)..\..\licenses\$(ProjectName).txt" (
+  DEL "$(OutDir)..\..\licenses\$(ProjectName).txt"
+)
+
+FOR %%H IN (mpeg2.h) DO (
+  SET "_HEADER=%%H"
+  IF EXIST "$(OutDir)..\..\include\mpeg2\!_HEADER!" (
+    DEL /f /q "$(OutDir)..\..\include\mpeg2\!_HEADER!"
+  )
+)
+
+:: Delete directory if empty; silence if failure
+RD /q "$(OutDir)..\..\include\mpeg2\" 2&gt;NUL
+
+ENDLOCAL
+</Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+ECHO Off
+SETLOCAL EnableDelayedExpansion EnableExtensions
+
+MKDIR "$(OutDir)..\..\include"
+MKDIR "$(OutDir)..\..\include\mpeg2"
+
+FOR %%H IN (mpeg2.h) DO (
+  SET "_HEADER=%%H"
+  COPY "$(ProjectDir)..\..\include\!_HEADER!" "$(OutDir)..\..\include\mpeg2"
+)
+
+MKDIR "$(OutDir)..\..\licenses"
+COPY "$(ProjectDir)..\..\COPYING" "$(OutDir)..\..\licenses\$(ProjectName).txt" 
+
+ENDLOCAL
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\libmpeg2\alloc.c" />
