@@ -23,12 +23,7 @@
 
 #include "config.h"
 
-#include <stdlib.h>
-#include <inttypes.h>
 
-#include "mpeg2.h"
-#include "attributes.h"
-#include "mpeg2_internal.h"
 #if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
 #include "mmx.h"
 #endif

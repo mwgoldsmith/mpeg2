@@ -28,8 +28,6 @@
 #include <stdlib.h>	/* defines NULL */
 #include <string.h>	/* memcmp */
 
-#include "mpeg2.h"
-#include "attributes.h"
 #include "mpeg2_internal.h"
 
 #define SEQ_EXT 2

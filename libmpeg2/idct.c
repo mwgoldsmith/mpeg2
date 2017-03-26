@@ -23,11 +23,8 @@
 
 #include "config.h"
 
-#include <stdlib.h>
 #include <inttypes.h>
 
-#include "mpeg2.h"
-#include "attributes.h"
 #include "mpeg2_internal.h"
 
 #define W1 2841 /* 2048 * sqrt (2) * cos (1 * pi / 16) */

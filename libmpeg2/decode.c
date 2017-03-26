@@ -24,11 +24,8 @@
 #include "config.h"
 
 #include <string.h>	/* memcmp/memset, try to remove */
-#include <stdlib.h>
 #include <inttypes.h>
 
-#include "mpeg2.h"
-#include "attributes.h"
 #include "mpeg2_internal.h"
 
 static int mpeg2_accels = 0;
