@@ -39,16 +39,13 @@
  * process both even and odd scanlines in one pass.
  */
 
-static const uint16_t const_2048[] ATTR_ALIGN(8) = {2048, 2048, 2048, 2048};
-static const uint16_t const_1024[] ATTR_ALIGN(8) = {1024, 1024, 1024, 1024};
-static const uint16_t const_128[] ATTR_ALIGN(8) = {128, 128, 128, 128};
-static const uint8_t const_Ugreen[] ATTR_ALIGN(8) =
-	{0xf3, 0x00, 0xf3, 0x00, 0xf3, 0x00, 0xf3, 0x00};
-static const uint8_t const_Vgreen[] ATTR_ALIGN(8) =
-	{0xe6, 0x00, 0xe6, 0x00, 0xe6, 0x00, 0xe6, 0x00};
-static const uint8_t const_Ublue_Vred[] ATTR_ALIGN(8) =
-	{0x41, 0x41, 0x41, 0x41, 0x33, 0x33, 0x33, 0x33};
-static const uint8_t const_Ycoeff[] ATTR_ALIGN(4) = {0x25, 0x25, 0x25, 0x25};
+static ALIGNED_ARRAY(const uint16_t, 8) const_2048[]  = {2048, 2048, 2048, 2048};
+static ALIGNED_ARRAY(const uint16_t, 8) const_1024[]  = {1024, 1024, 1024, 1024};
+static ALIGNED_ARRAY(const uint16_t, 8) const_128[]  = {128, 128, 128, 128};
+static ALIGNED_ARRAY(const uint8_t, 8) const_Ugreen[]  = {0xf3, 0x00, 0xf3, 0x00, 0xf3, 0x00, 0xf3, 0x00};
+static ALIGNED_ARRAY(const uint8_t, 8) const_Vgreen[]  = {0xe6, 0x00, 0xe6, 0x00, 0xe6, 0x00, 0xe6, 0x00};
+static ALIGNED_ARRAY(const uint8_t, 8) const_Ublue_Vred[]  = {0x41, 0x41, 0x41, 0x41, 0x33, 0x33, 0x33, 0x33};
+static ALIGNED_ARRAY(const uint8_t, 4) const_Ycoeff[] = {0x25, 0x25, 0x25, 0x25};
 
 #define TMP0		0
 #define TMP1		1

@@ -62,16 +62,11 @@ static inline vector_s16_t my_vec_mergel (vector_s16_t const A,
 #define VEC_S16(a,b,c,d,e,f,g,h) (vector_s16_t) (a, b, c, d, e, f, g, h)
 #endif
 
-static const vector_s16_t constants ATTR_ALIGN(16) =
-    VEC_S16 (23170, 13573, 6518, 21895, -23170, -21895, 32, 31);
-static const vector_s16_t constants_1 ATTR_ALIGN(16) =
-    VEC_S16 (16384, 22725, 21407, 19266, 16384, 19266, 21407, 22725);
-static const vector_s16_t constants_2 ATTR_ALIGN(16) =
-    VEC_S16 (16069, 22289, 20995, 18895, 16069, 18895, 20995, 22289);
-static const vector_s16_t constants_3 ATTR_ALIGN(16) =
-    VEC_S16 (21407, 29692, 27969, 25172, 21407, 25172, 27969, 29692);
-static const vector_s16_t constants_4 ATTR_ALIGN(16) =
-    VEC_S16 (13623, 18895, 17799, 16019, 13623, 16019, 17799, 18895);
+static ALIGNED_ARRAY(const vector_s16_t, 16) constants = VEC_S16 (23170, 13573, 6518, 21895, -23170, -21895, 32, 31);
+static ALIGNED_ARRAY(const vector_s16_t, 16) constants_1 = VEC_S16 (16384, 22725, 21407, 19266, 16384, 19266, 21407, 22725);
+static ALIGNED_ARRAY(const vector_s16_t, 16) constants_2 = VEC_S16 (16069, 22289, 20995, 18895, 16069, 18895, 20995, 22289);
+static ALIGNED_ARRAY(const vector_s16_t, 16) constants_3 = VEC_S16 (21407, 29692, 27969, 25172, 21407, 25172, 27969, 29692);
+static ALIGNED_ARRAY(const vector_s16_t, 16) constants_4 = VEC_S16 (13623, 18895, 17799, 16019, 13623, 16019, 17799, 18895);f
 
 #define IDCT								\
     vector_s16_t vx0, vx1, vx2, vx3, vx4, vx5, vx6, vx7;		\

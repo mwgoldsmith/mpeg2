@@ -53,17 +53,16 @@
 
 #define DUP4(x) {x, x, x, x}
 #define DUP8(x) {x, x, x, x, x, x, x, x}
-static const int16_t constants1[] ATTR_ALIGN(8) = DUP4 (1);
-static const int16_t constants2[] ATTR_ALIGN(8) = DUP4 (2);
-static const int16_t constants3[] ATTR_ALIGN(8) = DUP4 (3);
-static const int16_t constants6[] ATTR_ALIGN(8) = DUP4 (6);
-static const int8_t constants_fe[] ATTR_ALIGN(8) = DUP8 (0xfe);
-static const int8_t constants_7f[] ATTR_ALIGN(8) = DUP8 (0x7f);
-static const int8_t constants128[] ATTR_ALIGN(8) = DUP8 (128);
-static const int16_t constants256_512[] ATTR_ALIGN(8) =
-	{256, 512, 256, 512};
-static const int16_t constants256_1024[] ATTR_ALIGN(8) =
-	{256, 1024, 256, 1024};
+
+static ALIGNED_ARRAY(const int16_t, 8) constants1[] = DUP4(1);
+static ALIGNED_ARRAY(const int16_t, 8) constants2[] = DUP4(2);
+static ALIGNED_ARRAY(const int16_t, 8) constants3[] = DUP4(3);
+static ALIGNED_ARRAY(const int16_t, 8) constants6[] = DUP4(6);
+static ALIGNED_ARRAY(const int8_t, 8) constants_fe[] = DUP8(0xfe);
+static ALIGNED_ARRAY(const int8_t, 8) constants_7f[] = DUP8(0x7f);
+static ALIGNED_ARRAY(const int8_t, 8) constants128[] = DUP8(128);
+static ALIGNED_ARRAY(const int16_t, 8) constants256_512[] = { 256, 512, 256, 512 };
+static ALIGNED_ARRAY(const int16_t, 8) constants256_1024[] = { 256, 1024, 256, 1024 };
 
 #define REF_0		0
 #define REF_0_1		1
