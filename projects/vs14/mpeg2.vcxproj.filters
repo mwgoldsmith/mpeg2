@@ -63,10 +63,4 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
-  <ItemGroup>
-    <Object Include="cpu_state.obj" />
-    <Object Include="idct_mmx.obj" />
-    <Object Include="motion_comp_mmx.obj" />
-    <Object Include="cpu_accel.obj" />
-  </ItemGroup>
 </Project>
