@@ -1,6 +1,6 @@
 /*
- * attributes.h
- * Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+ * cpu_accel.c
+ * Copyright (C) 2000-2004 Michel Lespinasse <walken@zoy.org>
  * Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
  *
  * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
@@ -21,31 +21,37 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef LIBMPEG2_ATTRIBUTES_H
-#define LIBMPEG2_ATTRIBUTES_H
+#include "config.h"
 
-#if defined(_MSC_VER)
-#  define ALIGNED(x) __declspec(align(x))
-#else
-#  if defined(__GNUC__)
-#    ifdef ATTRIBUTE_ALIGNED_MAX
-#      define ALIGNED(x) __attribute__ ((__aligned__ ((ATTRIBUTE_ALIGNED_MAX < x) ? ATTRIBUTE_ALIGNED_MAX : x)))
-#    else
-#      define ALIGNED(x) __attribute__ ((aligned(x)))
-#    endif
-#  endif
-#endif
+#if defined(ARCH_ALPHA)
 
-#define ALIGNED_TYPE(t,x) typedef t ALIGNED(x)
+#include <inttypes.h>
 
-#define ALIGNED_ARRAY(t,x) ALIGNED(x) t
+#include "mpeg2.h"
+#include "attributes.h"
+#include "mpeg2_internal.h"
 
-#ifdef HAVE_BUILTIN_EXPECT
-#define likely(x) __builtin_expect ((x) != 0, 1)
-#define unlikely(x) __builtin_expect ((x) != 0, 0)
-#else
-#define likely(x) (x)
-#define unlikely(x) (x)
-#endif
+static inline uint32_t arch_accel (uint32_t accel) {
+  if (accel & MPEG2_ACCEL_ALPHA_MVI)
+	  accel |= MPEG2_ACCEL_ALPHA;
 
-#endif /* LIBMPEG2_ATTRIBUTES_H */
+#ifdef ACCEL_DETECT
+  if (accel & MPEG2_ACCEL_DETECT) {
+  	uint64_t no_mvi;
+
+	  asm volatile ("amask %1, %0"
+		      : "=r" (no_mvi)
+		      : "rI" (256));	/* AMASK_MVI */
+	  accel |= no_mvi ? MPEG2_ACCEL_ALPHA : (MPEG2_ACCEL_ALPHA | MPEG2_ACCEL_ALPHA_MVI);
+    }
+#endif /* ACCEL_DETECT */
+
+  return accel;
+}
+
+uint32_t mpeg2_detect_accel (uint32_t accel) {
+  accel = arch_accel(accel);
+  return accel;
+}
+
+#endif /* ARCH_ALPHA */

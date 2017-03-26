@@ -13,8 +13,29 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\arch">
-      <UniqueIdentifier>{14ab906e-d67e-4ba0-b02e-057e0d71717e}</UniqueIdentifier>
+    <Filter Include="Source Files\convert">
+      <UniqueIdentifier>{3a0bb9ed-0e20-4c4e-a34e-a081896006c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\convert\sparc">
+      <UniqueIdentifier>{bd9b7293-0943-4bfb-a226-32108a435f2a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\convert\x86">
+      <UniqueIdentifier>{4f45ba14-faed-4131-aa28-1ce297d29877}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\arm">
+      <UniqueIdentifier>{8a7c8cd9-5401-4554-acde-8553b70c0905}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\alpha">
+      <UniqueIdentifier>{535eac62-9d1f-48f2-bded-87843d2db54e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\x86">
+      <UniqueIdentifier>{2c0fa13e-d33f-422e-a63a-cdd515dd8740}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\sparc">
+      <UniqueIdentifier>{14e01b85-f208-451c-a38d-f89e809d6d0b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ppc">
+      <UniqueIdentifier>{e02f88a0-0a56-4df8-9f73-25353ed665b4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -36,17 +57,53 @@
     <ClCompile Include="..\..\libmpeg2\idct.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libmpeg2\motion_comp_mmx.c">
-      <Filter>Source Files\arch</Filter>
+    <ClCompile Include="..\..\libmpeg2\convert\sparc\rgb_vis.c">
+      <Filter>Source Files\convert\sparc</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libmpeg2\idct_mmx.c">
-      <Filter>Source Files\arch</Filter>
+    <ClCompile Include="..\..\libmpeg2\convert\x86\rgb_mmx.c">
+      <Filter>Source Files\convert\x86</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libmpeg2\cpu_state.c">
-      <Filter>Source Files\arch</Filter>
+    <ClCompile Include="..\..\libmpeg2\sparc\motion_comp_vis.c">
+      <Filter>Source Files\sparc</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libmpeg2\cpu_accel.c">
-      <Filter>Source Files\arch</Filter>
+    <ClCompile Include="..\..\libmpeg2\arm\motion_comp_arm.c">
+      <Filter>Source Files\arm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\alpha\motion_comp_alpha.c">
+      <Filter>Source Files\alpha</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\alpha\idct_alpha.c">
+      <Filter>Source Files\alpha</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\ppc\motion_comp_altivec.c">
+      <Filter>Source Files\ppc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\ppc\idct_altivec.c">
+      <Filter>Source Files\ppc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\x86\motion_comp_mmx.c">
+      <Filter>Source Files\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\x86\idct_mmx.c">
+      <Filter>Source Files\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\alpha\cpu_accel_alpha.c">
+      <Filter>Source Files\alpha</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\x86\cpu_accel_x86.c">
+      <Filter>Source Files\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\ppc\cpu_accel_ppc.c">
+      <Filter>Source Files\ppc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\sparc\cpu_accel_sparc.c">
+      <Filter>Source Files\sparc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\x86\cpu_state_ppc_x86.c">
+      <Filter>Source Files\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\ppc\cpu_state_ppc.c">
+      <Filter>Source Files\ppc</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -60,6 +117,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\libmpeg2\mpeg2_internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\mpeg2convert.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\mmx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libmpeg2\vlc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\alpha_asm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

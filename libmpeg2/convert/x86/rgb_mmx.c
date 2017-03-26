@@ -34,8 +34,8 @@
 #include "convert_internal.h"
 #include "attributes.h"
 
-#if defined(MSVC_ASM) && defined(ARCH_X86)
-
+#if defined(ARCH_X86)
+#if defined(MSVC_ASM)
 #include "mmx.h"
 
 #define CPU_MMXEXT 0
@@ -43,12 +43,12 @@
 
 /* CPU_MMXEXT/CPU_MMX adaptation layer */
 
-#define movntq(src,dest)	\
-do {				\
-    if (cpu == CPU_MMXEXT)	\
-	movntq_r2m (src, dest);	\
-    else			\
-	movq_r2m (src, dest);	\
+#define movntq(src,dest)    \
+do {                \
+    if (cpu == CPU_MMXEXT)    \
+    movntq_r2m (src, dest);    \
+    else            \
+    movq_r2m (src, dest);    \
 } while (0)
 
 static inline void mmx_yuv2rgb (uint8_t * py, uint8_t * pu, uint8_t * pv)
@@ -62,10 +62,10 @@ static inline void mmx_yuv2rgb (uint8_t * py, uint8_t * pu, uint8_t * pv)
     static mmx_t mmx_00ffw = {0x00ff00ff00ff00ffLL};
     static mmx_t mmx_Y_coeff = {0x253f253f253f253fLL};
 
-    movd_m2r (*pu, mm0);		/* mm0 = 00 00 00 00 u3 u2 u1 u0 */
-    movd_m2r (*pv, mm1);		/* mm1 = 00 00 00 00 v3 v2 v1 v0 */
-    movq_m2r (*py, mm6);		/* mm6 = Y7 Y6 Y5 Y4 Y3 Y2 Y1 Y0 */
-    pxor_r2r (mm4, mm4);		/* mm4 = 0 */
+    movd_m2r (*pu, mm0);        /* mm0 = 00 00 00 00 u3 u2 u1 u0 */
+    movd_m2r (*pv, mm1);        /* mm1 = 00 00 00 00 v3 v2 v1 v0 */
+    movq_m2r (*py, mm6);        /* mm6 = Y7 Y6 Y5 Y4 Y3 Y2 Y1 Y0 */
+    pxor_r2r (mm4, mm4);        /* mm4 = 0 */
     /* XXX might do cache preload for image here */
 
     /*
@@ -76,28 +76,28 @@ static inline void mmx_yuv2rgb (uint8_t * py, uint8_t * pu, uint8_t * pv)
      * mm6 -> Y even, mm7 -> Y odd
      */
 
-    punpcklbw_r2r (mm4, mm0);		/* mm0 = u3 u2 u1 u0 */
-    punpcklbw_r2r (mm4, mm1);		/* mm1 = v3 v2 v1 v0 */
-    psubsw_m2r (mmx_80w, mm0);		/* u -= 128 */
-    psubsw_m2r (mmx_80w, mm1);		/* v -= 128 */
-    psllw_i2r (3, mm0);			/* promote precision */
-    psllw_i2r (3, mm1);			/* promote precision */
-    movq_r2r (mm0, mm2);		/* mm2 = u3 u2 u1 u0 */
-    movq_r2r (mm1, mm3);		/* mm3 = v3 v2 v1 v0 */
-    pmulhw_m2r (mmx_U_green, mm2);	/* mm2 = u * u_green */
-    pmulhw_m2r (mmx_V_green, mm3);	/* mm3 = v * v_green */
-    pmulhw_m2r (mmx_U_blue, mm0);	/* mm0 = chroma_b */
-    pmulhw_m2r (mmx_V_red, mm1);	/* mm1 = chroma_r */
-    paddsw_r2r (mm3, mm2);		/* mm2 = chroma_g */
+    punpcklbw_r2r (mm4, mm0);        /* mm0 = u3 u2 u1 u0 */
+    punpcklbw_r2r (mm4, mm1);        /* mm1 = v3 v2 v1 v0 */
+    psubsw_m2r (mmx_80w, mm0);        /* u -= 128 */
+    psubsw_m2r (mmx_80w, mm1);        /* v -= 128 */
+    psllw_i2r (3, mm0);            /* promote precision */
+    psllw_i2r (3, mm1);            /* promote precision */
+    movq_r2r (mm0, mm2);        /* mm2 = u3 u2 u1 u0 */
+    movq_r2r (mm1, mm3);        /* mm3 = v3 v2 v1 v0 */
+    pmulhw_m2r (mmx_U_green, mm2);    /* mm2 = u * u_green */
+    pmulhw_m2r (mmx_V_green, mm3);    /* mm3 = v * v_green */
+    pmulhw_m2r (mmx_U_blue, mm0);    /* mm0 = chroma_b */
+    pmulhw_m2r (mmx_V_red, mm1);    /* mm1 = chroma_r */
+    paddsw_r2r (mm3, mm2);        /* mm2 = chroma_g */
 
-    psubusb_m2r (mmx_10w, mm6);		/* Y -= 16 */
-    movq_r2r (mm6, mm7);		/* mm7 = Y7 Y6 Y5 Y4 Y3 Y2 Y1 Y0 */
-    pand_m2r (mmx_00ffw, mm6);		/* mm6 =    Y6    Y4    Y2    Y0 */
-    psrlw_i2r (8, mm7);			/* mm7 =    Y7    Y5    Y3    Y1 */
-    psllw_i2r (3, mm6);			/* promote precision */
-    psllw_i2r (3, mm7);			/* promote precision */
-    pmulhw_m2r (mmx_Y_coeff, mm6);	/* mm6 = luma_rgb even */
-    pmulhw_m2r (mmx_Y_coeff, mm7);	/* mm7 = luma_rgb odd */
+    psubusb_m2r (mmx_10w, mm6);        /* Y -= 16 */
+    movq_r2r (mm6, mm7);        /* mm7 = Y7 Y6 Y5 Y4 Y3 Y2 Y1 Y0 */
+    pand_m2r (mmx_00ffw, mm6);        /* mm6 =    Y6    Y4    Y2    Y0 */
+    psrlw_i2r (8, mm7);            /* mm7 =    Y7    Y5    Y3    Y1 */
+    psllw_i2r (3, mm6);            /* promote precision */
+    psllw_i2r (3, mm7);            /* promote precision */
+    pmulhw_m2r (mmx_Y_coeff, mm6);    /* mm6 = luma_rgb even */
+    pmulhw_m2r (mmx_Y_coeff, mm7);    /* mm7 = luma_rgb odd */
 
     /*
      * Do the addition part of the conversion for even and odd pixels
@@ -107,24 +107,24 @@ static inline void mmx_yuv2rgb (uint8_t * py, uint8_t * pu, uint8_t * pv)
      * mm6 -> Y even, mm7 -> Y odd
      */
 
-    movq_r2r (mm0, mm3);		/* mm3 = chroma_b */
-    movq_r2r (mm1, mm4);		/* mm4 = chroma_r */
-    movq_r2r (mm2, mm5);		/* mm5 = chroma_g */
-    paddsw_r2r (mm6, mm0);		/* mm0 = B6 B4 B2 B0 */
-    paddsw_r2r (mm7, mm3);		/* mm3 = B7 B5 B3 B1 */
-    paddsw_r2r (mm6, mm1);		/* mm1 = R6 R4 R2 R0 */
-    paddsw_r2r (mm7, mm4);		/* mm4 = R7 R5 R3 R1 */
-    paddsw_r2r (mm6, mm2);		/* mm2 = G6 G4 G2 G0 */
-    paddsw_r2r (mm7, mm5);		/* mm5 = G7 G5 G3 G1 */
-    packuswb_r2r (mm0, mm0);		/* saturate to 0-255 */
-    packuswb_r2r (mm1, mm1);		/* saturate to 0-255 */
-    packuswb_r2r (mm2, mm2);		/* saturate to 0-255 */
-    packuswb_r2r (mm3, mm3);		/* saturate to 0-255 */
-    packuswb_r2r (mm4, mm4);		/* saturate to 0-255 */
-    packuswb_r2r (mm5, mm5);		/* saturate to 0-255 */
-    punpcklbw_r2r (mm3, mm0);		/* mm0 = B7 B6 B5 B4 B3 B2 B1 B0 */
-    punpcklbw_r2r (mm4, mm1);		/* mm1 = R7 R6 R5 R4 R3 R2 R1 R0 */
-    punpcklbw_r2r (mm5, mm2);		/* mm2 = G7 G6 G5 G4 G3 G2 G1 G0 */
+    movq_r2r (mm0, mm3);        /* mm3 = chroma_b */
+    movq_r2r (mm1, mm4);        /* mm4 = chroma_r */
+    movq_r2r (mm2, mm5);        /* mm5 = chroma_g */
+    paddsw_r2r (mm6, mm0);        /* mm0 = B6 B4 B2 B0 */
+    paddsw_r2r (mm7, mm3);        /* mm3 = B7 B5 B3 B1 */
+    paddsw_r2r (mm6, mm1);        /* mm1 = R6 R4 R2 R0 */
+    paddsw_r2r (mm7, mm4);        /* mm4 = R7 R5 R3 R1 */
+    paddsw_r2r (mm6, mm2);        /* mm2 = G6 G4 G2 G0 */
+    paddsw_r2r (mm7, mm5);        /* mm5 = G7 G5 G3 G1 */
+    packuswb_r2r (mm0, mm0);        /* saturate to 0-255 */
+    packuswb_r2r (mm1, mm1);        /* saturate to 0-255 */
+    packuswb_r2r (mm2, mm2);        /* saturate to 0-255 */
+    packuswb_r2r (mm3, mm3);        /* saturate to 0-255 */
+    packuswb_r2r (mm4, mm4);        /* saturate to 0-255 */
+    packuswb_r2r (mm5, mm5);        /* saturate to 0-255 */
+    punpcklbw_r2r (mm3, mm0);        /* mm0 = B7 B6 B5 B4 B3 B2 B1 B0 */
+    punpcklbw_r2r (mm4, mm1);        /* mm1 = R7 R6 R5 R4 R3 R2 R1 R0 */
+    punpcklbw_r2r (mm5, mm2);        /* mm2 = G7 G6 G5 G4 G3 G2 G1 G0 */
 }
 
 static inline void mmx_unpack_16rgb (uint8_t * image, const int cpu)
@@ -140,13 +140,13 @@ static inline void mmx_unpack_16rgb (uint8_t * image, const int cpu)
      * mm6 -> GB, mm7 -> AR pixel 0-3
      */
 
-    pand_m2r (mmx_bluemask, mm0);	/* mm0 = b7b6b5b4b3______ */
-    pand_m2r (mmx_greenmask, mm2);	/* mm2 = g7g6g5g4g3g2____ */
-    pand_m2r (mmx_redmask, mm1);	/* mm1 = r7r6r5r4r3______ */
-    psrlq_i2r (3, mm0);			/* mm0 = ______b7b6b5b4b3 */
-    pxor_r2r (mm4, mm4);		/* mm4 = 0 */
-    movq_r2r (mm0, mm5);		/* mm5 = ______b7b6b5b4b3 */
-    movq_r2r (mm2, mm7);		/* mm7 = g7g6g5g4g3g2____ */
+    pand_m2r (mmx_bluemask, mm0);    /* mm0 = b7b6b5b4b3______ */
+    pand_m2r (mmx_greenmask, mm2);    /* mm2 = g7g6g5g4g3g2____ */
+    pand_m2r (mmx_redmask, mm1);    /* mm1 = r7r6r5r4r3______ */
+    psrlq_i2r (3, mm0);            /* mm0 = ______b7b6b5b4b3 */
+    pxor_r2r (mm4, mm4);        /* mm4 = 0 */
+    movq_r2r (mm0, mm5);        /* mm5 = ______b7b6b5b4b3 */
+    movq_r2r (mm2, mm7);        /* mm7 = g7g6g5g4g3g2____ */
 
     punpcklbw_r2r (mm4, mm2);
     punpcklbw_r2r (mm1, mm0);
@@ -194,7 +194,7 @@ static inline void mmx_unpack_32rgb (uint8_t * image, const int cpu)
 }
 
 static inline void rgb16 (void * const _id, uint8_t * const * src,
-			  const unsigned int v_offset, const int cpu)
+              const unsigned int v_offset, const int cpu)
 {
     convert_rgb_t * const id = (convert_rgb_t *) _id;
     uint8_t * dst;
@@ -202,39 +202,39 @@ static inline void rgb16 (void * const _id, uint8_t * const * src,
     int i, j;
 
     dst = id->rgb_ptr + id->rgb_slice * v_offset;
-    py = src[0];	pu = src[1];	pv = src[2];
+    py = src[0];    pu = src[1];    pv = src[2];
 
     i = 16;
     do {
-	j = id->width;
-	do {
-	    mmx_yuv2rgb (py, pu, pv);
-	    mmx_unpack_16rgb (dst, cpu);
-	    py += 8;
-	    pu += 4;
-	    pv += 4;
-	    dst += 16;
-	} while (--j);
+    j = id->width;
+    do {
+        mmx_yuv2rgb (py, pu, pv);
+        mmx_unpack_16rgb (dst, cpu);
+        py += 8;
+        pu += 4;
+        pv += 4;
+        dst += 16;
+    } while (--j);
 
-	dst += id->rgb_increm;
-	py += id->y_increm;
-	if (--i == id->field) {
-	    dst = id->rgb_ptr + id->rgb_slice * (v_offset + 1);
-	    py = src[0] + id->y_stride_frame;
-	    pu = src[1] + id->uv_stride_frame;
-	    pv = src[2] + id->uv_stride_frame;
-	} else if (! (i & id->chroma420)) {
-	    pu += id->uv_increm;
-	    pv += id->uv_increm;
-	} else {
-	    pu -= id->uv_stride_frame;
-	    pv -= id->uv_stride_frame;
-	}
+    dst += id->rgb_increm;
+    py += id->y_increm;
+    if (--i == id->field) {
+        dst = id->rgb_ptr + id->rgb_slice * (v_offset + 1);
+        py = src[0] + id->y_stride_frame;
+        pu = src[1] + id->uv_stride_frame;
+        pv = src[2] + id->uv_stride_frame;
+    } else if (! (i & id->chroma420)) {
+        pu += id->uv_increm;
+        pv += id->uv_increm;
+    } else {
+        pu -= id->uv_stride_frame;
+        pv -= id->uv_stride_frame;
+    }
     } while (i);
 }
 
 static inline void argb32 (void * const _id, uint8_t * const * src,
-			   const unsigned int v_offset, const int cpu)
+               const unsigned int v_offset, const int cpu)
 {
     convert_rgb_t * const id = (convert_rgb_t *) _id;
     uint8_t * dst;
@@ -242,45 +242,45 @@ static inline void argb32 (void * const _id, uint8_t * const * src,
     int i, j;
 
     dst = id->rgb_ptr + id->rgb_slice * v_offset;
-    py = src[0];	pu = src[1];	pv = src[2];
+    py = src[0];    pu = src[1];    pv = src[2];
 
     i = 16;
     do {
-	j = id->width;
-	do {
-	    mmx_yuv2rgb (py, pu, pv);
-	    mmx_unpack_32rgb (dst, cpu);
-	    py += 8;
-	    pu += 4;
-	    pv += 4;
-	    dst += 32;
-	} while (--j);
+    j = id->width;
+    do {
+        mmx_yuv2rgb (py, pu, pv);
+        mmx_unpack_32rgb (dst, cpu);
+        py += 8;
+        pu += 4;
+        pv += 4;
+        dst += 32;
+    } while (--j);
 
-	dst += id->rgb_increm;
-	py += id->y_increm;
-	if (--i == id->field) {
-	    dst = id->rgb_ptr + id->rgb_slice * (v_offset + 1);
-	    py = src[0] + id->y_stride_frame;
-	    pu = src[1] + id->uv_stride_frame;
-	    pv = src[2] + id->uv_stride_frame;
-	} else if (! (i & id->chroma420)) {
-	    pu += id->uv_increm;
-	    pv += id->uv_increm;
-	} else {
-	    pu -= id->uv_stride_frame;
-	    pv -= id->uv_stride_frame;
-	}
+    dst += id->rgb_increm;
+    py += id->y_increm;
+    if (--i == id->field) {
+        dst = id->rgb_ptr + id->rgb_slice * (v_offset + 1);
+        py = src[0] + id->y_stride_frame;
+        pu = src[1] + id->uv_stride_frame;
+        pv = src[2] + id->uv_stride_frame;
+    } else if (! (i & id->chroma420)) {
+        pu += id->uv_increm;
+        pv += id->uv_increm;
+    } else {
+        pu -= id->uv_stride_frame;
+        pv -= id->uv_stride_frame;
+    }
     } while (i);
 }
 
 static void mmxext_rgb16 (void * id, uint8_t * const * src,
-			  unsigned int v_offset)
+              unsigned int v_offset)
 {
     rgb16 (id, src, v_offset, CPU_MMXEXT);
 }
 
 static void mmxext_argb32 (void * id, uint8_t * const * src,
-			   unsigned int v_offset)
+               unsigned int v_offset)
 {
     argb32 (id, src, v_offset, CPU_MMXEXT);
 }
@@ -291,37 +291,34 @@ static void mmx_rgb16 (void * id, uint8_t * const * src, unsigned int v_offset)
 }
 
 static void mmx_argb32 (void * id, uint8_t * const * src,
-			unsigned int v_offset)
+            unsigned int v_offset)
 {
     argb32 (id, src, v_offset, CPU_MMX);
 }
 
-#endif
+#endif /* MSVC_ASM */
 
 #if defined(MSVC_ASM) || (!defined(MSVC_ASM) && defined(_WIN64))
 mpeg2convert_copy_t * mpeg2convert_rgb_mmxext (int order, int bpp, const mpeg2_sequence_t * seq) {
-#if defined(ARCH_X86)
   if (order == MPEG2CONVERT_RGB && seq->chroma_width < seq->width) {
-  	if (bpp == 16)
-	    return mmxext_rgb16;
-  	else if (bpp == 32)
-	    return mmxext_argb32;
+    if (bpp == 16)
+      return mmxext_rgb16;
+    else if (bpp == 32)
+      return mmxext_argb32;
   }
-#endif
-    return NULL;	/* Fallback to C */
 }
+
+mpeg2convert_copy_t * mpeg2convert_rgb_mmx (int order, int bpp, const mpeg2_sequence_t * seq) {
+  if (order == MPEG2CONVERT_RGB && seq->chroma_width < seq->width) {
+    if (bpp == 16)
+      return mmx_rgb16;
+    else if (bpp == 32)
+      return mmx_argb32;
+  }
+  return NULL;    /* Fallback to C */
+}
+
 #endif
 
-#if defined(MSVC_ASM) || (!defined(MSVC_ASM) && defined(_WIN64))
-mpeg2convert_copy_t * mpeg2convert_rgb_mmx (int order, int bpp, const mpeg2_sequence_t * seq) {
-#if defined(ARCH_X86)
-  if (order == MPEG2CONVERT_RGB && seq->chroma_width < seq->width) {
-	  if (bpp == 16)
-	    return mmx_rgb16;
-	  else if (bpp == 32)
-	    return mmx_argb32;
-  }
-#endif
-  return NULL;	/* Fallback to C */
-}
-#endif
+#endif /* ARCH_X86 */
+
