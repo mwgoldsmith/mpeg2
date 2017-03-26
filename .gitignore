@@ -26,4 +26,5 @@ src/mpeg2dec
 
 .vs/
 *.opendb
+*.vcxproj.user
 *.sdf
