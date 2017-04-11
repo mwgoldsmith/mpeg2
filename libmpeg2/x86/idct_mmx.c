@@ -22,8 +22,15 @@
  */
 
 #include "config.h"
+#include <emmintrin.h>
+#include <xmmintrin.h>
+#include <inttypes.h>
+#include <xmmintrin.h>
+#include <emmintrin.h>
+#include <immintrin.h>
+#include <mmintrin.h>
 
-#if defined(MSVC_ASM) || (!defined(MSVC_ASM) && defined(_WIN64))
+#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
 
 #include <inttypes.h>
 
@@ -31,125 +38,10 @@
 #include "attributes.h"
 #include "mpeg2_internal.h"
 
-#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
 #include "mmx.h"
 
-#define ROW_SHIFT 15
-#define COL_SHIFT 6
-
-#define round(bias) ((int)(((bias)+0.5) * (1<<ROW_SHIFT)))
-#define rounder(bias) {round (bias), round (bias)}
-#define rounder_sse2(bias) {round (bias), round (bias), round (bias), round (bias)}
-
-
-#if 0
-/* C row IDCT - it is just here to document the MMXEXT and MMX versions */
-static inline void idct_row (int16_t * row, int offset,
-			     int16_t * table, int32_t * rounder)
-{
-    int C1, C2, C3, C4, C5, C6, C7;
-    int a0, a1, a2, a3, b0, b1, b2, b3;
-
-    row += offset;
-
-    C1 = table[1];
-    C2 = table[2];
-    C3 = table[3];
-    C4 = table[4];
-    C5 = table[5];
-    C6 = table[6];
-    C7 = table[7];
-
-    a0 = C4*row[0] + C2*row[2] + C4*row[4] + C6*row[6] + *rounder;
-    a1 = C4*row[0] + C6*row[2] - C4*row[4] - C2*row[6] + *rounder;
-    a2 = C4*row[0] - C6*row[2] - C4*row[4] + C2*row[6] + *rounder;
-    a3 = C4*row[0] - C2*row[2] + C4*row[4] - C6*row[6] + *rounder;
-
-    b0 = C1*row[1] + C3*row[3] + C5*row[5] + C7*row[7];
-    b1 = C3*row[1] - C7*row[3] - C1*row[5] - C5*row[7];
-    b2 = C5*row[1] - C1*row[3] + C7*row[5] + C3*row[7];
-    b3 = C7*row[1] - C5*row[3] + C3*row[5] - C1*row[7];
-
-    row[0] = (a0 + b0) >> ROW_SHIFT;
-    row[1] = (a1 + b1) >> ROW_SHIFT;
-    row[2] = (a2 + b2) >> ROW_SHIFT;
-    row[3] = (a3 + b3) >> ROW_SHIFT;
-    row[4] = (a3 - b3) >> ROW_SHIFT;
-    row[5] = (a2 - b2) >> ROW_SHIFT;
-    row[6] = (a1 - b1) >> ROW_SHIFT;
-    row[7] = (a0 - b0) >> ROW_SHIFT;
-}
-#endif
-
-
-/* SSE2 row IDCT */
-#define sse2_table(c1,c2,c3,c4,c5,c6,c7) {  c4,  c2,  c4,  c6,   \
-					    c4, -c6,  c4, -c2,   \
-					    c4,  c6, -c4, -c2,   \
-					   -c4,  c2,  c4, -c6,   \
-					    c1,  c3,  c3, -c7,   \
-					    c5, -c1,  c7, -c5,   \
-					    c5,  c7, -c1, -c5,   \
-					    c7,  c3,  c3, -c1 }
-
-#define SSE2_IDCT_2ROW(table, row1, row2, round1, round2) do {               \
-    /* no scheduling: trust in out of order execution */                     \
-    /* based on Intel AP-945 */                                              \
-    /* (http://cache-www.intel.com/cd/00/00/01/76/17680_w_idct.pdf) */       \
-                                                                             \
-    /* input */                      /* 1: row1= x7 x5 x3 x1  x6 x4 x2 x0 */ \
-    pshufd_r2r   (row1, xmm1, 0);    /* 1: xmm1= x2 x0 x2 x0  x2 x0 x2 x0 */ \
-    pmaddwd_m2r  (table[0], xmm1);   /* 1: xmm1= x2*C + x0*C ...          */ \
-    pshufd_r2r   (row1, xmm3, 0xaa); /* 1: xmm3= x3 x1 x3 x1  x3 x1 x3 x1 */ \
-    pmaddwd_m2r  (table[2*8], xmm3); /* 1: xmm3= x3*C + x1*C ...          */ \
-    pshufd_r2r   (row1, xmm2, 0x55); /* 1: xmm2= x6 x4 x6 x4  x6 x4 x6 x4 */ \
-    pshufd_r2r   (row1, row1, 0xff); /* 1: row1= x7 x5 x7 x5  x7 x5 x7 x5 */ \
-    pmaddwd_m2r  (table[1*8], xmm2); /* 1: xmm2= x6*C + x4*C ...          */ \
-    paddd_m2r    (round1, xmm1);     /* 1: xmm1= x2*C + x0*C + round ...  */ \
-    pmaddwd_m2r  (table[3*8], row1); /* 1: row1= x7*C + x5*C ...          */ \
-    pshufd_r2r   (row2, xmm5, 0);    /*    2:                             */ \
-    pshufd_r2r   (row2, xmm6, 0x55); /*    2:                             */ \
-    pmaddwd_m2r  (table[0], xmm5);   /*    2:                             */ \
-    paddd_r2r    (xmm2, xmm1);       /* 1: xmm1= a[]                      */ \
-    movdqa_r2r   (xmm1, xmm2);       /* 1: xmm2= a[]                      */ \
-    pshufd_r2r   (row2, xmm7, 0xaa); /*    2:                             */ \
-    pmaddwd_m2r  (table[1*8], xmm6); /*    2:                             */ \
-    paddd_r2r    (xmm3, row1);       /* 1: row1= b[]= 7*C+5*C+3*C+1*C ... */ \
-    pshufd_r2r   (row2, row2, 0xff); /*    2:                             */ \
-    psubd_r2r    (row1, xmm2);       /* 1: xmm2= a[] - b[]                */ \
-    pmaddwd_m2r  (table[2*8], xmm7); /*    2:                             */ \
-    paddd_r2r    (xmm1, row1);       /* 1: row1= a[] + b[]                */ \
-    psrad_i2r    (ROW_SHIFT, xmm2);  /* 1: xmm2= result 4...7             */ \
-    paddd_m2r    (round2, xmm5);     /*    2:                             */ \
-    pmaddwd_m2r  (table[3*8], row2); /*    2:                             */ \
-    paddd_r2r    (xmm6, xmm5);       /*    2:                             */ \
-    movdqa_r2r   (xmm5, xmm6);       /*    2:                             */ \
-    psrad_i2r    (ROW_SHIFT, row1);  /* 1: row1= result 0...4             */ \
-    pshufd_r2r   (xmm2, xmm2, 0x1b); /* 1: [0 1 2 3] -> [3 2 1 0]         */ \
-    packssdw_r2r (xmm2, row1);       /* 1: row1= result[]                 */ \
-    paddd_r2r    (xmm7, row2);       /*    2:                             */ \
-    psubd_r2r    (row2, xmm6);       /*    2:                             */ \
-    paddd_r2r    (xmm5, row2);       /*    2:                             */ \
-    psrad_i2r    (ROW_SHIFT, xmm6);  /*    2:                             */ \
-    psrad_i2r    (ROW_SHIFT, row2);  /*    2:                             */ \
-    pshufd_r2r   (xmm6, xmm6, 0x1b); /*    2:                             */ \
-    packssdw_r2r (xmm6, row2);       /*    2:                             */ \
-} while (0)
-
-
-/* MMXEXT row IDCT */
-
-#define mmxext_table(c1,c2,c3,c4,c5,c6,c7)	{  c4,  c2, -c4, -c2,	\
-						   c4,  c6,  c4,  c6,	\
-						   c1,  c3, -c1, -c5,	\
-						   c5,  c7,  c3, -c7,	\
-						   c4, -c6,  c4, -c6,	\
-						  -c4,  c2,  c4, -c2,	\
-						   c5, -c1,  c3, -c1,	\
-						   c7,  c3,  c7, -c5 }
-
-static inline void mmxext_row_head(int16_t * const row, const int offset,
-                                   const int16_t * const table) {
+static inline void mmxext_row_head(int16_t * const row, const int offset, const int16_t * const table) {
+  __m64 mm2;
   movq_m2r (*(row+offset), mm2); /* mm2 = x6 x4 x2 x0 */
 
   movq_m2r (*(row+offset+4), mm5); /* mm5 = x7 x5 x3 x1 */
@@ -161,11 +53,11 @@ static inline void mmxext_row_head(int16_t * const row, const int offset,
   movq_m2r (*(table+4), mm4); /* mm4 = C6 C4 C6 C4 */
   pmaddwd_r2r (mm0, mm3); /* mm3 = -C4*x4-C2*x6 C4*x0+C2*x2 */
 
+  mm2 = _mm_shuffle_pi16(mm2, 0x4e);
   pshufw_r2r (mm2, mm2, 0x4e); /* mm2 = x2 x0 x6 x4 */
 }
 
-static inline void mmxext_row(const int16_t * const table,
-                              const int32_t * const rounder) {
+static inline void mmxext_row(const int16_t * const table, const int32_t * const rounder) {
   movq_m2r (*(table+8), mm1); /* mm1 = -C5 -C1 C3 C1 */
   pmaddwd_r2r (mm2, mm4); /* mm4 = C4*x0+C6*x2 C4*x4+C6*x6 */
 
@@ -220,9 +112,7 @@ static inline void mmxext_row_tail(int16_t * const row, const int store) {
   movq_r2m (mm4, *(row+store+4)); /* save y7 y6 y5 y4 */
 }
 
-static inline void mmxext_row_mid(int16_t * const row, const int store,
-                                  const int offset,
-                                  const int16_t * const table) {
+static inline void mmxext_row_mid(int16_t * const row, const int store, const int offset, const int16_t * const table) {
   movq_m2r (*(row+offset), mm2); /* mm2 = x6 x4 x2 x0 */
   psrad_i2r (ROW_SHIFT, mm0); /* mm0 = y3 y2 */
 
@@ -247,20 +137,7 @@ static inline void mmxext_row_mid(int16_t * const row, const int store,
   pshufw_r2r (mm2, mm2, 0x4e); /* mm2 = x2 x0 x6 x4 */
 }
 
-
-/* MMX row IDCT */
-
-#define mmx_table(c1,c2,c3,c4,c5,c6,c7)	{  c4,  c2,  c4,  c6,	\
-					   c4,  c6, -c4, -c2,	\
-					   c1,  c3,  c3, -c7,	\
-					   c5,  c7, -c1, -c5,	\
-					   c4, -c6,  c4, -c2,	\
-					  -c4,  c2,  c4, -c6,	\
-					   c5, -c1,  c7, -c5,	\
-					   c7,  c3,  c3, -c1 }
-
-static inline void mmx_row_head(int16_t * const row, const int offset,
-                                const int16_t * const table) {
+static inline void mmx_row_head(int16_t * const row, const int offset, const int16_t * const table) {
   movq_m2r (*(row+offset), mm2); /* mm2 = x6 x4 x2 x0 */
 
   movq_m2r (*(row+offset+4), mm5); /* mm5 = x7 x5 x3 x1 */
@@ -278,8 +155,7 @@ static inline void mmx_row_head(int16_t * const row, const int offset,
   punpckhdq_r2r (mm2, mm2); /* mm2 = x6 x4 x6 x4 */
 }
 
-static inline void mmx_row(const int16_t * const table,
-                           const int32_t * const rounder) {
+static inline void mmx_row(const int16_t * const table, const int32_t * const rounder) {
   pmaddwd_r2r (mm2, mm4); /* mm4 = -C4*x4-C2*x6 C4*x4+C6*x6 */
   punpckldq_r2r (mm5, mm5); /* mm5 = x3 x1 x3 x1 */
 
@@ -340,8 +216,7 @@ static inline void mmx_row_tail(int16_t * const row, const int store) {
   movq_r2m (mm7, *(row+store+4)); /* save y7 y6 y5 y4 */
 }
 
-static inline void mmx_row_mid(int16_t * const row, const int store,
-                               const int offset, const int16_t * const table) {
+static inline void mmx_row_mid(int16_t * const row, const int store, const int offset, const int16_t * const table) {
   movq_m2r (*(row+offset), mm2); /* mm2 = x6 x4 x2 x0 */
   psrad_i2r (ROW_SHIFT, mm0); /* mm0 = y3 y2 */
 
@@ -374,98 +249,21 @@ static inline void mmx_row_mid(int16_t * const row, const int store,
 }
 
 
-#if 0
-/* C column IDCT - it is just here to document the MMXEXT and MMX versions */
-static inline void idct_col (int16_t * col, int offset)
-{
-/* multiplication - as implemented on mmx */
-#define F(c,x) (((c) * (x)) >> 16)
-
-/* saturation - it helps us handle torture test cases */
-#define S(x) (((x)>32767) ? 32767 : ((x)<-32768) ? -32768 : (x))
-
-    int16_t x0, x1, x2, x3, x4, x5, x6, x7;
-    int16_t y0, y1, y2, y3, y4, y5, y6, y7;
-    int16_t a0, a1, a2, a3, b0, b1, b2, b3;
-    int16_t u04, v04, u26, v26, u17, v17, u35, v35, u12, v12;
-
-    col += offset;
-
-    x0 = col[0*8];
-    x1 = col[1*8];
-    x2 = col[2*8];
-    x3 = col[3*8];
-    x4 = col[4*8];
-    x5 = col[5*8];
-    x6 = col[6*8];
-    x7 = col[7*8];
-
-    u04 = S (x0 + x4);
-    v04 = S (x0 - x4);
-    u26 = S (F (T2, x6) + x2);
-    v26 = S (F (T2, x2) - x6);
-
-    a0 = S (u04 + u26);
-    a1 = S (v04 + v26);
-    a2 = S (v04 - v26);
-    a3 = S (u04 - u26);
-
-    u17 = S (F (T1, x7) + x1);
-    v17 = S (F (T1, x1) - x7);
-    u35 = S (F (T3, x5) + x3);
-    v35 = S (F (T3, x3) - x5);
-
-    b0 = S (u17 + u35);
-    b3 = S (v17 - v35);
-    u12 = S (u17 - u35);
-    v12 = S (v17 + v35);
-    u12 = S (2 * F (C4, u12));
-    v12 = S (2 * F (C4, v12));
-    b1 = S (u12 + v12);
-    b2 = S (u12 - v12);
-
-    y0 = S (a0 + b0) >> COL_SHIFT;
-    y1 = S (a1 + b1) >> COL_SHIFT;
-    y2 = S (a2 + b2) >> COL_SHIFT;
-    y3 = S (a3 + b3) >> COL_SHIFT;
-
-    y4 = S (a3 - b3) >> COL_SHIFT;
-    y5 = S (a2 - b2) >> COL_SHIFT;
-    y6 = S (a1 - b1) >> COL_SHIFT;
-    y7 = S (a0 - b0) >> COL_SHIFT;
-
-    col[0*8] = y0;
-    col[1*8] = y1;
-    col[2*8] = y2;
-    col[3*8] = y3;
-    col[4*8] = y4;
-    col[5*8] = y5;
-    col[6*8] = y6;
-    col[7*8] = y7;
-}
-#endif
-
-
-#define T1 13036
-#define T2 27146
-#define T3 43790
-#define C4 23170
-
-
 /* SSE2 column IDCT */
 static inline void sse2_idct_col(int16_t * const col) {
+#ifdef _MSC_VER
+
+#else
   /* Almost identical to mmxext version:  */
-  /* just do both 4x8 columns in paraller */
+  /* just do both 4x8 columns in parallel */
 
   static ALIGNED_ARRAY(const short, 16) t1_vector[]  = {T1,T1,T1,T1,T1,T1,T1,T1};
   static ALIGNED_ARRAY(const short, 16) t2_vector[]  = {T2,T2,T2,T2,T2,T2,T2,T2};
   static ALIGNED_ARRAY(const short, 16) t3_vector[]  = {T3,T3,T3,T3,T3,T3,T3,T3};
   static ALIGNED_ARRAY(const short, 16) c4_vector[]  = {C4,C4,C4,C4,C4,C4,C4,C4};
 
-#if defined(__x86_64__)
-
-  /* INPUT: block in xmm8 ... xmm15 */
-
+  #if defined(__x86_64__)
+    /* INPUT: block in xmm8 ... xmm15 */
     movdqa_m2r (*t1_vector, xmm0);	/* xmm0  = T1 */
     movdqa_r2r (xmm9, xmm1);		/* xmm1  = x1 */
 
@@ -567,141 +365,144 @@ static inline void sse2_idct_col(int16_t * const col) {
 
     psraw_i2r (COL_SHIFT,xmm11);	/* xmm11 = y3 */
 
-  /* OUTPUT: block in xmm8 ... xmm15 */
+    /* OUTPUT: block in xmm8 ... xmm15 */
 
-#else
-  movdqa_m2r (*t1_vector, xmm0); /* xmm0 = T1 */
+  #else
+    movdqa_m2r (*t1_vector, xmm0); /* xmm0 = T1 */
 
-  movdqa_m2r (*(col+1*8), xmm1); /* xmm1 = x1 */
-  movdqa_r2r (xmm0, xmm2); /* xmm2 = T1 */
+    movdqa_m2r (*(col+1*8), xmm1); /* xmm1 = x1 */
+    movdqa_r2r (xmm0, xmm2); /* xmm2 = T1 */
 
-  movdqa_m2r (*(col+7*8), xmm4); /* xmm4 = x7 */
-  pmulhw_r2r (xmm1, xmm0); /* xmm0 = T1*x1 */
+    movdqa_m2r (*(col+7*8), xmm4); /* xmm4 = x7 */
+    pmulhw_r2r (xmm1, xmm0); /* xmm0 = T1*x1 */
 
-  movdqa_m2r (*t3_vector, xmm5); /* xmm5 = T3 */
-  pmulhw_r2r (xmm4, xmm2); /* xmm2 = T1*x7 */
+    movdqa_m2r (*t3_vector, xmm5); /* xmm5 = T3 */
+    pmulhw_r2r (xmm4, xmm2); /* xmm2 = T1*x7 */
 
-  movdqa_m2r (*(col+5*8), xmm6); /* xmm6 = x5 */
-  movdqa_r2r (xmm5, xmm7); /* xmm7 = T3-1 */
+    movdqa_m2r (*(col+5*8), xmm6); /* xmm6 = x5 */
+    movdqa_r2r (xmm5, xmm7); /* xmm7 = T3-1 */
 
-  movdqa_m2r (*(col+3*8), xmm3); /* xmm3 = x3 */
-  psubsw_r2r (xmm4, xmm0); /* xmm0 = v17 */
+    movdqa_m2r (*(col+3*8), xmm3); /* xmm3 = x3 */
+    psubsw_r2r (xmm4, xmm0); /* xmm0 = v17 */
 
-  movdqa_m2r (*t2_vector, xmm4); /* xmm4 = T2 */
-  pmulhw_r2r (xmm3, xmm5); /* xmm5 = (T3-1)*x3 */
+    movdqa_m2r (*t2_vector, xmm4); /* xmm4 = T2 */
+    pmulhw_r2r (xmm3, xmm5); /* xmm5 = (T3-1)*x3 */
 
-  paddsw_r2r (xmm2, xmm1); /* xmm1 = u17 */
-  pmulhw_r2r (xmm6, xmm7); /* xmm7 = (T3-1)*x5 */
+    paddsw_r2r (xmm2, xmm1); /* xmm1 = u17 */
+    pmulhw_r2r (xmm6, xmm7); /* xmm7 = (T3-1)*x5 */
 
-  /* slot */
+    /* slot */
 
-  movdqa_r2r (xmm4, xmm2); /* xmm2 = T2 */
-  paddsw_r2r (xmm3, xmm5); /* xmm5 = T3*x3 */
+    movdqa_r2r (xmm4, xmm2); /* xmm2 = T2 */
+    paddsw_r2r (xmm3, xmm5); /* xmm5 = T3*x3 */
 
-  pmulhw_m2r (*(col+2*8), xmm4); /* xmm4 = T2*x2 */
-  paddsw_r2r (xmm6, xmm7); /* xmm7 = T3*x5 */
+    pmulhw_m2r (*(col+2*8), xmm4); /* xmm4 = T2*x2 */
+    paddsw_r2r (xmm6, xmm7); /* xmm7 = T3*x5 */
 
-  psubsw_r2r (xmm6, xmm5); /* xmm5 = v35 */
-  paddsw_r2r (xmm3, xmm7); /* xmm7 = u35 */
+    psubsw_r2r (xmm6, xmm5); /* xmm5 = v35 */
+    paddsw_r2r (xmm3, xmm7); /* xmm7 = u35 */
 
-  movdqa_m2r (*(col+6*8), xmm3); /* xmm3 = x6 */
-  movdqa_r2r (xmm0, xmm6); /* xmm6 = v17 */
+    movdqa_m2r (*(col+6*8), xmm3); /* xmm3 = x6 */
+    movdqa_r2r (xmm0, xmm6); /* xmm6 = v17 */
 
-  pmulhw_r2r (xmm3, xmm2); /* xmm2 = T2*x6 */
-  psubsw_r2r (xmm5, xmm0); /* xmm0 = b3 */
+    pmulhw_r2r (xmm3, xmm2); /* xmm2 = T2*x6 */
+    psubsw_r2r (xmm5, xmm0); /* xmm0 = b3 */
 
-  psubsw_r2r (xmm3, xmm4); /* xmm4 = v26 */
-  paddsw_r2r (xmm6, xmm5); /* xmm5 = v12 */
+    psubsw_r2r (xmm3, xmm4); /* xmm4 = v26 */
+    paddsw_r2r (xmm6, xmm5); /* xmm5 = v12 */
 
-  movdqa_r2m (xmm0, *(col+3*8)); /* save b3 in scratch0 */
-  movdqa_r2r (xmm1, xmm6); /* xmm6 = u17 */
+    movdqa_r2m (xmm0, *(col+3*8)); /* save b3 in scratch0 */
+    movdqa_r2r (xmm1, xmm6); /* xmm6 = u17 */
 
-  paddsw_m2r (*(col+2*8), xmm2); /* xmm2 = u26 */
-  paddsw_r2r (xmm7, xmm6); /* xmm6 = b0 */
+    paddsw_m2r (*(col+2*8), xmm2); /* xmm2 = u26 */
+    paddsw_r2r (xmm7, xmm6); /* xmm6 = b0 */
 
-  psubsw_r2r (xmm7, xmm1); /* xmm1 = u12 */
-  movdqa_r2r (xmm1, xmm7); /* xmm7 = u12 */
+    psubsw_r2r (xmm7, xmm1); /* xmm1 = u12 */
+    movdqa_r2r (xmm1, xmm7); /* xmm7 = u12 */
 
-  movdqa_m2r (*(col+0*8), xmm3); /* xmm3 = x0 */
-  paddsw_r2r (xmm5, xmm1); /* xmm1 = u12+v12 */
+    movdqa_m2r (*(col+0*8), xmm3); /* xmm3 = x0 */
+    paddsw_r2r (xmm5, xmm1); /* xmm1 = u12+v12 */
 
-  movdqa_m2r (*c4_vector, xmm0); /* xmm0 = C4/2 */
-  psubsw_r2r (xmm5, xmm7); /* xmm7 = u12-v12 */
+    movdqa_m2r (*c4_vector, xmm0); /* xmm0 = C4/2 */
+    psubsw_r2r (xmm5, xmm7); /* xmm7 = u12-v12 */
 
-  movdqa_r2m (xmm6, *(col+5*8)); /* save b0 in scratch1 */
-  pmulhw_r2r (xmm0, xmm1); /* xmm1 = b1/2 */
+    movdqa_r2m (xmm6, *(col+5*8)); /* save b0 in scratch1 */
+    pmulhw_r2r (xmm0, xmm1); /* xmm1 = b1/2 */
 
-  movdqa_r2r (xmm4, xmm6); /* xmm6 = v26 */
-  pmulhw_r2r (xmm0, xmm7); /* xmm7 = b2/2 */
+    movdqa_r2r (xmm4, xmm6); /* xmm6 = v26 */
+    pmulhw_r2r (xmm0, xmm7); /* xmm7 = b2/2 */
 
-  movdqa_m2r (*(col+4*8), xmm5); /* xmm5 = x4 */
-  movdqa_r2r (xmm3, xmm0); /* xmm0 = x0 */
+    movdqa_m2r (*(col+4*8), xmm5); /* xmm5 = x4 */
+    movdqa_r2r (xmm3, xmm0); /* xmm0 = x0 */
 
-  psubsw_r2r (xmm5, xmm3); /* xmm3 = v04 */
-  paddsw_r2r (xmm5, xmm0); /* xmm0 = u04 */
+    psubsw_r2r (xmm5, xmm3); /* xmm3 = v04 */
+    paddsw_r2r (xmm5, xmm0); /* xmm0 = u04 */
 
-  paddsw_r2r (xmm3, xmm4); /* xmm4 = a1 */
-  movdqa_r2r (xmm0, xmm5); /* xmm5 = u04 */
+    paddsw_r2r (xmm3, xmm4); /* xmm4 = a1 */
+    movdqa_r2r (xmm0, xmm5); /* xmm5 = u04 */
 
-  psubsw_r2r (xmm6, xmm3); /* xmm3 = a2 */
-  paddsw_r2r (xmm2, xmm5); /* xmm5 = a0 */
+    psubsw_r2r (xmm6, xmm3); /* xmm3 = a2 */
+    paddsw_r2r (xmm2, xmm5); /* xmm5 = a0 */
 
-  paddsw_r2r (xmm1, xmm1); /* xmm1 = b1 */
-  psubsw_r2r (xmm2, xmm0); /* xmm0 = a3 */
+    paddsw_r2r (xmm1, xmm1); /* xmm1 = b1 */
+    psubsw_r2r (xmm2, xmm0); /* xmm0 = a3 */
 
-  paddsw_r2r (xmm7, xmm7); /* xmm7 = b2 */
-  movdqa_r2r (xmm3, xmm2); /* xmm2 = a2 */
+    paddsw_r2r (xmm7, xmm7); /* xmm7 = b2 */
+    movdqa_r2r (xmm3, xmm2); /* xmm2 = a2 */
 
-  movdqa_r2r (xmm4, xmm6); /* xmm6 = a1 */
-  paddsw_r2r (xmm7, xmm3); /* xmm3 = a2+b2 */
+    movdqa_r2r (xmm4, xmm6); /* xmm6 = a1 */
+    paddsw_r2r (xmm7, xmm3); /* xmm3 = a2+b2 */
 
-  psraw_i2r (COL_SHIFT, xmm3); /* xmm3 = y2 */
-  paddsw_r2r (xmm1, xmm4); /* xmm4 = a1+b1 */
+    psraw_i2r (COL_SHIFT, xmm3); /* xmm3 = y2 */
+    paddsw_r2r (xmm1, xmm4); /* xmm4 = a1+b1 */
 
-  psraw_i2r (COL_SHIFT, xmm4); /* xmm4 = y1 */
-  psubsw_r2r (xmm1, xmm6); /* xmm6 = a1-b1 */
+    psraw_i2r (COL_SHIFT, xmm4); /* xmm4 = y1 */
+    psubsw_r2r (xmm1, xmm6); /* xmm6 = a1-b1 */
 
-  movdqa_m2r (*(col+5*8), xmm1); /* xmm1 = b0 */
-  psubsw_r2r (xmm7, xmm2); /* xmm2 = a2-b2 */
+    movdqa_m2r (*(col+5*8), xmm1); /* xmm1 = b0 */
+    psubsw_r2r (xmm7, xmm2); /* xmm2 = a2-b2 */
 
-  psraw_i2r (COL_SHIFT, xmm6); /* xmm6 = y6 */
-  movdqa_r2r (xmm5, xmm7); /* xmm7 = a0 */
+    psraw_i2r (COL_SHIFT, xmm6); /* xmm6 = y6 */
+    movdqa_r2r (xmm5, xmm7); /* xmm7 = a0 */
 
-  movdqa_r2m (xmm4, *(col+1*8)); /* save y1 */
-  psraw_i2r (COL_SHIFT, xmm2); /* xmm2 = y5 */
+    movdqa_r2m (xmm4, *(col+1*8)); /* save y1 */
+    psraw_i2r (COL_SHIFT, xmm2); /* xmm2 = y5 */
 
-  movdqa_r2m (xmm3, *(col+2*8)); /* save y2 */
-  paddsw_r2r (xmm1, xmm5); /* xmm5 = a0+b0 */
+    movdqa_r2m (xmm3, *(col+2*8)); /* save y2 */
+    paddsw_r2r (xmm1, xmm5); /* xmm5 = a0+b0 */
 
-  movdqa_m2r (*(col+3*8), xmm4); /* xmm4 = b3 */
-  psubsw_r2r (xmm1, xmm7); /* xmm7 = a0-b0 */
+    movdqa_m2r (*(col+3*8), xmm4); /* xmm4 = b3 */
+    psubsw_r2r (xmm1, xmm7); /* xmm7 = a0-b0 */
 
-  psraw_i2r (COL_SHIFT, xmm5); /* xmm5 = y0 */
-  movdqa_r2r (xmm0, xmm3); /* xmm3 = a3 */
+    psraw_i2r (COL_SHIFT, xmm5); /* xmm5 = y0 */
+    movdqa_r2r (xmm0, xmm3); /* xmm3 = a3 */
 
-  movdqa_r2m (xmm2, *(col+5*8)); /* save y5 */
-  psubsw_r2r (xmm4, xmm3); /* xmm3 = a3-b3 */
+    movdqa_r2m (xmm2, *(col+5*8)); /* save y5 */
+    psubsw_r2r (xmm4, xmm3); /* xmm3 = a3-b3 */
 
-  psraw_i2r (COL_SHIFT, xmm7); /* xmm7 = y7 */
-  paddsw_r2r (xmm0, xmm4); /* xmm4 = a3+b3 */
+    psraw_i2r (COL_SHIFT, xmm7); /* xmm7 = y7 */
+    paddsw_r2r (xmm0, xmm4); /* xmm4 = a3+b3 */
 
-  movdqa_r2m (xmm5, *(col+0*8)); /* save y0 */
-  psraw_i2r (COL_SHIFT, xmm3); /* xmm3 = y4 */
+    movdqa_r2m (xmm5, *(col+0*8)); /* save y0 */
+    psraw_i2r (COL_SHIFT, xmm3); /* xmm3 = y4 */
 
-  movdqa_r2m (xmm6, *(col+6*8)); /* save y6 */
-  psraw_i2r (COL_SHIFT, xmm4); /* xmm4 = y3 */
+    movdqa_r2m (xmm6, *(col+6*8)); /* save y6 */
+    psraw_i2r (COL_SHIFT, xmm4); /* xmm4 = y3 */
 
-  movdqa_r2m (xmm7, *(col+7*8)); /* save y7 */
+    movdqa_r2m (xmm7, *(col+7*8)); /* save y7 */
 
-  movdqa_r2m (xmm3, *(col+4*8)); /* save y4 */
+    movdqa_r2m (xmm3, *(col+4*8)); /* save y4 */
 
-  movdqa_r2m (xmm4, *(col+3*8)); /* save y3 */
+    movdqa_r2m (xmm4, *(col+3*8)); /* save y3 */
+  #endif
 #endif
 }
 
-
 /* MMX column IDCT */
 static inline void idct_col(int16_t * const col, const int offset) {
+#ifdef _MSC_VER
+
+#else
   static ALIGNED_ARRAY(const short, 8) t1_vector[]  = {T1,T1,T1,T1};
   static ALIGNED_ARRAY(const short, 8) t2_vector[]  = {T2,T2,T2,T2};
   static ALIGNED_ARRAY(const short, 8) t3_vector[]  = {T3,T3,T3,T3};
@@ -836,78 +637,23 @@ static inline void idct_col(int16_t * const col, const int offset) {
   movq_r2m (mm3, *(col+offset+4*8)); /* save y4 */
 
   movq_r2m (mm4, *(col+offset+3*8)); /* save y3 */
-}
-
-
-static ALIGNED_ARRAY(const int32_t, 8) rounder0[] = rounder ((1 << (COL_SHIFT - 1)) - 0.5);
-static ALIGNED_ARRAY(const int32_t, 8) rounder4[]  = rounder (0);
-static ALIGNED_ARRAY(const int32_t, 8) rounder1[]  = rounder (1.25683487303); /* C1*(C1/C4+C1+C7)/2 */
-static ALIGNED_ARRAY(const int32_t, 8)rounder7[]  = rounder (-0.25); /* C1*(C7/C4+C7-C1)/2 */
-static ALIGNED_ARRAY(const int32_t, 8) rounder2[]  = rounder (0.60355339059); /* C2 * (C6+C2)/2 */
-static ALIGNED_ARRAY(const int32_t, 8) rounder6[]  = rounder (-0.25); /* C2 * (C6-C2)/2 */
-static ALIGNED_ARRAY(const int32_t, 8) rounder3[]  = rounder (0.087788325588); /* C3*(-C3/C4+C3+C5)/2 */
-static ALIGNED_ARRAY(const int32_t, 8) rounder5[]  = rounder (-0.441341716183); /* C3*(-C5/C4+C5-C3)/2 */
-
-
-#define declare_idct(idct,table,idct_row_head,idct_row,idct_row_tail,idct_row_mid)	\
-static inline void idct (int16_t * const block)				\
-{									\
-    static ALIGNED_ARRAY(const int16_t, 16) table04[] =			\
-	table (22725, 21407, 19266, 16384, 12873,  8867, 4520);		\
-    static ALIGNED_ARRAY(const int16_t, 16) table17[] =			\
-	table (31521, 29692, 26722, 22725, 17855, 12299, 6270);		\
-    static ALIGNED_ARRAY(const int16_t, 16) table26[] =			\
-	table (29692, 27969, 25172, 21407, 16819, 11585, 5906);		\
-    static ALIGNED_ARRAY(const int16_t, 16) table35[] =			\
-	table (26722, 25172, 22654, 19266, 15137, 10426, 5315);		\
-									\
-    idct_row_head (block, 0*8, table04);				\
-    idct_row (table04, rounder0);					\
-    idct_row_mid (block, 0*8, 4*8, table04);				\
-    idct_row (table04, rounder4);					\
-    idct_row_mid (block, 4*8, 1*8, table17);				\
-    idct_row (table17, rounder1);					\
-    idct_row_mid (block, 1*8, 7*8, table17);				\
-    idct_row (table17, rounder7);					\
-    idct_row_mid (block, 7*8, 2*8, table26);				\
-    idct_row (table26, rounder2);					\
-    idct_row_mid (block, 2*8, 6*8, table26);				\
-    idct_row (table26, rounder6);					\
-    idct_row_mid (block, 6*8, 3*8, table35);				\
-    idct_row (table35, rounder3);					\
-    idct_row_mid (block, 3*8, 5*8, table35);				\
-    idct_row (table35, rounder5);					\
-    idct_row_tail (block, 5*8);						\
-									\
-    idct_col (block, 0);						\
-    idct_col (block, 4);						\
+#endif
 }
 
 static inline void sse2_idct(int16_t * const block) {
-  static ALIGNED_ARRAY(const int16_t, 16) table04[]  =
-    sse2_table (22725, 21407, 19266, 16384, 12873, 8867, 4520);
-  static ALIGNED_ARRAY(const int16_t, 16) table17[]  =
-    sse2_table (31521, 29692, 26722, 22725, 17855, 12299, 6270);
-  static ALIGNED_ARRAY(const int16_t, 16) table26[]  =
-    sse2_table (29692, 27969, 25172, 21407, 16819, 11585, 5906);
-  static ALIGNED_ARRAY(const int16_t, 16) table35[]  =
-    sse2_table (26722, 25172, 22654, 19266, 15137, 10426, 5315);
+  static ALIGNED_ARRAY(const int16_t, 16) table04[]  = sse2_table (22725, 21407, 19266, 16384, 12873, 8867, 4520);
+  static ALIGNED_ARRAY(const int16_t, 16) table17[]  = sse2_table (31521, 29692, 26722, 22725, 17855, 12299, 6270);
+  static ALIGNED_ARRAY(const int16_t, 16) table26[]  = sse2_table (29692, 27969, 25172, 21407, 16819, 11585, 5906);
+  static ALIGNED_ARRAY(const int16_t, 16) table35[]  = sse2_table (26722, 25172, 22654, 19266, 15137, 10426, 5315);
 
-  static ALIGNED_ARRAY(const int16_t, 16) rounder0_128[]  =
-    rounder_sse2 ((1 << (COL_SHIFT - 1)) - 0.5);
+  static ALIGNED_ARRAY(const int16_t, 16) rounder0_128[]  = rounder_sse2 ((1 << (COL_SHIFT - 1)) - 0.5);
   static ALIGNED_ARRAY(const int16_t, 16) rounder4_128[]  = rounder_sse2 (0);
-  static ALIGNED_ARRAY(const int16_t, 16) rounder1_128[]  =
-    rounder_sse2 (1.25683487303); /* C1*(C1/C4+C1+C7)/2 */
-  static ALIGNED_ARRAY(const int16_t, 16) rounder7_128[]  =
-    rounder_sse2 (-0.25); /* C1*(C7/C4+C7-C1)/2 */
-  static ALIGNED_ARRAY(const int16_t, 16) rounder2_128[]  =
-    rounder_sse2 (0.60355339059); /* C2 * (C6+C2)/2 */
-  static ALIGNED_ARRAY(const int16_t, 16) rounder6_128[]  =
-    rounder_sse2 (-0.25); /* C2 * (C6-C2)/2 */
-  static ALIGNED_ARRAY(const int16_t, 16) rounder3_128[]  =
-    rounder_sse2 (0.087788325588); /* C3*(-C3/C4+C3+C5)/2 */
-  static ALIGNED_ARRAY(const int16_t, 16) rounder5_128[]  =
-    rounder_sse2 (-0.441341716183); /* C3*(-C5/C4+C5-C3)/2 */
+  static ALIGNED_ARRAY(const int16_t, 16) rounder1_128[]  = rounder_sse2 (1.25683487303); /* C1*(C1/C4+C1+C7)/2 */
+  static ALIGNED_ARRAY(const int16_t, 16) rounder7_128[]  = rounder_sse2 (-0.25); /* C1*(C7/C4+C7-C1)/2 */
+  static ALIGNED_ARRAY(const int16_t, 16) rounder2_128[]  = rounder_sse2 (0.60355339059); /* C2 * (C6+C2)/2 */
+  static ALIGNED_ARRAY(const int16_t, 16) rounder6_128[]  = rounder_sse2 (-0.25); /* C2 * (C6-C2)/2 */
+  static ALIGNED_ARRAY(const int16_t, 16) rounder3_128[]  = rounder_sse2 (0.087788325588); /* C3*(-C3/C4+C3+C5)/2 */
+  static ALIGNED_ARRAY(const int16_t, 16) rounder5_128[]  = rounder_sse2 (-0.441341716183); /* C3*(-C5/C4+C5-C3)/2 */
 
 #if defined(__x86_64__)
     movdqa_m2r (block[0*8], xmm8);
@@ -927,7 +673,6 @@ static inline void sse2_idct(int16_t * const block) {
     SSE2_IDCT_2ROW (table35, xmm11, xmm13, *rounder3_128, *rounder5_128);
 
   /* OUTPUT: block in xmm8 ... xmm15 */
-
 #else
   movdqa_m2r (block[0*8], xmm0);
   movdqa_m2r (block[4*8], xmm4);
@@ -957,9 +702,11 @@ static inline void sse2_idct(int16_t * const block) {
   sse2_idct_col(block);
 }
 
-static void sse2_block_copy(int16_t * const block, uint8_t *dest,
-                            const int stride) {
-#if defined(__x86_64__)
+static void sse2_block_copy(int16_t * const block, uint8_t *dest, const int stride) {
+#if defined(_MSC_VER)
+
+#else
+  #if defined(__x86_64__)
   /* INPUT: block in xmm8 ... xmm15 */
     packuswb_r2r (xmm8, xmm8);
     packuswb_r2r (xmm9, xmm9);
@@ -977,45 +724,39 @@ static void sse2_block_copy(int16_t * const block, uint8_t *dest,
     packuswb_r2r (xmm15, xmm15);
     movq_r2m (xmm14, *(dest+6*stride));
     movq_r2m (xmm15, *(dest+7*stride));
-#else
-  movdqa_m2r (*(block+0*8), xmm0);
-  movdqa_m2r (*(block+1*8), xmm1);
-  movdqa_m2r (*(block+2*8), xmm2);
-  packuswb_r2r (xmm0, xmm0);
-  movdqa_m2r (*(block+3*8), xmm3);
-  packuswb_r2r (xmm1, xmm1);
-  movdqa_m2r (*(block+4*8), xmm4);
-  packuswb_r2r (xmm2, xmm2);
-  movdqa_m2r (*(block+5*8), xmm5);
-  packuswb_r2r (xmm3, xmm3);
-  movdqa_m2r (*(block+6*8), xmm6);
-  packuswb_r2r (xmm4, xmm4);
-  movdqa_m2r (*(block+7*8), xmm7);
-  movq_r2m (xmm0, *(dest+0*stride));
-  packuswb_r2r (xmm5, xmm5);
-  movq_r2m (xmm1, *(dest+1*stride));
-  packuswb_r2r (xmm6, xmm6);
-  movq_r2m (xmm2, *(dest+2*stride));
-  packuswb_r2r (xmm7, xmm7);
-  movq_r2m (xmm3, *(dest+3*stride));
-  movq_r2m (xmm4, *(dest+4*stride));
-  movq_r2m (xmm5, *(dest+5*stride));
-  movq_r2m (xmm6, *(dest+6*stride));
-  movq_r2m (xmm7, *(dest+7*stride));
+  #else
+    movdqa_m2r (*(block+0*8), xmm0);
+    movdqa_m2r (*(block+1*8), xmm1);
+    movdqa_m2r (*(block+2*8), xmm2);
+    packuswb_r2r (xmm0, xmm0);
+    movdqa_m2r (*(block+3*8), xmm3);
+    packuswb_r2r (xmm1, xmm1);
+    movdqa_m2r (*(block+4*8), xmm4);
+    packuswb_r2r (xmm2, xmm2);
+    movdqa_m2r (*(block+5*8), xmm5);
+    packuswb_r2r (xmm3, xmm3);
+    movdqa_m2r (*(block+6*8), xmm6);
+    packuswb_r2r (xmm4, xmm4);
+    movdqa_m2r (*(block+7*8), xmm7);
+    movq_r2m (xmm0, *(dest+0*stride));
+    packuswb_r2r (xmm5, xmm5);
+    movq_r2m (xmm1, *(dest+1*stride));
+    packuswb_r2r (xmm6, xmm6);
+    movq_r2m (xmm2, *(dest+2*stride));
+    packuswb_r2r (xmm7, xmm7);
+    movq_r2m (xmm3, *(dest+3*stride));
+    movq_r2m (xmm4, *(dest+4*stride));
+    movq_r2m (xmm5, *(dest+5*stride));
+    movq_r2m (xmm6, *(dest+6*stride));
+    movq_r2m (xmm7, *(dest+7*stride));
+  #endif
 #endif
 }
 
-#define COPY_MMX(offset,r0,r1,r2)	\
-do {					\
-    movq_m2r (*(block+offset), r0);	\
-    dest += stride;			\
-    movq_m2r (*(block+offset+4), r1);	\
-    movq_r2m (r2, *dest);		\
-    packuswb_r2r (r1, r0);		\
-} while (0)
+static inline void block_copy(int16_t * const block, uint8_t *dest, const int stride) {
+#if defined(_MSC_VER)
 
-static inline void block_copy(int16_t * const block, uint8_t *dest,
-                              const int stride) {
+#else
   movq_m2r (*(block+0*8), mm0);
   movq_m2r (*(block+0*8+4), mm1);
   movq_m2r (*(block+1*8), mm2);
@@ -1030,55 +771,78 @@ static inline void block_copy(int16_t * const block, uint8_t *dest,
   COPY_MMX (6*8, mm0, mm1, mm2);
   COPY_MMX (7*8, mm2, mm3, mm0);
   movq_r2m (mm2, *(dest+stride));
+#endif
 }
 
-#define ADD_SSE2_2ROW(op, block0, block1)\
-do {					\
-    movq_m2r (*(dest), xmm1);		\
-    movq_m2r (*(dest+stride), xmm2);	\
-    punpcklbw_r2r (xmm0, xmm1);		\
-    punpcklbw_r2r (xmm0, xmm2);		\
-    paddsw_##op (block0, xmm1);		\
-    paddsw_##op (block1, xmm2);		\
-    packuswb_r2r (xmm1, xmm1);		\
-    packuswb_r2r (xmm2, xmm2);		\
-    movq_r2m (xmm1, *(dest));		\
-    movq_r2m (xmm2, *(dest+stride));	\
-    dest += 2*stride;			\
-} while (0)
+static void sse2_block_add(int16_t * const block, uint8_t *dest, const int stride) {
+#if defined(_MSC_VER)
+  __m128i *src = (__m128i*)block;
+  __m128i r0, r1, r2, r3, r4, r5, r6, r7;
+  __m128i zero;
 
-static void sse2_block_add(int16_t * const block, uint8_t *dest,
-                           const int stride) {
+  r0 = _mm_loadl_epi64((__m128i*)(dest + 0 * stride));
+  r1 = _mm_loadl_epi64((__m128i*)(dest + 1 * stride));
+  r2 = _mm_loadl_epi64((__m128i*)(dest + 2 * stride));
+  r3 = _mm_loadl_epi64((__m128i*)(dest + 3 * stride));
+  r4 = _mm_loadl_epi64((__m128i*)(dest + 4 * stride));
+  r5 = _mm_loadl_epi64((__m128i*)(dest + 5 * stride));
+  r6 = _mm_loadl_epi64((__m128i*)(dest + 6 * stride));
+  r7 = _mm_loadl_epi64((__m128i*)(dest + 7 * stride));
+
+  zero = _mm_setzero_si128();
+
+  r0 = _mm_unpacklo_epi8(r0, zero);
+  r1 = _mm_unpacklo_epi8(r1, zero);
+  r2 = _mm_unpacklo_epi8(r2, zero);
+  r3 = _mm_unpacklo_epi8(r3, zero);
+  r4 = _mm_unpacklo_epi8(r4, zero);
+  r5 = _mm_unpacklo_epi8(r5, zero);
+  r6 = _mm_unpacklo_epi8(r6, zero);
+  r7 = _mm_unpacklo_epi8(r7, zero);
+
+  r0 = _mm_adds_epi16(src0, r0);
+  r1 = _mm_adds_epi16(src1, r1);
+  r2 = _mm_adds_epi16(src2, r2);
+  r3 = _mm_adds_epi16(src3, r3);
+  r4 = _mm_adds_epi16(src4, r4);
+  r5 = _mm_adds_epi16(src5, r5);
+  r6 = _mm_adds_epi16(src6, r6);
+  r7 = _mm_adds_epi16(src7, r7);
+
+  r0 = _mm_packus_epi16(r0, r1);
+  r1 = _mm_packus_epi16(r2, r3);
+  r2 = _mm_packus_epi16(r4, r5);
+  r3 = _mm_packus_epi16(r6, r7);
+
+  mm_storel_epi64(dest + 0 * stride, r0);
+  mm_storeh_epi64(dest + 1 * stride, r0);
+  mm_storel_epi64(dest + 2 * stride, r1);
+  mm_storeh_epi64(dest + 3 * stride, r1);
+  mm_storel_epi64(dest + 4 * stride, r2);
+  mm_storeh_epi64(dest + 5 * stride, r2);
+  mm_storel_epi64(dest + 6 * stride, r3);
+  mm_storeh_epi64(dest + 7 * stride, r3);
+#else
   pxor_r2r(xmm0, xmm0);
-#if defined(__x86_64__)
-  /* INPUT: block in xmm8 ... xmm15 */
+  #if defined(__x86_64__)
+    /* INPUT: block in xmm8 ... xmm15 */
     ADD_SSE2_2ROW(r2r, xmm8, xmm9);
     ADD_SSE2_2ROW(r2r, xmm10, xmm11);
     ADD_SSE2_2ROW(r2r, xmm12, xmm13);
     ADD_SSE2_2ROW(r2r, xmm14, xmm15);
-#else
-  ADD_SSE2_2ROW(m2r, *(block+0*8), *(block+1*8));
-  ADD_SSE2_2ROW(m2r, *(block+2*8), *(block+3*8));
-  ADD_SSE2_2ROW(m2r, *(block+4*8), *(block+5*8));
-  ADD_SSE2_2ROW(m2r, *(block+6*8), *(block+7*8));
+  #else
+    ADD_SSE2_2ROW(m2r, *(block+0*8), *(block+1*8));
+    ADD_SSE2_2ROW(m2r, *(block+2*8), *(block+3*8));
+    ADD_SSE2_2ROW(m2r, *(block+4*8), *(block+5*8));
+    ADD_SSE2_2ROW(m2r, *(block+6*8), *(block+7*8));
+  #endif
 #endif
 }
 
-#define ADD_MMX(offset,r1,r2,r3,r4)	\
-do {					\
-    movq_m2r (*(dest+2*stride), r1);	\
-    packuswb_r2r (r4, r3);		\
-    movq_r2r (r1, r2);			\
-    dest += stride;			\
-    movq_r2m (r3, *dest);		\
-    punpcklbw_r2r (mm0, r1);		\
-    paddsw_m2r (*(block+offset), r1);	\
-    punpckhbw_r2r (mm0, r2);		\
-    paddsw_m2r (*(block+offset+4), r2);	\
-} while (0)
+static inline void block_add(int16_t * const block, uint8_t *dest, const int stride) {
+#if defined(_MSC_VER)
 
-static inline void block_add(int16_t * const block, uint8_t *dest,
-                             const int stride) {
+#else
   movq_m2r (*dest, mm1);
   pxor_r2r (mm0, mm0);
   movq_m2r (*(dest+stride), mm3);
@@ -1102,25 +866,62 @@ static inline void block_add(int16_t * const block, uint8_t *dest,
   ADD_MMX (7*8, mm3, mm4, mm1, mm2);
   packuswb_r2r (mm4, mm3);
   movq_r2m (mm3, *(dest+stride));
+#endif
 }
 
-
 static inline void sse2_block_zero(int16_t * const block) {
-  pxor_r2r (xmm0, xmm0);
-  movdqa_r2m (xmm0, *(block+0*8));
-  movdqa_r2m (xmm0, *(block+1*8));
-  movdqa_r2m (xmm0, *(block+2*8));
-  movdqa_r2m (xmm0, *(block+3*8));
-  movdqa_r2m (xmm0, *(block+4*8));
-  movdqa_r2m (xmm0, *(block+5*8));
-  movdqa_r2m (xmm0, *(block+6*8));
-  movdqa_r2m (xmm0, *(block+7*8));
+#if defined(_MSC_VER)
+  __m128i* src = (__m128i*) block;
+  __m128i zero;
+
+  zero = _mm_setzero_si128();
+  _mm_store_si128(src + 0, zero);
+  _mm_store_si128(src + 1, zero);
+  _mm_store_si128(src + 2, zero);
+  _mm_store_si128(src + 3, zero);
+  _mm_store_si128(src + 4, zero);
+  _mm_store_si128(src + 5, zero);
+  _mm_store_si128(src + 6, zero);
+  _mm_store_si128(src + 7, zero);
+#else
+  pxor_r2r(xmm0, xmm0);
+  movdqa_r2m(xmm0, *(block + 0 * 8));
+  movdqa_r2m(xmm0, *(block + 1 * 8));
+  movdqa_r2m(xmm0, *(block + 2 * 8));
+  movdqa_r2m(xmm0, *(block + 3 * 8));
+  movdqa_r2m(xmm0, *(block + 4 * 8));
+  movdqa_r2m(xmm0, *(block + 5 * 8));
+  movdqa_r2m(xmm0, *(block + 6 * 8));
+  movdqa_r2m(xmm0, *(block + 7 * 8));
+#endif
 }
 
 static inline void block_zero(int16_t * const block) {
-  pxor_r2r (mm0, mm0);
-  movq_r2m (mm0, *(block+0*4));
-  movq_r2m (mm0, *(block+1*4));
+#if defined(_MSC_VER)
+  __m64* src = (__m64*) block;
+  __m64 zero;
+
+  zero = _m_pxor(zero, zero);
+  _mm_stream_pi(src + 0 * 4, zero);
+  _mm_stream_pi(src + 1 * 4, zero);
+  _mm_stream_pi(src + 2 * 4, zero);
+  _mm_stream_pi(src + 3 * 4, zero);
+  _mm_stream_pi(src + 4 * 4, zero);
+  _mm_stream_pi(src + 5 * 4, zero);
+  _mm_stream_pi(src + 6 * 4, zero);
+  _mm_stream_pi(src + 7 * 4, zero);
+  _mm_stream_pi(src + 8 * 4, zero);
+  _mm_stream_pi(src + 9 * 4, zero);
+  _mm_stream_pi(src + 10 * 4, zero);
+  _mm_stream_pi(src + 11 * 4, zero);
+  _mm_stream_pi(src + 12 * 4, zero);
+  _mm_stream_pi(src + 13 * 4, zero);
+  _mm_stream_pi(src + 14 * 4, zero);
+  _mm_stream_pi(src + 15 * 4, zero);
+#else
+  pxor_r2r(mm0, mm0);
+  movq_r2m(mm0, *(block + 0 * 4));
+  movq_r2m(mm0, *(block + 1 * 4));
   movq_r2m (mm0, *(block+2*4));
   movq_r2m (mm0, *(block+3*4));
   movq_r2m (mm0, *(block+4*4));
@@ -1135,23 +936,13 @@ static inline void block_zero(int16_t * const block) {
   movq_r2m (mm0, *(block+13*4));
   movq_r2m (mm0, *(block+14*4));
   movq_r2m (mm0, *(block+15*4));
+#endif
 }
 
+static inline void block_add_DC(int16_t * const block, uint8_t *dest, const int stride, const int cpu) {
+#ifdef _MSC_VER
 
-#define CPU_MMXEXT 0
-#define CPU_MMX 1
-
-#define dup4(reg)			\
-do {					\
-    if (cpu != CPU_MMXEXT) {		\
-	punpcklwd_r2r (reg, reg);	\
-	punpckldq_r2r (reg, reg);	\
-    } else				\
-	pshufw_r2r (reg, reg, 0x00);	\
-} while (0)
-
-static inline void block_add_DC(int16_t * const block, uint8_t *dest,
-                                const int stride, const int cpu) {
+#else
   movd_v2r ((block[0] + 64) >> 7, mm0);
   pxor_r2r (mm1, mm1);
   movq_m2r (*dest, mm2);
@@ -1197,20 +988,435 @@ static inline void block_add_DC(int16_t * const block, uint8_t *dest,
   movq_r2m (mm2, *(dest + stride));
   psubusb_r2r (mm1, mm3);
   movq_r2m (mm3, *(dest + 2*stride));
+#endif
 }
+
+
+
+void idct_sse2_asm() {
+  __m128i xmm0, xmm1, xmm2, xmm3, xmm4,
+    xmm5, xmm6, xmm7;
+  const uint8_t * esi, *ecx;
+  xmm0 = src0;
+  esi = (const uint8_t *)M128_tab_i_04;
+  xmm4 = src2;
+  ecx = (const uint8_t *)M128_tab_i_26;
+  __asm call dct_8_inv_row
+    src0 = xmm0;
+  src2 = xmm4;
+  xmm0 = src4;
+  xmm4 = src6;
+  __asm call dct_8_inv_row
+    src4 = xmm0;
+  src6 = xmm4;
+  xmm0 = src3;
+  esi = (const uint8_t *)M128_tab_i_35;
+  xmm4 = src1;
+  ecx = (const uint8_t *)M128_tab_i_17;
+  __asm call dct_8_inv_row
+    src3 = xmm0;
+  src1 = xmm4;
+  xmm0 = src5;
+  xmm4 = src7;
+  __asm call dct_8_inv_row
+  __asm call dct_8_inv_col_8
+  return;
+
+dct_8_inv_row:
+  xmm0 = _mm_shufflelo_epi16(xmm0, 0xd8);
+  xmm1 = _mm_shuffle_epi32(xmm0, 0);
+  xmm1 = mm_madd_epi16(xmm1, esi);
+  xmm3 = _mm_shuffle_epi32(xmm0, 0x55);
+  xmm0 = _mm_shufflehi_epi16(xmm0, 0xd8);
+  xmm3 = mm_madd_epi16(xmm3, esi + 32);
+  xmm2 = _mm_shuffle_epi32(xmm0, 0xaa);
+  xmm0 = _mm_shuffle_epi32(xmm0, 0xff);
+  xmm2 = mm_madd_epi16(xmm2, esi + 16);
+  xmm4 = _mm_shufflehi_epi16(xmm4, 0xd8);
+  xmm1 = mm_add_epi32(xmm1);
+  xmm4 = _mm_shufflelo_epi16(xmm4, 0xd8);
+  xmm0 = mm_madd_epi16(xmm0, esi + 48);
+  xmm5 = _mm_shuffle_epi32(xmm4, 0);
+  xmm6 = _mm_shuffle_epi32(xmm4, 0xaa);
+  xmm5 = mm_madd_epi16(xmm5, ecx);
+  xmm1 = _mm_add_epi32(xmm1, xmm2);
+  xmm2 = xmm1;
+  xmm7 = _mm_shuffle_epi32(xmm4, 0x55);
+  xmm6 = mm_madd_epi16(xmm6, ecx + 16);
+  xmm0 = _mm_add_epi32(xmm0, xmm3);
+  xmm4 = _mm_shuffle_epi32(xmm4, 0xff);
+  xmm2 = _mm_sub_epi32(xmm2, xmm0);
+  xmm7 = mm_madd_epi16(xmm7, ecx + 32);
+  xmm0 = _mm_add_epi32(xmm0, xmm1);
+  xmm2 = _mm_srai_epi32(xmm2, 12);
+  xmm5 = mm_add_epi32(xmm5);
+  xmm4 = mm_madd_epi16(xmm4, ecx + 48);
+  xmm5 = _mm_add_epi32(xmm5, xmm6);
+  xmm6 = xmm5;
+  xmm0 = _mm_srai_epi32(xmm0, 12);
+  xmm2 = _mm_shuffle_epi32(xmm2, 0x1b);
+  xmm0 = _mm_packs_epi32(xmm0, xmm2);
+  xmm4 = _mm_add_epi32(xmm4, xmm7);
+  xmm6 = _mm_sub_epi32(xmm6, xmm4);
+  xmm4 = _mm_add_epi32(xmm4, xmm5);
+  xmm6 = _mm_srai_epi32(xmm6, 12);
+  xmm4 = _mm_srai_epi32(xmm4, 12);
+  xmm6 = _mm_shuffle_epi32(xmm6, 0x1b);
+  xmm4 = _mm_packs_epi32(xmm4, xmm6);
+__asm ret
+
+dct_8_inv_col_8: 
+  xmm1 = *(__m128i*)M128_tg_3_16;
+  xmm2 = xmm0;
+  xmm3 = src3;
+  xmm0 = _mm_mulhi_epi16(xmm0, xmm1);
+  xmm1 = _mm_mulhi_epi16(xmm1, xmm3);
+  xmm5 = *(__m128i*)M128_tg_1_16;
+  xmm6 = xmm4;
+  xmm4 = _mm_mulhi_epi16(xmm4, xmm5);
+  xmm0 = _mm_adds_epi16(xmm0, xmm2);
+  xmm5 = _mm_mulhi_epi16(xmm5, src1);
+  xmm1 = _mm_adds_epi16(xmm1, xmm3);
+  xmm7 = src6;
+  xmm0 = _mm_adds_epi16(xmm0, xmm3);
+  xmm3 = *(__m128i*)M128_tg_2_16;
+  xmm2 = _mm_subs_epi16(xmm2, xmm1);
+  xmm7 = _mm_mulhi_epi16(xmm7, xmm3);
+  xmm1 = xmm0;
+  xmm3 = _mm_mulhi_epi16(xmm3, src2);
+  xmm5 = _mm_subs_epi16(xmm5, xmm6);
+  xmm4 = _mm_adds_epi16(xmm4, src1);
+  xmm0 = _mm_adds_epi16(xmm0, xmm4);
+  xmm0 = mm_adds_epi16(xmm0, M128_one_corr);
+  xmm4 = _mm_subs_epi16(xmm4, xmm1);
+  xmm6 = xmm5;
+  xmm5 = _mm_subs_epi16(xmm5, xmm2);
+  xmm5 = mm_adds_epi16(xmm5, M128_one_corr);
+  xmm6 = _mm_adds_epi16(xmm6, xmm2);
+  src7 = xmm0;
+  xmm1 = xmm4;
+  xmm0 = *(__m128i*)M128_cos_4_16;
+  xmm4 = _mm_adds_epi16(xmm4, xmm5);
+  xmm2 = *(__m128i*)M128_cos_4_16;
+  xmm2 = _mm_mulhi_epi16(xmm2, xmm4);
+  src3 = xmm6;
+  xmm1 = _mm_subs_epi16(xmm1, xmm5);
+  xmm7 = _mm_adds_epi16(xmm7, src2);
+  xmm3 = _mm_subs_epi16(xmm3, src6);
+  xmm6 = src0;
+  xmm0 = _mm_mulhi_epi16(xmm0, xmm1);
+  xmm5 = src4;
+  xmm5 = _mm_adds_epi16(xmm5, xmm6);
+  xmm6 = _mm_subs_epi16(xmm6, src4);
+  xmm4 = _mm_adds_epi16(xmm4, xmm2);
+  xmm4 = mm_or_si128(xmm4, M128_one_corr);
+  xmm0 = _mm_adds_epi16(xmm0, xmm1);
+  xmm0 = mm_or_si128(xmm0, M128_one_corr);
+  xmm2 = xmm5;
+  xmm5 = _mm_adds_epi16(xmm5, xmm7);
+  xmm1 = xmm6;
+  xmm5 = mm_adds_epi16(xmm5, M128_round_inv_col);
+  xmm2 = _mm_subs_epi16(xmm2, xmm7);
+  xmm7 = src7;
+  xmm6 = _mm_adds_epi16(xmm6, xmm3);
+  xmm6 = mm_adds_epi16(xmm6, M128_round_inv_col);
+  xmm7 = _mm_adds_epi16(xmm7, xmm5);
+  xmm7 = _mm_srai_epi16(xmm7, SHIFT_INV_COL);
+  xmm1 = _mm_subs_epi16(xmm1, xmm3);
+  xmm1 = mm_adds_epi16(xmm1, M128_round_inv_corr);
+  xmm3 = xmm6;
+  xmm2 = mm_adds_epi16(xmm2, M128_round_inv_corr);
+  xmm6 = _mm_adds_epi16(xmm6, xmm4);
+  src0 = xmm7;
+  xmm6 = _mm_srai_epi16(xmm6, SHIFT_INV_COL);
+  xmm7 = xmm1;
+  xmm1 = _mm_adds_epi16(xmm1, xmm0);
+  src1 = xmm6;
+  xmm1 = _mm_srai_epi16(xmm1, SHIFT_INV_COL);
+  xmm6 = src3;
+  xmm7 = _mm_subs_epi16(xmm7, xmm0);
+  xmm7 = _mm_srai_epi16(xmm7, SHIFT_INV_COL);
+  src2 = xmm1;
+  xmm5 = _mm_subs_epi16(xmm5, src7);
+  xmm5 = _mm_srai_epi16(xmm5, SHIFT_INV_COL);
+  src7 = xmm5;
+  xmm3 = _mm_subs_epi16(xmm3, xmm4);
+  xmm6 = _mm_adds_epi16(xmm6, xmm2);
+  xmm2 = _mm_subs_epi16(xmm2, src3);
+  xmm6 = _mm_srai_epi16(xmm6, SHIFT_INV_COL);
+  xmm2 = _mm_srai_epi16(xmm2, SHIFT_INV_COL);
+  src3 = xmm6;
+  xmm3 = _mm_srai_epi16(xmm3, SHIFT_INV_COL);
+  src4 = xmm2;
+  src5 = xmm7;
+  src6 = xmm3;
+  __asm ret
+}
+
+#if defined(_M_IX86) && (defined(_MSC_VER) || defined(__INTEL_COMPILER))
+
+void  __declspec(naked) dct_8_inv_row_asm () {
+  _asm {
+    push ebp
+    mov ebp, esp
+
+    pshuflw    xmm0, xmm0, 0xD8
+    pshufd     xmm1, xmm0, 0
+    pmaddwd    xmm1, [esi]
+    pshufd     xmm3, xmm0, 0x55
+    pshufhw    xmm0, xmm0, 0xD8
+    pmaddwd    xmm3, [esi + 32]
+    pshufd     xmm2, xmm0, 0xAA
+    pshufd     xmm0, xmm0, 0xFF
+    pmaddwd    xmm2, [esi + 16]
+    pshufhw    xmm4, xmm4, 0xD8
+    paddd      xmm1, M128_round_inv_row
+    pshuflw    xmm4, xmm4, 0xD8
+    pmaddwd    xmm0, [esi + 48]
+    pshufd     xmm5, xmm4, 0
+    pshufd     xmm6, xmm4, 0xAA
+    pmaddwd    xmm5, [ecx]
+    paddd      xmm1, xmm2
+    movdqa     xmm2, xmm1
+    pshufd     xmm7, xmm4, 0x55
+    pmaddwd    xmm6, [ecx + 16]
+    paddd      xmm0, xmm3
+    pshufd     xmm4, xmm4, 0xFF
+    psubd      xmm2, xmm0
+    pmaddwd    xmm7, [ecx + 32]
+    paddd      xmm0, xmm1
+    psrad      xmm2, 12
+    paddd      xmm5, M128_round_inv_row
+    pmaddwd    xmm4, [ecx + 48]
+    paddd      xmm5, xmm6
+    movdqa     xmm6, xmm5
+    psrad      xmm0, 12
+    pshufd     xmm2, xmm2, 0x1B
+    packssdw   xmm0, xmm2
+    paddd      xmm4, xmm7
+    psubd      xmm6, xmm4
+    paddd      xmm4, xmm5
+    psrad      xmm6, 12
+    psrad      xmm4, 12
+    pshufd     xmm6, xmm6, 0x1B
+    packssdw   xmm4, xmm6
+
+    mov esp, ebp
+    pop ebp
+    ret
+  }
+}
+
+#define DCT_8_INV_COL_8_ASM														      \
+    __asm movdqa     xmm1, XMMWORD PTR M128_tg_3_16	       	\
+    __asm movdqa     xmm2, xmm0														  \
+    __asm movdqa     xmm3, XMMWORD PTR [edx+3*16]		        \
+    __asm pmulhw     xmm0, xmm1														  \
+    __asm pmulhw     xmm1, xmm3														  \
+    __asm movdqa     xmm5, XMMWORD PTR M128_tg_1_16		      \
+    __asm movdqa     xmm6, xmm4														  \
+    __asm pmulhw     xmm4, xmm5														  \
+    __asm paddsw     xmm0, xmm2													  	\
+    __asm pmulhw     xmm5, [edx+1*16]											  \
+    __asm paddsw     xmm1, xmm3														  \
+    __asm movdqa     xmm7, XMMWORD PTR [edx+6*16]		        \
+    __asm paddsw     xmm0, xmm3					 									  \
+    __asm movdqa     xmm3, XMMWORD PTR M128_tg_2_16		      \
+    __asm psubsw     xmm2, xmm1														  \
+    __asm pmulhw     xmm7, xmm3														  \
+    __asm movdqa     xmm1, xmm0														  \
+    __asm pmulhw     xmm3, [edx+2*16]												\
+    __asm psubsw     xmm5, xmm6														  \
+    __asm paddsw     xmm4, [edx+1*16]										  	\
+    __asm paddsw     xmm0, xmm4														  \
+    __asm paddsw     xmm0, XMMWORD PTR M128_one_corr		    \
+    __asm psubsw     xmm4, xmm1												  		\
+    __asm movdqa     xmm6, xmm5														  \
+    __asm psubsw     xmm5, xmm2														  \
+    __asm paddsw     xmm5, XMMWORD PTR M128_one_corr	    	\
+    __asm paddsw     xmm6, xmm2														  \
+    __asm movdqa     [edx+7*16], xmm0											  \
+    __asm movdqa     xmm1, xmm4														  \
+    __asm movdqa     xmm0, XMMWORD PTR M128_cos_4_16		    \
+    __asm paddsw     xmm4, xmm5													  	\
+    __asm movdqa     xmm2, XMMWORD PTR M128_cos_4_16		    \
+    __asm pmulhw     xmm2, xmm4													  	\
+    __asm movdqa     [edx+3*16], xmm6												\
+    __asm psubsw     xmm1, xmm5													  	\
+    __asm paddsw     xmm7, [edx+2*16]								   	  	\
+    __asm psubsw     xmm3, [edx+6*16]												\
+    __asm movdqa     xmm6, [edx]													  \
+    __asm pmulhw     xmm0, xmm1														  \
+    __asm movdqa     xmm5, [edx+4*16]											  \
+    __asm paddsw     xmm5, xmm6														  \
+    __asm psubsw     xmm6, [edx+4*16]											  \
+    __asm paddsw     xmm4, xmm2														  \
+    __asm por        xmm4, XMMWORD PTR M128_one_corr	     	\
+    __asm paddsw     xmm0, xmm1														  \
+    __asm por        xmm0, XMMWORD PTR M128_one_corr		    \
+    __asm movdqa     xmm2, xmm5														  \
+    __asm paddsw     xmm5, xmm7														  \
+    __asm movdqa     xmm1, xmm6														  \
+    __asm paddsw     xmm5, XMMWORD PTR M128_round_inv_col	  \
+    __asm psubsw     xmm2, xmm7														  \
+    __asm movdqa     xmm7, [edx+7*16]												\
+    __asm paddsw     xmm6, xmm3														  \
+    __asm paddsw     xmm6, XMMWORD PTR M128_round_inv_col	  \
+    __asm paddsw     xmm7, xmm5														  \
+    __asm psraw      xmm7, SHIFT_INV_COL										\
+    __asm psubsw     xmm1, xmm3														  \
+    __asm paddsw     xmm1, XMMWORD PTR M128_round_inv_corr	\
+    __asm movdqa     xmm3, xmm6														  \
+    __asm paddsw     xmm2, XMMWORD PTR M128_round_inv_corr	\
+    __asm paddsw     xmm6, xmm4														  \
+    __asm movdqa     [edx], xmm7												  	\
+    __asm psraw      xmm6, SHIFT_INV_COL										\
+    __asm movdqa     xmm7, xmm1													  	\
+    __asm paddsw     xmm1, xmm0													  	\
+    __asm movdqa     [edx+1*16], xmm6				  					  	\
+    __asm psraw      xmm1, SHIFT_INV_COL										\
+    __asm movdqa     xmm6, [edx+3*16]											  \
+    __asm psubsw     xmm7, xmm0												  		\
+    __asm psraw      xmm7, SHIFT_INV_COL								  	\
+    __asm movdqa     [edx+2*16], xmm1									    	\
+    __asm psubsw     xmm5, [edx+7*16]												\
+    __asm psraw      xmm5, SHIFT_INV_COL										\
+    __asm movdqa     [edx+7*16], xmm5												\
+    __asm psubsw     xmm3, xmm4														  \
+    __asm paddsw     xmm6, xmm2													  	\
+    __asm psubsw     xmm2, [edx+3*16]												\
+    __asm psraw      xmm6, SHIFT_INV_COL										\
+    __asm psraw      xmm2, SHIFT_INV_COL								  	\
+    __asm movdqa     [edx+3*16], xmm6											  \
+    __asm psraw      xmm3, SHIFT_INV_COL										\
+    __asm movdqa     [edx+4*16], xmm2												\
+    __asm movdqa     [edx+5*16], xmm7												\
+    __asm movdqa     [edx+6*16], xmm3
+
+#define IDCT_SSE2_ASM(src) 
 
 #endif
 
-void mpeg2_idct_copy_sse2(int16_t * const block, uint8_t * const dest, const int stride) {
+
+void mpeg2_idct_copy_sse2(int16_t * block, uint8_t * dest, int stride) {
+#if defined(_MSC_VER)
+  __m128i * src = (__m128i *) block;
+  __m128i r0, r1, r2, r3;
+  __m128i zero;
+
+#ifdef IDCT_SSE2_ASM
+  IDCT_SSE2_ASM(src);
+#else
+  IDCT_SSE2_SRC(src);
+  IDCT_SSE2
+#endif
+
+  r0 = _mm_packus_epi16(src0, src1);
+  r1 = _mm_packus_epi16(src2, src3);
+  r2 = _mm_packus_epi16(src4, src5);
+  r3 = _mm_packus_epi16(src6, src7);
+
+  mm_storel_epi64(dest + 0 * stride, r0);
+  mm_storeh_epi64(dest + 1 * stride, r0);
+  mm_storel_epi64(dest + 2 * stride, r1);
+  mm_storeh_epi64(dest + 3 * stride, r1);
+  mm_storel_epi64(dest + 4 * stride, r2);
+  mm_storeh_epi64(dest + 5 * stride, r2);
+  mm_storel_epi64(dest + 6 * stride, r3);
+  mm_storeh_epi64(dest + 7 * stride, r3);
+#else
+
+#endif
+}
+
 #if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
-  sse2_idct(block);
-  sse2_block_copy(block, dest, stride);
+
+void mpeg2_idct_add_sse2(int last, int16_t * block, uint8_t * dest, int stride) {
+#if defined(_MSC_VER)
+  __m128i * src = (__m128i *) block;
+  __m128i r0, r1, r2, r3, r4, r5, r6, r7;
+  __m128i zero;
+  
+#ifdef ARCH_X86_64
+#define IDCT_SSE2_SRC(src)						\
+    __m128i xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15;	\
+    xmm8  = src[0];							\
+    xmm9  = src[1];							\
+    xmm10 = src[2];							\
+    xmm11 = src[3];							\
+    xmm12 = src[4];							\
+    xmm13 = src[5];							\
+    xmm14 = src[6];							\
+    xmm15 = src[7];
+#define src0 xmm8
+#define src1 xmm9
+#define src2 xmm10
+#define src3 xmm11
+#define src4 xmm12
+#define src5 xmm13
+#define src6 xmm14
+#define src7 xmm15
+#else
+#define IDCT_SSE2_SRC(src)
+#define src0 src[0]
+#define src1 src[1]
+#define src2 src[2]
+#define src3 src[3]
+#define src4 src[4]
+#define src5 src[5]
+#define src6 src[6]
+#define src7 src[7]
+#endif
+#ifdef IDCT_SSE2_ASM
+#else
+  IDCT_SSE2
+#endif
+
+  r0 = _mm_loadl_epi64((__m128i*)(dest + 0 * stride));
+  r1 = _mm_loadl_epi64((__m128i*)(dest + 1 * stride));
+  r2 = _mm_loadl_epi64((__m128i*)(dest + 2 * stride));
+  r3 = _mm_loadl_epi64((__m128i*)(dest + 3 * stride));
+  r4 = _mm_loadl_epi64((__m128i*)(dest + 4 * stride));
+  r5 = _mm_loadl_epi64((__m128i*)(dest + 5 * stride));
+  r6 = _mm_loadl_epi64((__m128i*)(dest + 6 * stride));
+  r7 = _mm_loadl_epi64((__m128i*)(dest + 7 * stride));
+
+  zero = _mm_setzero_si128();
+
+  r0 = _mm_unpacklo_epi8(r0, zero);
+  r1 = _mm_unpacklo_epi8(r1, zero);
+  r2 = _mm_unpacklo_epi8(r2, zero);
+  r3 = _mm_unpacklo_epi8(r3, zero);
+  r4 = _mm_unpacklo_epi8(r4, zero);
+  r5 = _mm_unpacklo_epi8(r5, zero);
+  r6 = _mm_unpacklo_epi8(r6, zero);
+  r7 = _mm_unpacklo_epi8(r7, zero);
+
+  r0 = _mm_adds_epi16(src0, r0);
+  r1 = _mm_adds_epi16(src1, r1);
+  r2 = _mm_adds_epi16(src2, r2);
+  r3 = _mm_adds_epi16(src3, r3);
+  r4 = _mm_adds_epi16(src4, r4);
+  r5 = _mm_adds_epi16(src5, r5);
+  r6 = _mm_adds_epi16(src6, r6);
+  r7 = _mm_adds_epi16(src7, r7);
+
+  r0 = _mm_packus_epi16(r0, r1);
+  r1 = _mm_packus_epi16(r2, r3);
+  r2 = _mm_packus_epi16(r4, r5);
+  r3 = _mm_packus_epi16(r6, r7);
+
+  mm_storel_epi64(dest + 0 * stride, r0);
+  mm_storeh_epi64(dest + 1 * stride, r0);
+  mm_storel_epi64(dest + 2 * stride, r1);
+  mm_storeh_epi64(dest + 3 * stride, r1);
+  mm_storel_epi64(dest + 4 * stride, r2);
+  mm_storeh_epi64(dest + 5 * stride, r2);
+  mm_storel_epi64(dest + 6 * stride, r3);
+  mm_storeh_epi64(dest + 7 * stride, r3);
+
   sse2_block_zero(block);
-#endif
-}
-
-void mpeg2_idct_add_sse2(const int last, int16_t * const block, uint8_t * const dest, const int stride) {
-#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
+#else
   if (last != 129 || (block[0] & (7 << 4)) == (4 << 4)) {
     sse2_idct(block);
     sse2_block_add(block, dest, stride);
@@ -1220,20 +1426,13 @@ void mpeg2_idct_add_sse2(const int last, int16_t * const block, uint8_t * const 
 #endif
 }
 
-#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
-declare_idct (mmxext_idct, mmxext_table, mmxext_row_head, mmxext_row, mmxext_row_tail, mmxext_row_mid)
-#endif
-
 void mpeg2_idct_copy_mmxext(int16_t * const block, uint8_t * const dest, const int stride) {
-#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
   mmxext_idct(block);
   block_copy(block, dest, stride);
   block_zero(block);
-#endif
 }
 
 void mpeg2_idct_add_mmxext(const int last, int16_t * const block, uint8_t * const dest, const int stride) {
-#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
   if (last != 129 || (block[0] & (7 << 4)) == (4 << 4)) {
     mmxext_idct(block);
     block_add(block, dest, stride);
@@ -1241,23 +1440,15 @@ void mpeg2_idct_add_mmxext(const int last, int16_t * const block, uint8_t * cons
   } else {
     block_add_DC(block, dest, stride, CPU_MMXEXT);
   }
-#endif
 }
 
-#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
-declare_idct (mmx_idct, mmx_table, mmx_row_head, mmx_row, mmx_row_tail, mmx_row_mid)
-#endif
-
 void mpeg2_idct_copy_mmx(int16_t * const block, uint8_t * const dest, const int stride) {
-#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
   mmx_idct(block);
   block_copy(block, dest, stride);
   block_zero(block);
-#endif
 }
 
 void mpeg2_idct_add_mmx(const int last, int16_t * const block, uint8_t * const dest, const int stride) {
-#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
   if (last != 129 || (block[0] & (7 << 4)) == (4 << 4)) {
     mmx_idct(block);
     block_add(block, dest, stride);
@@ -1265,11 +1456,9 @@ void mpeg2_idct_add_mmx(const int last, int16_t * const block, uint8_t * const d
   } else {
     block_add_DC(block, dest, stride, CPU_MMX);
   }
-#endif
 }
 
 void mpeg2_idct_mmx_init(void) {
-#if defined(MSVC_ASM) && (defined(ARCH_X86) || defined(ARCH_X86_64))
   int i, j;
 
   /* the mmx/mmxext idct uses a reordered input, so we patch scan tables */
@@ -1279,7 +1468,7 @@ void mpeg2_idct_mmx_init(void) {
     j = mpeg2_scan_alt[i];
     mpeg2_scan_alt[i] = (j & 0x38) | ((j & 6) >> 1) | ((j & 1) << 2);
   }
-#endif
 }
+#endif
 
 #endif

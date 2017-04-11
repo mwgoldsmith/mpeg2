@@ -14,6 +14,7 @@ if ARCH_SPARC
 libmpeg2convertarch_la_SOURCES += sparc/rgb_vis.c
 endif
 endif
+
 libmpeg2convertarch_la_CFLAGS = $(OPT_CFLAGS) $(ARCH_OPT_CFLAGS) $(LIBMPEG2_CFLAGS)
 
 pkgconfigdir = $(libdir)/pkgconfig

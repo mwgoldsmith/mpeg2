@@ -105,6 +105,12 @@
     <ClCompile Include="..\..\libmpeg2\ppc\cpu_state_ppc.c">
       <Filter>Source Files\ppc</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\x86\idct_sse2.c">
+      <Filter>Source Files\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libmpeg2\x86\motion_comp_sse2.c">
+      <Filter>Source Files\x86</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h">
